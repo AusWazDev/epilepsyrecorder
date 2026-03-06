@@ -9,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
+const String kAppName = 'Medical Event Recorder';
+const String kAppVersion = '1.0.0';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const AppBootstrap());
@@ -48,7 +51,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Medical Event Recorder',
+      title: kAppName,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
@@ -426,7 +429,7 @@ String buildCsv(List<EventRecord> items) {
   final fmtLocal = DateFormat.yMMMd().add_jm();
   final sb = StringBuffer();
 
-  sb.writeln('# Epilepsy Recorder export');
+  sb.writeln('# $kAppName export');
   sb.writeln('# referral_required: Yes = medical referral was required');
   sb.writeln(
       '# Column order: timestamp_iso, timestamp_local, duration, feelings, referral_required, notes');
@@ -466,8 +469,9 @@ Future<File> _buildCsvTempFile(
   final csv = buildCsv(items);
   final dir = await getTemporaryDirectory();
   final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-  final prefix =
-      (filenamePrefix == null || filenamePrefix.isEmpty) ? 'epilepsy_events' : filenamePrefix;
+  final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
+      ? 'medical_event_recorder'
+      : filenamePrefix;
 
   final file = File('${dir.path}/${prefix}_$ts.csv');
   await file.writeAsString(csv, flush: true);
@@ -492,8 +496,8 @@ Future<void> exportCsvShare(
 
   await SharePlus.instance.share(
     ShareParams(
-      subject: 'Epilepsy events export (CSV)',
-      text: 'Epilepsy Recorder CSV export',
+      subject: '$kAppName export (CSV)',
+      text: '$kAppName CSV export',
       files: [XFile(file.path, mimeType: 'text/csv')],
       sharePositionOrigin: shareOriginRect(context),
     ),
@@ -514,8 +518,9 @@ Future<void> exportCsvSaveAs(
 
   final csv = buildCsv(items);
   final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-  final prefix =
-      (filenamePrefix == null || filenamePrefix.isEmpty) ? 'epilepsy_events' : filenamePrefix;
+  final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
+      ? 'medical_event_recorder'
+      : filenamePrefix;
 
   final location = await getSaveLocation(
     suggestedName: '${prefix}_$ts.csv',
@@ -530,7 +535,6 @@ Future<void> exportCsvSaveAs(
 
   if (!context.mounted) return;
 
-  // Optional convenience: offer "Open" on desktop
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: const Text('CSV saved'),
@@ -545,9 +549,7 @@ Future<void> exportCsvSaveAs(
             } else if (Platform.isLinux) {
               await Process.start('xdg-open', [location.path], runInShell: true);
             }
-          } catch (_) {
-            // ignore if platform doesn't allow launching
-          }
+          } catch (_) {}
         },
       ),
     ),
@@ -623,7 +625,12 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-enum _HomeMenuAction { history, exportAll, resetDisclaimer }
+enum _HomeMenuAction {
+  history,
+  exportAll,
+  resetDisclaimer,
+  about,
+}
 
 class _HomeScreenState extends State<HomeScreen> {
   final _store = EventStore();
@@ -687,8 +694,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await _editEvent(existing: null);
   }
 
-  /// Returns updated record when saved, null if cancelled.
-  /// confirmOnSave=true triggers confirm dialog (used by History).
   Future<EventRecord?> _editEvent({EventRecord? existing, bool confirmOnSave = false}) async {
     DurationCategory duration = existing?.duration ?? DurationCategory.lt1;
     final selectedFeelings = (existing?.feelings ?? const <String>[]).toSet();
@@ -727,14 +732,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: Theme.of(ctx).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
-
                   Text('Duration', style: Theme.of(ctx).textTheme.labelLarge),
                   const SizedBox(height: 8),
                   DurationTiles(
                     selected: duration,
                     onSelected: (d) => setSheetState(() => duration = d),
                   ),
-
                   const SizedBox(height: 12),
                   Text('Feelings', style: Theme.of(ctx).textTheme.labelLarge),
                   const SizedBox(height: 8),
@@ -777,7 +780,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }).toList(),
                   ),
-
                   const SizedBox(height: 14),
                   Text('Medical referral required?',
                       style: Theme.of(ctx).textTheme.labelLarge),
@@ -840,7 +842,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 8),
                   ExpansionTile(
                     tilePadding: EdgeInsets.zero,
@@ -857,7 +858,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 12),
                     ],
                   ),
-
                   Row(
                     children: [
                       TextButton(
@@ -883,12 +883,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   updated.notes.trim() != originalNotes ||
                                   !sameSet(updated.feelings.toSet(), originalFeelings);
 
-                          // Confirm only when requested (History) and only if editing an existing record
                           if (confirmOnSave && existing != null) {
                             if (!hasChanges) {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('No changes to save.')),
+                                  const SnackBar(
+                                      content: Text('No changes to save.')),
                                 );
                               }
                               if (ctx.mounted) Navigator.pop(ctx);
@@ -924,7 +924,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const Text('Save the following changes?'),
                                     const SizedBox(height: 12),
                                     ...changes.map((c) => Padding(
-                                          padding: const EdgeInsets.only(bottom: 6),
+                                          padding:
+                                              const EdgeInsets.only(bottom: 6),
                                           child: Text('• $c'),
                                         )),
                                   ],
@@ -955,7 +956,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
 
                           await _persist();
-                          if (ctx.mounted) Navigator.pop(ctx, updated); // return updated record
+                          if (ctx.mounted) Navigator.pop(ctx, updated);
                         },
                         child: const Text('Save'),
                       ),
@@ -976,11 +977,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset disclaimer?'),
-        content: const Text('This will show the disclaimer again.'),
+        title: const Text('Reset app?'),
+        content: const Text(
+          'This will clear all events and show the disclaimer again.\n\n'
+          'This action cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Reset')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reset'),
+          ),
         ],
       ),
     );
@@ -1019,7 +1029,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Epilepsy Recorder'),
+        title: const Text(kAppName),
         actions: [
           PopupMenuButton<_HomeMenuAction>(
             onSelected: (action) async {
@@ -1031,18 +1041,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   await showExportOptions(
                     context,
                     _records,
-                    filenamePrefix: 'epilepsy_events_all',
+                    filenamePrefix: 'medical_event_recorder_all',
                   );
                   break;
                 case _HomeMenuAction.resetDisclaimer:
                   await _confirmResetDisclaimer();
                   break;
+                case _HomeMenuAction.about:
+                  showAboutDialog(
+                    context: context,
+                    applicationName: kAppName,
+                    applicationVersion: 'v$kAppVersion',
+                    applicationLegalese: 'For personal record‑keeping only.\n'
+                        'Not a medical device.\n\n'
+                        'All data is stored locally on your device.',
+                  );
+                  break;
               }
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: _HomeMenuAction.history, child: Text('History')),
-              PopupMenuItem(value: _HomeMenuAction.exportAll, child: Text('Export CSV (all events)')),
-              PopupMenuItem(value: _HomeMenuAction.resetDisclaimer, child: Text('Reset disclaimer')),
+              PopupMenuItem(
+                value: _HomeMenuAction.history,
+                child: Text('History'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.exportAll,
+                child: Text('Export CSV (all events)'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.resetDisclaimer,
+                child: Text('Reset app (clear all data)'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.about,
+                child: Text('About'),
+              ),
             ],
           ),
         ],
@@ -1074,8 +1107,13 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(countText, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 6),
               Text(
-                'Tip: Use the menu (⋮) for History, Export CSV, and Reset Disclaimer.',
+                'Tip: Use the menu (⋮) for History, Export CSV, and Reset App.',
                 textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Version $kAppVersion',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -1113,8 +1151,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   late List<EventRecord> _records;
 
   final DateFormat _uiTimeFmt = DateFormat('EEE d MMM yyyy, h:mm a');
-
-  // reliable inline search
   final TextEditingController _searchController = TextEditingController();
 
   String _searchText = '';
@@ -1155,7 +1191,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete event?'),
+        title: const Text('Delete this event?'),
         content: const Text(
           'This action cannot be undone.\n\nAre you sure you want to delete this event?',
         ),
@@ -1192,7 +1228,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () => showExportOptions(
               context,
               shown,
-              filenamePrefix: 'epilepsy_events_filtered',
+              filenamePrefix: 'medical_event_recorder_filtered',
             ),
           ),
         ],
@@ -1223,7 +1259,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
               onChanged: (value) => setState(() => _searchText = value),
             ),
             const SizedBox(height: 10),
-
             Card(
               elevation: 0,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -1242,12 +1277,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 onChanged: (value) => setState(() => _referralOnly = value),
               ),
             ),
-
             const SizedBox(height: 10),
-
             Expanded(
               child: shown.isEmpty
-                  ? const Center(child: Text('No events match your filters.'))
+                  ? const Center(
+                      child: Text(
+                        'No events yet.\nTap “Record Event” to get started.',
+                        textAlign: TextAlign.center,
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: shown.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),

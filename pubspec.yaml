@@ -1,4 +1,4 @@
-name: Medical_Event_Recorder
+name: medical_event_recorder
 description: Medical Event Recorder
 publish_to: 'none'
 version: 1.0.0+1
