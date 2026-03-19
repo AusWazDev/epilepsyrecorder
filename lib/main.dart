@@ -56,16 +56,6 @@ class _AppBootstrapState extends State<AppBootstrap> {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-
-      // ✅ GLOBAL KEYBOARD DISMISS: tap anywhere outside to hide keyboard
-      builder: (context, child) {
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
-
       home: !_ready
           ? const SplashLoadingScreen()
           : (_accepted ? const HomeScreen() : const DisclaimerScreen()),
@@ -472,3 +462,874 @@ String buildCsv(List<EventRecord> items) {
    EXPORT (3 OPTIONS WIRED IN)
    =========================== */
 
+Future<File> _buildCsvTempFile(
+  List<EventRecord> items, {
+  String? filenamePrefix,
+}) async {
+  final csv = buildCsv(items);
+  final dir = await getTemporaryDirectory();
+  final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+  final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
+      ? 'medical_event_recorder'
+      : filenamePrefix;
+
+  final file = File('${dir.path}/${prefix}_$ts.csv');
+  await file.writeAsString(csv, flush: true);
+  return file;
+}
+
+Future<void> exportCsvShare(
+  BuildContext context,
+  List<EventRecord> items, {
+  String? filenamePrefix,
+}) async {
+  if (items.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No events to export.')),
+    );
+    return;
+  }
+
+  final file = await _buildCsvTempFile(items, filenamePrefix: filenamePrefix);
+
+  if (!context.mounted) return;
+
+  await SharePlus.instance.share(
+    ShareParams(
+      subject: '$kAppName export (CSV)',
+      text: '$kAppName CSV export',
+      files: [XFile(file.path, mimeType: 'text/csv')],
+      sharePositionOrigin: shareOriginRect(context),
+    ),
+  );
+}
+
+Future<void> exportCsvSaveAs(
+  BuildContext context,
+  List<EventRecord> items, {
+  String? filenamePrefix,
+}) async {
+  if (items.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No events to export.')),
+    );
+    return;
+  }
+
+  final csv = buildCsv(items);
+  final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+  final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
+      ? 'medical_event_recorder'
+      : filenamePrefix;
+
+  final location = await getSaveLocation(
+    suggestedName: '${prefix}_$ts.csv',
+    acceptedTypeGroups: const [
+      XTypeGroup(label: 'CSV files', extensions: ['csv']),
+    ],
+  );
+
+  if (location == null) return;
+
+  await File(location.path).writeAsString(csv, flush: true);
+
+  if (!context.mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: const Text('CSV saved'),
+      action: SnackBarAction(
+        label: 'Open',
+        onPressed: () async {
+          try {
+            if (Platform.isWindows) {
+              await Process.start('explorer', [location.path], runInShell: true);
+            } else if (Platform.isMacOS) {
+              await Process.start('open', [location.path], runInShell: true);
+            } else if (Platform.isLinux) {
+              await Process.start('xdg-open', [location.path], runInShell: true);
+            }
+          } catch (_) {}
+        },
+      ),
+    ),
+  );
+}
+
+Future<void> showExportOptions(
+  BuildContext context,
+  List<EventRecord> items, {
+  String? filenamePrefix,
+}) async {
+  if (items.isEmpty) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('No events to export.')));
+    return;
+  }
+
+  await showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.ios_share),
+              title: const Text('Share to apps'),
+              subtitle: const Text('OneDrive, iCloud, Google Drive, Files, email'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await exportCsvShare(
+                  context,
+                  items,
+                  filenamePrefix: filenamePrefix,
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: const Text('Save to device'),
+              subtitle: const Text('Choose location and file name'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await exportCsvSaveAs(
+                  context,
+                  items,
+                  filenamePrefix: filenamePrefix,
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('Cancel'),
+              onTap: () => Navigator.pop(ctx),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/* ===========================
+   HOME (Record-only + menu)
+   =========================== */
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+enum _HomeMenuAction {
+  history,
+  exportAll,
+  resetDisclaimer,
+  about,
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _store = EventStore();
+  final _uuid = const Uuid();
+
+  List<EventRecord> _records = [];
+  bool _loaded = false;
+
+  final List<String> _feelingsOptions = const [
+    'Tired and weary',
+    'Just Tired',
+    'Just Weary',
+    'Experiencing a headache',
+    'Sad',
+    'Confused',
+    'Annoyed',
+    'Angry',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final loaded = await _store.load();
+      if (!mounted) return;
+      setState(() {
+        _records = loaded;
+        _loaded = true;
+      });
+    });
+  }
+
+  Future<void> _persist() => _store.save(_records);
+
+  Future<void> _quickRecord() async {
+    final rec = EventRecord(
+      id: _uuid.v4(),
+      timestamp: DateTime.now(),
+      duration: DurationCategory.lt1,
+      feelings: const [],
+      referralRequired: false,
+      notes: '',
+    );
+
+    setState(() => _records.insert(0, rec));
+    await _persist();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Event recorded'),
+        action: SnackBarAction(
+          label: 'Edit',
+          onPressed: () => _editEvent(existing: rec),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _recordWithDetails() async {
+    await _editEvent(existing: null);
+  }
+
+  Future<EventRecord?> _editEvent({EventRecord? existing, bool confirmOnSave = false}) async {
+    DurationCategory duration = existing?.duration ?? DurationCategory.lt1;
+    final selectedFeelings = (existing?.feelings ?? const <String>[]).toSet();
+    bool referralRequired = existing?.referralRequired ?? false;
+    final notesController = TextEditingController(text: existing?.notes ?? '');
+    final isNew = existing == null;
+
+    final originalDuration = existing?.duration;
+    final originalFeelings = (existing?.feelings ?? const <String>[]).toSet();
+    final originalReferral = existing?.referralRequired ?? false;
+    final originalNotes = (existing?.notes ?? '').trim();
+
+    bool sameSet(Set<String> a, Set<String> b) =>
+        a.length == b.length && a.containsAll(b);
+
+    final result = await showModalBottomSheet<EventRecord>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 8,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setSheetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isNew ? 'Record event' : 'Edit event',
+                    style: Theme.of(ctx).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Duration', style: Theme.of(ctx).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  DurationTiles(
+                    selected: duration,
+                    onSelected: (d) => setSheetState(() => duration = d),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Feelings', style: Theme.of(ctx).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: _feelingsOptions.map((f) {
+                      final isSelected = selectedFeelings.contains(f);
+                      return FilterChip(
+                        label: Text(
+                          f,
+                          style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                                fontWeight:
+                                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                        ),
+                        selected: isSelected,
+                        showCheckmark: true,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        labelPadding:
+                            const EdgeInsets.symmetric(horizontal: 6),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        selectedColor:
+                            Theme.of(ctx).colorScheme.primaryContainer,
+                        checkmarkColor: Theme.of(ctx).colorScheme.primary,
+                        side: BorderSide(
+                          color: isSelected
+                              ? Theme.of(ctx).colorScheme.primary
+                              : Theme.of(ctx).colorScheme.outlineVariant,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        onSelected: (sel) {
+                          setSheetState(() {
+                            sel
+                                ? selectedFeelings.add(f)
+                                : selectedFeelings.remove(f);
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  Text('Medical referral required?',
+                      style: Theme.of(ctx).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      ChoiceChip(
+                        label: Text(
+                          'No',
+                          style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                                fontWeight: referralRequired
+                                    ? FontWeight.w500
+                                    : FontWeight.w700,
+                              ),
+                        ),
+                        selected: !referralRequired,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        labelPadding:
+                            const EdgeInsets.symmetric(horizontal: 6),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        selectedColor:
+                            Theme.of(ctx).colorScheme.primaryContainer,
+                        side: BorderSide(
+                          color: !referralRequired
+                              ? Theme.of(ctx).colorScheme.primary
+                              : Theme.of(ctx).colorScheme.outlineVariant,
+                          width: !referralRequired ? 2 : 1,
+                        ),
+                        onSelected: (_) =>
+                            setSheetState(() => referralRequired = false),
+                      ),
+                      ChoiceChip(
+                        label: Text(
+                          'Yes',
+                          style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                                fontWeight: referralRequired
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                        ),
+                        selected: referralRequired,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        labelPadding:
+                            const EdgeInsets.symmetric(horizontal: 6),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        selectedColor:
+                            Theme.of(ctx).colorScheme.primaryContainer,
+                        side: BorderSide(
+                          color: referralRequired
+                              ? Theme.of(ctx).colorScheme.primary
+                              : Theme.of(ctx).colorScheme.outlineVariant,
+                          width: referralRequired ? 2 : 1,
+                        ),
+                        onSelected: (_) =>
+                            setSheetState(() => referralRequired = true),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: const Text('Notes (optional)'),
+                    children: [
+                      TextField(
+                        controller: notesController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'Add notes if helpful',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () async {
+                          final updated = EventRecord(
+                            id: existing?.id ?? _uuid.v4(),
+                            timestamp: existing?.timestamp ?? DateTime.now(),
+                            duration: duration,
+                            feelings: selectedFeelings.toList(),
+                            referralRequired: referralRequired,
+                            notes: notesController.text.trim(),
+                          );
+
+                          final hasChanges = existing == null
+                              ? true
+                              : updated.duration != originalDuration ||
+                                  updated.referralRequired != originalReferral ||
+                                  updated.notes.trim() != originalNotes ||
+                                  !sameSet(updated.feelings.toSet(), originalFeelings);
+
+                          if (confirmOnSave && existing != null) {
+                            if (!hasChanges) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('No changes to save.')),
+                                );
+                              }
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              return;
+                            }
+
+                            final changes = <String>[];
+                            if (updated.duration != originalDuration) {
+                              changes.add(
+                                'Duration: ${durationLabel(originalDuration!)} → ${durationLabel(updated.duration)}',
+                              );
+                            }
+                            if (updated.referralRequired != originalReferral) {
+                              changes.add(
+                                'Medical referral: ${originalReferral ? "Yes" : "No"} → ${updated.referralRequired ? "Yes" : "No"}',
+                              );
+                            }
+                            if (!sameSet(updated.feelings.toSet(), originalFeelings)) {
+                              changes.add('Feelings updated');
+                            }
+                            if (updated.notes.trim() != originalNotes) {
+                              changes.add('Notes updated');
+                            }
+
+                            final ok = await showDialog<bool>(
+                              context: ctx,
+                              builder: (dCtx) => AlertDialog(
+                                title: const Text('Confirm changes'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Save the following changes?'),
+                                    const SizedBox(height: 12),
+                                    ...changes.map((c) => Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 6),
+                                          child: Text('• $c'),
+                                        )),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(dCtx, false),
+                                    child: const Text('Keep editing'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () => Navigator.pop(dCtx, true),
+                                    child: const Text('Save'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (ok != true) return;
+                          }
+
+                          setState(() {
+                            if (isNew) {
+                              _records.insert(0, updated);
+                            } else {
+                              final index = _records.indexWhere((r) => r.id == existing.id);
+                              if (index != -1) _records[index] = updated;
+                            }
+                          });
+
+                          await _persist();
+                          if (ctx.mounted) Navigator.pop(ctx, updated);
+                        },
+                        child: const Text('Save'),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    return result;
+  }
+
+  Future<void> _confirmResetDisclaimer() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reset app?'),
+        content: const Text(
+          'This will clear all events and show the disclaimer again.\n\n'
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AppBootstrap()),
+        (route) => false,
+      );
+    }
+  }
+
+  void _openHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HistoryScreen(
+          records: _records,
+          feelingsOptions: _feelingsOptions,
+          onRecordsChanged: (updated) async {
+            setState(() => _records = updated);
+            await _persist();
+          },
+          onEdit: (existing, {required confirmOnSave}) =>
+              _editEvent(existing: existing, confirmOnSave: confirmOnSave),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final countText = _loaded ? '${_records.length} saved' : 'Loading…';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(kAppName),
+        actions: [
+          PopupMenuButton<_HomeMenuAction>(
+            onSelected: (action) async {
+              switch (action) {
+                case _HomeMenuAction.history:
+                  _openHistory();
+                  break;
+                case _HomeMenuAction.exportAll:
+                  await showExportOptions(
+                    context,
+                    _records,
+                    filenamePrefix: 'medical_event_recorder_all',
+                  );
+                  break;
+                case _HomeMenuAction.resetDisclaimer:
+                  await _confirmResetDisclaimer();
+                  break;
+                case _HomeMenuAction.about:
+                  showAboutDialog(
+                    context: context,
+                    applicationName: kAppName,
+                    applicationVersion: 'v$kAppVersion',
+                    applicationLegalese: 'For personal record‑keeping only.\n'
+                        'Not a medical device.\n\n'
+                        'All data is stored locally on your device.',
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _HomeMenuAction.history,
+                child: Text('History'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.exportAll,
+                child: Text('Export CSV (all events)'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.resetDisclaimer,
+                child: Text('Reset app (clear all data)'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.about,
+                child: Text('About'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 320,
+                height: 88,
+                child: FilledButton(
+                  onPressed: _quickRecord,
+                  child: const Text('Record Event', style: TextStyle(fontSize: 26)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.tune),
+                  label: const Text('Record with details'),
+                  onPressed: _recordWithDetails,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(countText, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 6),
+              Text(
+                'Tip: Use the menu (⋮) for History, Export CSV, and Reset App.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Version $kAppVersion',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ===========================
+   HISTORY / SEARCH PAGE
+   =========================== */
+
+class HistoryScreen extends StatefulWidget {
+  final List<EventRecord> records;
+  final List<String> feelingsOptions;
+  final Future<void> Function(List<EventRecord> updated) onRecordsChanged;
+
+  final Future<EventRecord?> Function(EventRecord existing, {required bool confirmOnSave}) onEdit;
+
+  const HistoryScreen({
+    super.key,
+    required this.records,
+    required this.feelingsOptions,
+    required this.onRecordsChanged,
+    required this.onEdit,
+  });
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  late List<EventRecord> _records;
+
+  final DateFormat _uiTimeFmt = DateFormat('EEE d MMM yyyy, h:mm a');
+  final TextEditingController _searchController = TextEditingController();
+
+  String _searchText = '';
+  bool _referralOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _records = List<EventRecord>.from(widget.records);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<EventRecord> get _filteredRecords {
+    final q = _searchText.trim().toLowerCase();
+
+    return _records.where((r) {
+      if (_referralOnly && !r.referralRequired) return false;
+
+      if (q.isEmpty) return true;
+      final haystack = [
+        durationLabel(r.duration),
+        r.feelings.join(' '),
+        'referral: ${r.referralRequired ? "yes" : "no"}',
+        r.notes,
+        _uiTimeFmt.format(r.timestamp),
+      ].join(' ').toLowerCase();
+
+      return haystack.contains(q);
+    }).toList();
+  }
+
+  Future<void> _deleteAndPersist(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete this event?'),
+        content: const Text(
+          'This action cannot be undone.\n\nAre you sure you want to delete this event?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _records.removeWhere((r) => r.id == id));
+    await widget.onRecordsChanged(_records);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = _filteredRecords;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('History'),
+        actions: [
+          IconButton(
+            tooltip: 'Export CSV (filtered)',
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => showExportOptions(
+              context,
+              shown,
+              filenamePrefix: 'medical_event_recorder_filtered',
+            ),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchText.isNotEmpty
+                    ? IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchText = '';
+                            _searchController.clear();
+                          });
+                        },
+                      )
+                    : null,
+                hintText: 'Search notes, feelings, duration, referral…',
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _searchText = value),
+            ),
+            const SizedBox(height: 10),
+            Card(
+              elevation: 0,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SwitchListTile(
+                title: Text(
+                  'Referral required only',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                subtitle: const Text('Show only events that required medical referral'),
+                value: _referralOnly,
+                onChanged: (value) => setState(() => _referralOnly = value),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: shown.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No events yet.\nTap “Record Event” to get started.',
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: shown.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (ctx, i) {
+                        final r = shown[i];
+                        final notesShort = r.notes.trim().isEmpty
+                            ? ''
+                            : (r.notes.trim().length > 60
+                                ? '${r.notes.trim().substring(0, 60)}…'
+                                : r.notes.trim());
+
+                        final line1 = durationLabel(r.duration);
+                        final line2Parts = <String>[
+                          if (r.feelings.isNotEmpty) r.feelings.join(', '),
+                          if (r.referralRequired) 'Referral: Yes',
+                          if (notesShort.isNotEmpty) 'Notes: $notesShort',
+                        ];
+                        final line2 = line2Parts.join(' • ');
+
+                        return ListTile(
+                          onTap: () async {
+                            final updated = await widget.onEdit(r, confirmOnSave: true);
+                            if (updated != null) {
+                              setState(() {
+                                final index = _records.indexWhere((e) => e.id == updated.id);
+                                if (index != -1) _records[index] = updated;
+                                _records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+                              });
+                            }
+                          },
+                          title: Text(_uiTimeFmt.format(r.timestamp)),
+                          subtitle: Text(line2.isEmpty ? line1 : '$line1\n$line2'),
+                          isThreeLine: line2.isNotEmpty,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _deleteAndPersist(r.id),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
