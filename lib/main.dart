@@ -752,9 +752,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   // ✅ Fix 1: tap outside input dismisses keyboard without closing sheet
                   onTap: () => FocusScope.of(ctx).unfocus(),
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -965,35 +962,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (updated.notes.trim() != originalNotes) {
                                     changes.add('Notes updated');
                                   }
-
                                   final ok = await showDialog<bool>(
                                     context: ctx,
                                     builder: (dCtx) => AlertDialog(
                                       title: const Text('Confirm changes'),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                              'Save the following changes?'),
-                                          const SizedBox(height: 12),
-                                          ...changes.map((c) => Padding(
-                                                padding: const EdgeInsets.only(
-                                                    bottom: 6),
+                                      content: SingleChildScrollView(
+                                        child: ListBody(
+                                          children: [
+                                            const Text('Save the following changes?'),
+                                            const SizedBox(height: 12),
+                                            for (final c in changes)
+                                              Padding(
+                                                padding: const EdgeInsets.only(bottom: 6),
                                                 child: Text('• $c'),
-                                              )),
-                                        ],
+                                              ),
+                                          ],
+                                        ),
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(dCtx, false),
+                                          onPressed: () => Navigator.pop(dCtx, false),
                                           child: const Text('Keep editing'),
                                         ),
                                         FilledButton(
-                                          onPressed: () =>
-                                              Navigator.pop(dCtx, true),
+                                          onPressed: () => Navigator.pop(dCtx, true),
                                           child: const Text('Save'),
                                         ),
                                       ],
@@ -1002,7 +994,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   if (ok != true) return;
                                 }
-
                                 setState(() {
                                   if (isNew) {
                                     _records.insert(0, updated);
@@ -1142,47 +1133,65 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 320,
-                height: 88,
-                child: FilledButton(
-                  onPressed: _quickRecord,
-                  child: const Text('Record Event',
-                      style: TextStyle(fontSize: 26)),
+      
+      body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 320,
+                            height: 88,
+                            child: FilledButton(
+                              onPressed: _quickRecord,
+                              child: const Text(
+                                'Record Event',
+                                style: TextStyle(fontSize: 26),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.tune),
+                              label: const Text('Record with details'),
+                              onPressed: _recordWithDetails,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            countText,
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Tip: Use the menu (⋮) for History, Export CSV, and Reset App.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Version $kAppVersion',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                height: 48,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.tune),
-                  label: const Text('Record with details'),
-                  onPressed: _recordWithDetails,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(countText, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 6),
-              Text(
-                'Tip: Use the menu (⋮) for History, Export CSV, and Reset App.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Version $kAppVersion',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
+              );
+            },
           ),
         ),
-      ),
     );
   }
 }
