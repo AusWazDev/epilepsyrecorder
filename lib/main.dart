@@ -58,7 +58,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
       ),
       home: !_ready
           ? const SplashLoadingScreen()
-          : (_accepted ? const HomeScreen() : const DisclaimerScreen()),
+          : (_accepted ? HomeScreen() : DisclaimerScreen()),
     );
   }
 }
@@ -76,7 +76,7 @@ class SplashLoadingScreen extends StatelessWidget {
    =========================== */
 
 class DisclaimerScreen extends StatelessWidget {
-  const DisclaimerScreen({super.key});
+  DisclaimerScreen({super.key});
 
   Future<void> _accept(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
@@ -85,7 +85,7 @@ class DisclaimerScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => HomeScreen()),
     );
   }
 
@@ -233,10 +233,7 @@ class _DisclaimerBullet extends StatelessWidget {
         children: [
           const Text('•  ', style: TextStyle(fontSize: 18)),
           Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
           ),
         ],
       ),
@@ -252,7 +249,8 @@ Rect shareOriginRect(BuildContext context) {
   final box = context.findRenderObject() as RenderBox?;
   if (box == null || !box.hasSize) return const Rect.fromLTWH(0, 0, 1, 1);
   final rect = box.localToGlobal(Offset.zero) & box.size;
-  if (rect.width == 0 || rect.height == 0) return const Rect.fromLTWH(0, 0, 1, 1);
+  if (rect.width == 0 || rect.height == 0)
+    return const Rect.fromLTWH(0, 0, 1, 1);
   return rect;
 }
 
@@ -385,8 +383,9 @@ class EventRecord {
         (e) => e.name == map['duration'],
         orElse: () => DurationCategory.oneToFive,
       ),
-      feelings:
-          (feelingsRaw is List) ? feelingsRaw.map((e) => e.toString()).toList() : <String>[],
+      feelings: (feelingsRaw is List)
+          ? feelingsRaw.map((e) => e.toString()).toList()
+          : <String>[],
       referralRequired: (referralRaw is bool) ? referralRaw : false,
       notes: (notesRaw is String) ? notesRaw : '',
     );
@@ -401,9 +400,10 @@ class EventStore {
     final raw = prefs.getString(_storageKey);
     if (raw == null || raw.isEmpty) return [];
     final decoded = jsonDecode(raw) as List<dynamic>;
-    final list =
-        decoded.map((e) => EventRecord.fromMap(e as Map<String, dynamic>)).toList()
-          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final list = decoded
+        .map((e) => EventRecord.fromMap(e as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return list;
   }
 
@@ -419,8 +419,10 @@ class EventStore {
    =========================== */
 
 String _csvEscape(String v) {
-  final needsQuotes =
-      v.contains(',') || v.contains('"') || v.contains('\n') || v.contains('\r');
+  final needsQuotes = v.contains(',') ||
+      v.contains('"') ||
+      v.contains('\n') ||
+      v.contains('\r');
   if (!needsQuotes) return v;
   return '"${v.replaceAll('"', '""')}"';
 }
@@ -543,11 +545,13 @@ Future<void> exportCsvSaveAs(
         onPressed: () async {
           try {
             if (Platform.isWindows) {
-              await Process.start('explorer', [location.path], runInShell: true);
+              await Process.start('explorer', [location.path],
+                  runInShell: true);
             } else if (Platform.isMacOS) {
               await Process.start('open', [location.path], runInShell: true);
             } else if (Platform.isLinux) {
-              await Process.start('xdg-open', [location.path], runInShell: true);
+              await Process.start('xdg-open', [location.path],
+                  runInShell: true);
             }
           } catch (_) {}
         },
@@ -571,14 +575,17 @@ Future<void> showExportOptions(
     context: context,
     showDragHandle: true,
     builder: (ctx) {
+      final isIOS = Platform.isIOS;
+
       return SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ✅ Always show Share
             ListTile(
               leading: const Icon(Icons.ios_share),
               title: const Text('Share to apps'),
-              subtitle: const Text('OneDrive, iCloud, Google Drive, Files, email'),
+              subtitle: const Text('Files, email, cloud storage, spreadsheets'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await exportCsvShare(
@@ -588,24 +595,29 @@ Future<void> showExportOptions(
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.save_alt),
-              title: const Text('Save to device'),
-              subtitle: const Text('Choose location and file name'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await exportCsvSaveAs(
-                  context,
-                  items,
-                  filenamePrefix: filenamePrefix,
-                );
-              },
-            ),
+
+            // ✅ Only show Save on NON‑iOS platforms
+            if (!isIOS)
+              ListTile(
+                leading: const Icon(Icons.save_alt),
+                title: const Text('Save to device'),
+                subtitle: const Text('Choose location and file name'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await exportCsvSaveAs(
+                    context,
+                    items,
+                    filenamePrefix: filenamePrefix,
+                  );
+                },
+              ),
+
             ListTile(
               leading: const Icon(Icons.close),
               title: const Text('Cancel'),
               onTap: () => Navigator.pop(ctx),
             ),
+
             const SizedBox(height: 8),
           ],
         ),
@@ -619,7 +631,7 @@ Future<void> showExportOptions(
    =========================== */
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -694,7 +706,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _editEvent(existing: null);
   }
 
-  Future<EventRecord?> _editEvent({EventRecord? existing, bool confirmOnSave = false}) async {
+  Future<EventRecord?> _editEvent({
+    EventRecord? existing,
+    bool confirmOnSave = false,
+  }) async {
     DurationCategory duration = existing?.duration ?? DurationCategory.lt1;
     final selectedFeelings = (existing?.feelings ?? const <String>[]).toSet();
     bool referralRequired = existing?.referralRequired ?? false;
@@ -713,258 +728,305 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+
+      // ✅ Fix 2: prevent swipe-to-dismiss
+      enableDrag: false,
+
+      // ✅ Also prevent tap-outside dismissal (prevents losing typed input)
+      isDismissible: false,
+
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 8,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
-          child: StatefulBuilder(
-            builder: (ctx, setSheetState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isNew ? 'Record event' : 'Edit event',
-                    style: Theme.of(ctx).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Duration', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  DurationTiles(
-                    selected: duration,
-                    onSelected: (d) => setSheetState(() => duration = d),
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Feelings', style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: _feelingsOptions.map((f) {
-                      final isSelected = selectedFeelings.contains(f);
-                      return FilterChip(
-                        label: Text(
-                          f,
-                          style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
-                                fontWeight:
-                                    isSelected ? FontWeight.w700 : FontWeight.w500,
-                              ),
-                        ),
-                        selected: isSelected,
-                        showCheckmark: true,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        labelPadding:
-                            const EdgeInsets.symmetric(horizontal: 6),
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
-                        selectedColor:
-                            Theme.of(ctx).colorScheme.primaryContainer,
-                        checkmarkColor: Theme.of(ctx).colorScheme.primary,
-                        side: BorderSide(
-                          color: isSelected
-                              ? Theme.of(ctx).colorScheme.primary
-                              : Theme.of(ctx).colorScheme.outlineVariant,
-                          width: isSelected ? 2 : 1,
-                        ),
-                        onSelected: (sel) {
-                          setSheetState(() {
-                            sel
-                                ? selectedFeelings.add(f)
-                                : selectedFeelings.remove(f);
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 14),
-                  Text('Medical referral required?',
-                      style: Theme.of(ctx).textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      ChoiceChip(
-                        label: Text(
-                          'No',
-                          style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
-                                fontWeight: referralRequired
-                                    ? FontWeight.w500
-                                    : FontWeight.w700,
-                              ),
-                        ),
-                        selected: !referralRequired,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        labelPadding:
-                            const EdgeInsets.symmetric(horizontal: 6),
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
-                        selectedColor:
-                            Theme.of(ctx).colorScheme.primaryContainer,
-                        side: BorderSide(
-                          color: !referralRequired
-                              ? Theme.of(ctx).colorScheme.primary
-                              : Theme.of(ctx).colorScheme.outlineVariant,
-                          width: !referralRequired ? 2 : 1,
-                        ),
-                        onSelected: (_) =>
-                            setSheetState(() => referralRequired = false),
-                      ),
-                      ChoiceChip(
-                        label: Text(
-                          'Yes',
-                          style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
-                                fontWeight: referralRequired
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
-                        ),
-                        selected: referralRequired,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        labelPadding:
-                            const EdgeInsets.symmetric(horizontal: 6),
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
-                        selectedColor:
-                            Theme.of(ctx).colorScheme.primaryContainer,
-                        side: BorderSide(
-                          color: referralRequired
-                              ? Theme.of(ctx).colorScheme.primary
-                              : Theme.of(ctx).colorScheme.outlineVariant,
-                          width: referralRequired ? 2 : 1,
-                        ),
-                        onSelected: (_) =>
-                            setSheetState(() => referralRequired = true),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    title: const Text('Notes (optional)'),
-                    children: [
-                      TextField(
-                        controller: notesController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          hintText: 'Add notes if helpful',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
-                      ),
-                      const Spacer(),
-                      FilledButton(
-                        onPressed: () async {
-                          final updated = EventRecord(
-                            id: existing?.id ?? _uuid.v4(),
-                            timestamp: existing?.timestamp ?? DateTime.now(),
-                            duration: duration,
-                            feelings: selectedFeelings.toList(),
-                            referralRequired: referralRequired,
-                            notes: notesController.text.trim(),
-                          );
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 8,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+            ),
+            child: StatefulBuilder(
+              builder: (ctx, setSheetState) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
 
-                          final hasChanges = existing == null
-                              ? true
-                              : updated.duration != originalDuration ||
-                                  updated.referralRequired != originalReferral ||
-                                  updated.notes.trim() != originalNotes ||
-                                  !sameSet(updated.feelings.toSet(), originalFeelings);
-
-                          if (confirmOnSave && existing != null) {
-                            if (!hasChanges) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('No changes to save.')),
-                                );
-                              }
-                              if (ctx.mounted) Navigator.pop(ctx);
-                              return;
-                            }
-
-                            final changes = <String>[];
-                            if (updated.duration != originalDuration) {
-                              changes.add(
-                                'Duration: ${durationLabel(originalDuration!)} → ${durationLabel(updated.duration)}',
-                              );
-                            }
-                            if (updated.referralRequired != originalReferral) {
-                              changes.add(
-                                'Medical referral: ${originalReferral ? "Yes" : "No"} → ${updated.referralRequired ? "Yes" : "No"}',
-                              );
-                            }
-                            if (!sameSet(updated.feelings.toSet(), originalFeelings)) {
-                              changes.add('Feelings updated');
-                            }
-                            if (updated.notes.trim() != originalNotes) {
-                              changes.add('Notes updated');
-                            }
-
-                            final ok = await showDialog<bool>(
-                              context: ctx,
-                              builder: (dCtx) => AlertDialog(
-                                title: const Text('Confirm changes'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Save the following changes?'),
-                                    const SizedBox(height: 12),
-                                    ...changes.map((c) => Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 6),
-                                          child: Text('• $c'),
-                                        )),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(dCtx, false),
-                                    child: const Text('Keep editing'),
-                                  ),
-                                  FilledButton(
-                                    onPressed: () => Navigator.pop(dCtx, true),
-                                    child: const Text('Save'),
-                                  ),
-                                ],
+                  // ✅ Fix 1: tap outside input dismisses keyboard without closing sheet
+                  onTap: () => FocusScope.of(ctx).unfocus(),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isNew ? 'Record event' : 'Edit event',
+                          style: Theme.of(ctx).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 12),
+                        Text('Duration',
+                            style: Theme.of(ctx).textTheme.labelLarge),
+                        const SizedBox(height: 8),
+                        DurationTiles(
+                          selected: duration,
+                          onSelected: (d) => setSheetState(() => duration = d),
+                        ),
+                        const SizedBox(height: 12),
+                        Text('Feelings',
+                            style: Theme.of(ctx).textTheme.labelLarge),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: _feelingsOptions.map((f) {
+                            final isSelected = selectedFeelings.contains(f);
+                            return FilterChip(
+                              label: Text(
+                                f,
+                                style:
+                                    Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                                          fontWeight: isSelected
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                        ),
                               ),
+                              selected: isSelected,
+                              showCheckmark: true,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              labelPadding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.padded,
+                              selectedColor:
+                                  Theme.of(ctx).colorScheme.primaryContainer,
+                              checkmarkColor: Theme.of(ctx).colorScheme.primary,
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Theme.of(ctx).colorScheme.primary
+                                    : Theme.of(ctx).colorScheme.outlineVariant,
+                                width: isSelected ? 2 : 1,
+                              ),
+                              onSelected: (sel) {
+                                setSheetState(() {
+                                  sel
+                                      ? selectedFeelings.add(f)
+                                      : selectedFeelings.remove(f);
+                                });
+                              },
                             );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 14),
+                        Text('Medical referral required?',
+                            style: Theme.of(ctx).textTheme.labelLarge),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            ChoiceChip(
+                              label: Text(
+                                'No',
+                                style:
+                                    Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                                          fontWeight: referralRequired
+                                              ? FontWeight.w500
+                                              : FontWeight.w700,
+                                        ),
+                              ),
+                              selected: !referralRequired,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              labelPadding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.padded,
+                              selectedColor:
+                                  Theme.of(ctx).colorScheme.primaryContainer,
+                              side: BorderSide(
+                                color: !referralRequired
+                                    ? Theme.of(ctx).colorScheme.primary
+                                    : Theme.of(ctx).colorScheme.outlineVariant,
+                                width: !referralRequired ? 2 : 1,
+                              ),
+                              onSelected: (_) =>
+                                  setSheetState(() => referralRequired = false),
+                            ),
+                            ChoiceChip(
+                              label: Text(
+                                'Yes',
+                                style:
+                                    Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                                          fontWeight: referralRequired
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                        ),
+                              ),
+                              selected: referralRequired,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              labelPadding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.padded,
+                              selectedColor:
+                                  Theme.of(ctx).colorScheme.primaryContainer,
+                              side: BorderSide(
+                                color: referralRequired
+                                    ? Theme.of(ctx).colorScheme.primary
+                                    : Theme.of(ctx).colorScheme.outlineVariant,
+                                width: referralRequired ? 2 : 1,
+                              ),
+                              onSelected: (_) =>
+                                  setSheetState(() => referralRequired = true),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          title: const Text('Notes (optional)'),
+                          children: [
+                            TextField(
+                              controller: notesController,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
+                              decoration: const InputDecoration(
+                                hintText: 'Add notes if helpful',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            TextButton(
+                              // ✅ Fix 3: dismiss keyboard before closing
+                              onPressed: () {
+                                FocusScope.of(ctx).unfocus();
+                                Navigator.pop(ctx);
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            const Spacer(),
+                            FilledButton(
+                              onPressed: () async {
+                                final updated = EventRecord(
+                                  id: existing?.id ?? _uuid.v4(),
+                                  timestamp:
+                                      existing?.timestamp ?? DateTime.now(),
+                                  duration: duration,
+                                  feelings: selectedFeelings.toList(),
+                                  referralRequired: referralRequired,
+                                  notes: notesController.text.trim(),
+                                );
 
-                            if (ok != true) return;
-                          }
+                                final hasChanges = existing == null
+                                    ? true
+                                    : updated.duration != originalDuration ||
+                                        updated.referralRequired !=
+                                            originalReferral ||
+                                        updated.notes.trim() != originalNotes ||
+                                        !sameSet(updated.feelings.toSet(),
+                                            originalFeelings);
 
-                          setState(() {
-                            if (isNew) {
-                              _records.insert(0, updated);
-                            } else {
-                              final index = _records.indexWhere((r) => r.id == existing.id);
-                              if (index != -1) _records[index] = updated;
-                            }
-                          });
+                                if (confirmOnSave && existing != null) {
+                                  if (!hasChanges) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content:
+                                                Text('No changes to save.')),
+                                      );
+                                    }
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                    return;
+                                  }
 
-                          await _persist();
-                          if (ctx.mounted) Navigator.pop(ctx, updated);
-                        },
-                        child: const Text('Save'),
-                      ),
-                    ],
+                                  final changes = <String>[];
+                                  if (updated.duration != originalDuration) {
+                                    changes.add(
+                                      'Duration: ${durationLabel(originalDuration!)} → ${durationLabel(updated.duration)}',
+                                    );
+                                  }
+                                  if (updated.referralRequired !=
+                                      originalReferral) {
+                                    changes.add(
+                                      'Medical referral: ${originalReferral ? "Yes" : "No"} → ${updated.referralRequired ? "Yes" : "No"}',
+                                    );
+                                  }
+                                  if (!sameSet(updated.feelings.toSet(),
+                                      originalFeelings)) {
+                                    changes.add('Feelings updated');
+                                  }
+                                  if (updated.notes.trim() != originalNotes) {
+                                    changes.add('Notes updated');
+                                  }
+
+                                  final ok = await showDialog<bool>(
+                                    context: ctx,
+                                    builder: (dCtx) => AlertDialog(
+                                      title: const Text('Confirm changes'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                              'Save the following changes?'),
+                                          const SizedBox(height: 12),
+                                          ...changes.map((c) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                    bottom: 6),
+                                                child: Text('• $c'),
+                                              )),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(dCtx, false),
+                                          child: const Text('Keep editing'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () =>
+                                              Navigator.pop(dCtx, true),
+                                          child: const Text('Save'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (ok != true) return;
+                                }
+
+                                setState(() {
+                                  if (isNew) {
+                                    _records.insert(0, updated);
+                                  } else {
+                                    final index = _records.indexWhere(
+                                        (r) => r.id == existing!.id);
+                                    if (index != -1) _records[index] = updated;
+                                  }
+                                });
+
+                                await _persist();
+                                if (ctx.mounted) Navigator.pop(ctx, updated);
+                              },
+                              child: const Text('Save'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
                   ),
-                ],
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },
@@ -1091,7 +1153,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 88,
                 child: FilledButton(
                   onPressed: _quickRecord,
-                  child: const Text('Record Event', style: TextStyle(fontSize: 26)),
+                  child: const Text('Record Event',
+                      style: TextStyle(fontSize: 26)),
                 ),
               ),
               const SizedBox(height: 14),
@@ -1133,7 +1196,8 @@ class HistoryScreen extends StatefulWidget {
   final List<String> feelingsOptions;
   final Future<void> Function(List<EventRecord> updated) onRecordsChanged;
 
-  final Future<EventRecord?> Function(EventRecord existing, {required bool confirmOnSave}) onEdit;
+  final Future<EventRecord?> Function(EventRecord existing,
+      {required bool confirmOnSave}) onEdit;
 
   const HistoryScreen({
     super.key,
@@ -1168,25 +1232,50 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.dispose();
   }
 
-  List<EventRecord> get _filteredRecords {
-    final q = _searchText.trim().toLowerCase();
-
-    return _records.where((r) {
-      if (_referralOnly && !r.referralRequired) return false;
-
-      if (q.isEmpty) return true;
-      final haystack = [
-        durationLabel(r.duration),
-        r.feelings.join(' '),
-        'referral: ${r.referralRequired ? "yes" : "no"}',
-        r.notes,
-        _uiTimeFmt.format(r.timestamp),
-      ].join(' ').toLowerCase();
-
-      return haystack.contains(q);
-    }).toList();
+  List<String> _durationSearchAliases(DurationCategory d) {
+    switch (d) {
+      case DurationCategory.lt1:
+        return ['<1', 'lt1', 'less than 1'];
+      case DurationCategory.oneToFive:
+        return ['1-5', '1 to 5', 'between 1 and 5'];
+      case DurationCategory.gt5:
+        return ['>5', 'gt5', 'greater than 5'];
+    }
   }
 
+  List<EventRecord> get _filteredRecords {
+  final q = _searchText.trim().toLowerCase();
+
+  return _records.where((r) {
+    if (_referralOnly && !r.referralRequired) return false;
+    if (q.isEmpty) return true;
+
+    // ✅ Only treat as duration if the query is PURELY numeric
+    final parsed = int.tryParse(q);
+    if (parsed != null && RegExp(r'^\d+$').hasMatch(q)) {
+      switch (r.duration) {
+        case DurationCategory.lt1:
+          return parsed < 1;
+        case DurationCategory.oneToFive:
+          return parsed >= 1 && parsed <= 5;
+        case DurationCategory.gt5:
+          return parsed > 5;
+      }
+    }
+
+    // ✅ Otherwise, fall back to normal text search
+    final haystack = [
+      durationLabel(r.duration),
+      ..._durationSearchAliases(r.duration),
+      r.feelings.join(' '),
+      'referral: ${r.referralRequired ? "yes" : "no"}',
+      r.notes,
+      _uiTimeFmt.format(r.timestamp),
+    ].join(' ').toLowerCase();
+
+    return haystack.contains(q);
+  }).toList();
+}
   Future<void> _deleteAndPersist(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -1272,7 +1361,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                 ),
-                subtitle: const Text('Show only events that required medical referral'),
+                subtitle: const Text(
+                    'Show only events that required medical referral'),
                 value: _referralOnly,
                 onChanged: (value) => setState(() => _referralOnly = value),
               ),
@@ -1307,17 +1397,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
                         return ListTile(
                           onTap: () async {
-                            final updated = await widget.onEdit(r, confirmOnSave: true);
+                            final updated =
+                                await widget.onEdit(r, confirmOnSave: true);
                             if (updated != null) {
                               setState(() {
-                                final index = _records.indexWhere((e) => e.id == updated.id);
+                                final index = _records
+                                    .indexWhere((e) => e.id == updated.id);
                                 if (index != -1) _records[index] = updated;
-                                _records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+                                _records.sort((a, b) =>
+                                    b.timestamp.compareTo(a.timestamp));
                               });
                             }
                           },
                           title: Text(_uiTimeFmt.format(r.timestamp)),
-                          subtitle: Text(line2.isEmpty ? line1 : '$line1\n$line2'),
+                          subtitle:
+                              Text(line2.isEmpty ? line1 : '$line1\n$line2'),
                           isThreeLine: line2.isNotEmpty,
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline),
