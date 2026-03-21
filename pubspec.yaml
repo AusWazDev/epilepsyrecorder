@@ -29,18 +29,25 @@ flutter:
   uses-material-design: true
   assets:
     - assets/app_icon.png
+    - assets/splash_logo.png
 
 flutter_launcher_icons:
   android: true
   ios: true
+  remove_alpha_ios: true
   image_path: assets/app_icon.png
+  windows:
+    generate: true
+    image_path: assets/app_icon.png
+    icon_size: 48
 
 flutter_native_splash:
-  color: "#4F46E5"
-  image: assets/app_icon.png
+  color: "#0D4F82"
+  image: assets/splash_logo.png
   android: true
   ios: true
-  
+  web: false
+
 msix_config:
   display_name: Medical Event Recorder
   publisher_display_name: Medical Event Recorder
@@ -49,6 +56,5 @@ msix_config:
   msix_version: 1.0.0.0
   logo_path: windows/runner/resources/app_icon.ico
   create_assets: false
-
   signing_certificate_path: C:/Users/wjl25/Documents/MedicalEventRecorder.pfx
-  signing_certificate_password: YourStrongPassword
+  signing_certificate_password: YOUR_PASSWORD_HERE
