@@ -283,14 +283,41 @@ Future<void> exportCsvSaveAs(
     );
     return;
   }
+
   final csv = buildCsv(items);
   final ts  = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
   final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
       ? 'medical_event_recorder'
       : filenamePrefix;
+  final filename = '${prefix}_$ts.csv';
 
+  // ── ANDROID — save to Downloads ──
+  if (Platform.isAndroid) {
+    try {
+      final dir = Directory('/storage/emulated/0/Download');
+      if (!await dir.exists()) await dir.create(recursive: true);
+      final file = File('${dir.path}/$filename');
+      await file.writeAsString(csv, flush: true);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved to Downloads/$filename'),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save to Downloads. Try Share instead.'),
+        ),
+      );
+    }
+    return;
+  }
+
+  // ── DESKTOP — file picker save dialog ──
   final location = await getSaveLocation(
-    suggestedName: '${prefix}_$ts.csv',
+    suggestedName: filename,
     acceptedTypeGroups: const [
       XTypeGroup(label: 'CSV files', extensions: ['csv']),
     ],
@@ -308,20 +335,14 @@ Future<void> exportCsvSaveAs(
         onPressed: () async {
           try {
             if (Platform.isWindows) {
-              await Process.start(
-                'explorer', [location.path],
-                runInShell: true,
-              );
+              await Process.start('explorer', [location.path],
+                  runInShell: true);
             } else if (Platform.isMacOS) {
-              await Process.start(
-                'open', [location.path],
-                runInShell: true,
-              );
+              await Process.start('open', [location.path],
+                  runInShell: true);
             } else if (Platform.isLinux) {
-              await Process.start(
-                'xdg-open', [location.path],
-                runInShell: true,
-              );
+              await Process.start('xdg-open', [location.path],
+                  runInShell: true);
             }
           } catch (_) {}
         },
@@ -346,10 +367,11 @@ Future<void> showExportOptions(
     showDragHandle: true,
     builder: (ctx) {
       final isIOS = Platform.isIOS;
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
 
             // ── BRANDED HEADER ──
             Container(

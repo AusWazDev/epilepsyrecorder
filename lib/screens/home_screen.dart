@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/services.dart';
 
 import '../constants.dart';
 import '../models/event_record.dart';
@@ -31,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<EventRecord> _records = [];
   bool _loaded = false;
+  bool _buttonFlash = false;
 
   @override
   void initState() {
@@ -64,6 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── QUICK RECORD ──
   Future<void> _quickRecord() async {
+    // ── HAPTIC FEEDBACK ──
+    HapticFeedback.heavyImpact();
+
+    // ── BUTTON FLASH ──
+    setState(() => _buttonFlash = true);
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted) setState(() => _buttonFlash = false);
+
     final rec = EventRecord(
       id:               _uuid.v4(),
       timestamp:        DateTime.now(),
@@ -79,12 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Event recorded'),
-        action: SnackBarAction(
-          label: 'Add details',
-          onPressed: () => _openLogScreen(existing: rec),
-        ),
+      const SnackBar(
+        content: Text('Event recorded'),
       ),
     );
   }
@@ -286,7 +292,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: ElevatedButton(
                             onPressed: _quickRecord,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: MERColours.alert,
+                              backgroundColor: _buttonFlash
+                                  ? Colors.white
+                                  : MERColours.alert,
                               foregroundColor: Colors.white,
                               elevation:       0,
                               padding: const EdgeInsets.symmetric(

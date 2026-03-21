@@ -227,14 +227,17 @@ class DisclaimerScreen extends StatelessWidget {
             ),
 
             // ── AGREE BUTTON ──
-            SizedBox(
-              width:  double.infinity,
-              height: 52,
-              child: FilledButton(
-                onPressed: () => _accept(context),
-                child: const Text(
-                  'I Understand and Agree',
-                  style: TextStyle(fontSize: 16),
+            SafeArea(
+              top: false,
+              child: SizedBox(
+                width:  double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: () => _accept(context),
+                  child: const Text(
+                    'I Understand and Agree',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ),
