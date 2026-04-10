@@ -31,11 +31,11 @@ class _AppBootstrapState extends State<AppBootstrap> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final prefs    = await SharedPreferences.getInstance();
-      final accepted = prefs.getBool('disclaimerAccepted') ?? false;
+      final prefs           = await SharedPreferences.getInstance();
+      final acceptedVersion = prefs.getString('disclaimerAcceptedVersion') ?? '';
       if (!mounted) return;
       setState(() {
-        _accepted = accepted;
+        _accepted = acceptedVersion == kDisclaimerVersion;
         _ready    = true;
       });
     });

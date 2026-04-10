@@ -376,26 +376,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                         if (_loaded && _records.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: Text(
-                                'No events yet.\n'
-                                'Tap Record Event to get started.',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                          ),
+                          _GettingStartedCard(),
 
-                        const SizedBox(height: 12),
-                        Center(
-                          child: Text(
-                            'Use menu ⋮ for Export & Settings',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -689,6 +671,105 @@ class _LastEventCard extends StatelessWidget {
 }
 
 /* ===========================
+   GETTING STARTED CARD
+   =========================== */
+
+class _GettingStartedCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color:        MERColours.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: MERColours.border, width: 0.5),
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          tilePadding:     const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Text(
+            'GETTING STARTED',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          iconColor:         MERColours.textMuted,
+          collapsedIconColor: MERColours.textMuted,
+          children: [
+            const Divider(height: 1, thickness: 0.5),
+            const SizedBox(height: 14),
+            _HowToRow(
+              icon:  Icons.touch_app_outlined,
+              title: 'Quick record',
+              body:  'Tap the red Record Event button to instantly log an event with the current timestamp.',
+            ),
+            const SizedBox(height: 12),
+            _HowToRow(
+              icon:  Icons.tune,
+              title: 'Record with details',
+              body:  'Add notes, duration, triggers, and severity using the blue button.',
+            ),
+            const SizedBox(height: 12),
+            _HowToRow(
+              icon:  Icons.more_vert,
+              title: 'History & export',
+              body:  'Use the ⋮ menu in the top right to view your event history or export as CSV.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HowToRow extends StatelessWidget {
+  final IconData icon;
+  final String   title;
+  final String   body;
+
+  const _HowToRow({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: MERColours.primary),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color:      MERColours.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/* ===========================
    SPLASH REDIRECT
    =========================== */
 
@@ -704,12 +785,12 @@ class _SplashRedirectState extends State<_SplashRedirect> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final prefs    = await SharedPreferences.getInstance();
-      final accepted = prefs.getBool('disclaimerAccepted') ?? false;
+      final prefs           = await SharedPreferences.getInstance();
+      final acceptedVersion = prefs.getString('disclaimerAcceptedVersion') ?? '';
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => accepted
+          builder: (_) => acceptedVersion == kDisclaimerVersion
               ? const HomeScreen()
               : const DisclaimerScreen(),
         ),

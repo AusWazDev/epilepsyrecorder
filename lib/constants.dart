@@ -1,5 +1,15 @@
-const String kAppName = 'Medical Event Recorder';
-const String kAppVersion = '1.0.0';
+const String kAppName           = 'Medical Event Recorder';
+const String kAppVersion        = '1.0.0';
+const String kCompanyName       = 'Notiva';
+
+// Bump this string whenever the disclaimer or privacy policy changes.
+// Any user who accepted an older version will be shown the screen again.
+const String kDisclaimerVersion = '1.0';
+
+const String kWebsiteUrl   = 'https://www.notiva.com.au';
+const String kPrivacyUrl   = 'https://www.notiva.com.au/medical-event-recorder/privacy/';
+const String kContactUrl   = 'https://www.notiva.com.au/contact/';
+const String kSupportEmail = 'contact@notiva.com.au';
 
 const List<String> kFeelingsOptions = [
   '😴 Tired and weary',

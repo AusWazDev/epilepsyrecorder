@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../constants.dart';
 import '../theme/mer_theme.dart';
@@ -99,7 +100,7 @@ class AboutScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // App info card
+                  // App card
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(14),
@@ -107,25 +108,56 @@ class AboutScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'APP INFO',
+                            'APP',
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
                           const SizedBox(height: 12),
+                          _InfoRow(
+                            label: 'Developer',
+                            value: kCompanyName,
+                          ),
                           _InfoRow(
                             label: 'Version',
                             value: kAppVersion,
                           ),
                           _InfoRow(
-                            label: 'Platform',
-                            value: _platformName(),
+                            label: 'Platforms',
+                            value: 'iOS · Android · Windows',
                           ),
                           _InfoRow(
                             label: 'Data storage',
                             value: 'Local device only',
+                            isLast: true,
                           ),
-                          _InfoRow(
-                            label: 'Purpose',
-                            value: 'Personal record‑keeping',
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Links card
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LINKS',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 12),
+                          _LinkRow(
+                            label: 'Website',
+                            url:   kWebsiteUrl,
+                          ),
+                          _LinkRow(
+                            label: 'Privacy Policy',
+                            url:   kPrivacyUrl,
+                          ),
+                          _LinkRow(
+                            label:  'Support',
+                            url:    'mailto:$kSupportEmail',
                             isLast: true,
                           ),
                         ],
@@ -145,101 +177,18 @@ class AboutScreen extends StatelessWidget {
                             'LEGAL',
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
-                          const SizedBox(height: 12),
+                          const Divider(height: 20, thickness: 0.5),
                           Text(
-                            'This application is provided for personal '
-                            'record‑keeping purposes only. It is not a '
-                            'medical device and is not intended to diagnose, '
-                            'treat, cure, or prevent any disease or medical '
-                            'condition.',
+                            'For personal record‑keeping only. Not a medical '
+                            'device. Does not diagnose, treat, or replace '
+                            'professional medical advice. All data is stored '
+                            'locally on your device.',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(height: 1.6),
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'All data is stored locally on your device. '
-                            'The developer does not collect, transmit, or '
-                            'store any personal or medical information.',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(height: 1.6),
-                          ),
+                          const SizedBox(height: 8),
                         ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Developer card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'DEVELOPER',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: 12),
-                          _InfoRow(
-                            label: 'App',
-                            value: kAppName,
-                          ),
-                          _InfoRow(
-                            label: 'Built with',
-                            value: 'Flutter',
-                          ),
-                          _InfoRow(
-                            label: 'Platforms',
-                            value: 'iOS · Android · Windows',
-                            isLast: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Emergency notice
-                  Container(
-                    width:   double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color:        const Color(0xFFFAECE7),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: MERColours.alert,
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Emergency Notice',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color:      const Color(0xFF712B13),
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'This app must not be used in emergency '
-                          'situations. If you believe you are experiencing '
-                          'a medical emergency, contact emergency services '
-                          'immediately.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color:  const Color(0xFF993C1D),
-                                height: 1.5,
-                              ),
-                        ),
-                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -252,13 +201,74 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  String _platformName() {
-    try {
-      if (const bool.fromEnvironment('dart.library.io')) {
-        return 'Desktop / Mobile';
-      }
-    } catch (_) {}
-    return 'Unknown';
+}
+
+/* ===========================
+   LINK ROW
+   =========================== */
+
+class _LinkRow extends StatelessWidget {
+  final String label;
+  final String url;
+  final bool   isLast;
+
+  const _LinkRow({
+    required this.label,
+    required this.url,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => launchUrl(
+            Uri.parse(url),
+            mode: LaunchMode.externalApplication,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Row(
+                  children: [
+                    Text(
+                      url.startsWith('mailto:')
+                          ? url.replaceFirst('mailto:', '')
+                          : url
+                              .replaceFirst('https://', '')
+                              .replaceFirst('www.', ''),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color:      MERColours.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.open_in_new,
+                      size:  14,
+                      color: MERColours.primary,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (!isLast)
+          Divider(
+            height:    1,
+            thickness: 0.5,
+            color:     MERColours.border,
+          ),
+      ],
+    );
   }
 }
 

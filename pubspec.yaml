@@ -17,6 +17,7 @@ dependencies:
   cross_file: ^0.3.4+2
   file_selector: ^1.0.3
   msix: ^3.16.13
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -50,9 +51,9 @@ flutter_native_splash:
 
 msix_config:
   display_name: Medical Event Recorder
-  publisher_display_name: Medical Event Recorder
+  publisher_display_name: Notiva
   identity_name: MedicalEventRecorder
-  publisher: CN=MedicalEventRecorder
+  publisher: CN=Notiva
   msix_version: 1.0.0.0
   logo_path: windows/runner/resources/app_icon.ico
   create_assets: false

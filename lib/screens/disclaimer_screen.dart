@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../constants.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 import 'home_screen.dart';
@@ -10,7 +12,7 @@ class DisclaimerScreen extends StatelessWidget {
 
   Future<void> _accept(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('disclaimerAccepted', true);
+    await prefs.setString('disclaimerAcceptedVersion', kDisclaimerVersion);
     if (!context.mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -214,6 +216,22 @@ class DisclaimerScreen extends StatelessWidget {
                               'personal or medical information.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () => launchUrl(
+                                Uri.parse(kPrivacyUrl),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                              child: Text(
+                                'Read our full Privacy Policy →',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color:           MERColours.primary,
+                                  fontWeight:      FontWeight.w600,
+                                  decoration:      TextDecoration.underline,
+                                  decorationColor: MERColours.primary,
+                                ),
                               ),
                             ),
                           ],
