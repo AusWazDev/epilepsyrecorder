@@ -19,7 +19,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     // ✅ NEW package ID / namespace (branding)
-    namespace = "au.com.bedlin.medical_event_recorder"
+    namespace = "au.com.notiva.medical_event_recorder"
 
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -35,7 +35,7 @@ android {
 
     defaultConfig {
         // ✅ MUST match namespace for modern AGP
-        applicationId = "au.com.bedlin.medical_event_recorder"
+        applicationId = "au.com.notiva.medical_event_recorder"
 
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
