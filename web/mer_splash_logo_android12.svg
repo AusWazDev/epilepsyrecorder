@@ -1,0 +1,48 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+
+  <!--
+    Android 12+ splash icon safe zone: inner 2/3 of canvas = pixels 171–853.
+    All elements scaled 0.75x and centred on (512,512) of original design.
+  -->
+
+  <!-- Clipboard body -->
+  <rect x="297" y="249" width="430" height="368" rx="30" fill="none" stroke="white" stroke-width="21" opacity="0.9"/>
+  <rect x="297" y="249" width="430" height="368" rx="30" fill="white" opacity="0.08"/>
+
+  <!-- Clip at top -->
+  <rect x="420" y="195" width="184" height="76" rx="22" fill="white" opacity="0.95"/>
+  <rect x="458" y="168" width="108" height="54" rx="22" fill="white" opacity="0.7"/>
+
+  <!-- Top rule line -->
+  <line x1="348" y1="339" x2="676" y2="339" stroke="white" stroke-width="10" opacity="0.3"/>
+
+  <!-- ECG pulse line -->
+  <polyline
+    points="327,444 404,444 443,346 485,541 524,399 563,481 602,444 697,444"
+    fill="none"
+    stroke="white"
+    stroke-width="27"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+
+  <!-- Bottom rule line -->
+  <line x1="348" y1="504" x2="589" y2="504" stroke="white" stroke-width="10" opacity="0.3"/>
+
+  <!-- Coral cross — vertical -->
+  <rect x="620" y="256" width="30" height="99" rx="9" fill="#E05B3A"/>
+
+  <!-- Coral cross — horizontal -->
+  <rect x="584" y="292" width="102" height="30" rx="9" fill="#E05B3A"/>
+
+  <!-- MER text -->
+  <text
+    x="512"
+    y="766"
+    text-anchor="middle"
+    font-family="Arial, sans-serif"
+    font-size="90"
+    font-weight="800"
+    fill="white"
+    letter-spacing="15">MER</text>
+
+</svg>

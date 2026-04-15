@@ -31,12 +31,16 @@ flutter:
   assets:
     - assets/app_icon.png
     - assets/splash_logo.png
+    - assets/splash_logo_android12.png
+    - assets/app_icon_foreground.png
 
 flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
   image_path: assets/app_icon.png
+  adaptive_icon_background: "#0D4F82"
+  adaptive_icon_foreground: assets/app_icon_foreground.png
   windows:
     generate: true
     image_path: assets/app_icon.png
@@ -48,6 +52,9 @@ flutter_native_splash:
   android: true
   ios: true
   web: false
+  android_12:
+    color: "#0D4F82"
+    image: assets/splash_logo_android12.png
 
 msix_config:
   display_name: Medical Event Recorder

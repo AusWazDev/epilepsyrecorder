@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MER Icon & Image Reference</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 40px 24px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 40px;
+    }
+    .section {
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #5b9bd5;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .card {
+      background: #252540;
+      border: 1px solid #333360;
+      border-radius: 12px;
+      padding: 20px;
+      width: 220px;
+    }
+    .preview {
+      width: 180px;
+      height: 180px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .preview.blue-bg   { background: #0D4F82; }
+    .preview.checker   {
+      background-image:
+        linear-gradient(45deg, #444 25%, transparent 25%),
+        linear-gradient(-45deg, #444 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #444 75%),
+        linear-gradient(-45deg, transparent 75%, #444 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      background-color: #333;
+    }
+    .preview.white-bg  { background: #ffffff; }
+    .preview img, .preview object {
+      max-width: 160px;
+      max-height: 160px;
+      display: block;
+    }
+    .file-path {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #e0a060;
+      background: #1a1a2e;
+      border-radius: 4px;
+      padding: 6px 8px;
+      word-break: break-all;
+      margin-bottom: 8px;
+    }
+    .label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .desc {
+      font-size: 11px;
+      color: #888;
+      line-height: 1.5;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      margin-top: 6px;
+      margin-right: 4px;
+    }
+    .tag.android { background: #1a3d1a; color: #6fcf6f; }
+    .tag.ios     { background: #1a2a3d; color: #6fafcf; }
+    .tag.windows { background: #2a2a1a; color: #cfcf6f; }
+    .tag.in-app  { background: #2a1a3d; color: #af6fcf; }
+    .tag.source  { background: #3d1a1a; color: #cf6f6f; }
+  </style>
+</head>
+<body>
+
+  <h1>MER — Icon &amp; Image Reference</h1>
+  <p class="subtitle">Open this file in a browser from C:\dev\epilepsyrecorder\web\icon_reference.html</p>
+
+  <!-- ── IN-APP ICONS ─────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">In-App Icon</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <img src="../assets/app_icon.png" alt="app_icon">
+        </div>
+        <div class="file-path">assets/app_icon.png</div>
+        <div class="label">App Icon (full)</div>
+        <div class="desc">Blue background + clipboard/ECG/cross symbol. Used in-app: Home header, About page, loading screen, disclaimer.</div>
+        <span class="tag in-app">In-app</span>
+        <span class="tag android">Android</span>
+        <span class="tag ios">iOS</span>
+        <span class="tag windows">Windows</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── LAUNCHER ICONS ───────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Launcher / App Store Icons</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="preview checker">
+          <img src="../assets/app_icon_foreground.png" alt="app_icon_foreground">
+        </div>
+        <div class="file-path">assets/app_icon_foreground.png</div>
+        <div class="label">Adaptive Icon Foreground</div>
+        <div class="desc">Transparent background. Used by Android 8+ adaptive icon system. Shown on blue background layer. Symbol centred within circular safe zone.</div>
+        <span class="tag android">Android adaptive</span>
+      </div>
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <img src="../assets/app_icon_1080x1080.png" alt="app_icon_1080">
+        </div>
+        <div class="file-path">assets/app_icon_1080x1080.png</div>
+        <div class="label">Windows Store Box Art</div>
+        <div class="desc">1080×1080px. Used for Microsoft Store listing. Already submitted.</div>
+        <span class="tag windows">Windows Store</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SPLASH SCREENS ───────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Splash Screen Images</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <img src="../assets/splash_logo.png" alt="splash_logo">
+        </div>
+        <div class="file-path">assets/splash_logo.png</div>
+        <div class="label">Splash Logo (pre-Android 12)</div>
+        <div class="desc">Transparent PNG. White clipboard/ECG/cross. Used for Android &lt;12 and iOS splash screen on blue (#0D4F82) background.</div>
+        <span class="tag android">Android &lt;12</span>
+        <span class="tag ios">iOS</span>
+      </div>
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <img src="../assets/splash_logo_android12.png" alt="splash_logo_android12">
+        </div>
+        <div class="file-path">assets/splash_logo_android12.png</div>
+        <div class="label">Splash Logo (Android 12+)</div>
+        <div class="desc">Square 1024×1024 transparent PNG. Scaled to 75% to fit Android 12+ SplashScreen API safe zone. Confirmed working on Android 15 (P30).</div>
+        <span class="tag android">Android 12+</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SVG SOURCES ──────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">SVG Source Files (web/ folder)</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <object data="mer_icon_full.svg" type="image/svg+xml" width="160" height="160"></object>
+        </div>
+        <div class="file-path">web/mer_icon_full.svg</div>
+        <div class="label">Icon Full (source)</div>
+        <div class="desc">Source SVG for app_icon.png. Blue background + symbol at 85% scale. Edit this to update in-app and non-adaptive icons.</div>
+        <span class="tag source">Source SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <object data="mer_icon_foreground.svg" type="image/svg+xml" width="160" height="160"></object>
+        </div>
+        <div class="file-path">web/mer_icon_foreground.svg</div>
+        <div class="label">Adaptive Foreground (source)</div>
+        <div class="desc">Source SVG for app_icon_foreground.png. Transparent background. Edit this to update the Android adaptive launcher icon.</div>
+        <span class="tag source">Source SVG</span>
+        <span class="tag android">Android adaptive</span>
+      </div>
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <object data="mer_splash_logo.svg" type="image/svg+xml" width="140" height="150"></object>
+        </div>
+        <div class="file-path">web/mer_splash_logo.svg</div>
+        <div class="label">Splash Logo (source)</div>
+        <div class="desc">Source SVG for splash_logo.png. 1024×1100, transparent background. White elements on blue splash background.</div>
+        <span class="tag source">Source SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="preview blue-bg">
+          <object data="mer_splash_logo_android12.svg" type="image/svg+xml" width="160" height="160"></object>
+        </div>
+        <div class="file-path">web/mer_splash_logo_android12.svg</div>
+        <div class="label">Splash Logo Android 12+ (source)</div>
+        <div class="desc">Source SVG for splash_logo_android12.png. Square 1024×1024. Design scaled to 75% to fit Android 12+ SplashScreen safe zone.</div>
+        <span class="tag source">Source SVG</span>
+        <span class="tag android">Android 12+</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── HOW TO UPDATE ────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">How to Update Icons</div>
+    <div style="background:#252540; border:1px solid #333360; border-radius:12px; padding:20px; font-size:13px; line-height:2;">
+      <strong style="color:#5b9bd5;">To update the in-app icon + non-adaptive launcher icon:</strong><br>
+      Edit <code style="color:#e0a060;">web/mer_icon_full.svg</code> → run <code style="color:#e0a060;">npx svgexport web/mer_icon_full.svg assets/app_icon.png 1024:1024</code> → run <code style="color:#e0a060;">dart run flutter_launcher_icons</code><br><br>
+      <strong style="color:#5b9bd5;">To update the Android adaptive launcher icon:</strong><br>
+      Edit <code style="color:#e0a060;">web/mer_icon_foreground.svg</code> → run <code style="color:#e0a060;">npx svgexport web/mer_icon_foreground.svg assets/app_icon_foreground.png 1024:1024</code> → run <code style="color:#e0a060;">dart run flutter_launcher_icons</code><br><br>
+      <strong style="color:#5b9bd5;">To update the splash screen:</strong><br>
+      Edit source SVGs → re-export PNGs → run <code style="color:#e0a060;">dart run flutter_native_splash:create</code>
+    </div>
+  </div>
+
+</body>
+</html>

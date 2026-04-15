@@ -1,0 +1,38 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Adaptive icon foreground — symbol only, no MER text.
+    Original design scaled to 85%, centred on canvas (512,512).
+    All content fits within the 72/108dp circular safe zone.
+    Background #0D4F82 supplied by adaptive_icon_background in pubspec.yaml.
+  -->
+
+  <!-- Clipboard body -->
+  <rect x="252" y="291" width="488" height="442" rx="34" fill="none" stroke="white" stroke-width="24" opacity="0.9"/>
+  <rect x="252" y="291" width="488" height="442" rx="34" fill="white" opacity="0.08"/>
+
+  <!-- Clip at top -->
+  <rect x="408" y="207" width="209" height="87" rx="25" fill="white" opacity="0.95"/>
+  <rect x="451" y="176" width="122" height="61" rx="25" fill="white" opacity="0.7"/>
+
+  <!-- Top rule line -->
+  <line x1="327" y1="374" x2="697" y2="374" stroke="white" stroke-width="12" opacity="0.3"/>
+
+  <!-- ECG pulse line -->
+  <polyline
+    points="303,493 390,493 434,383 481,604 526,442 570,536 614,493 721,493"
+    fill="none"
+    stroke="white"
+    stroke-width="31"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+
+  <!-- Bottom rule line -->
+  <line x1="327" y1="561" x2="599" y2="561" stroke="white" stroke-width="12" opacity="0.3"/>
+
+  <!-- Coral cross — vertical -->
+  <rect x="634" y="276" width="34" height="112" rx="10" fill="#E05B3A"/>
+
+  <!-- Coral cross — horizontal -->
+  <rect x="594" y="317" width="116" height="34" rx="10" fill="#E05B3A"/>
+
+</svg>
