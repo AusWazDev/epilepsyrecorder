@@ -9,6 +9,10 @@
 *.gradle text eol=lf
 *.kts  text eol=lf
 
+# Shell scripts must stay LF (bash breaks on CRLF)
+*.sh text eol=lf
+scripts/hooks/* text eol=lf
+
 # Windows scripts should stay CRLF
 *.ps1 text eol=crlf
 *.bat text eol=crlf

@@ -52,10 +52,10 @@ flutter_native_splash:
 msix_config:
   display_name: Medical Event Recorder
   publisher_display_name: Notiva
-  identity_name: MedicalEventRecorder
-  publisher: CN=Notiva
+  identity_name: Notiva.MedicalEventRecorder
+  publisher: CN=520D1E31-3542-4059-8124-5366ECCA4994
   msix_version: 1.0.0.0
   logo_path: windows/runner/resources/app_icon.ico
   create_assets: false
   signing_certificate_path: C:/Users/wjl25/Documents/MedicalEventRecorder.pfx
-  signing_certificate_password: YOUR_PASSWORD_HERE
+  signing_certificate_password: MpBP5!%_na[/0M!J

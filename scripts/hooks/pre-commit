@@ -1,0 +1,67 @@
+#!/bin/bash
+# ============================================================
+# Medical Event Recorder — Pre-commit Traceability Hook
+# ============================================================
+# Warns when lib/ files are changed without the corresponding
+# docs being updated in the same commit.
+#
+# This is a WARNING-ONLY hook — it never blocks a commit.
+# Install via: scripts/install-hooks.sh
+# ============================================================
+
+STAGED=$(git diff --cached --name-only)
+WARNINGS=0
+
+warn() {
+  echo ""
+  echo "  ⚠️  $1"
+  echo "     → Also check: $2"
+  WARNINGS=$((WARNINGS + 1))
+}
+
+echo ""
+echo "🔍 MER traceability check..."
+
+LIB_CHANGES=$(echo "$STAGED" | grep "^lib/")
+
+# ── Any lib/ change requires a Change Register entry ────────
+if [ -n "$LIB_CHANGES" ]; then
+  if ! echo "$STAGED" | grep -q "Change Register"; then
+    warn "lib/ files changed without Change Register entry" \
+      "Medical Event Recorder — Change Register.md (add version entry)"
+  fi
+fi
+
+# ── Disclaimer version change — verify constants.dart ───────
+if echo "$STAGED" | grep -q "disclaimer"; then
+  if ! echo "$STAGED" | grep -q "constants.dart"; then
+    warn "Disclaimer screen changed" \
+      "constants.dart — did kDisclaimerVersion need bumping?"
+  fi
+fi
+
+# ── CLAUDE.md — update when architecture changes ────────────
+if echo "$STAGED" | grep -qE "constants.dart|pubspec.yaml|main.dart"; then
+  if ! echo "$STAGED" | grep -q "CLAUDE.md"; then
+    warn "Core file changed" \
+      "CLAUDE.md — update if tech stack, key constants, or architecture changed"
+  fi
+fi
+
+# ── Signing / build config ───────────────────────────────────
+if echo "$STAGED" | grep -qE "pubspec.yaml|msix"; then
+  warn "Build config changed" \
+    "Verify MSIX signing config (publisher identity, identity name) still correct"
+fi
+
+# ── Summary ─────────────────────────────────────────────────
+echo ""
+if [ "$WARNINGS" -gt 0 ]; then
+  echo "  ⚠️  $WARNINGS traceability reminder(s) — update missed docs in a follow-up commit."
+  echo "  Committing anyway."
+else
+  echo "  ✅ All traceability checks passed."
+fi
+echo ""
+
+exit 0
