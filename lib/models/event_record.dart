@@ -373,48 +373,26 @@ Future<void> showExportOptions(
             mainAxisSize: MainAxisSize.min,
             children: [
 
-            // ── BRANDED HEADER ──
-            Container(
-              width:   double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical:   14,
-              ),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0D4F82),
-                borderRadius: BorderRadius.only(
-                  topLeft:  Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: const Row(
+            // ── HEADER LABEL ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Row(
                 children: [
-                  _ExportIconWidget(),
-                  SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize:       MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Export events',
-                        style: TextStyle(
-                          fontSize:   14,
-                          fontWeight: FontWeight.w600,
-                          color:      Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Medical Event Recorder',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color:    Colors.white54,
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Export events',
+                    style: TextStyle(
+                      fontSize:   13,
+                      fontWeight: FontWeight.w600,
+                      color:      Colors.black45,
+                      letterSpacing: 0.4,
+                    ),
                   ),
+                  const Spacer(),
+                  const _ExportIconWidget(),
                 ],
               ),
             ),
+            const Divider(height: 1),
 
             // ── SHARE ──
             ListTile(

@@ -29,32 +29,31 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/app_icon.png
-    - assets/splash_logo.png
-    - assets/splash_logo_android12.png
-    - assets/app_icon_foreground.png
+    - assets/Blue_background_without_MER.png
+    - assets/Transparent_without_MER.png
+    - assets/Transparent_with_MER.png
 
 flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  image_path: assets/app_icon.png
+  image_path: assets/Blue_background_without_MER.png
   adaptive_icon_background: "#0D4F82"
-  adaptive_icon_foreground: assets/app_icon_foreground.png
+  adaptive_icon_foreground: assets/Transparent_without_MER.png
   windows:
     generate: true
-    image_path: assets/app_icon.png
+    image_path: assets/Blue_background_without_MER.png
     icon_size: 48
 
 flutter_native_splash:
   color: "#0D4F82"
-  image: assets/splash_logo.png
+  image: assets/Transparent_with_MER.png
   android: true
   ios: true
   web: false
   android_12:
     color: "#0D4F82"
-    image: assets/splash_logo_android12.png
+    image: assets/Transparent_without_MER.png
 
 msix_config:
   display_name: Medical Event Recorder

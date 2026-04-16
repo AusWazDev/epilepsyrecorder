@@ -1,6 +1,6 @@
-<svg width="1024" height="1100" viewBox="0 0 1024 1100" xmlns="http://www.w3.org/2000/svg">
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
 
-  <!-- Clipboard body -->
+  <!-- Clipboard body — same coordinates as Blue_background_with_MER.svg -->
   <rect x="225" y="235" width="574" height="520" rx="40" fill="none" stroke="white" stroke-width="28" opacity="0.9"/>
   <rect x="225" y="235" width="574" height="520" rx="40" fill="white" opacity="0.08"/>
 
@@ -29,15 +29,9 @@
   <!-- Coral cross — horizontal -->
   <rect x="608" y="293" width="136" height="40" rx="12" fill="#E05B3A"/>
 
-  <!-- MER text -->
-  <text
-    x="512"
-    y="980"
-    text-anchor="middle"
-    font-family="Arial, sans-serif"
-    font-size="120"
-    font-weight="800"
-    fill="white"
-    letter-spacing="20">MER</text>
+  <!-- MER text — same as Blue_background_with_MER.svg -->
+  <text x="512" y="940" text-anchor="middle"
+    font-family="Arial, sans-serif" font-size="164" font-weight="800"
+    fill="white" letter-spacing="20">MER</text>
 
 </svg>

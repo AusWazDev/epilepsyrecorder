@@ -45,8 +45,11 @@ lib/
   theme/                  — app theme, colours, typography
   widgets/                — shared widgets (app icon widget etc.)
 assets/
-  app_icon_1080x1080.png  — Windows Store box art (1080×1080)
-  (other icon/splash assets)
+  Blue_background_with_MER.png     — Windows Store box art, in-app reference
+  Blue_background_without_MER.png  — in-app icon, iOS/launcher fallback
+  Transparent_with_MER.png         — iOS + Android splash
+  Transparent_without_MER.png      — Android adaptive icon foreground
+  (SVG sources in web/)
 ```
 
 ---

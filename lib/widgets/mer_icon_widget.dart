@@ -7,7 +7,7 @@ class MERIconWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/app_icon.png',
+      'assets/Blue_background_without_MER.png',
       width:         size,
       height:        size,
       filterQuality: FilterQuality.high,
