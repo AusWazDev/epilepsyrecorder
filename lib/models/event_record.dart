@@ -190,38 +190,44 @@ String _csvEscape(String v) {
   return '"${v.replaceAll('"', '""')}"';
 }
 
-String buildCsv(List<EventRecord> items) {
-  final fmtLocal = DateFormat.yMMMd().add_jm();
-  final sb       = StringBuffer();
+// Strip leading emoji + space from a feelings option label for use as a column header.
+// e.g. '😪 Just tired' → 'Just tired'
+String _feelingHeader(String option) =>
+    option.replaceFirst(RegExp(r'^\S+\s+'), '');
 
+String buildCsv(List<EventRecord> items) {
+  final fmtDate = DateFormat('yyyy-MM-dd');
+  final fmtTime = DateFormat.jm();
+  final sb      = StringBuffer();
+
+  sb.write('\uFEFF'); // UTF-8 BOM — tells Excel to read as UTF-8
   sb.writeln('# $kAppName export');
   sb.writeln('# referral_required: Yes = medical referral was required');
-  sb.writeln(
-    '# Column order: timestamp_iso, timestamp_local, event_type, '
-    'duration, severity, feelings, triggers, referral_required, notes',
-  );
+  sb.writeln('# Feeling / trigger columns: Yes = selected, blank = not selected');
 
   sb.writeln([
     'timestamp_iso',
-    'timestamp_local',
+    'date',
+    'time',
     'event_type',
     'duration',
     'severity',
-    'feelings',
-    'triggers',
+    ...kFeelingsOptions.map(_feelingHeader),
+    ...kTriggerOptions,
     'referral_required',
     'notes',
-  ].join(','));
+  ].map(_csvEscape).join(','));
 
   for (final r in items.reversed) {
     sb.writeln([
       r.timestamp.toIso8601String(),
-      fmtLocal.format(r.timestamp),
+      fmtDate.format(r.timestamp),
+      fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
       eventTypeLabel(r.eventType),
       durationLabel(r.duration),
       severityLabel(r.severity),
-      r.feelings.join('; '),
-      r.triggers.join('; '),
+      ...kFeelingsOptions.map((f) => r.feelings.contains(f) ? 'Yes' : ''),
+      ...kTriggerOptions.map((t) => r.triggers.contains(t) ? 'Yes' : ''),
       r.referralRequired ? 'Yes' : 'No',
       r.notes,
     ].map(_csvEscape).join(','));
