@@ -201,9 +201,6 @@ String buildCsv(List<EventRecord> items) {
   final sb      = StringBuffer();
 
   sb.write('\uFEFF'); // UTF-8 BOM — tells Excel to read as UTF-8
-  sb.writeln('# $kAppName export');
-  sb.writeln('# referral_required: Yes = medical referral was required');
-  sb.writeln('# Feeling / trigger columns: Yes = selected, blank = not selected');
 
   sb.writeln([
     'timestamp_iso',
