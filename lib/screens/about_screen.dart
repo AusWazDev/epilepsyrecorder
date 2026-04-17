@@ -230,32 +230,39 @@ class _LinkRow extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                Row(
-                  children: [
-                    Text(
-                      url.startsWith('mailto:')
-                          ? url.replaceFirst('mailto:', '')
-                          : url
-                              .replaceFirst('https://', '')
-                              .replaceFirst('www.', ''),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color:      MERColours.primary,
-                        fontWeight: FontWeight.w500,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          url.startsWith('mailto:')
+                              ? url.replaceFirst('mailto:', '')
+                              : url
+                                  .replaceFirst('https://', '')
+                                  .replaceFirst('www.', ''),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:      MERColours.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.open_in_new,
-                      size:  14,
-                      color: MERColours.primary,
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.open_in_new,
+                        size:  14,
+                        color: MERColours.primary,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
