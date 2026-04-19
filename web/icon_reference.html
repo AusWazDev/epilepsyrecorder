@@ -3,148 +3,380 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MER Icon & Image Reference</title>
+  <title>Brand & App Asset Reference</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px 24px; }
     h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .subtitle { font-size: 13px; color: #888; margin-bottom: 40px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 48px; }
+
+    /* Company group blocks */
+    .company-group { margin-bottom: 64px; }
+    .company-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 32px; padding: 16px 20px;
+      border-radius: 10px;
+    }
+    .company-header.notiva { background: #0a1825; border-left: 4px solid #1B9AAA; }
+    .company-header.uig    { background: #1c1500; border-left: 4px solid #F59E0B; }
+    .company-header .co-name { font-size: 18px; font-weight: 700; }
+    .company-header.notiva .co-name { color: #1B9AAA; }
+    .company-header.uig    .co-name { color: #F59E0B; }
+    .company-header .co-desc { font-size: 12px; color: #888; margin-top: 2px; }
+
+    /* Sections within a group */
     .section { margin-bottom: 52px; }
     .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #5b9bd5; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #2a2a4a; }
+
+    /* Cards */
     .grid { display: flex; flex-wrap: wrap; gap: 20px; }
     .card { background: #252540; border: 1px solid #333360; border-radius: 12px; padding: 20px; width: 220px; }
     .preview { width: 180px; height: 180px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; overflow: hidden; }
-    .preview.blue  { background: #0D4F82; }
+    .preview.blue    { background: #0D4F82; }
+    .preview.navy    { background: #0D1B2A; }
+    .preview.amber   { background: #F59E0B; }
+    .preview.light   { background: #F4F7F9; }
+    .preview.dark-bg { background: #1C1917; }
     .preview.check {
       background-image: linear-gradient(45deg,#444 25%,transparent 25%), linear-gradient(-45deg,#444 25%,transparent 25%), linear-gradient(45deg,transparent 75%,#444 75%), linear-gradient(-45deg,transparent 75%,#444 75%);
       background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0; background-color: #333;
     }
     .preview img, .preview object { max-width: 160px; max-height: 160px; display: block; }
+    .preview img.favicon-preview { width: 64px; height: 64px; image-rendering: pixelated; }
+
     .file-path { font-family: 'Courier New', monospace; font-size: 11px; color: #e0a060; background: #1a1a2e; border-radius: 4px; padding: 6px 8px; word-break: break-all; margin-bottom: 8px; }
     .label { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
     .desc { font-size: 11px; color: #888; line-height: 1.5; }
+
     .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; margin-top: 6px; margin-right: 4px; }
     .tag.android  { background:#1a3d1a; color:#6fcf6f; }
     .tag.ios      { background:#1a2a3d; color:#6fafcf; }
     .tag.windows  { background:#2a2a1a; color:#cfcf6f; }
     .tag.in-app   { background:#2a1a3d; color:#af6fcf; }
     .tag.source   { background:#3d1a1a; color:#cf6f6f; }
+    .tag.website  { background:#1a3d3d; color:#6fcfcf; }
+    .tag.brand    { background:#3d2a0a; color:#cfaf6f; }
     .tag.note     { background:#1a3d3d; color:#6fcfcf; }
+
     .status { display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px; margin-bottom:10px; }
-    .status.active { background:#1a3d1a; color:#6fcf6f; }
+    .status.active  { background:#1a3d1a; color:#6fcf6f; }
+    .status.pending { background:#3d2a0a; color:#cfaf6f; }
+
+    /* Divider between groups */
+    .group-divider { border: none; border-top: 1px solid #2a2a4a; margin: 60px 0; }
   </style>
 </head>
 <body>
 
-<h1>MER — Icon &amp; Image Reference</h1>
+<h1>Brand &amp; App Asset Reference</h1>
 <p class="subtitle">file:///C:/dev/epilepsyrecorder/web/icon_reference.html &nbsp;·&nbsp; Refresh after changes</p>
 
-<!-- ═══ SECTION 1: ACTIVE ASSETS ═════════════════════════════════════════ -->
-<div class="section">
-  <div class="section-title">Section 1 — Active Assets (assets/)</div>
-  <div class="grid">
 
-    <div class="card">
-      <div class="status active">✓ Active</div>
-      <div class="preview blue"><img src="../assets/Blue_background_with_MER.png" alt=""></div>
-      <div class="file-path">#1 — assets/Blue_background_with_MER.png</div>
-      <div class="label">Blue background with MER</div>
-      <div class="desc">Full-size clipboard + MER text on blue background. Windows Store box art (already submitted).</div>
-      <span class="tag windows">Windows Store</span>
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  NOTIVA + MER                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="company-group">
+
+  <div class="company-header notiva">
+    <div>
+      <div class="co-name">Notiva</div>
+      <div class="co-desc">Health event data capture &nbsp;·&nbsp; notiva.com.au &nbsp;·&nbsp; Navy #0D1B2A · Teal #1B9AAA · Green #4CAF50</div>
     </div>
-
-    <div class="card">
-      <div class="status active">✓ Active</div>
-      <div class="preview check"><img src="../assets/Transparent_with_MER.png" alt=""></div>
-      <div class="file-path">#2 — assets/Transparent_with_MER.png</div>
-      <div class="label">Transparent with MER</div>
-      <div class="desc">Full-size clipboard + MER text, transparent background. Used by flutter_native_splash for iOS, Android &lt;12, and Android 12+ splash screens on #0D4F82 background.</div>
-      <span class="tag ios">iOS splash</span>
-      <span class="tag android">Android splash</span>
-    </div>
-
-    <div class="card">
-      <div class="status active">✓ Active</div>
-      <div class="preview blue"><img src="../assets/Blue_background_without_MER.png" alt=""></div>
-      <div class="file-path">#3 — assets/Blue_background_without_MER.png</div>
-      <div class="label">Blue background without MER</div>
-      <div class="desc">Full-size clipboard, no MER text, centred on blue background. Used in-app (Home, About, loading, disclaimer) and as non-adaptive launcher fallback.</div>
-      <span class="tag in-app">In-app</span>
-      <span class="tag android">Launcher fallback</span>
-      <span class="tag ios">iOS icon</span>
-    </div>
-
-    <div class="card">
-      <div class="status active">✓ Active</div>
-      <div class="preview check"><img src="../assets/Transparent_without_MER.png" alt=""></div>
-      <div class="file-path">#4 — assets/Transparent_without_MER.png</div>
-      <div class="label">Transparent without MER</div>
-      <div class="desc">Full-size clipboard, no MER text, transparent background. Used as Android 8+ adaptive icon foreground layer over #0D4F82 background. Note: corners may be clipped by Android's circular launcher mask.</div>
-      <span class="tag android">Android adaptive icon</span>
-    </div>
-
   </div>
-</div>
 
-<!-- ═══ SECTION 2: SVG SOURCES ════════════════════════════════════════════ -->
-<div class="section">
-  <div class="section-title">Section 2 — SVG Source Files (web/)</div>
-  <div class="grid">
+  <!-- Notiva Wordmarks -->
+  <div class="section">
+    <div class="section-title">Notiva — Wordmarks</div>
+    <div class="grid">
 
-    <div class="card">
-      <div class="status active">✓ Active source</div>
-      <div class="preview blue"><object data="Blue_background_with_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
-      <div class="file-path">#5 — web/Blue_background_with_MER.svg</div>
-      <div class="label">Blue background with MER</div>
-      <div class="desc">Source for #1. Full-size clipboard + MER text + blue background. 1024×1024.</div>
-      <span class="tag source">Source SVG</span>
+      <div class="card" style="width:320px;">
+        <div class="status active">✓ Active</div>
+        <div class="preview light" style="width:100%;height:80px;">
+          <object data="../../notiva-site/public/notiva-wordmark.svg" type="image/svg+xml" style="height:40px;width:auto;max-width:260px;"></object>
+        </div>
+        <div class="file-path">notiva-site/public/notiva-wordmark.svg</div>
+        <div class="label">Notiva Wordmark — Standard</div>
+        <div class="desc">Mark + "Notiva" in navy. For use on white or light backgrounds. 152×40 viewBox.</div>
+        <span class="tag brand">Wordmark</span>
+        <span class="tag website">Light bg</span>
+      </div>
+
+      <div class="card" style="width:320px;">
+        <div class="status active">✓ Active</div>
+        <div class="preview navy" style="width:100%;height:80px;">
+          <object data="../../notiva-site/public/notiva-wordmark-reversed.svg" type="image/svg+xml" style="height:40px;width:auto;max-width:260px;"></object>
+        </div>
+        <div class="file-path">notiva-site/public/notiva-wordmark-reversed.svg</div>
+        <div class="label">Notiva Wordmark — Reversed</div>
+        <div class="desc">Mark + "Notiva" in white. For use on dark or navy backgrounds. 152×40 viewBox.</div>
+        <span class="tag brand">Wordmark</span>
+        <span class="tag in-app">Dark bg</span>
+      </div>
+
     </div>
-
-    <div class="card">
-      <div class="status active">✓ Active source</div>
-      <div class="preview check"><object data="Transparent_with_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
-      <div class="file-path">#6 — web/Transparent_with_MER.svg</div>
-      <div class="label">Transparent with MER</div>
-      <div class="desc">Source for #2. 1024×1024, transparent background. Full-size clipboard + MER text. Matches #5 layout exactly.</div>
-      <span class="tag source">Source SVG</span>
-    </div>
-
-    <div class="card">
-      <div class="status active">✓ Active source</div>
-      <div class="preview blue"><object data="Blue_background_without_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
-      <div class="file-path">#7 — web/Blue_background_without_MER.svg</div>
-      <div class="label">Blue background without MER</div>
-      <div class="desc">Source for #3. Full-size clipboard centred (no MER text) + blue background. 1024×1024.</div>
-      <span class="tag source">Source SVG</span>
-    </div>
-
-    <div class="card">
-      <div class="status active">✓ Active source</div>
-      <div class="preview check"><object data="Transparent_without_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
-      <div class="file-path">#8 — web/Transparent_without_MER.svg</div>
-      <div class="label">Transparent without MER</div>
-      <div class="desc">Source for #4. Full-size clipboard (no MER text), transparent background. Matches #7 layout exactly. 1024×1024.</div>
-      <span class="tag source">Source SVG</span>
-      <span class="tag android">Adaptive icon</span>
-    </div>
-
   </div>
-</div>
 
-<!-- ═══ SECTION 3: UPDATE GUIDE ═══════════════════════════════════════════ -->
-<div class="section">
-  <div class="section-title">Section 3 — How to Update</div>
-  <div style="background:#252540;border:1px solid #333360;border-radius:12px;padding:20px;font-size:12px;line-height:2.2;">
-    <strong style="color:#5b9bd5;">With MER text (#1 &amp; #2):</strong><br>
-    Edit <code style="color:#e0a060;">web/Blue_background_with_MER.svg</code> or <code style="color:#e0a060;">web/Transparent_with_MER.svg</code> → re-export PNG at 1024:1024<br><br>
-    <strong style="color:#5b9bd5;">Without MER text — in-app + launcher (#3 &amp; #4):</strong><br>
-    Edit <code style="color:#e0a060;">web/Blue_background_without_MER.svg</code> or <code style="color:#e0a060;">web/Transparent_without_MER.svg</code> → re-export PNG at 1024:1024 → <code style="color:#e0a060;">dart run flutter_launcher_icons</code><br><br>
-    <strong style="color:#5b9bd5;">Splash screens:</strong><br>
-    Edit source SVGs → re-export PNGs → <code style="color:#e0a060;">dart run flutter_native_splash:create</code><br><br>
-    <strong style="color:#5b9bd5;">Export command:</strong><br>
-    <code style="color:#e0a060;">npx svgexport web/&lt;name&gt;.svg assets/&lt;name&gt;.png 1024:1024</code>
+  <!-- Notiva Brand Assets -->
+  <div class="section">
+    <div class="section-title">Notiva — Brand Assets</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview navy">
+          <img class="favicon-preview" src="../../notiva-site/public/favicon.svg" alt="Notiva favicon" style="width:80px;height:80px;image-rendering:auto;">
+        </div>
+        <div class="file-path">notiva-site/public/favicon.svg</div>
+        <div class="label">Notiva Favicon — Bar Mark</div>
+        <div class="desc">SVG master. 7-bar waveform mark on navy rounded square. Peak bar teal (#1B9AAA), flanking bars white at opacity 0.58/0.30. 32×32 viewBox.</div>
+        <span class="tag website">Website favicon</span>
+        <span class="tag brand">Master SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview check">
+          <img src="../../notiva-site/public/app-icon-mer.png" alt="MER app icon" style="max-width:160px;max-height:160px;">
+        </div>
+        <div class="file-path">notiva-site/public/app-icon-mer.png</div>
+        <div class="label">MER App Icon (website)</div>
+        <div class="desc">Used on the Medical Event Recorder product page hero. Shown at ~80px on the site.</div>
+        <span class="tag website">Website</span>
+        <span class="tag in-app">Reference</span>
+      </div>
+
+    </div>
   </div>
-</div>
+
+  <!-- MER Active Assets -->
+  <div class="section">
+    <div class="section-title">MER — Active Assets (assets/)</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview blue"><img src="../assets/Blue_background_with_MER.png" alt=""></div>
+        <div class="file-path">#1 — assets/Blue_background_with_MER.png</div>
+        <div class="label">Blue background with MER</div>
+        <div class="desc">Full-size clipboard + MER text on blue background. Windows Store box art (already submitted).</div>
+        <span class="tag windows">Windows Store</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview check"><img src="../assets/Transparent_with_MER.png" alt=""></div>
+        <div class="file-path">#2 — assets/Transparent_with_MER.png</div>
+        <div class="label">Transparent with MER</div>
+        <div class="desc">Full-size clipboard + MER text, transparent background. Used by flutter_native_splash for iOS, Android &lt;12, and Android 12+ splash screens on #0D4F82 background.</div>
+        <span class="tag ios">iOS splash</span>
+        <span class="tag android">Android splash</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview blue"><img src="../assets/Blue_background_without_MER.png" alt=""></div>
+        <div class="file-path">#3 — assets/Blue_background_without_MER.png</div>
+        <div class="label">Blue background without MER</div>
+        <div class="desc">Full-size clipboard, no MER text, centred on blue background. Used in-app (Home, About, loading, disclaimer) and as non-adaptive launcher fallback.</div>
+        <span class="tag in-app">In-app</span>
+        <span class="tag android">Launcher fallback</span>
+        <span class="tag ios">iOS icon</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview check"><img src="../assets/Transparent_without_MER.png" alt=""></div>
+        <div class="file-path">#4 — assets/Transparent_without_MER.png</div>
+        <div class="label">Transparent without MER</div>
+        <div class="desc">Full-size clipboard, no MER text, transparent background. Used as Android 8+ adaptive icon foreground layer over #0D4F82 background. Note: corners may be clipped by Android's circular launcher mask.</div>
+        <span class="tag android">Android adaptive icon</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MER SVG Sources -->
+  <div class="section">
+    <div class="section-title">MER — SVG Source Files (web/)</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="status active">✓ Active source</div>
+        <div class="preview blue"><object data="Blue_background_with_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
+        <div class="file-path">#5 — web/Blue_background_with_MER.svg</div>
+        <div class="label">Blue background with MER</div>
+        <div class="desc">Source for #1. Full-size clipboard + MER text + blue background. 1024×1024.</div>
+        <span class="tag source">Source SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active source</div>
+        <div class="preview check"><object data="Transparent_with_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
+        <div class="file-path">#6 — web/Transparent_with_MER.svg</div>
+        <div class="label">Transparent with MER</div>
+        <div class="desc">Source for #2. 1024×1024, transparent background. Full-size clipboard + MER text. Matches #5 layout exactly.</div>
+        <span class="tag source">Source SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active source</div>
+        <div class="preview blue"><object data="Blue_background_without_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
+        <div class="file-path">#7 — web/Blue_background_without_MER.svg</div>
+        <div class="label">Blue background without MER</div>
+        <div class="desc">Source for #3. Full-size clipboard centred (no MER text) + blue background. 1024×1024.</div>
+        <span class="tag source">Source SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active source</div>
+        <div class="preview check"><object data="Transparent_without_MER.svg" type="image/svg+xml" width="160" height="160"></object></div>
+        <div class="file-path">#8 — web/Transparent_without_MER.svg</div>
+        <div class="label">Transparent without MER</div>
+        <div class="desc">Source for #4. Full-size clipboard (no MER text), transparent background. Matches #7 layout exactly. 1024×1024.</div>
+        <span class="tag source">Source SVG</span>
+        <span class="tag android">Adaptive icon</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MER Update Guide -->
+  <div class="section">
+    <div class="section-title">MER — How to Update</div>
+    <div style="background:#252540;border:1px solid #333360;border-radius:12px;padding:20px;font-size:12px;line-height:2.2;">
+      <strong style="color:#5b9bd5;">With MER text (#1 &amp; #2):</strong><br>
+      Edit <code style="color:#e0a060;">web/Blue_background_with_MER.svg</code> or <code style="color:#e0a060;">web/Transparent_with_MER.svg</code> → re-export PNG at 1024:1024<br><br>
+      <strong style="color:#5b9bd5;">Without MER text — in-app + launcher (#3 &amp; #4):</strong><br>
+      Edit <code style="color:#e0a060;">web/Blue_background_without_MER.svg</code> or <code style="color:#e0a060;">web/Transparent_without_MER.svg</code> → re-export PNG at 1024:1024 → <code style="color:#e0a060;">dart run flutter_launcher_icons</code><br><br>
+      <strong style="color:#5b9bd5;">Splash screens:</strong><br>
+      Edit source SVGs → re-export PNGs → <code style="color:#e0a060;">dart run flutter_native_splash:create</code><br><br>
+      <strong style="color:#5b9bd5;">Export command:</strong><br>
+      <code style="color:#e0a060;">npx svgexport web/&lt;name&gt;.svg assets/&lt;name&gt;.png 1024:1024</code><br><br>
+      <strong style="color:#5b9bd5;">Notiva favicon — export sizes needed (future):</strong><br>
+      180×180 (apple-touch-icon) · 192×192 + 512×512 (PWA manifest) · 1024×1024 (app store)<br>
+      <code style="color:#e0a060;">npx svgexport ../../notiva-site/public/favicon.svg &lt;output&gt;.png &lt;size&gt;:&lt;size&gt;</code>
+    </div>
+  </div>
+
+</div><!-- /company-group notiva -->
+
+
+<hr class="group-divider">
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  UNIQUE INTERACTIVE GAMES + SOUNDFIND                                  -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="company-group">
+
+  <div class="company-header uig">
+    <div>
+      <div class="co-name">Unique Interactive Games</div>
+      <div class="co-desc">Word puzzle games &nbsp;·&nbsp; uniquegames.com.au &nbsp;·&nbsp; Amber #F59E0B · Charcoal #1C1917 · Coral #EF4444 · Cream #FFFBEB</div>
+    </div>
+  </div>
+
+  <!-- UIG Wordmarks -->
+  <div class="section">
+    <div class="section-title">UIG — Wordmarks</div>
+    <div class="grid">
+
+      <div class="card" style="width:320px;">
+        <div class="status active">✓ Active</div>
+        <div class="preview light" style="width:100%;height:80px;">
+          <object data="../../uniquegames-site/public/uig-wordmark.svg" type="image/svg+xml" style="height:40px;width:auto;max-width:260px;"></object>
+        </div>
+        <div class="file-path">uniquegames-site/public/uig-wordmark.svg</div>
+        <div class="label">UIG Wordmark — Standard</div>
+        <div class="desc">Mark + "Unique Interactive / Games" in charcoal. For use on white or light backgrounds. 200×40 viewBox.</div>
+        <span class="tag brand">Wordmark</span>
+        <span class="tag website">Light bg</span>
+      </div>
+
+      <div class="card" style="width:320px;">
+        <div class="status active">✓ Active</div>
+        <div class="preview dark-bg" style="width:100%;height:80px;">
+          <object data="../../uniquegames-site/public/uig-wordmark-reversed.svg" type="image/svg+xml" style="height:40px;width:auto;max-width:260px;"></object>
+        </div>
+        <div class="file-path">uniquegames-site/public/uig-wordmark-reversed.svg</div>
+        <div class="label">UIG Wordmark — Reversed</div>
+        <div class="desc">Mark + "Unique Interactive / Games" in white. For use on dark or charcoal backgrounds. 200×40 viewBox.</div>
+        <span class="tag brand">Wordmark</span>
+        <span class="tag in-app">Dark bg</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- UIG Brand Assets -->
+  <div class="section">
+    <div class="section-title">UIG — Brand Assets</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview amber">
+          <img src="../../uniquegames-site/public/favicon.svg" alt="UIG favicon" style="width:80px;height:80px;image-rendering:auto;">
+        </div>
+        <div class="file-path">uniquegames-site/public/favicon.svg</div>
+        <div class="label">UIG Favicon — Grid Mark (amber bg)</div>
+        <div class="desc">SVG master. 5×5 word-grid mark on amber rounded square. Charcoal cells at off (0.15) / semi (0.40) / highlight (0.90) opacities. Centre tile highlighted. 32×32 viewBox.</div>
+        <span class="tag website">Website favicon</span>
+        <span class="tag brand">Master SVG</span>
+      </div>
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview dark-bg">
+          <img src="../../uniquegames-site/public/favicon.svg" alt="UIG favicon dark" style="width:80px;height:80px;image-rendering:auto;">
+        </div>
+        <div class="file-path">uniquegames-site/public/favicon.svg</div>
+        <div class="label">UIG Favicon — Grid Mark (dark bg)</div>
+        <div class="desc">Same SVG on dark background — preview as it appears in dark-mode browser tabs and dark taskbars. Amber background on the icon itself remains visible.</div>
+        <span class="tag website">Dark mode tab</span>
+        <span class="tag brand">Preview</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SoundFind Active Assets -->
+  <div class="section">
+    <div class="section-title">SoundFind — Active Assets</div>
+    <div class="grid">
+
+      <div class="card">
+        <div class="status active">✓ Active</div>
+        <div class="preview check">
+          <img src="../../uniquegames-site/public/app-icon-soundfind.png" alt="SoundFind app icon" style="max-width:160px;max-height:160px;">
+        </div>
+        <div class="file-path">uniquegames-site/public/app-icon-soundfind.png</div>
+        <div class="label">SoundFind App Icon (website)</div>
+        <div class="desc">Used on the SoundFind product page hero. Shown at ~80px on the site. Transparent background — previewed here on checker to show edges.</div>
+        <span class="tag website">Website</span>
+        <span class="tag in-app">Reference</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- UIG / SoundFind Update Guide -->
+  <div class="section">
+    <div class="section-title">UIG / SoundFind — Asset Notes</div>
+    <div style="background:#252540;border:1px solid #333360;border-radius:12px;padding:20px;font-size:12px;line-height:2.2;">
+      <strong style="color:#F59E0B;">UIG favicon — export sizes needed (future):</strong><br>
+      180×180 (apple-touch-icon) · 192×192 + 512×512 (PWA manifest) · 1024×1024 (app store)<br>
+      <code style="color:#e0a060;">npx svgexport ../../uniquegames-site/public/favicon.svg &lt;output&gt;.png &lt;size&gt;:&lt;size&gt;</code><br><br>
+      <strong style="color:#F59E0B;">SoundFind app icon source:</strong><br>
+      No SVG source exists yet — app-icon-soundfind.png is the current master.<br>
+      When a vector source is created, add it here and update this guide.<br><br>
+      <strong style="color:#F59E0B;">SoundFind app store icons (future):</strong><br>
+      Android: 512×512 PNG · iOS: 1024×1024 PNG (no alpha) · Windows (Capacitor Electron): Phase 5
+    </div>
+  </div>
+
+</div><!-- /company-group uig -->
+
 
 </body>
 </html>
