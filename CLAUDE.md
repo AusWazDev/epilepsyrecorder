@@ -33,15 +33,18 @@
 ```
 lib/
   constants.dart          — app-wide constants (kDisclaimerVersion, URLs, company name)
-  main.dart               — entry point, disclaimer gate logic
+  main.dart               — entry point, calls NotificationService.init() before runApp()
   models/
     event_record.dart     — EventRecord model, SharedPreferences serialisation
   screens/
-    home_screen.dart      — event list, Getting Started card, splash redirect
+    home_screen.dart      — event list, Getting Started card (first use), Help link card (returning), splash redirect
     log_event_screen.dart — new event form
     history_screen.dart   — event history, CSV export
-    about_screen.dart     — APP card, LINKS card, LEGAL card
+    about_screen.dart     — APP card, LINKS card, LEGAL card, APP DATA (reset) card
     disclaimer_screen.dart — versioned disclaimer accept gate
+    help_screen.dart      — How to use guide; Quick Log Notification setup with live permission status
+  services/
+    notification_service.dart — awesome_notifications persistent quick-log notification; SilentAction buttons; SharedPreferences cross-isolate storage
   theme/                  — app theme, colours, typography
   widgets/                — shared widgets (app icon widget etc.)
 assets/
@@ -55,6 +58,15 @@ assets/
 ---
 
 ## Key Architecture Decisions
+
+### Quick-log notification
+- `awesome_notifications` v0.11.0 — `SilentAction` buttons fire without opening the app, works from lock screen
+- Channel key `mer_active_v2` — v2 forced recreation after `defaultColor` + `NotificationImportance.Default` changes
+- `locked: false` — notification is in the standard (non-system) section so it shows expanded by default; can be swiped away but restores on next app open via `_restoreNotification()`
+- `@pragma('vm:entry-point')` required on BOTH the class AND the static callback
+- Notification permission denied → app still loads (try-catch in `init()`); Help screen shows orange status + link to Android notification settings via `showNotificationConfigPage()`
+- Large icon: `drawable/ic_notification_large.png` (flat PNG from mipmap-xxhdpi, not adaptive icon)
+- Small icon: `resource://drawable/ic_launcher_foreground` with `defaultColor: 0xFF0D4F82`
 
 ### Disclaimer versioning
 - `kDisclaimerVersion` in `constants.dart` — bump this string to re-prompt all users
