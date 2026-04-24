@@ -7,6 +7,7 @@ import '../constants.dart';
 import '../models/event_record.dart';
 import '../screens/about_screen.dart';
 import '../screens/disclaimer_screen.dart';
+import '../screens/help_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../theme/mer_theme.dart';
@@ -22,11 +23,11 @@ class HomeScreen extends StatefulWidget {
 enum _HomeMenuAction {
   history,
   exportAll,
-  resetDisclaimer,
   about,
+  help,
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _store = EventStore();
   final _uuid  = const Uuid();
 
@@ -37,13 +38,29 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final loaded = await _store.load();
-      if (!mounted) return;
-      setState(() {
-        _records = loaded;
-        _loaded  = true;
-      });
+      await _loadRecords(initial: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadRecords();
+  }
+
+  Future<void> _loadRecords({bool initial = false}) async {
+    final loaded = await _store.load();
+    if (!mounted) return;
+    setState(() {
+      _records = loaded;
+      if (initial) _loaded = true;
     });
   }
 
@@ -236,13 +253,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     filenamePrefix: 'medical_event_recorder_all',
                   );
                   break;
-                case _HomeMenuAction.resetDisclaimer:
-                  await _confirmResetDisclaimer();
-                  break;
                 case _HomeMenuAction.about:
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const AboutScreen(),
+                      builder: (_) => AboutScreen(
+                        onReset: _confirmResetDisclaimer,
+                      ),
+                    ),
+                  );
+                  break;
+                case _HomeMenuAction.help:
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const HelpScreen(),
                     ),
                   );
                   break;
@@ -258,12 +281,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text('Export CSV (all events)'),
               ),
               PopupMenuItem(
-                value: _HomeMenuAction.resetDisclaimer,
-                child: Text('Reset app (clear all data)'),
-              ),
-              PopupMenuItem(
                 value: _HomeMenuAction.about,
                 child: Text('About'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.help,
+                child: Text('Help'),
               ),
             ],
           ),
@@ -376,7 +399,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                         if (_loaded && _records.isEmpty)
-                          _GettingStartedCard(),
+                          _GettingStartedCard(
+                            onHelpTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const HelpScreen(),
+                              ),
+                            ),
+                          ),
+
+                        if (_loaded && _records.isNotEmpty)
+                          _HelpLinkCard(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const HelpScreen(),
+                              ),
+                            ),
+                          ),
 
                         const SizedBox(height: 8),
                       ],
@@ -675,6 +713,9 @@ class _LastEventCard extends StatelessWidget {
    =========================== */
 
 class _GettingStartedCard extends StatelessWidget {
+  final VoidCallback onHelpTap;
+  const _GettingStartedCard({required this.onHelpTap});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -718,7 +759,72 @@ class _GettingStartedCard extends StatelessWidget {
               title: 'History & export',
               body:  'Use the ⋮ menu in the top right to view your event history or export as CSV.',
             ),
+            const SizedBox(height: 12),
+            Divider(height: 1, thickness: 0.5, color: MERColours.border),
+            InkWell(
+              onTap:        onHelpTap,
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.help_outline, size: 16, color: MERColours.textMuted),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'More Help',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: MERColours.textMuted,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, size: 16, color: MERColours.textMuted),
+                  ],
+                ),
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HelpLinkCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _HelpLinkCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color:        MERColours.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: MERColours.border, width: 0.5),
+      ),
+      child: InkWell(
+        onTap:        onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.help_outline,
+                  size: 18, color: MERColours.textMuted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Need Help with MER?',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: MERColours.textMuted,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 18, color: MERColours.textMuted),
+            ],
+          ),
         ),
       ),
     );

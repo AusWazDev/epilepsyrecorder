@@ -6,7 +6,8 @@ import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
+  final VoidCallback? onReset;
+  const AboutScreen({super.key, this.onReset});
 
   @override
   Widget build(BuildContext context) {
@@ -191,6 +192,48 @@ class AboutScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+
+                  // Reset card
+                  if (onReset != null)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'APP DATA',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            const Divider(height: 20, thickness: 0.5),
+                            Text(
+                              'Reset clears all recorded events and shows the disclaimer again. This cannot be undone.',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(height: 1.6),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: onReset,
+                                icon: const Icon(Icons.delete_outline,
+                                    size: 18),
+                                label: const Text('Reset app (clear all data)'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red.shade700,
+                                  side: BorderSide(
+                                      color: Colors.red.shade300),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   const SizedBox(height: 24),
                 ],
               ),

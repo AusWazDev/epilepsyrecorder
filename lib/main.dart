@@ -5,10 +5,12 @@ import 'constants.dart';
 import 'theme/mer_theme.dart';
 import 'screens/disclaimer_screen.dart';
 import 'screens/home_screen.dart';
+import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.instance.init();
   runApp(const AppBootstrap());
 }
 

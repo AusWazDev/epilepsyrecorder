@@ -18,6 +18,7 @@ dependencies:
   file_selector: ^1.0.3
   msix: ^3.16.13
   url_launcher: ^6.3.1
+  awesome_notifications: ^0.11.0
 
 dev_dependencies:
   flutter_test:
