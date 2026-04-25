@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import awesome_notifications
+import shared_preferences_foundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -12,6 +13,8 @@ import awesome_notifications
     SwiftAwesomeNotificationsPlugin.setPluginRegistrantCallback { registry in
       SwiftAwesomeNotificationsPlugin.register(
         with: registry.registrar(forPlugin: "io.flutter.plugins.awesomenotifications.AwesomeNotificationsPlugin")!)
+      SharedPreferencesPlugin.register(
+        with: registry.registrar(forPlugin: "SharedPreferencesPlugin")!)
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

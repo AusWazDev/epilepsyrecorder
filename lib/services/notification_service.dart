@@ -57,7 +57,7 @@ class NotificationService {
 
     try {
       await AwesomeNotifications().initialize(
-        'resource://drawable/ic_launcher_foreground',
+        Platform.isAndroid ? 'resource://drawable/ic_launcher_foreground' : null,
         [
           NotificationChannel(
             channelKey:         _chanActive,
@@ -101,6 +101,31 @@ class NotificationService {
   // from any isolate context.
   @pragma('vm:entry-point')
   static Future<void> onActionReceived(ReceivedAction action) async {
+    // Channels must be registered in the background isolate before
+    // createNotification() can succeed (main isolate init doesn't carry over).
+    await AwesomeNotifications().initialize(
+      Platform.isAndroid ? 'resource://drawable/ic_launcher_foreground' : null,
+      [
+        NotificationChannel(
+          channelKey:         _chanActive,
+          channelName:        'MER Active',
+          channelDescription: 'Persistent quick-log action — always available',
+          importance:         NotificationImportance.Default,
+          playSound:          false,
+          enableVibration:    false,
+          defaultPrivacy:     NotificationPrivacy.Public,
+          defaultColor:       const Color(0xFF0D4F82),
+        ),
+        NotificationChannel(
+          channelKey:         _chanFeedback,
+          channelName:        'MER Quick Log',
+          channelDescription: 'Confirmation shown after a quick log action',
+          importance:         NotificationImportance.High,
+          defaultPrivacy:     NotificationPrivacy.Public,
+        ),
+      ],
+    );
+
     if (action.buttonKeyPressed == _btnStart) {
       await instance._handleStart();
     } else if (action.buttonKeyPressed == _btnEnd) {
@@ -189,6 +214,21 @@ class NotificationService {
     await _showNormal();
   }
 
+  Future<void> endEvent() async {
+    try {
+      await _handleEnd();
+    } catch (_) {}
+  }
+
+  // Called whenever the app returns to foreground so the persistent
+  // notification is re-posted if iOS dismissed it.
+  Future<void> restoreNotification() async {
+    try {
+      final allowed = await AwesomeNotifications().isNotificationAllowed();
+      if (allowed) await _restoreNotification();
+    } catch (_) {}
+  }
+
   // ── Startup helpers ───────────────────────────────────────────────────────
 
   Future<void> _clearIfTimedOut() async {
@@ -221,40 +261,41 @@ class NotificationService {
           id:              _persistentId,
           channelKey:      _chanActive,
           title:           'Medical Event Recorder',
-          body:            'Tap "Log Event Now" to record immediately',
-          notificationLayout: NotificationLayout.BigText,
-          category:        NotificationCategory.Service,
-          largeIcon:       'resource://drawable/ic_notification_large',
+          body:            'Long-press this notification to log an event',
+          notificationLayout: Platform.isAndroid ? NotificationLayout.BigText : NotificationLayout.Default,
+          category:        Platform.isAndroid ? NotificationCategory.Service : null,
+          largeIcon:       Platform.isAndroid ? 'resource://drawable/ic_notification_large' : null,
           autoDismissible: false,
         ),
         actionButtons: [
           NotificationActionButton(
             key:             _btnStart,
             label:           'Log Event Now',
-            actionType:      ActionType.SilentAction,
-            autoDismissible: false,
+            actionType:      Platform.isAndroid ? ActionType.SilentAction : ActionType.Default,
+            autoDismissible: Platform.isAndroid ? false : true,
           ),
         ],
       );
 
   Future<void> _showActive(DateTime start) =>
       AwesomeNotifications().createNotification(
+        schedule: null,
         content: NotificationContent(
           id:              _persistentId,
           channelKey:      _chanActive,
           title:           'Event in progress · ${_fmtTime(start)}',
-          body:            'Tap "Event Ended" when it stops',
-          notificationLayout: NotificationLayout.BigText,
-          category:        NotificationCategory.Service,
-          largeIcon:       'resource://drawable/ic_notification_large',
+          body:            'Long-press this notification to end the event',
+          notificationLayout: Platform.isAndroid ? NotificationLayout.BigText : NotificationLayout.Default,
+          category:        Platform.isAndroid ? NotificationCategory.Service : null,
+          largeIcon:       Platform.isAndroid ? 'resource://drawable/ic_notification_large' : null,
           autoDismissible: false,
         ),
         actionButtons: [
           NotificationActionButton(
             key:             _btnEnd,
             label:           'Event Ended',
-            actionType:      ActionType.SilentAction,
-            autoDismissible: false,
+            actionType:      Platform.isAndroid ? ActionType.SilentAction : ActionType.Default,
+            autoDismissible: Platform.isAndroid ? false : true,
           ),
         ],
       );
@@ -270,7 +311,7 @@ class NotificationService {
           title:           title,
           body:            body,
           autoDismissible: true,
-          timeoutAfter:    const Duration(seconds: 4),
+          timeoutAfter:    Platform.isAndroid ? const Duration(seconds: 4) : null,
         ),
       );
 }

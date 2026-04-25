@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter/services.dart';
 
 import '../constants.dart';
+import '../services/notification_service.dart';
 import '../models/event_record.dart';
 import '../screens/about_screen.dart';
 import '../screens/disclaimer_screen.dart';
@@ -52,7 +53,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _loadRecords();
+    if (state == AppLifecycleState.resumed) {
+      _loadRecords();
+      NotificationService.instance.restoreNotification();
+    }
   }
 
   Future<void> _loadRecords({bool initial = false}) async {
