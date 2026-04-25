@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _uuid  = const Uuid();
 
   List<EventRecord> _records = [];
+  Map<String, dynamic>? _activeEvent;
   bool _loaded = false;
   bool _buttonFlash = false;
 
@@ -60,12 +65,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadRecords({bool initial = false}) async {
-    final loaded = await _store.load();
+    final prefs    = await SharedPreferences.getInstance();
+    final loaded   = await _store.load();
+    final activeRaw = prefs.getString('mer_active_event');
+    Map<String, dynamic>? active;
+    if (activeRaw != null) {
+      try { active = jsonDecode(activeRaw) as Map<String, dynamic>; } catch (_) {}
+    }
     if (!mounted) return;
     setState(() {
-      _records = loaded;
+      _records     = loaded;
+      _activeEvent = active;
       if (initial) _loaded = true;
     });
+  }
+
+  Future<void> _endActiveEvent() async {
+    await NotificationService.instance.endEvent();
+    await _loadRecords();
   }
 
   Future<void> _persist() => _store.save(_records);
@@ -313,6 +330,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
+                        // ── ACTIVE EVENT BANNER ──
+                        if (_activeEvent != null) ...[
+                          _ActiveEventBanner(
+                            startTime: DateTime.parse(
+                                _activeEvent!['startIso'] as String),
+                            onEnd: _endActiveEvent,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         // ── RECORD EVENT BUTTON ──
                         SizedBox(
                           width: double.infinity,
@@ -429,6 +456,83 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/* ===========================
+   ACTIVE EVENT BANNER
+   =========================== */
+
+class _ActiveEventBanner extends StatelessWidget {
+  final DateTime     startTime;
+  final VoidCallback onEnd;
+
+  const _ActiveEventBanner({required this.startTime, required this.onEnd});
+
+  @override
+  Widget build(BuildContext context) {
+    final elapsed = DateTime.now().difference(startTime);
+    final m       = elapsed.inMinutes;
+    final s       = elapsed.inSeconds % 60;
+    final elapsedStr = m > 0 ? '${m}m ${s}s' : '${s}s';
+    final timeStr    = DateFormat('h:mm a').format(startTime);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+      decoration: BoxDecoration(
+        color:        const Color(0xFFFFEBEE),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEF9A9A)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width:  10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Color(0xFFD32F2F),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Event in progress',
+                  style: TextStyle(
+                    fontSize:   14,
+                    fontWeight: FontWeight.w700,
+                    color:      Color(0xFFB71C1C),
+                  ),
+                ),
+                Text(
+                  'Started $timeStr · $elapsedStr ago',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color:    Color(0xFFD32F2F),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: onEnd,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFD32F2F),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              textStyle: const TextStyle(
+                fontSize:   13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: const Text('End Event'),
+          ),
+        ],
       ),
     );
   }

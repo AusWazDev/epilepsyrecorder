@@ -115,18 +115,31 @@ class _HelpScreenState extends State<HelpScreen> {
                 const _HelpRow(
                   icon:  Icons.notifications_outlined,
                   title: 'What is it?',
-                  body:  'MER keeps a notification in your notification shade at all times. You can log an event or stop a recording directly from there — without opening the app.',
+                  body:  'MER keeps a notification in your notification shade at all times. You can log an event directly from there — without unlocking your phone.',
                 ),
-                const _HelpRow(
-                  icon:  Icons.swipe_down_outlined,
-                  title: 'Using from the notification shade',
-                  body:  'Pull down from the top of your screen. Find the MER notification and tap "Log Event Now" to start recording. Tap "Event Ended" to stop and save the duration.',
-                ),
-                const _HelpRow(
-                  icon:  Icons.lock_outline,
-                  title: 'Using from the lock screen',
-                  body:  'Go to Settings → Notifications → Notifications on lock screen → Show all notifications. Once set, pull down the shade on your lock screen to access MER without unlocking.',
-                ),
+                if (Platform.isIOS) ...[
+                  const _HelpRow(
+                    icon:  Icons.swipe_down_outlined,
+                    title: 'Using from the notification shade',
+                    body:  'Pull down from the top of your screen. Long-press the MER notification to reveal the action buttons, then tap "Log Event Now". When the event is active, open MER and tap "End Event" on the home screen.',
+                  ),
+                  const _HelpRow(
+                    icon:  Icons.lock_outline,
+                    title: 'Using from the lock screen',
+                    body:  'Go to iPhone Settings → Notifications → Medical Event Recorder → Show Previews → Always. Then long-press the MER notification on your lock screen to reveal the action buttons.',
+                  ),
+                ] else ...[
+                  const _HelpRow(
+                    icon:  Icons.swipe_down_outlined,
+                    title: 'Using from the notification shade',
+                    body:  'Pull down from the top of your screen. Find the MER notification and tap "Log Event Now" to start recording. Tap "Event Ended" to stop and save the duration.',
+                  ),
+                  const _HelpRow(
+                    icon:  Icons.lock_outline,
+                    title: 'Using from the lock screen',
+                    body:  'Go to Settings → Notifications → Notifications on lock screen → Show all notifications. Once set, pull down the shade on your lock screen to access MER without unlocking.',
+                  ),
+                ],
                 const _HelpRow(
                   icon:  Icons.refresh,
                   title: 'If the notification disappears',
