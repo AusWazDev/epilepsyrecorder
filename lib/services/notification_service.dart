@@ -166,7 +166,9 @@ class NotificationService {
     await _showActive(now);
     await _showFeedback(
       title: 'Event started · ${_fmtTime(now)}',
-      body:  'Tap "Event Ended" in the notification when it stops',
+      body:  Platform.isIOS
+          ? 'Long-press the notification to end the event'
+          : 'Tap "Event Ended" in the notification when it stops',
     );
   }
 
