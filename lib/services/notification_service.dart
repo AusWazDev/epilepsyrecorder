@@ -275,7 +275,7 @@ class NotificationService {
           NotificationActionButton(
             key:             _btnStart,
             label:           'Log Event Now',
-            actionType:      Platform.isIOS ? ActionType.SilentBackgroundAction : ActionType.SilentAction,
+            actionType:      Platform.isIOS ? ActionType.Default : ActionType.SilentAction,
             autoDismissible: Platform.isAndroid ? false : true,
           ),
         ],
@@ -298,7 +298,7 @@ class NotificationService {
           NotificationActionButton(
             key:             _btnEnd,
             label:           'Event Ended',
-            actionType:      Platform.isIOS ? ActionType.SilentBackgroundAction : ActionType.SilentAction,
+            actionType:      Platform.isIOS ? ActionType.Default : ActionType.SilentAction,
             autoDismissible: Platform.isAndroid ? false : true,
           ),
         ],
