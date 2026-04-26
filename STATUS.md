@@ -62,6 +62,11 @@ Also note earlier commits not yet in Change Register:
 | iOS setup — awesome_notifications deployment target 15.0, Podfile, AppDelegate | `f693b57` |
 | Add quick-log notification service + Help screen | `b5980de` |
 
+## TODO — Next Windows Session
+- Update Notiva privacy policy (notiva-site) with Sentry disclosure — same pattern as SoundFind privacy update (short version callout, new Sentry section, rights section). Commit and deploy to notiva.com.au.
+- Add DEF-36 and CR-41 to MER Change Register (OneDrive doc)
+- Update ClickUp handoff doc
+
 ## Notes for Mac Claude
 
 - `sentry_flutter: ^9.0.0` added to `pubspec.yaml`
