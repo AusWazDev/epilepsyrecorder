@@ -2,6 +2,29 @@
 
 ---
 
+## Session: 26 April 2026 (evening) — Windows (Claude Code CLI)
+
+**What was done:**
+
+- **MS Store tax/payout banner resolved** — ticket #2604210030008414 cleared. Blocker removed.
+- **DEF-37: Quick Log Notification section hidden on Windows** — Help screen was showing the notification section on Windows (mobile-only feature). Wrapped `_Section` in `Platform.isWindows` guard. Commit `b289a26`.
+- **MSIX signing fixed** — `msix` package passes certificate password through cmd.exe where `!`, `%`, `[` are mangled, causing silent fallback to test cert. Fix: `sign_msix: false` in pubspec.yaml, sign manually with `signtool.exe` via PowerShell. Signing password removed from pubspec.yaml permanently. Commit `8801097`.
+- **Microsoft OpenJDK 21 installed** — required by `sentry_flutter` transitive `jni` dependency for Windows compilation. Build-time only, not in MSIX.
+- **MER MSIX v1.0.0.0 built and submitted to MS Store for certification** — Store ID: `9PMJ09CDSL6K`. Signed with `CN=520D1E31-3542-4059-8124-5366ECCA4994`. Submitted 26 April 2026.
+- **Change Register updated** — entries 41–42 added (DEF-37, MSIX build/signing).
+- **ClickUp updated**.
+
+**Tested:**
+- Windows smoke test (exe) — all functions confirmed ✅
+- Norton 360 flagged as suspicious (expected for self-signed new exe — not an issue for Store version) ✅
+
+**Next:**
+- Await MS Store certification result for MER (email to apps@notiva.com.au)
+- Await MS Store certification result for SoundFind (email to apps@uniquegames.com.au)
+- Await illion CSC-207240 — unblocks Google Play and Apple for both apps
+
+---
+
 ## Session: 26 April 2026 (afternoon) — Mac (Claude Code CLI)
 
 **What was done:**
