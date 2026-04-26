@@ -53,6 +53,7 @@
 | CR-37 | Change | iOS Help screen notification instructions (platform-aware) | `a42594f` |
 | CR-38 | Change | iOS feedback notification wording | `fc01e97` |
 | DEF-36 | Defect fix | Revert iOS notification action type to Default — SilentBackgroundAction unreliable in release builds | `9877054` |
+| CR-41 | Change | Sentry crash reporting — sentry_flutter added, SentryFlutter.init() wraps appRunner in main.dart, DSN hardcoded for test builds | TBD |
 
 Also note earlier commits not yet in Change Register:
 
@@ -60,3 +61,11 @@ Also note earlier commits not yet in Change Register:
 |------|--------|
 | iOS setup — awesome_notifications deployment target 15.0, Podfile, AppDelegate | `f693b57` |
 | Add quick-log notification service + Help screen | `b5980de` |
+
+## Notes for Mac Claude
+
+- `sentry_flutter: ^9.0.0` added to `pubspec.yaml`
+- `main.dart` updated — DSN hardcoded, `SentryFlutter.init()` wraps `appRunner`
+- Run `flutter pub get` then build and side-load to iPad as normal
+- No `--dart-define` needed, no dSYM upload — dSYM upload is for final App Store build only
+- After building, update CR-41 commit hash in this table

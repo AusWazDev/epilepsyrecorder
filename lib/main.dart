@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'constants.dart';
 import 'theme/mer_theme.dart';
@@ -9,9 +10,18 @@ import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.instance.init();
-  runApp(const AppBootstrap());
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://48b157764abd294968a63ff25dfb1a49@o4511281612849152.ingest.us.sentry.io/4511284989394944';
+      options.tracesSampleRate = 0.1;
+      options.sendDefaultPii = false;
+    },
+    appRunner: () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await NotificationService.instance.init();
+      runApp(const AppBootstrap());
+    },
+  );
 }
 
 /* ===========================
