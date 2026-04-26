@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -465,19 +466,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
    ACTIVE EVENT BANNER
    =========================== */
 
-class _ActiveEventBanner extends StatelessWidget {
+class _ActiveEventBanner extends StatefulWidget {
   final DateTime     startTime;
   final VoidCallback onEnd;
 
   const _ActiveEventBanner({required this.startTime, required this.onEnd});
 
   @override
+  State<_ActiveEventBanner> createState() => _ActiveEventBannerState();
+}
+
+class _ActiveEventBannerState extends State<_ActiveEventBanner> {
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final elapsed = DateTime.now().difference(startTime);
-    final m       = elapsed.inMinutes;
-    final s       = elapsed.inSeconds % 60;
+    final elapsed    = DateTime.now().difference(widget.startTime);
+    final m          = elapsed.inMinutes;
+    final s          = elapsed.inSeconds % 60;
     final elapsedStr = m > 0 ? '${m}m ${s}s' : '${s}s';
-    final timeStr    = DateFormat('h:mm a').format(startTime);
+    final timeStr    = DateFormat('h:mm a').format(widget.startTime);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
@@ -521,7 +543,7 @@ class _ActiveEventBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           FilledButton(
-            onPressed: onEnd,
+            onPressed: widget.onEnd,
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFD32F2F),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

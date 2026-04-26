@@ -164,12 +164,14 @@ class NotificationService {
     }));
 
     await _showActive(now);
-    await _showFeedback(
-      title: 'Event started · ${_fmtTime(now)}',
-      body:  Platform.isIOS
-          ? 'Long-press the notification to end the event'
-          : 'Tap "Event Ended" in the notification when it stops',
-    );
+    // iOS: the "Event in progress" notification is itself the confirmation —
+    // a second feedback notification stacks on top and confuses the action button.
+    if (!Platform.isIOS) {
+      await _showFeedback(
+        title: 'Event started · ${_fmtTime(now)}',
+        body:  'Tap "Event Ended" in the notification when it stops',
+      );
+    }
   }
 
   Future<void> _handleEnd() async {
@@ -273,7 +275,7 @@ class NotificationService {
           NotificationActionButton(
             key:             _btnStart,
             label:           'Log Event Now',
-            actionType:      Platform.isAndroid ? ActionType.SilentAction : ActionType.Default,
+            actionType:      Platform.isIOS ? ActionType.SilentBackgroundAction : ActionType.SilentAction,
             autoDismissible: Platform.isAndroid ? false : true,
           ),
         ],
@@ -296,7 +298,7 @@ class NotificationService {
           NotificationActionButton(
             key:             _btnEnd,
             label:           'Event Ended',
-            actionType:      Platform.isAndroid ? ActionType.SilentAction : ActionType.Default,
+            actionType:      Platform.isIOS ? ActionType.SilentBackgroundAction : ActionType.SilentAction,
             autoDismissible: Platform.isAndroid ? false : true,
           ),
         ],
