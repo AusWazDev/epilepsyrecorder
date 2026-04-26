@@ -109,6 +109,7 @@ class _HelpScreenState extends State<HelpScreen> {
             ),
             const SizedBox(height: 12),
 
+            if (!Platform.isWindows)
             _Section(
               title: 'QUICK LOG NOTIFICATION',
               children: [
