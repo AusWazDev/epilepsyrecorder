@@ -2,6 +2,28 @@
 
 ---
 
+## Session: 26 April 2026 (afternoon) — Mac (Claude Code CLI)
+
+**What was done:**
+
+- **DEF-36: Reverted iOS notification action type to Default** — `SilentBackgroundAction` (added in commit `368bb34`) was confirmed unreliable in release builds on a locked device. Background Dart isolate does not execute consistently in release mode. Reverted both buttons (`Log Event Now` and `Event Ended`) to `ActionType.Default` for iOS. Requires FaceID/unlock but works 100% reliably. Lock-screen-without-unlock deferred to Phase 5 (`UNNotificationServiceExtension`). Commit `9877054`.
+- **Installed clean release build** on Wazza's iPhone 15 Pro Max via `xcodebuild` + `xcrun devicectl` (DerivedData path required — flutter build path lacks proper framework signing).
+- **Confirmed working:** Both notification buttons work after FaceID unlock. Active event banner shows/clears correctly.
+
+**Tested on device:**
+- Wazza's iPhone 15 Pro Max (iOS 26.3.1) — full notification flow confirmed with Default action type ✅
+
+**Next (Windows session):**
+- Add Change Register entry for DEF-36 (commit `9877054`)
+- Update pending entries from previous session (DEF-35, CR-36, CR-37, CR-38)
+- Take iOS App Store screenshots from Wazza's iPhone 15 Pro Max (connected via USB)
+- See ClickUp handoff doc for screenshot spec and screen list
+
+**Phase 5 backlog (future release):**
+- Lock-screen-without-unlock via `UNNotificationServiceExtension` — proper native iOS extension that runs in its own process, independent of Flutter app lifecycle
+
+---
+
 ## Session: 26 April 2026 — Mac (Claude Code CLI)
 
 **What was done:**

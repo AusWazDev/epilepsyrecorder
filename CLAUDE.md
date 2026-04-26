@@ -60,7 +60,7 @@ assets/
 ## Key Architecture Decisions
 
 ### Quick-log notification
-- `awesome_notifications` v0.11.0 — `SilentAction` buttons fire without opening the app, works from lock screen
+- `awesome_notifications` v0.11.0 — iOS uses `ActionType.Default` (prompts FaceID/unlock, then logs reliably); Android uses `SilentAction` (fires without opening app)
 - Channel key `mer_active_v2` — v2 forced recreation after `defaultColor` + `NotificationImportance.Default` changes
 - `locked: false` — notification is in the standard (non-system) section so it shows expanded by default; can be swiped away but restores on next app open via `_restoreNotification()`
 - `@pragma('vm:entry-point')` required on BOTH the class AND the static callback
