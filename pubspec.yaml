@@ -66,4 +66,3 @@ msix_config:
   logo_path: windows/runner/resources/app_icon.ico
   create_assets: false
   signing_certificate_path: C:/Users/wjl25/Documents/MedicalEventRecorder.pfx
-  signing_certificate_password: MpBP5!%_na[/0M!J
