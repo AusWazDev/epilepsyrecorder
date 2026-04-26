@@ -52,6 +52,7 @@
 | CR-36 | Change | Active Event Banner on HomeScreen | `a42594f` |
 | CR-37 | Change | iOS Help screen notification instructions (platform-aware) | `a42594f` |
 | CR-38 | Change | iOS feedback notification wording | `fc01e97` |
+| DEF-36 | Defect fix | Revert iOS notification action type to Default — SilentBackgroundAction unreliable in release builds | `9877054` |
 
 Also note earlier commits not yet in Change Register:
 
