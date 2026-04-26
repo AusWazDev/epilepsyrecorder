@@ -157,6 +157,10 @@ class AboutScreen extends StatelessWidget {
                             url:   kPrivacyUrl,
                           ),
                           _LinkRow(
+                            label: 'Terms of Service',
+                            url:   kTermsUrl,
+                          ),
+                          _LinkRow(
                             label:  'Support',
                             url:    'mailto:$kSupportEmail',
                             isLast: true,

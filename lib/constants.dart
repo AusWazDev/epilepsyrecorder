@@ -8,6 +8,7 @@ const String kDisclaimerVersion = '1.0';
 
 const String kWebsiteUrl   = 'https://www.notiva.com.au';
 const String kPrivacyUrl   = 'https://www.notiva.com.au/medical-event-recorder/privacy/';
+const String kTermsUrl     = 'https://www.notiva.com.au/medical-event-recorder/terms/';
 const String kContactUrl   = 'https://www.notiva.com.au/contact/';
 const String kSupportEmail = 'contact@notiva.com.au';
 
