@@ -2,6 +2,16 @@
 
 ---
 
+## Session: 29 April 2026 — Windows
+
+**MER v1.0.0 PUBLISHED on Microsoft Store** ✅
+- Store ID: `9PMJ09CDSL6K`
+- Published 29 April 2026 — live and available to customers
+- Email confirmed: "Your submission for the app Medical Event Recorder has been processed."
+- URL: https://apps.microsoft.com/detail/9PMJ09CDSL6K
+
+---
+
 ## Session: 26 April 2026 (evening) — Windows (Claude Code CLI)
 
 **What was done:**
