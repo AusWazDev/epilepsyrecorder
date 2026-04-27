@@ -23,7 +23,7 @@ Do not submit until all boxes are checked. No exceptions.
 - [ ] App icon displays correctly in the installer and taskbar
 - [ ] Start menu tile shows MER branding — not a default placeholder
 - [ ] No generic/white-background tiles
-- [ ] **Check Store listing icon in Partner Center preview AND on the live Store page** — v1.0.0 icon was flagged as substandard quality after publication. Investigate source asset resolution and Partner Center store listing image upload before resubmitting.
+- [ ] **Check Store listing icon in Partner Center preview AND on the live Store page** — v1.0.0 icon was substandard. Two issues found: (1) 300×300 App tile icon slot was empty — fill with clean `app_icon.png` resized to 300×300. (2) 1:1 Box art had `Blue_background_with_MER.png` (has "MER" text) — replace with clean `app_icon_1080x1080.png` (icon only, no text). Both assets are in `assets/`.
 
 ## 4. Install and Smoke Test
 
