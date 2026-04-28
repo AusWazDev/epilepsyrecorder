@@ -2,6 +2,32 @@
 
 ---
 
+## Session: 29 April 2026 — Mac (Claude Code CLI)
+
+**MER v1.0.0 SUBMITTED to Apple App Store** ✅
+- Submitted 29 April 2026 — under review (up to 48 hours)
+- Bundle ID: `au.com.notiva.medicaleventrecorder`
+- Version 1.0.0, Build 1
+- iPhone only for v1.0 (iPad deferred to v1.0.1)
+- Distribution certificate: Apple Distribution: NOTIVA (B7LWF6Z674)
+- IPA built via `flutter build ipa --release`, uploaded via Xcode Organizer
+
+**What was done:**
+- Fixed DEVELOPMENT_TEAM — unified all configurations to Notiva `B7LWF6Z674`. Commit `0e6bd04`.
+- Changed TARGETED_DEVICE_FAMILY from "1,2" to "1" (iPhone only). Commit `0e6bd04`.
+- Created Apple Distribution certificate for Notiva in Xcode
+- Built App Store IPA (23.3MB) — `flutter build ipa --release`
+- Resolved export compliance — no custom encryption (None of the algorithms)
+- Set App Information: Category (Medical), Content Rights
+- Submitted for App Store review
+
+**Next:**
+- Await Apple review result (email to apps@notiva.com.au, up to 48 hours)
+- Update Change Register with today's commits
+- Plan v1.0.1: iPad support (TARGETED_DEVICE_FAMILY = "1,2"), iPad screenshots, lock-screen-without-unlock (Phase 5)
+
+---
+
 ## Session: 29 April 2026 — Windows
 
 **MER v1.0.0 PUBLISHED on Microsoft Store** ✅
