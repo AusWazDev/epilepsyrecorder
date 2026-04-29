@@ -16,6 +16,18 @@
 - **Version:** 1.0.0+1 (locked for store submission)
 - **Owner:** Waz (wjl25) — Windows PC primary
 
+## Package / Bundle IDs — CRITICAL
+
+| Platform | ID | Notes |
+|---|---|---|
+| Android `applicationId` | `au.com.notiva.medicaleventrecorder` | Must match Google Play registration exactly — no underscores |
+| Android `namespace` | `au.com.notiva.medical_event_recorder` | Internal R class only — do NOT change without updating all source files |
+| iOS Bundle ID | `au.com.notiva.medicaleventrecorder` | Set in Xcode project, must match App Store Connect |
+| Apple App ID | `au.com.notiva.medicaleventrecorder` | Registered 29 Apr 2026 — Team ID B7LWF6Z674 |
+| Google Play package | `au.com.notiva.medicaleventrecorder` | Registered 29 Apr 2026 — cannot be changed after first publish |
+
+**Before every build:** confirm `applicationId` in `android/app/build.gradle.kts` matches the Google Play package name exactly.
+
 ---
 
 ## Tech Stack

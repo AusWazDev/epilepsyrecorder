@@ -35,8 +35,7 @@ android {
     }
 
     defaultConfig {
-        // ✅ MUST match namespace for modern AGP
-        applicationId = "au.com.notiva.medical_event_recorder"
+        applicationId = "au.com.notiva.medicaleventrecorder"
 
         minSdk = flutter.minSdkVersion  // awesome_notifications requires minSdk 23
         targetSdk = flutter.targetSdkVersion
