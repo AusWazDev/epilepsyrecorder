@@ -66,8 +66,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadRecords({bool initial = false}) async {
-    final prefs    = await SharedPreferences.getInstance();
-    final loaded   = await _store.load();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // pick up any native writes from locked-screen actions
+    final loaded = await _store.load();
     final activeRaw = prefs.getString('mer_active_event');
     Map<String, dynamic>? active;
     if (activeRaw != null) {

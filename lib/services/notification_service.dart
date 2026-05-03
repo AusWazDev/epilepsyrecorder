@@ -2,12 +2,20 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart' show Color;
+import 'package:flutter/services.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/event_record.dart';
+
+// ── iOS native notification channel ──────────────────────────────────────────
+// Persistent notification on iOS is managed entirely in native Swift
+// (AppDelegate) so action buttons fire natively on a locked screen without
+// needing a Dart background isolate.
+
+const _iosChannel = MethodChannel('au.com.notiva.mer/notifications');
 
 // ── IDs & storage keys ────────────────────────────────────────────────────────
 
@@ -101,6 +109,10 @@ class NotificationService {
   // from any isolate context.
   @pragma('vm:entry-point')
   static Future<void> onActionReceived(ReceivedAction action) async {
+    // iOS action buttons are handled natively in AppDelegate — no Dart
+    // background isolate needed (and none is reliable in release builds).
+    if (Platform.isIOS) return;
+
     // Channels must be registered in the background isolate before
     // createNotification() can succeed (main isolate init doesn't carry over).
     await AwesomeNotifications().initialize(
@@ -247,7 +259,8 @@ class NotificationService {
   }
 
   Future<void> _restoreNotification() async {
-    final prefs     = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // pick up any writes made natively while Dart wasn't running
     final activeRaw = prefs.getString(_activeEventKey);
     if (activeRaw != null) {
       final active = jsonDecode(activeRaw) as Map<String, dynamic>;
@@ -260,49 +273,59 @@ class NotificationService {
 
   // ── Notification builders ─────────────────────────────────────────────────
 
-  Future<void> _showNormal() => AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id:              _persistentId,
-          channelKey:      _chanActive,
-          title:           'Medical Event Recorder',
-          body:            'Long-press this notification to log an event',
-          notificationLayout: Platform.isAndroid ? NotificationLayout.BigText : NotificationLayout.Default,
-          category:        Platform.isAndroid ? NotificationCategory.Service : null,
-          largeIcon:       Platform.isAndroid ? 'resource://drawable/ic_notification_large' : null,
+  Future<void> _showNormal() async {
+    if (Platform.isIOS) {
+      await _iosChannel.invokeMethod('showNormal');
+      return;
+    }
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id:                 _persistentId,
+        channelKey:         _chanActive,
+        title:              'Medical Event Recorder',
+        body:               'Long-press this notification to log an event',
+        notificationLayout: NotificationLayout.BigText,
+        category:           NotificationCategory.Service,
+        largeIcon:          'resource://drawable/ic_notification_large',
+        autoDismissible:    false,
+      ),
+      actionButtons: [
+        NotificationActionButton(
+          key:             _btnStart,
+          label:           'Log Event Now',
+          actionType:      ActionType.SilentAction,
           autoDismissible: false,
         ),
-        actionButtons: [
-          NotificationActionButton(
-            key:             _btnStart,
-            label:           'Log Event Now',
-            actionType:      Platform.isIOS ? ActionType.Default : ActionType.SilentAction,
-            autoDismissible: Platform.isAndroid ? false : true,
-          ),
-        ],
-      );
+      ],
+    );
+  }
 
-  Future<void> _showActive(DateTime start) =>
-      AwesomeNotifications().createNotification(
-        schedule: null,
-        content: NotificationContent(
-          id:              _persistentId,
-          channelKey:      _chanActive,
-          title:           'Event in progress · ${_fmtTime(start)}',
-          body:            'Long-press this notification to end the event',
-          notificationLayout: Platform.isAndroid ? NotificationLayout.BigText : NotificationLayout.Default,
-          category:        Platform.isAndroid ? NotificationCategory.Service : null,
-          largeIcon:       Platform.isAndroid ? 'resource://drawable/ic_notification_large' : null,
+  Future<void> _showActive(DateTime start) async {
+    if (Platform.isIOS) {
+      await _iosChannel.invokeMethod('showActive', {'startIso': start.toIso8601String()});
+      return;
+    }
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id:                 _persistentId,
+        channelKey:         _chanActive,
+        title:              'Event in progress · ${_fmtTime(start)}',
+        body:               'Long-press this notification to end the event',
+        notificationLayout: NotificationLayout.BigText,
+        category:           NotificationCategory.Service,
+        largeIcon:          'resource://drawable/ic_notification_large',
+        autoDismissible:    false,
+      ),
+      actionButtons: [
+        NotificationActionButton(
+          key:             _btnEnd,
+          label:           'Event Ended',
+          actionType:      ActionType.SilentAction,
           autoDismissible: false,
         ),
-        actionButtons: [
-          NotificationActionButton(
-            key:             _btnEnd,
-            label:           'Event Ended',
-            actionType:      Platform.isIOS ? ActionType.Default : ActionType.SilentAction,
-            autoDismissible: Platform.isAndroid ? false : true,
-          ),
-        ],
-      );
+      ],
+    );
+  }
 
   Future<void> _showFeedback({
     required String title,
