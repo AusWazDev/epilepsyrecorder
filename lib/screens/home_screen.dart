@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -67,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadRecords({bool initial = false}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.reload(); // pick up any native writes from locked-screen actions
+    await prefs.reload();
     final loaded = await _store.load();
     final activeRaw = prefs.getString('mer_active_event');
     Map<String, dynamic>? active;

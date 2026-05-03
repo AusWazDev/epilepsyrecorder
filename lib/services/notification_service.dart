@@ -2,20 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart' show Color;
-import 'package:flutter/services.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/event_record.dart';
-
-// ── iOS native notification channel ──────────────────────────────────────────
-// Persistent notification on iOS is managed entirely in native Swift
-// (AppDelegate) so action buttons fire natively on a locked screen without
-// needing a Dart background isolate.
-
-const _iosChannel = MethodChannel('au.com.notiva.mer/notifications');
 
 // ── IDs & storage keys ────────────────────────────────────────────────────────
 
@@ -61,7 +53,11 @@ class NotificationService {
   static final NotificationService instance = NotificationService._();
 
   Future<void> init() async {
-    if (Platform.isWindows) return;
+    // iOS: Swift (AppDelegate) owns all notification management.
+    // awesome_notifications must NOT initialize on iOS — its initialize()
+    // call resets UNUserNotificationCenter.delegate to itself, breaking
+    // our native locked-screen action handler.
+    if (Platform.isWindows || Platform.isIOS) return;
 
     try {
       await AwesomeNotifications().initialize(
@@ -236,9 +232,9 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // Called whenever the app returns to foreground so the persistent
-  // notification is re-posted if iOS dismissed it.
+  // On iOS, Swift's applicationDidBecomeActive handles this natively.
   Future<void> restoreNotification() async {
+    if (Platform.isIOS) return;
     try {
       final allowed = await AwesomeNotifications().isNotificationAllowed();
       if (allowed) await _restoreNotification();
@@ -260,7 +256,7 @@ class NotificationService {
 
   Future<void> _restoreNotification() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.reload(); // pick up any writes made natively while Dart wasn't running
+    await prefs.reload();
     final activeRaw = prefs.getString(_activeEventKey);
     if (activeRaw != null) {
       final active = jsonDecode(activeRaw) as Map<String, dynamic>;
@@ -274,10 +270,7 @@ class NotificationService {
   // ── Notification builders ─────────────────────────────────────────────────
 
   Future<void> _showNormal() async {
-    if (Platform.isIOS) {
-      await _iosChannel.invokeMethod('showNormal');
-      return;
-    }
+    if (Platform.isIOS) return; // Swift owns iOS persistent notification
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id:                 _persistentId,
@@ -301,10 +294,7 @@ class NotificationService {
   }
 
   Future<void> _showActive(DateTime start) async {
-    if (Platform.isIOS) {
-      await _iosChannel.invokeMethod('showActive', {'startIso': start.toIso8601String()});
-      return;
-    }
+    if (Platform.isIOS) return; // Swift owns iOS persistent notification
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id:                 _persistentId,

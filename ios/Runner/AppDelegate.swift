@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import UserNotifications
+import ActivityKit
 import awesome_notifications
 import shared_preferences_foundation
 
@@ -8,20 +9,23 @@ import shared_preferences_foundation
 @objc class AppDelegate: FlutterAppDelegate {
 
   // ── SharedPreferences key prefix (Flutter uses "flutter." on iOS) ─────────
-  private let kStorageKey     = "flutter.epilepsy_event_records_v1"
-  private let kActiveEventKey = "flutter.mer_active_event"
+  private let kStorageKey      = "flutter.epilepsy_event_records_v1"
+  private let kActiveEventKey  = "flutter.mer_active_event"
+
+  // ── App Groups shared storage (used by MERWidget / EndMEREventIntent) ──────
+  private let kAppGroupId      = "group.au.com.notiva.medicaleventrecorder"
+  private let kSharedRecords   = "mer_records"
+  private let kSharedActiveKey = "mer_active_event"
 
   // ── Notification identifiers ──────────────────────────────────────────────
-  // awesome_notifications converts Int id → String for the UNNotificationRequest identifier
-  private let kPersistentId   = "1"
-  private let kFeedbackId     = "mer_feedback_native"
-  private let kBtnStart       = "QUICK_LOG_START"
-  private let kBtnEnd         = "QUICK_LOG_END"
-  private let kCategoryNormal = "MER_NORMAL"
-  private let kCategoryActive = "MER_ACTIVE"
+  private let kPersistentId        = "1"
+  private let kActivePersistentId  = "2"
+  private let kFeedbackId          = "mer_feedback_native"
+  private let kBtnStart            = "QUICK_LOG_START"
+  private let kBtnEnd              = "QUICK_LOG_END"
+  private let kCategoryNormal      = "MER_NORMAL"
+  private let kCategoryActive      = "MER_ACTIVE"
 
-  // Reference to whoever was delegate before we reclaimed it (awesome_notifications),
-  // so we can forward willPresent and non-MER didReceive calls through it.
   private weak var previousDelegate: UNUserNotificationCenterDelegate?
 
   override func application(
@@ -38,35 +42,6 @@ import shared_preferences_foundation
 
     let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    // MethodChannel: Dart calls "showNormal" / "showActive" to create the
-    // persistent iOS notification natively, bypassing awesome_notifications.
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let channel = FlutterMethodChannel(
-        name: "au.com.notiva.mer/notifications",
-        binaryMessenger: controller.binaryMessenger
-      )
-      channel.setMethodCallHandler { [weak self] call, result in
-        switch call.method {
-        case "showNormal":
-          self?.showPersistentNormalNotification()
-          result(nil)
-        case "showActive":
-          if let args = call.arguments as? [String: Any],
-             let startIso = args["startIso"] as? String {
-            self?.showPersistentActiveNotification(startIso: startIso)
-          }
-          result(nil)
-        default:
-          result(FlutterMethodNotImplemented)
-        }
-      }
-    }
-
-    // Reclaim the UNUserNotificationCenter delegate.
-    // awesome_notifications registers itself as delegate during plugin init;
-    // we take it back so locked-screen action buttons are handled natively
-    // (without relying on a Dart background isolate, which is unreliable
-    // in release builds on a locked device).
     previousDelegate = UNUserNotificationCenter.current().delegate
     UNUserNotificationCenter.current().delegate = self
     registerNativeNotificationCategories()
@@ -74,16 +49,90 @@ import shared_preferences_foundation
     return result
   }
 
-  // ── Native category registration ──────────────────────────────────────────
-  // Called at launch and before each native notification creation so our
-  // categories survive if awesome_notifications overwrites them during
-  // a Flutter resume cycle.
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    super.applicationDidBecomeActive(application)
+    previousDelegate = UNUserNotificationCenter.current().delegate
+    UNUserNotificationCenter.current().delegate = self
+    registerNativeNotificationCategories()
+    syncFromSharedIfNeeded()
+    UNUserNotificationCenter.current().requestAuthorization(
+      options: [.alert, .sound, .badge]
+    ) { [weak self] _, _ in
+      DispatchQueue.main.async { self?.restorePersistentNotification() }
+    }
+  }
 
+  // ── Shared storage sync ───────────────────────────────────────────────────
+  // Called on every foreground. If MERWidget's EndMEREventIntent ran while the
+  // app was backgrounded/locked, the shared suite has the end-event data but
+  // Flutter's standard UserDefaults does not. Detect and reconcile here.
+  private func syncFromSharedIfNeeded() {
+    guard let shared = UserDefaults(suiteName: kAppGroupId) else { return }
+    let standard = UserDefaults.standard
+
+    let sharedActive   = shared.string(forKey: kSharedActiveKey)
+    let standardActive = standard.string(forKey: kActiveEventKey)
+
+    if standardActive != nil && sharedActive == nil {
+      // Widget intent ended the event while app was not running — sync records
+      if let sharedRecs = shared.string(forKey: kSharedRecords) {
+        standard.set(sharedRecs, forKey: kStorageKey)
+      }
+      standard.removeObject(forKey: kActiveEventKey)
+      standard.synchronize()
+      if #available(iOS 16.2, *) { endLiveActivity() }
+    }
+  }
+
+  private func restorePersistentNotification() {
+    let defaults = UserDefaults.standard
+    if let activeRaw = defaults.string(forKey: kActiveEventKey),
+       let data = activeRaw.data(using: .utf8),
+       let active = try? JSONSerialization.jsonObject(with: data) as? NSDictionary,
+       let startIso = active["startIso"] as? String,
+       let startDate = ISO8601DateFormatter().date(from: startIso) {
+      if Date().timeIntervalSince(startDate) >= 30 * 60 {
+        defaults.removeObject(forKey: kActiveEventKey)
+        defaults.synchronize()
+        if let shared = UserDefaults(suiteName: kAppGroupId) {
+          shared.removeObject(forKey: kSharedActiveKey)
+          shared.synchronize()
+        }
+        if #available(iOS 16.2, *) { endLiveActivity() }
+        showPersistentNormalNotification()
+      } else {
+        showPersistentActiveNotification(startIso: startIso)
+      }
+    } else {
+      showPersistentNormalNotification()
+    }
+  }
+
+  // ── Live Activity helpers ─────────────────────────────────────────────────
+
+  @available(iOS 16.2, *)
+  private func startLiveActivity(eventId: String, startIso: String) {
+    let attributes = MERActivityAttributes()
+    let state      = MERActivityAttributes.ContentState(eventId: eventId, startIso: startIso)
+    let content    = ActivityContent(state: state, staleDate: nil)
+    _ = try? Activity<MERActivityAttributes>.request(attributes: attributes, content: content)
+  }
+
+  @available(iOS 16.2, *)
+  private func endLiveActivity() {
+    Task {
+      for activity in Activity<MERActivityAttributes>.activities {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+  }
+
+  // ── Native category registration ──────────────────────────────────────────
   private func registerNativeNotificationCategories() {
     let startAction = UNNotificationAction(
       identifier: kBtnStart,
       title: "Log Event Now",
-      options: []  // background — no foreground, no authentication required
+      options: []
     )
     let endAction = UNNotificationAction(
       identifier: kBtnEnd,
@@ -114,8 +163,6 @@ import shared_preferences_foundation
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    // Forward to awesome_notifications so it can show notifications
-    // while the app is in the foreground.
     if let prev = previousDelegate {
       prev.userNotificationCenter?(center, willPresent: notification, withCompletionHandler: completionHandler)
     } else {
@@ -130,16 +177,10 @@ import shared_preferences_foundation
   ) {
     switch response.actionIdentifier {
     case kBtnStart:
-      // Handle natively — writes to UserDefaults directly so data is saved
-      // even if the Dart VM is not running (locked screen, release build).
-      handleQuickLogStart()
-      completionHandler()
+      handleQuickLogStart(completion: completionHandler)
     case kBtnEnd:
-      handleQuickLogEnd()
-      completionHandler()
+      handleQuickLogEnd(completion: completionHandler)
     default:
-      // Forward everything else (notification body tap, dismiss, etc.)
-      // to awesome_notifications so Dart-side routing still works.
       if let prev = previousDelegate {
         prev.userNotificationCenter?(center, didReceive: response, withCompletionHandler: completionHandler)
       } else {
@@ -150,103 +191,132 @@ import shared_preferences_foundation
 
   // ── Action handlers ───────────────────────────────────────────────────────
 
-  private func handleQuickLogStart() {
-    let defaults = UserDefaults.standard
-    let now = Date()
-    let id = UUID().uuidString
+  private func handleQuickLogStart(completion: @escaping () -> Void) {
+    let standard = UserDefaults.standard
+    let shared   = UserDefaults(suiteName: kAppGroupId)
+    let now  = Date()
+    let id   = UUID().uuidString
     let isoNow = ISO8601DateFormatter().string(from: now)
 
-    // Build a minimal EventRecord matching Dart's EventRecord.toMap() format
-    let record: [String: Any] = [
-      "id": id,
-      "timestamp": isoNow,
-      "duration": "lt1",
-      "feelings": [String](),
-      "triggers": [String](),
-      "referralRequired": false,
-      "notes": "",
-      "eventType": "seizure",
-      "severity": "mild",
-    ]
+    let record = NSMutableDictionary()
+    record["id"]               = id
+    record["timestamp"]        = isoNow
+    record["duration"]         = "lt1"
+    record["feelings"]         = NSArray()
+    record["triggers"]         = NSArray()
+    record["referralRequired"] = NSNumber(value: false)
+    record["notes"]            = ""
+    record["eventType"]        = "seizure"
+    record["severity"]         = "mild"
 
-    // Prepend to the stored list
-    var list: [[String: Any]] = []
-    if let raw = defaults.string(forKey: kStorageKey),
+    // Prepend to standard (Flutter) storage
+    var list = NSMutableArray()
+    if let raw = standard.string(forKey: kStorageKey),
        let data = raw.data(using: .utf8),
-       let decoded = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
-      list = decoded
+       let decoded = try? JSONSerialization.jsonObject(with: data) as? NSArray {
+      list = NSMutableArray(array: decoded)
     }
     list.insert(record, at: 0)
     if let encoded = try? JSONSerialization.data(withJSONObject: list),
        let str = String(data: encoded, encoding: .utf8) {
-      defaults.set(str, forKey: kStorageKey)
+      standard.set(str, forKey: kStorageKey)
+      shared?.set(str, forKey: kSharedRecords)
     }
 
-    // Mark the active event
-    let active: [String: String] = ["id": id, "startIso": isoNow]
+    // Mark active event in both suites
+    let active: NSDictionary = ["id": id, "startIso": isoNow]
     if let encoded = try? JSONSerialization.data(withJSONObject: active),
        let str = String(data: encoded, encoding: .utf8) {
-      defaults.set(str, forKey: kActiveEventKey)
+      standard.set(str, forKey: kActiveEventKey)
+      shared?.set(str, forKey: kSharedActiveKey)
     }
-    defaults.synchronize()
+    standard.synchronize()
+    shared?.synchronize()
+
+    // Start Live Activity (iOS 16.2+)
+    if #available(iOS 16.2, *) {
+      startLiveActivity(eventId: id, startIso: isoNow)
+    }
 
     let fmt = DateFormatter()
     fmt.dateFormat = "h:mm a"
-    showPersistentActiveNotification(startTimeStr: fmt.string(from: now))
+    scheduleActiveNotification(startTimeStr: fmt.string(from: now), completion: completion)
   }
 
-  private func handleQuickLogEnd() {
-    let defaults = UserDefaults.standard
+  private func handleQuickLogEnd(completion: @escaping () -> Void) {
+    let standard = UserDefaults.standard
+    let shared   = UserDefaults(suiteName: kAppGroupId)
     var elapsedStr = ""
 
-    if let activeRaw = defaults.string(forKey: kActiveEventKey),
+    if let activeRaw = standard.string(forKey: kActiveEventKey),
        let data = activeRaw.data(using: .utf8),
-       let active = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+       let active = try? JSONSerialization.jsonObject(with: data) as? NSDictionary,
        let eventId = active["id"] as? String,
        let startIso = active["startIso"] as? String,
        let startTime = ISO8601DateFormatter().date(from: startIso) {
 
       let endTime = Date()
       let secs = max(0, Int(endTime.timeIntervalSince(startTime)))
-      let m = secs / 60
-      let s = secs % 60
+      let m = secs / 60, s = secs % 60
       elapsedStr = m == 0 ? "\(s)s" : (s == 0 ? "\(m)m" : "\(m)m \(s)s")
-
       let duration = secs < 60 ? "lt1" : (secs < 300 ? "oneToFive" : "gt5")
 
-      if let raw = defaults.string(forKey: kStorageKey),
-         let listData = raw.data(using: .utf8),
-         var list = try? JSONSerialization.jsonObject(with: listData) as? [[String: Any]] {
-        if let idx = list.firstIndex(where: { ($0["id"] as? String) == eventId }) {
-          list[idx]["duration"] = duration
+      func updateList(_ raw: String?) -> String? {
+        guard let raw = raw,
+              let listData = raw.data(using: .utf8),
+              let decoded = try? JSONSerialization.jsonObject(with: listData) as? NSArray else { return nil }
+        let list = NSMutableArray(array: decoded)
+        for i in 0..<list.count {
+          if let item = list[i] as? NSMutableDictionary, (item["id"] as? String) == eventId {
+            item["duration"] = duration; break
+          }
+          if let item = list[i] as? NSDictionary, (item["id"] as? String) == eventId {
+            let mutable = NSMutableDictionary(dictionary: item)
+            mutable["duration"] = duration; list[i] = mutable; break
+          }
         }
-        if let encoded = try? JSONSerialization.data(withJSONObject: list),
-           let str = String(data: encoded, encoding: .utf8) {
-          defaults.set(str, forKey: kStorageKey)
-        }
+        guard let enc = try? JSONSerialization.data(withJSONObject: list),
+              let str = String(data: enc, encoding: .utf8) else { return nil }
+        return str
+      }
+
+      if let updated = updateList(standard.string(forKey: kStorageKey)) {
+        standard.set(updated, forKey: kStorageKey)
+        shared?.set(updated, forKey: kSharedRecords)
       }
     }
 
-    defaults.removeObject(forKey: kActiveEventKey)
-    defaults.synchronize()
+    standard.removeObject(forKey: kActiveEventKey)
+    standard.synchronize()
+    shared?.removeObject(forKey: kSharedActiveKey)
+    shared?.synchronize()
+
+    if #available(iOS 16.2, *) { endLiveActivity() }
 
     showFeedbackNotification(elapsed: elapsedStr)
-    showPersistentNormalNotification()
+    showPersistentNormalNotification(completion: completion)
+  }
+
+  func endEvent() async {
+    handleQuickLogEnd(completion: {})
   }
 
   // ── Notification builders ─────────────────────────────────────────────────
 
-  func showPersistentNormalNotification() {
-    registerNativeNotificationCategories()
+  func showPersistentNormalNotification(completion: (() -> Void)? = nil) {
+    UNUserNotificationCenter.current().removeDeliveredNotifications(
+      withIdentifiers: [kPersistentId, kActivePersistentId]
+    )
     let content = UNMutableNotificationContent()
     content.title = "Medical Event Recorder"
     content.body = "Long-press this notification to log an event"
     content.sound = .none
     content.categoryIdentifier = kCategoryNormal
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
     let request = UNNotificationRequest(
-      identifier: kPersistentId, content: content, trigger: nil
+      identifier: kPersistentId, content: content, trigger: trigger
     )
-    UNUserNotificationCenter.current().add(request)
+    UNUserNotificationCenter.current().add(request) { _ in completion?() }
   }
 
   func showPersistentActiveNotification(startIso: String) {
@@ -258,20 +328,23 @@ import shared_preferences_foundation
     } else {
       timeStr = startIso
     }
-    showPersistentActiveNotification(startTimeStr: timeStr)
+    scheduleActiveNotification(startTimeStr: timeStr, completion: nil)
   }
 
-  private func showPersistentActiveNotification(startTimeStr: String) {
-    registerNativeNotificationCategories()
+  private func scheduleActiveNotification(startTimeStr: String, completion: (() -> Void)?) {
+    UNUserNotificationCenter.current().removeDeliveredNotifications(
+      withIdentifiers: [kPersistentId, kActivePersistentId]
+    )
     let content = UNMutableNotificationContent()
     content.title = "Event in progress · \(startTimeStr)"
     content.body = "Tap \"Event Ended\" when the event is over"
     content.sound = .none
     content.categoryIdentifier = kCategoryActive
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
     let request = UNNotificationRequest(
-      identifier: kPersistentId, content: content, trigger: nil
+      identifier: kActivePersistentId, content: content, trigger: trigger
     )
-    UNUserNotificationCenter.current().add(request)
+    UNUserNotificationCenter.current().add(request) { _ in completion?() }
   }
 
   private func showFeedbackNotification(elapsed: String) {
@@ -279,8 +352,7 @@ import shared_preferences_foundation
     content.title = elapsed.isEmpty ? "Event ended" : "Event ended · \(elapsed)"
     content.body = "Open MER to add details"
     content.sound = .default
-    // 1-second delay so it appears after the persistent notification update
-    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
     let request = UNNotificationRequest(
       identifier: kFeedbackId, content: content, trigger: trigger
     )
