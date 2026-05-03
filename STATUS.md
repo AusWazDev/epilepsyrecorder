@@ -2,6 +2,32 @@
 
 ---
 
+## Session: 3 May 2026 — Mac (Claude Code CLI)
+
+**MER v1.0.1 SUBMITTED to Apple App Store** ✅
+- Submitted 3 May 2026 — Waiting for Review
+- Submission ID: `063bcd45-6947-491e-b34b-b17b9e89e1e7`
+- Version 1.0.1, Build 2
+- iPhone + iPad (TARGETED_DEVICE_FAMILY = "1,2")
+- iPad screenshots uploaded (6 × 2048×2732 from Danny's iPad)
+
+**What was done:**
+- Bumped version to `1.0.1+2` in pubspec.yaml. Commit `6168af4`.
+- Changed `TARGETED_DEVICE_FAMILY` from `1` to `"1,2"` across all Xcode configurations (Debug/Profile/Release). Commit `6168af4`.
+- Built IPA with `flutter build ipa --release` (23.3MB)
+- Uploaded via Xcode Organizer → App Store Connect → Distribute App
+- Created v1.0.1 in App Store Connect, uploaded 6 iPad Pro 13" screenshots
+- Answered export compliance: None of the algorithms (no custom encryption)
+- Submitted for App Store review
+
+**Next:**
+- Await Apple review result (email to apps@notiva.com.au, up to 48 hours)
+- Update Change Register on Windows with session commits
+- Complete TestFlight internal testing setup — add Waz and Paula as Users in App Store Connect, then add to NOTIVA Internal group
+- Update Notiva privacy policy with Sentry disclosure
+
+---
+
 ## Session: 29 April 2026 — Mac (Claude Code CLI)
 
 **MER v1.0.0 SUBMITTED to Apple App Store** ✅
