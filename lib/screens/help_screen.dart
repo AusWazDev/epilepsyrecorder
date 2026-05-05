@@ -41,6 +41,7 @@ class _HelpScreenState extends State<HelpScreen> {
   Future<void> _openNotificationSettings() async {
     await AwesomeNotifications().showNotificationConfigPage();
     await _checkNotifications();
+    if (Platform.isIOS) await _checkShowPreviews();
   }
 
   @override
@@ -76,18 +77,33 @@ class _HelpScreenState extends State<HelpScreen> {
           children: [
 
             if (!_notificationsAllowed && !Platform.isWindows) ...[
-              _NotificationWarningCard(onOpenSettings: _openNotificationSettings),
-              const SizedBox(height: 16),
+              _WarningCard(
+                title:          'Notifications are disabled',
+                body:           'Tap the button below to open notification settings, then turn on notifications for MER.',
+                buttonLabel:    'Open Notification Settings',
+                onOpenSettings: _openNotificationSettings,
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            if (!_showPreviewsAlways && Platform.isIOS) ...[
+              _WarningCard(
+                title:          'Lock screen access not configured',
+                body:           'To start and stop events from the lock screen without unlocking your phone, tap the button below and set Show Previews to Always.',
+                buttonLabel:    'Open Notification Settings',
+                onOpenSettings: _openNotificationSettings,
+              ),
+              const SizedBox(height: 12),
             ],
 
             _Section(
               title: 'RECORDING EVENTS',
               children: const [
                 _HelpRow(
-                  icon:  Icons.circle,
+                  icon:      Icons.circle,
                   iconColor: Color(0xFFD32F2F),
-                  title: 'Quick record',
-                  body:  'Tap the red Record Event button to instantly log an event with the current timestamp.',
+                  title:     'Quick record',
+                  body:      'Tap the red Record Event button to instantly log an event with the current timestamp.',
                 ),
                 _HelpRow(
                   icon:  Icons.tune,
@@ -95,9 +111,10 @@ class _HelpScreenState extends State<HelpScreen> {
                   body:  'Use the blue Record with details button to add notes, duration, triggers, and severity before saving.',
                 ),
                 _HelpRow(
-                  icon:  Icons.edit_outlined,
-                  title: 'Edit a record',
-                  body:  'Tap any event in the list to open it and make changes. Tap the ⋮ menu on the event card for more options.',
+                  icon:   Icons.edit_outlined,
+                  title:  'Edit a record',
+                  body:   'Tap any event in the list to open it and make changes. Tap the ⋮ menu on the event card for more options.',
+                  isLast: true,
                 ),
               ],
             ),
@@ -112,9 +129,9 @@ class _HelpScreenState extends State<HelpScreen> {
                   body:  'Tap ⋮ (top right) → History to see all past events with edit and delete options.',
                 ),
                 _HelpRow(
-                  icon:  Icons.download_outlined,
-                  title: 'Export to CSV',
-                  body:  'Tap ⋮ → Export CSV (all events) to share your event data as a spreadsheet file.',
+                  icon:   Icons.download_outlined,
+                  title:  'Export to CSV',
+                  body:   'Tap ⋮ → Export CSV (all events) to share your event data as a spreadsheet file.',
                   isLast: true,
                 ),
               ],
@@ -128,49 +145,49 @@ class _HelpScreenState extends State<HelpScreen> {
                 const _HelpRow(
                   icon:  Icons.notifications_outlined,
                   title: 'What is it?',
-                  body:  'MER keeps a notification in your notification shade at all times. You can log an event directly from there — without unlocking your phone.',
+                  body:  'MER keeps a notification available at all times so you can log events without opening the app — even from the lock screen.',
                 ),
                 if (Platform.isIOS) ...[
                   const _HelpRow(
                     icon:  Icons.swipe_down_outlined,
                     title: 'Starting an event',
-                    body:  'Pull down the notification shade and long-press the MER notification to reveal the action button, then tap "Log Event Now". A timer starts immediately — no need to open the app.',
+                    body:  'Pull down from the top of your screen and long-press the MER notification to reveal the action button, then tap "Log Event Now". A timer starts immediately.',
                   ),
                   const _HelpRow(
                     icon:  Icons.lock_outline,
                     title: 'Starting from the lock screen',
-                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now" — your phone stays locked. Check the Lock screen access status below to confirm your notification settings are configured correctly.',
+                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now" — your phone stays locked.',
                   ),
                   const _HelpRow(
                     icon:  Icons.timer_outlined,
                     title: 'Live Activity timer',
-                    body:  'After starting an event, a live timer appears on the Dynamic Island or as a banner on the lock screen showing how long the event has been running. When the event is over, tap "Event Ended" directly on the timer — your phone can stay locked.',
+                    body:  'After starting an event, a live timer appears on the Dynamic Island or as a banner on the lock screen. When the event is over, tap "Event Ended" on the timer — your phone can stay locked.',
                   ),
                   const _HelpRow(
                     icon:  Icons.open_in_new,
                     title: 'Reviewing the event',
-                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap that notification to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
+                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
                   ),
                 ] else ...[
                   const _HelpRow(
                     icon:  Icons.swipe_down_outlined,
-                    title: 'Using from the notification shade',
-                    body:  'Pull down from the top of your screen. Find the MER notification and tap "Log Event Now" to start recording. Tap "Event Ended" to stop and save the duration.',
+                    title: 'Starting an event',
+                    body:  'Pull down from the top of your screen, find the MER notification, and tap "Log Event Now". Tap "Event Ended" when it\'s over to save the duration.',
                   ),
                   const _HelpRow(
                     icon:  Icons.lock_outline,
                     title: 'Using from the lock screen',
-                    body:  'Go to Settings → Notifications → Notifications on lock screen → Show all notifications. Once set, pull down the shade on your lock screen to access MER without unlocking.',
+                    body:  'Go to Settings → Notifications → Notifications on lock screen → Show all notifications. Once set, pull down from the top of your lock screen to access MER without unlocking.',
                   ),
                 ],
                 const _HelpRow(
                   icon:  Icons.refresh,
                   title: 'If the notification disappears',
-                  body:  'The notification can be swiped away accidentally. Simply open the MER app and it will restore automatically.',
+                  body:  'The notification can be swiped away accidentally. Open the MER app and it will restore automatically.',
                 ),
                 if (Platform.isIOS)
                   _HelpRow(
-                    icon:  _showPreviewsAlways
+                    icon:      _showPreviewsAlways
                         ? Icons.lock_open_outlined
                         : Icons.lock_outlined,
                     iconColor: _showPreviewsAlways
@@ -179,7 +196,7 @@ class _HelpScreenState extends State<HelpScreen> {
                     title: 'Lock screen access',
                     body:  _showPreviewsAlways
                         ? 'Show Previews is set to "Always" — lock screen notification actions are available without unlocking.'
-                        : 'Show Previews is not set to "Always". To start events from the lock screen without unlocking, go to iPhone Settings → Notifications → Medical Event Recorder → Show Previews → Always.',
+                        : 'Show Previews is not configured. Use the button at the top of this page to open notification settings and set Show Previews to Always.',
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -209,16 +226,16 @@ class _HelpScreenState extends State<HelpScreen> {
                   ),
                 if (!Platform.isWindows)
                   _HelpRow(
-                    icon:  _notificationsAllowed
+                    icon:      _notificationsAllowed
                         ? Icons.notifications_active_outlined
                         : Icons.notifications_off_outlined,
                     iconColor: _notificationsAllowed
                         ? const Color(0xFF388E3C)
                         : const Color(0xFFF57C00),
-                    title: 'Notification status',
-                    body:  _notificationsAllowed
+                    title:  'Notification status',
+                    body:   _notificationsAllowed
                         ? 'Notifications are enabled for MER.'
-                        : 'Use the button at the top of this page to enable notifications. Once enabled, close and reopen MER to restore the quick-log notification.',
+                        : 'Tap the button at the top of this page to open notification settings and turn on notifications for MER.',
                     isLast: true,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -257,11 +274,20 @@ class _HelpScreenState extends State<HelpScreen> {
   }
 }
 
-// ── Notification warning banner ───────────────────────────────────────────────
+// ── Warning banner (notifications disabled / lock screen not configured) ───────
 
-class _NotificationWarningCard extends StatelessWidget {
+class _WarningCard extends StatelessWidget {
+  final String       title;
+  final String       body;
+  final String       buttonLabel;
   final VoidCallback onOpenSettings;
-  const _NotificationWarningCard({required this.onOpenSettings});
+
+  const _WarningCard({
+    required this.title,
+    required this.body,
+    required this.buttonLabel,
+    required this.onOpenSettings,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +308,7 @@ class _NotificationWarningCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Notifications are disabled',
+                  title,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color:      const Color(0xFFE65100),
@@ -290,7 +316,7 @@ class _NotificationWarningCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Tap the button below to open MER\'s notification settings, then toggle the Notifications switch to ON.',
+                  body,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color:  const Color(0xFFBF360C),
                     height: 1.4,
@@ -300,7 +326,7 @@ class _NotificationWarningCard extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onOpenSettings,
                   icon:  const Icon(Icons.settings_outlined, size: 16),
-                  label: const Text('Open Notification Settings'),
+                  label: Text(buttonLabel),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFF57C00),
                     padding: const EdgeInsets.symmetric(
