@@ -139,7 +139,7 @@ class _HelpScreenState extends State<HelpScreen> {
                   const _HelpRow(
                     icon:  Icons.lock_outline,
                     title: 'Starting from the lock screen',
-                    body:  'Go to iPhone Settings → Notifications → Medical Event Recorder → Show Previews → Always. Long-press the MER notification on your lock screen and tap "Log Event Now" — your phone stays locked.',
+                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now" — your phone stays locked. Check the Lock screen access status below to confirm your notification settings are configured correctly.',
                   ),
                   const _HelpRow(
                     icon:  Icons.timer_outlined,
