@@ -53,6 +53,7 @@ struct EndMEREventIntent: AppIntent {
                     shared.set(str, forKey: kSharedRecords)
                 }
             }
+
         }
 
         shared.removeObject(forKey: kSharedActive)
@@ -77,17 +78,6 @@ struct EndMEREventIntent: AppIntent {
             identifier: "mer_feedback_intent",
             content:    feedback,
             trigger:    UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)))
-
-        let normal = UNMutableNotificationContent()
-        normal.title              = "Medical Event Recorder"
-        normal.body               = "Long-press this notification to log an event"
-        normal.sound              = nil
-        normal.categoryIdentifier = "MER_NORMAL"
-        center.removeDeliveredNotifications(withIdentifiers: ["1"])
-        try? await center.add(UNNotificationRequest(
-            identifier: "1",
-            content:    normal,
-            trigger:    UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)))
 
         return .result()
     }

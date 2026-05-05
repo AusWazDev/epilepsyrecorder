@@ -33,6 +33,8 @@ enum _HomeMenuAction {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  static const _navChannel = MethodChannel('au.com.notiva.mer/navigation');
+
   final _store = EventStore();
   final _uuid  = const Uuid();
 
@@ -45,9 +47,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _navChannel.setMethodCallHandler(_handleNativeCall);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadRecords(initial: true);
+      // Cold-start fallback: feedback notification tapped before Flutter was ready
+      try {
+        final shouldOpen = await _navChannel.invokeMethod<bool>('getPendingOpenLatest');
+        if (shouldOpen == true && mounted && _records.isNotEmpty) {
+          _openLogScreen(existing: _records.first);
+        }
+      } catch (_) {}
     });
+  }
+
+  Future<dynamic> _handleNativeCall(MethodCall call) async {
+    if (call.method == 'openLatestEvent') {
+      if (!mounted) return;
+      await _loadRecords();
+      if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+    }
   }
 
   @override
@@ -79,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _activeEvent = active;
       if (initial) _loaded = true;
     });
+
   }
 
   Future<void> _endActiveEvent() async {
@@ -166,6 +185,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
 
     await _persist();
+    // Reschedule the persistent notification — app stays in foreground so
+    // applicationDidBecomeActive won't fire to do this automatically.
+    try { await _navChannel.invokeMethod<void>('restoreNotification'); } catch (_) {}
   }
 
   // ── HISTORY ──

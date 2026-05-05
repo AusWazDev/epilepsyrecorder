@@ -26,7 +26,9 @@ import shared_preferences_foundation
   private let kCategoryNormal      = "MER_NORMAL"
   private let kCategoryActive      = "MER_ACTIVE"
 
-  private weak var previousDelegate: UNUserNotificationCenterDelegate?
+  // ── Navigation ────────────────────────────────────────────────────────────
+  private let kPendingOpenLatest = "mer_open_latest_event"
+  private var navChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
@@ -42,16 +44,36 @@ import shared_preferences_foundation
 
     let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    previousDelegate = UNUserNotificationCenter.current().delegate
     UNUserNotificationCenter.current().delegate = self
     registerNativeNotificationCategories()
+
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(
+        name: "au.com.notiva.mer/navigation",
+        binaryMessenger: controller.binaryMessenger
+      )
+      channel.setMethodCallHandler { [weak self] call, result in
+        switch call.method {
+        case "getPendingOpenLatest":
+          let key   = self?.kPendingOpenLatest ?? ""
+          let flag  = UserDefaults.standard.bool(forKey: key)
+          UserDefaults.standard.removeObject(forKey: key)
+          result(flag)
+        case "restoreNotification":
+          DispatchQueue.main.async { self?.restorePersistentNotification() }
+          result(nil)
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+      navChannel = channel
+    }
 
     return result
   }
 
   override func applicationDidBecomeActive(_ application: UIApplication) {
     super.applicationDidBecomeActive(application)
-    previousDelegate = UNUserNotificationCenter.current().delegate
     UNUserNotificationCenter.current().delegate = self
     registerNativeNotificationCategories()
     syncFromSharedIfNeeded()
@@ -101,7 +123,15 @@ import shared_preferences_foundation
         if #available(iOS 16.2, *) { endLiveActivity() }
         showPersistentNormalNotification()
       } else {
-        showPersistentActiveNotification(startIso: startIso)
+        if #available(iOS 17.0, *) {
+          // iOS 17+: Live Activity is the end-event UI — restore it if gone
+          if Activity<MERActivityAttributes>.activities.isEmpty,
+             let eventId = active["id"] as? String {
+            startLiveActivity(eventId: eventId, startIso: startIso)
+          }
+        } else {
+          showPersistentActiveNotification(startIso: startIso)
+        }
       }
     } else {
       showPersistentNormalNotification()
@@ -163,11 +193,7 @@ import shared_preferences_foundation
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    if let prev = previousDelegate {
-      prev.userNotificationCenter?(center, willPresent: notification, withCompletionHandler: completionHandler)
-    } else {
-      completionHandler([.alert, .sound])
-    }
+    completionHandler([.alert, .sound])
   }
 
   override func userNotificationCenter(
@@ -175,17 +201,34 @@ import shared_preferences_foundation
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
+    let notifId = response.notification.request.identifier
     switch response.actionIdentifier {
     case kBtnStart:
       handleQuickLogStart(completion: completionHandler)
     case kBtnEnd:
       handleQuickLogEnd(completion: completionHandler)
-    default:
-      if let prev = previousDelegate {
-        prev.userNotificationCenter?(center, didReceive: response, withCompletionHandler: completionHandler)
-      } else {
-        completionHandler()
+    case UNNotificationDefaultActionIdentifier
+         where notifId == kFeedbackId || notifId == "mer_feedback_intent":
+      // Directly sync the App Group records to standard UserDefaults so Flutter
+      // always reads the duration that EndMEREventIntent wrote, regardless of
+      // whether syncFromSharedIfNeeded ran with the right conditions.
+      let standard = UserDefaults.standard
+      if let shared = UserDefaults(suiteName: kAppGroupId),
+         let sharedRecs = shared.string(forKey: kSharedRecords) {
+        standard.set(sharedRecs, forKey: kStorageKey)
       }
+      standard.removeObject(forKey: kActiveEventKey)
+      standard.synchronize()
+      if let channel = navChannel {
+        channel.invokeMethod("openLatestEvent", arguments: nil)
+      } else {
+        // Cold start — Flutter not ready yet; set flag for getPendingOpenLatest poll
+        standard.set(true, forKey: kPendingOpenLatest)
+        standard.synchronize()
+      }
+      completionHandler()
+    default:
+      completionHandler()
     }
   }
 
@@ -238,9 +281,14 @@ import shared_preferences_foundation
       startLiveActivity(eventId: id, startIso: isoNow)
     }
 
-    let fmt = DateFormatter()
-    fmt.dateFormat = "h:mm a"
-    scheduleActiveNotification(startTimeStr: fmt.string(from: now), completion: completion)
+    if #available(iOS 17.0, *) {
+      // Live Activity button handles end — no active notification needed
+      completion()
+    } else {
+      let fmt = DateFormatter()
+      fmt.dateFormat = "h:mm a"
+      scheduleActiveNotification(startTimeStr: fmt.string(from: now), completion: completion)
+    }
   }
 
   private func handleQuickLogEnd(completion: @escaping () -> Void) {

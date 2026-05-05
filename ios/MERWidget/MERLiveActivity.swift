@@ -10,14 +10,19 @@ struct MERLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label("Event in progress", systemImage: "waveform.path.ecg")
-                        .font(.callout)
-                        .foregroundColor(.white)
-                        .labelStyle(.titleAndIcon)
+                    HStack(spacing: 6) {
+                        Image("MERIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        Text("Event in progress")
+                            .font(.callout)
+                            .foregroundColor(.white)
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if #available(iOS 17.0, *),
-                       let startDate = ISO8601DateFormatter().date(from: context.state.startIso) {
+                    if #available(iOS 17.0, *) {
                         Button(intent: EndMEREventIntent()) {
                             Label("End", systemImage: "stop.circle.fill")
                                 .font(.caption.bold())
@@ -58,11 +63,16 @@ struct MERLockScreenView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "waveform.path.ecg")
-                .font(.title2)
-                .foregroundColor(.orange)
+            Image("MERIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
 
             VStack(alignment: .leading, spacing: 2) {
+                Text("MER")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.7))
                 Text("Event in progress")
                     .font(.headline)
                     .foregroundColor(.white)
