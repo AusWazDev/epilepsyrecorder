@@ -2,6 +2,30 @@
 
 ---
 
+## Session: 6 May 2026 — Mac (Claude Code CLI)
+
+**CR-42: Lock screen notification — iOS complete** ✅
+- Simplified notification tap navigation: signal-based (`openLatestEvent`) — no ID passing needed; Flutter opens `_records.first` after reload
+- Fixed reliable duration capture: `didReceive` now explicitly syncs App Group records → `UserDefaults.standard` before signalling Flutter; eliminates dependency on `syncFromSharedIfNeeded`
+- Sentry release + environment tags added to `main.dart` (release: `au.com.notiva.medicaleventrecorder@1.0.1+2`, environment: production)
+- Tested 5 consecutive runs on both Wazza's iPhone 15 Pro Max and Danny's iPad Pro — all passed ✅
+- Commits: `285bb74`, `17a0a4b`, `2b18cdd` (3 commits, 3 ahead of origin)
+- Sentry MCP authenticated via OAuth on Mac (HTTP transport, user scope)
+
+**Sentry issues triaged:**
+- MEDICAL-EVENT-RECORDER-2, -3, -4 — confirmed as test run crashes from CR-42 development (adhoc build, Danny's iPad, May 3). Not production. Safe to archive.
+- SOUNDFIND-3 + SOUNDFIND-4 — unchanged Electron SW issues, no new events
+
+**Next (Windows session):**
+- Push MER branch to origin (3 commits ahead)
+- Add CR-42 entries to Change Register (OneDrive)
+- Archive MER Sentry issues -2, -3, -4 in Sentry dashboard
+- Update ClickUp handoff doc
+- Still pending: dSYM upload setup for Sentry (needs sentry-cli or Xcode build phase)
+- Still pending: Notiva privacy policy update for Sentry disclosure
+
+---
+
 ## Session: 3 May 2026 — Mac (Claude Code CLI)
 
 **MER v1.0.1 SUBMITTED to Apple App Store** ✅
@@ -139,6 +163,7 @@
 | CR-38 | Change | iOS feedback notification wording | `fc01e97` |
 | DEF-36 | Defect fix | Revert iOS notification action type to Default — SilentBackgroundAction unreliable in release builds | `9877054` |
 | CR-41 | Change | Sentry crash reporting — sentry_flutter added, SentryFlutter.init() wraps appRunner in main.dart, DSN hardcoded for test builds | `cab928b` |
+| CR-42 | Change | iOS lock screen notification actions — Live Activity, consecutive event support, reliable duration capture, simplified navigation signal | `285bb74`, `17a0a4b`, `2b18cdd` |
 
 Also note earlier commits not yet in Change Register:
 
