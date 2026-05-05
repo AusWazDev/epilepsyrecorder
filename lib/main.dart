@@ -13,7 +13,7 @@ void main() async {
   await SentryFlutter.init(
     (options) {
       options.dsn = 'https://48b157764abd294968a63ff25dfb1a49@o4511281612849152.ingest.us.sentry.io/4511284989394944';
-      options.release = 'au.com.notiva.medicaleventrecorder@1.0.1+2';
+      options.release = 'au.com.notiva.medicaleventrecorder@1.0.2+3';
       options.environment = 'production';
       options.tracesSampleRate = 0.1;
       options.sendDefaultPii = false;

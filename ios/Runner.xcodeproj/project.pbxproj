@@ -251,6 +251,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				FF0000000000000000000019 /* Embed App Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
+				49199A0DF28845FAB5747A7B /* Upload dSYMs to Sentry */,
 				D6E34461F14A057E020E8198 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
@@ -419,6 +420,20 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		49199A0DF28845FAB5747A7B /* Upload dSYMs to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Upload dSYMs to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry dSYM upload - not a Release build\"\n  exit 0\nfi\n\n/usr/local/bin/sentry-cli debug-files upload \\\n  --org bedlin-pty-ltd \\\n  --project medical-event-recorder \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" || echo \"warning: Sentry dSYM upload failed - check auth token in ~/.sentryclirc\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

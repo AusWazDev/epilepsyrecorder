@@ -1,5 +1,5 @@
 const String kAppName           = 'Medical Event Recorder';
-const String kAppVersion        = '1.0.0';
+const String kAppVersion        = '1.0.2';
 const String kCompanyName       = 'Notiva';
 
 // Bump this string whenever the disclaimer or privacy policy changes.
