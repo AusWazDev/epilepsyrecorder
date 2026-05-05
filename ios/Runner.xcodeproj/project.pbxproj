@@ -367,6 +367,20 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
+		49199A0DF28845FAB5747A7B /* Upload dSYMs to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Upload dSYMs to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry dSYM upload - not a Release build\"\n  exit 0\nfi\n\n/usr/local/bin/sentry-cli debug-files upload \\\n  --org bedlin-pty-ltd \\\n  --project medical-event-recorder \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" || echo \"warning: Sentry dSYM upload failed - check auth token in ~/.sentryclirc\"\n";
+		};
 		601FDECE0C14249928BA8D69 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -420,20 +434,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
 			showEnvVarsInLog = 0;
-		};
-		49199A0DF28845FAB5747A7B /* Upload dSYMs to Sentry */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Upload dSYMs to Sentry";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Sentry dSYM upload - not a Release build\"\n  exit 0\nfi\n\n/usr/local/bin/sentry-cli debug-files upload \\\n  --org bedlin-pty-ltd \\\n  --project medical-event-recorder \\\n  \"${DWARF_DSYM_FOLDER_PATH}\" || echo \"warning: Sentry dSYM upload failed - check auth token in ~/.sentryclirc\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

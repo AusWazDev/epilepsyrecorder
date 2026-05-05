@@ -9,20 +9,26 @@
 - Fixed reliable duration capture: `didReceive` now explicitly syncs App Group records → `UserDefaults.standard` before signalling Flutter; eliminates dependency on `syncFromSharedIfNeeded`
 - Sentry release + environment tags added to `main.dart` (release: `au.com.notiva.medicaleventrecorder@1.0.1+2`, environment: production)
 - Tested 5 consecutive runs on both Wazza's iPhone 15 Pro Max and Danny's iPad Pro — all passed ✅
-- Commits: `285bb74`, `17a0a4b`, `2b18cdd` (3 commits, 3 ahead of origin)
+- Commits: `285bb74`, `17a0a4b`, `2b18cdd` + 8 further CR-42 commits
 - Sentry MCP authenticated via OAuth on Mac (HTTP transport, user scope)
 
-**Sentry issues triaged:**
-- MEDICAL-EVENT-RECORDER-2, -3, -4 — confirmed as test run crashes from CR-42 development (adhoc build, Danny's iPad, May 3). Not production. Safe to archive.
-- SOUNDFIND-3 + SOUNDFIND-4 — unchanged Electron SW issues, no new events
+**Sentry work complete** ✅
+- MEDICAL-EVENT-RECORDER-2, -3, -4 — confirmed test artifacts (adhoc builds, Danny's iPad, 3–5 May). Archived in Sentry dashboard.
+- Notiva privacy policy — Sentry disclosure already live at notiva.com.au/medical-event-recorder/privacy/. No changes needed.
+- dSYM upload build phase added to `ios/Runner.xcodeproj/project.pbxproj` (UUID 49199A0DF28845FAB5747A7B). sentry-cli 3.4.1 at /usr/local/bin. Auth token (org:ci) in ~/.sentryclirc. 4 dSYMs confirmed uploaded on first build.
+
+**MER v1.0.2 built and submitted to Apple App Store** ✅
+- v1.0.1 confirmed live (released 5 May 2026)
+- Version bumped to 1.0.2+3. Fixed `kAppVersion` splash screen bug (was displaying 1.0.0). Sentry release tag updated.
+- MERWidget/Assets.xcassets widget icon assets committed (omitted from CR-42).
+- All commits pushed to origin from Mac.
+- IPA built via `flutter build ipa --release`. Uploaded via Xcode Organizer.
+- **Submitted — Waiting for Review.** Submission ID: `baa1f74d-c017-4878-8767-3dcdef69156b`. 6 May 2026 at 5:20 AM. Automatic release, 7-day phased rollout.
+- Commit: `192ae40`
 
 **Next (Windows session):**
-- Push MER branch to origin (3 commits ahead)
-- Add CR-42 entries to Change Register (OneDrive)
-- Archive MER Sentry issues -2, -3, -4 in Sentry dashboard
-- Update ClickUp handoff doc
-- Still pending: dSYM upload setup for Sentry (needs sentry-cli or Xcode build phase)
-- Still pending: Notiva privacy policy update for Sentry disclosure
+- Add CR-42 + v1.0.2 entries to Change Register (OneDrive)
+- Set up TestFlight internal testing — add Waz + Paula in App Store Connect → NOTIVA Internal group (after v1.0.2 review clears)
 
 ---
 
@@ -163,7 +169,8 @@
 | CR-38 | Change | iOS feedback notification wording | `fc01e97` |
 | DEF-36 | Defect fix | Revert iOS notification action type to Default — SilentBackgroundAction unreliable in release builds | `9877054` |
 | CR-41 | Change | Sentry crash reporting — sentry_flutter added, SentryFlutter.init() wraps appRunner in main.dart, DSN hardcoded for test builds | `cab928b` |
-| CR-42 | Change | iOS lock screen notification actions — Live Activity, consecutive event support, reliable duration capture, simplified navigation signal | `285bb74`, `17a0a4b`, `2b18cdd` |
+| CR-42 | Change | iOS lock screen notification actions — Live Activity, consecutive event support, reliable duration capture, simplified navigation signal, help screen updates, home screen banner | `285bb74`, `17a0a4b`, `2b18cdd`, `6dac380`, `5cb044f`, `a82742d`, `6e0f4f4`, `48631d6`, `2f02365`, `55e3354`, `8f204df` |
+| v1.0.2 | Release | Version bump 1.0.1+2 → 1.0.2+3, fix kAppVersion splash bug, Sentry dSYM build phase, widget icon assets | `192ae40` |
 
 Also note earlier commits not yet in Change Register:
 
