@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,11 +44,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Map<String, dynamic>? _activeEvent;
   bool _loaded = false;
   bool _buttonFlash = false;
+  bool _notificationsAllowed = true;
+  bool _showPreviewsAlways   = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (!Platform.isWindows) _checkNotificationStatus();
     _navChannel.setMethodCallHandler(_handleNativeCall);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadRecords(initial: true);
@@ -79,8 +84,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _loadRecords();
       NotificationService.instance.restoreNotification();
+      if (!Platform.isWindows) _checkNotificationStatus();
     }
   }
+
+  Future<void> _checkNotificationStatus() async {
+    final allowed = await AwesomeNotifications().isNotificationAllowed();
+    bool previewsAlways = true;
+    if (Platform.isIOS) {
+      try {
+        final s = await _navChannel.invokeMethod<String>('getShowPreviewsSetting');
+        previewsAlways = s == 'always';
+      } catch (_) {}
+    }
+    if (mounted) setState(() {
+      _notificationsAllowed = allowed;
+      _showPreviewsAlways   = previewsAlways;
+    });
+  }
+
+  Future<void> _openNotificationSettings() async {
+    await AwesomeNotifications().showNotificationConfigPage();
+    if (!Platform.isWindows) _checkNotificationStatus();
+  }
+
+  void _openHelp() => Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => const HelpScreen()),
+  );
 
   Future<void> _loadRecords({bool initial = false}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -101,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _endActiveEvent() async {
+    if (Platform.isIOS) return; // iOS: Live Activity owns event end
     await NotificationService.instance.endEvent();
     await _loadRecords();
   }
@@ -353,12 +384,37 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
-                        // ── ACTIVE EVENT BANNER ──
-                        if (_activeEvent != null) ...[
+                        // ── SETTINGS NUDGE / ACTIVE EVENT BANNER ──
+                        if (!_notificationsAllowed && !Platform.isWindows) ...[
+                          _SettingsNudgeCard(
+                            icon:      Icons.notifications_off_outlined,
+                            iconColor: const Color(0xFFF57C00),
+                            title:    'Notifications are off',
+                            body:     'Quick log won\'t work until notifications are enabled.',
+                            bgColor:  const Color(0xFFFFF3E0),
+                            bdColor:  const Color(0xFFFFB74D),
+                            onOpenSettings: _openNotificationSettings,
+                            onHelp:         _openHelp,
+                          ),
+                          const SizedBox(height: 12),
+                        ] else if (!_showPreviewsAlways && Platform.isIOS) ...[
+                          _SettingsNudgeCard(
+                            icon:      Icons.lock_outlined,
+                            iconColor: const Color(0xFF1976D2),
+                            title:    'Lock screen access not configured',
+                            body:     'Set Show Previews to Always to log events without unlocking.',
+                            bgColor:  const Color(0xFFE3F2FD),
+                            bdColor:  const Color(0xFF90CAF9),
+                            onOpenSettings: _openNotificationSettings,
+                            onHelp:         _openHelp,
+                          ),
+                          const SizedBox(height: 12),
+                        ] else if (_activeEvent != null) ...[
                           _ActiveEventBanner(
-                            startTime: DateTime.parse(
+                            startTime:     DateTime.parse(
                                 _activeEvent!['startIso'] as String),
-                            onEnd: _endActiveEvent,
+                            onEnd:         _endActiveEvent,
+                            showEndButton: !Platform.isIOS,
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -491,8 +547,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 class _ActiveEventBanner extends StatefulWidget {
   final DateTime     startTime;
   final VoidCallback onEnd;
+  final bool         showEndButton;
 
-  const _ActiveEventBanner({required this.startTime, required this.onEnd});
+  const _ActiveEventBanner({
+    required this.startTime,
+    required this.onEnd,
+    this.showEndButton = true,
+  });
 
   @override
   State<_ActiveEventBanner> createState() => _ActiveEventBannerState();
@@ -563,18 +624,120 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: widget.onEnd,
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFD32F2F),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              textStyle: const TextStyle(
-                fontSize:   13,
-                fontWeight: FontWeight.w600,
+          if (widget.showEndButton) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: widget.onEnd,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                textStyle: const TextStyle(
+                  fontSize:   13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+              child: const Text('End Event'),
             ),
-            child: const Text('End Event'),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/* ===========================
+   SETTINGS NUDGE CARD
+   =========================== */
+
+class _SettingsNudgeCard extends StatelessWidget {
+  final IconData     icon;
+  final Color        iconColor;
+  final String       title;
+  final String       body;
+  final Color        bgColor;
+  final Color        bdColor;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onHelp;
+
+  const _SettingsNudgeCard({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.body,
+    required this.bgColor,
+    required this.bdColor,
+    required this.onOpenSettings,
+    required this.onHelp,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+      decoration: BoxDecoration(
+        color:        bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border:       Border.all(color: bdColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize:   13,
+                    fontWeight: FontWeight.w700,
+                    color:      iconColor,
+                  ),
+                ),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color:    iconColor.withValues(alpha: 0.85),
+                    height:   1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: onOpenSettings,
+                style: TextButton.styleFrom(
+                  foregroundColor: iconColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize:   12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: const Text('Open Settings'),
+              ),
+              TextButton(
+                onPressed: onHelp,
+                style: TextButton.styleFrom(
+                  foregroundColor: iconColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(fontSize: 11),
+                ),
+                child: const Text('Help →'),
+              ),
+            ],
           ),
         ],
       ),
