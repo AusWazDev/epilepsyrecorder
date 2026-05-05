@@ -401,8 +401,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           _SettingsNudgeCard(
                             icon:      Icons.lock_outlined,
                             iconColor: const Color(0xFF1976D2),
-                            title:    'Lock screen access not configured',
-                            body:     'Set Show Previews to Always to log events without unlocking.',
+                            title:    'Starting events from the lock screen requires a password',
+                            body:     'Set Show Previews to Always for instant lock screen logging — no authentication needed to start.',
                             bgColor:  const Color(0xFFE3F2FD),
                             bdColor:  const Color(0xFF90CAF9),
                             onOpenSettings: _openNotificationSettings,

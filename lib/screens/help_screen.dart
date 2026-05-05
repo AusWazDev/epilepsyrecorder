@@ -103,8 +103,8 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
 
             if (!_showPreviewsAlways && Platform.isIOS) ...[
               _WarningCard(
-                title:          'Lock screen access not configured',
-                body:           'To start and stop events from the lock screen without unlocking your phone, tap the button below and set Show Previews to Always.',
+                title:          'Starting events from the lock screen requires a password',
+                body:           'To log instantly without unlocking, tap the button below and set Show Previews to Always.',
                 buttonLabel:    'Open Notification Settings',
                 onOpenSettings: _openNotificationSettings,
               ),
@@ -171,7 +171,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   const _HelpRow(
                     icon:  Icons.lock_outline,
                     title: 'Starting from the lock screen',
-                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now" — your phone stays locked.',
+                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now". With Show Previews set to Always, no password is needed — the event starts immediately. Ending the event requires unlocking, which is the right time to add details.',
                   ),
                   const _HelpRow(
                     icon:  Icons.timer_outlined,
@@ -210,8 +210,8 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                         : const Color(0xFFF57C00),
                     title: 'Lock screen access',
                     body:  _showPreviewsAlways
-                        ? 'Show Previews is set to "Always" — lock screen notification actions are available without unlocking.'
-                        : 'Show Previews is not configured. Use the button at the top of this page to open notification settings and set Show Previews to Always.',
+                        ? 'Show Previews is set to "Always" — events can be started from the lock screen without a password.'
+                        : 'With default settings, starting an event from the lock screen requires a password. Use the button at the top of this page to set Show Previews to Always.',
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
