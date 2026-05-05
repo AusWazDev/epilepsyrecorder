@@ -172,6 +172,57 @@ Also note earlier commits not yet in Change Register:
 | iOS setup — awesome_notifications deployment target 15.0, Podfile, AppDelegate | `f693b57` |
 | Add quick-log notification service + Help screen | `b5980de` |
 
+## Notes for Windows Claude — Android Notification Path (CR-42 follow-up)
+
+### Background
+CR-42 gave iOS the full notification flow: Log Event Now → Live Activity timer → "Event Ended" → feedback notification → **tap feedback notification → MER opens directly to the edit screen**.
+
+The Android path (all in `lib/services/notification_service.dart`) handles start/end correctly but is missing the last step. On Android, tapping the "Event ended · Xm Ys — Open MER to add details" feedback notification opens MER to the home screen — the user then has to find and tap the event manually.
+
+### Android gap — two issues to fix
+
+**Issue 1: Feedback notification auto-dismisses in 4 seconds (too short for end-event)**
+In `_showFeedback()`, `timeoutAfter: Platform.isAndroid ? const Duration(seconds: 4) : null` applies to both start and end events. The 4-second window is fine for the "Event started" confirmation but too short for the "Event ended" notification that the user needs to tap.
+Fix: pass an optional `timeout` to `_showFeedback`, use `Duration(seconds: 4)` for start, `null` (or 30s) for end.
+
+**Issue 2: Tapping the end feedback notification does not navigate to the edit screen**
+Android `onActionReceived` runs in a background isolate — cannot invoke navChannel directly.
+Use the same SharedPreferences flag pattern as iOS cold-start (`kPendingOpenLatest`):
+
+1. In `_showFeedback()` (end-event call in `_handleEnd()`), add a payload:
+   ```dart
+   payload: {'action': 'openLatest'},
+   ```
+
+2. In `onActionReceived()`, add after the existing `_btnEnd` block:
+   ```dart
+   } else if (action.buttonKeyPressed.isEmpty &&
+              action.payload?['action'] == 'openLatest') {
+     final prefs = await SharedPreferences.getInstance();
+     await prefs.setBool('mer_open_latest_event', true);
+   }
+   ```
+   Note: `buttonKeyPressed.isEmpty` means the notification body was tapped (default action), not an action button.
+
+3. In `lib/screens/home_screen.dart`, `didChangeAppLifecycleState` already calls `_loadRecords()` on resume. After that call, add the flag check (Android only):
+   ```dart
+   if (Platform.isAndroid) {
+     final prefs = await SharedPreferences.getInstance();
+     final shouldOpen = prefs.getBool('mer_open_latest_event') ?? false;
+     if (shouldOpen) {
+       await prefs.remove('mer_open_latest_event');
+       if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+     }
+   }
+   ```
+
+### Testing on Android (Windows)
+- Tap "Log Event Now", wait ~1 min, tap "Event Ended"
+- Verify: feedback notification stays visible for >4 seconds
+- Tap the feedback notification body
+- MER should open directly to the edit screen for that event
+- Also test cold-start: kill MER from recents, tap feedback notification → should still open to edit screen
+
 ## TODO — Next Windows Session
 - Update Notiva privacy policy (notiva-site) with Sentry disclosure — same pattern as SoundFind privacy update (short version callout, new Sentry section, rights section). Commit and deploy to notiva.com.au.
 - Add DEF-36 and CR-41 to MER Change Register (OneDrive doc)

@@ -121,13 +121,23 @@ class _HelpScreenState extends State<HelpScreen> {
                 if (Platform.isIOS) ...[
                   const _HelpRow(
                     icon:  Icons.swipe_down_outlined,
-                    title: 'Using from the notification shade',
-                    body:  'Pull down from the top of your screen. Long-press the MER notification to reveal the action buttons, then tap "Log Event Now". When the event is active, open MER and tap "End Event" on the home screen.',
+                    title: 'Starting an event',
+                    body:  'Pull down the notification shade and long-press the MER notification to reveal the action button, then tap "Log Event Now". A timer starts immediately — no need to open the app.',
                   ),
                   const _HelpRow(
                     icon:  Icons.lock_outline,
-                    title: 'Using from the lock screen',
-                    body:  'Go to iPhone Settings → Notifications → Medical Event Recorder → Show Previews → Always. Then long-press the MER notification on your lock screen to reveal the action buttons.',
+                    title: 'Starting from the lock screen',
+                    body:  'Go to iPhone Settings → Notifications → Medical Event Recorder → Show Previews → Always. Long-press the MER notification on your lock screen and tap "Log Event Now" — your phone stays locked.',
+                  ),
+                  const _HelpRow(
+                    icon:  Icons.timer_outlined,
+                    title: 'Live Activity timer',
+                    body:  'After starting an event, a live timer appears on the Dynamic Island or as a banner on the lock screen showing how long the event has been running. When the event is over, tap "Event Ended" directly on the timer — your phone can stay locked.',
+                  ),
+                  const _HelpRow(
+                    icon:  Icons.open_in_new,
+                    title: 'Reviewing the event',
+                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap that notification to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
                   ),
                 ] else ...[
                   const _HelpRow(
