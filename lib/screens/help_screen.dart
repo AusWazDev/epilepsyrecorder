@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/mer_theme.dart';
 
@@ -14,16 +15,27 @@ class HelpScreen extends StatefulWidget {
 
 class _HelpScreenState extends State<HelpScreen> {
   bool _notificationsAllowed = true;
+  bool _showPreviewsAlways   = true;
+
+  static const _navChannel = MethodChannel('au.com.notiva.mer/navigation');
 
   @override
   void initState() {
     super.initState();
     if (!Platform.isWindows) _checkNotifications();
+    if (Platform.isIOS) _checkShowPreviews();
   }
 
   Future<void> _checkNotifications() async {
     final allowed = await AwesomeNotifications().isNotificationAllowed();
     if (mounted) setState(() => _notificationsAllowed = allowed);
+  }
+
+  Future<void> _checkShowPreviews() async {
+    try {
+      final setting = await _navChannel.invokeMethod<String>('getShowPreviewsSetting');
+      if (mounted) setState(() => _showPreviewsAlways = setting == 'always');
+    } catch (_) {}
   }
 
   Future<void> _openNotificationSettings() async {
@@ -156,6 +168,45 @@ class _HelpScreenState extends State<HelpScreen> {
                   title: 'If the notification disappears',
                   body:  'The notification can be swiped away accidentally. Simply open the MER app and it will restore automatically.',
                 ),
+                if (Platform.isIOS)
+                  _HelpRow(
+                    icon:  _showPreviewsAlways
+                        ? Icons.lock_open_outlined
+                        : Icons.lock_outlined,
+                    iconColor: _showPreviewsAlways
+                        ? const Color(0xFF388E3C)
+                        : const Color(0xFFF57C00),
+                    title: 'Lock screen access',
+                    body:  _showPreviewsAlways
+                        ? 'Show Previews is set to "Always" — lock screen notification actions are available without unlocking.'
+                        : 'Show Previews is not set to "Always". To start events from the lock screen without unlocking, go to iPhone Settings → Notifications → Medical Event Recorder → Show Previews → Always.',
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width:  10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: _showPreviewsAlways
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFFF57C00),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _showPreviewsAlways ? 'Active' : 'Not set',
+                          style: TextStyle(
+                            fontSize:   13,
+                            fontWeight: FontWeight.w600,
+                            color: _showPreviewsAlways
+                                ? const Color(0xFF388E3C)
+                                : const Color(0xFFF57C00),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (!Platform.isWindows)
                   _HelpRow(
                     icon:  _notificationsAllowed

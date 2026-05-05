@@ -59,6 +59,12 @@ import shared_preferences_foundation
           let flag  = UserDefaults.standard.bool(forKey: key)
           UserDefaults.standard.removeObject(forKey: key)
           result(flag)
+        case "getShowPreviewsSetting":
+          UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+              result(settings.showPreviewsSetting == .always ? "always" : "other")
+            }
+          }
         case "restoreNotification":
           DispatchQueue.main.async { self?.restorePersistentNotification() }
           result(nil)
