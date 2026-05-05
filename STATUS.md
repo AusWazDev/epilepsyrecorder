@@ -27,7 +27,8 @@
 - Commit: `192ae40`
 
 **Next (Windows session):**
-- Add CR-42 + v1.0.2 entries to Change Register (OneDrive)
+- ~~Add CR-42 + v1.0.2 entries to Change Register (OneDrive)~~ ✅ Done 6 May 2026
+- ~~Update Notiva privacy policy with Sentry disclosure~~ ✅ Already live — verified 6 May 2026
 - Set up TestFlight internal testing — add Waz + Paula in App Store Connect → NOTIVA Internal group (after v1.0.2 review clears)
 
 ---
