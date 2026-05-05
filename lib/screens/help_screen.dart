@@ -13,7 +13,7 @@ class HelpScreen extends StatefulWidget {
   State<HelpScreen> createState() => _HelpScreenState();
 }
 
-class _HelpScreenState extends State<HelpScreen> {
+class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
   bool _notificationsAllowed = true;
   bool _showPreviewsAlways   = true;
 
@@ -22,8 +22,23 @@ class _HelpScreenState extends State<HelpScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (!Platform.isWindows) _checkNotifications();
     if (Platform.isIOS) _checkShowPreviews();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!Platform.isWindows) _checkNotifications();
+      if (Platform.isIOS) _checkShowPreviews();
+    }
   }
 
   Future<void> _checkNotifications() async {
