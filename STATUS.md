@@ -4,13 +4,16 @@
 
 ## Session: 6 May 2026 — Windows (Claude Code CLI)
 
-**CR-43: Android end-event notification — navigate to edit screen on tap** ✅
-- `_showFeedback()` now accepts optional `timeout` (default 4s) and `payload` params
-- End-event call passes `timeout: null` (notification persists until dismissed) + `payload: {'action': 'openLatest'}`
-- `onActionReceived`: body tap (empty `buttonKeyPressed`) with `openLatest` payload sets `mer_open_latest_event` flag in SharedPreferences
-- `HomeScreen._handleResume()`: new async helper checks flag on warm-start resume, opens edit screen if set
-- `HomeScreen.initState` cold-start block: checks Android flag after iOS native channel check
-- Commit: `4d1514a`. Pushed to origin.
+**CR-43: Android notification flow — complete** ✅
+- End-event feedback notification navigates to edit screen on tap
+- `onActionReceived`: `openLatest` payload handled *before* `initialize()` call to eliminate race window
+- `HomeScreen._handleResume()` + cold-start: 8×250ms polling loop (replaces fragile fixed delay)
+- Notification branding: all feedback notifications now have `largeIcon` + `color(0xFF0D4F82)` + `BigText` — mandatory pattern documented in CLAUDE.md
+- Notification wording: Android-appropriate copy (tap, not long-press)
+- Notification ordering: 3s delay before `_showNormal()` in `_handleEnd()` so end-event summary stays at top of shade
+- Help screen: "Reviewing the event" row added for Android
+- Commits: `4d1514a`, `0468e6f`. Pushed to origin.
+- Tested on P30 ROW (Android 15) — all flows confirmed ✅
 
 ---
 
@@ -184,7 +187,7 @@
 | CR-41 | Change | Sentry crash reporting — sentry_flutter added, SentryFlutter.init() wraps appRunner in main.dart, DSN hardcoded for test builds | `cab928b` |
 | CR-42 | Change | iOS lock screen notification actions — Live Activity, consecutive event support, reliable duration capture, simplified navigation signal, help screen updates, home screen banner | `285bb74`, `17a0a4b`, `2b18cdd`, `6dac380`, `5cb044f`, `a82742d`, `6e0f4f4`, `48631d6`, `2f02365`, `55e3354`, `8f204df` |
 | v1.0.2 | Release | Version bump 1.0.1+2 → 1.0.2+3, fix kAppVersion splash bug, Sentry dSYM build phase, widget icon assets | `192ae40` |
-| CR-43 | Change | Android end-event notification tap navigates to edit screen; end-event notification no longer auto-dismisses | `4d1514a` |
+| CR-43 | Change | Android notification flow: tap-to-edit, branded icons, correct wording, ordering fix, help screen update | `4d1514a`, `0468e6f` |
 
 Also note earlier commits not yet in Change Register:
 
