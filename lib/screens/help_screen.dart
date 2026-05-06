@@ -194,6 +194,11 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                     title: 'Using from the lock screen',
                     body:  'Go to Settings → Notifications → Notifications on lock screen → Show all notifications. Once set, pull down from the top of your lock screen to access MER without unlocking.',
                   ),
+                  const _HelpRow(
+                    icon:  Icons.open_in_new,
+                    title: 'Reviewing the event',
+                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
+                  ),
                 ],
                 const _HelpRow(
                   icon:  Icons.refresh,

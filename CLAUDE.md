@@ -80,6 +80,26 @@ assets/
 - Large icon: `drawable/ic_notification_large.png` (flat PNG from mipmap-xxhdpi, not adaptive icon)
 - Small icon: `resource://drawable/ic_launcher_foreground` with `defaultColor: 0xFF0D4F82`
 
+### Android notification icon — REQUIRED pattern for every new notification
+
+`ic_notification_large.png` is a white/flat icon on a transparent background. The blue circle background comes entirely from the notification's `color` property — **not** from the asset itself and **not** reliably from the channel `defaultColor` (Android caches channel settings; updates to an existing channel may not take effect).
+
+**Every `NotificationContent` on Android must include all three of these:**
+
+```dart
+notificationLayout: NotificationLayout.BigText,
+largeIcon:          'resource://drawable/ic_notification_large',
+color:              const Color(0xFF0D4F82),
+```
+
+Omitting any one of these produces either no icon, a black circle, or incorrect rendering. This has been re-discovered twice — do not omit these fields when adding or modifying any notification in `notification_service.dart`.
+
+**Android navigation from notification tap (background isolate → HomeScreen):**
+- Tapping a feedback notification body sets `mer_open_latest_event = true` in SharedPreferences (done in `onActionReceived` *before* the `AwesomeNotifications().initialize()` call to minimise latency)
+- `HomeScreen._handleResume()` polls for the flag (8 × 250ms, max 2s) after resume
+- `HomeScreen.initState` cold-start block does the same poll
+- Do NOT use a fixed delay — it loses the race against the background isolate init
+
 ### Disclaimer versioning
 - `kDisclaimerVersion` in `constants.dart` — bump this string to re-prompt all users
 - Stored as `disclaimerAcceptedVersion` in SharedPreferences (NOT a boolean)

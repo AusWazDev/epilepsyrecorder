@@ -65,10 +65,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       } catch (_) {}
       if (Platform.isAndroid) {
         final prefs = await SharedPreferences.getInstance();
-        final shouldOpen = prefs.getBool('mer_open_latest_event') ?? false;
-        if (shouldOpen) {
-          await prefs.remove('mer_open_latest_event');
-          if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+        for (int i = 0; i < 8; i++) {
+          await prefs.reload();
+          if (prefs.getBool('mer_open_latest_event') ?? false) {
+            await prefs.remove('mer_open_latest_event');
+            if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+            break;
+          }
+          await Future.delayed(const Duration(milliseconds: 250));
         }
       }
     });
@@ -98,11 +102,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     NotificationService.instance.restoreNotification();
     if (!Platform.isWindows) _checkNotificationStatus();
     if (Platform.isAndroid) {
+      // Poll for the flag set by onActionReceived — it may arrive slightly
+      // after resume since the background isolate skips channel init now.
       final prefs = await SharedPreferences.getInstance();
-      final shouldOpen = prefs.getBool('mer_open_latest_event') ?? false;
-      if (shouldOpen) {
-        await prefs.remove('mer_open_latest_event');
-        if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+      for (int i = 0; i < 8; i++) {
+        await prefs.reload();
+        if (prefs.getBool('mer_open_latest_event') ?? false) {
+          await prefs.remove('mer_open_latest_event');
+          if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+          return;
+        }
+        await Future.delayed(const Duration(milliseconds: 250));
       }
     }
   }

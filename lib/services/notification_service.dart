@@ -79,6 +79,7 @@ class NotificationService {
             channelDescription: 'Confirmation shown after a quick log action',
             importance:         NotificationImportance.High,
             defaultPrivacy:     NotificationPrivacy.Public,
+            defaultColor:       const Color(0xFF0D4F82),
           ),
         ],
       );
@@ -109,6 +110,16 @@ class NotificationService {
     // background isolate needed (and none is reliable in release builds).
     if (Platform.isIOS) return;
 
+    // Handle feedback notification body tap before initializing channels —
+    // avoids race with HomeScreen._handleResume by writing the flag as fast
+    // as possible, without waiting for the channel init overhead.
+    if (action.buttonKeyPressed.isEmpty &&
+        action.payload?['action'] == 'openLatest') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('mer_open_latest_event', true);
+      return;
+    }
+
     // Channels must be registered in the background isolate before
     // createNotification() can succeed (main isolate init doesn't carry over).
     await AwesomeNotifications().initialize(
@@ -138,10 +149,6 @@ class NotificationService {
       await instance._handleStart();
     } else if (action.buttonKeyPressed == _btnEnd) {
       await instance._handleEnd();
-    } else if (action.buttonKeyPressed.isEmpty &&
-               action.payload?['action'] == 'openLatest') {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('mer_open_latest_event', true);
     }
   }
 
@@ -229,6 +236,9 @@ class NotificationService {
     }
 
     await prefs.remove(_activeEventKey);
+    // Delay restoring the persistent notification so the end-event feedback
+    // notification settles at the top of the shade first.
+    await Future.delayed(const Duration(seconds: 3));
     await _showNormal();
   }
 
@@ -282,7 +292,7 @@ class NotificationService {
         id:                 _persistentId,
         channelKey:         _chanActive,
         title:              'Medical Event Recorder',
-        body:               'Long-press this notification to log an event',
+        body:               'Tap "Log Event Now" to start logging an event',
         notificationLayout: NotificationLayout.BigText,
         category:           NotificationCategory.Service,
         largeIcon:          'resource://drawable/ic_notification_large',
@@ -306,7 +316,7 @@ class NotificationService {
         id:                 _persistentId,
         channelKey:         _chanActive,
         title:              'Event in progress · ${_fmtTime(start)}',
-        body:               'Long-press this notification to end the event',
+        body:               'Tap "Event Ended" when the event stops',
         notificationLayout: NotificationLayout.BigText,
         category:           NotificationCategory.Service,
         largeIcon:          'resource://drawable/ic_notification_large',
@@ -331,13 +341,16 @@ class NotificationService {
   }) =>
       AwesomeNotifications().createNotification(
         content: NotificationContent(
-          id:              _feedbackId,
-          channelKey:      _chanFeedback,
-          title:           title,
-          body:            body,
-          autoDismissible: true,
-          timeoutAfter:    Platform.isAndroid ? timeout : null,
-          payload:         payload,
+          id:                 _feedbackId,
+          channelKey:         _chanFeedback,
+          title:              title,
+          body:               body,
+          notificationLayout: NotificationLayout.BigText,
+          largeIcon:          'resource://drawable/ic_notification_large',
+          color:              const Color(0xFF0D4F82),
+          autoDismissible:    true,
+          timeoutAfter:       Platform.isAndroid ? timeout : null,
+          payload:            payload,
         ),
       );
 }
