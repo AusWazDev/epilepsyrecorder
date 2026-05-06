@@ -55,13 +55,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _navChannel.setMethodCallHandler(_handleNativeCall);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadRecords(initial: true);
-      // Cold-start fallback: feedback notification tapped before Flutter was ready
+      // Cold-start: iOS uses native channel flag; Android uses SharedPreferences flag
       try {
         final shouldOpen = await _navChannel.invokeMethod<bool>('getPendingOpenLatest');
         if (shouldOpen == true && mounted && _records.isNotEmpty) {
           _openLogScreen(existing: _records.first);
+          return;
         }
       } catch (_) {}
+      if (Platform.isAndroid) {
+        final prefs = await SharedPreferences.getInstance();
+        final shouldOpen = prefs.getBool('mer_open_latest_event') ?? false;
+        if (shouldOpen) {
+          await prefs.remove('mer_open_latest_event');
+          if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+        }
+      }
     });
   }
 
@@ -81,10 +90,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _loadRecords();
-      NotificationService.instance.restoreNotification();
-      if (!Platform.isWindows) _checkNotificationStatus();
+    if (state == AppLifecycleState.resumed) _handleResume();
+  }
+
+  Future<void> _handleResume() async {
+    await _loadRecords();
+    NotificationService.instance.restoreNotification();
+    if (!Platform.isWindows) _checkNotificationStatus();
+    if (Platform.isAndroid) {
+      final prefs = await SharedPreferences.getInstance();
+      final shouldOpen = prefs.getBool('mer_open_latest_event') ?? false;
+      if (shouldOpen) {
+        await prefs.remove('mer_open_latest_event');
+        if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+      }
     }
   }
 

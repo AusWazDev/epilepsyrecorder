@@ -138,6 +138,10 @@ class NotificationService {
       await instance._handleStart();
     } else if (action.buttonKeyPressed == _btnEnd) {
       await instance._handleEnd();
+    } else if (action.buttonKeyPressed.isEmpty &&
+               action.payload?['action'] == 'openLatest') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('mer_open_latest_event', true);
     }
   }
 
@@ -217,8 +221,10 @@ class NotificationService {
 
       final elapsed = _fmtElapsed(startTime, endTime);
       await _showFeedback(
-        title: 'Event ended · $elapsed',
-        body:  'Open MER to add details',
+        title:   'Event ended · $elapsed',
+        body:    'Open MER to add details',
+        timeout: null,
+        payload: {'action': 'openLatest'},
       );
     }
 
@@ -320,6 +326,8 @@ class NotificationService {
   Future<void> _showFeedback({
     required String title,
     required String body,
+    Duration? timeout = const Duration(seconds: 4),
+    Map<String, String>? payload,
   }) =>
       AwesomeNotifications().createNotification(
         content: NotificationContent(
@@ -328,7 +336,8 @@ class NotificationService {
           title:           title,
           body:            body,
           autoDismissible: true,
-          timeoutAfter:    Platform.isAndroid ? const Duration(seconds: 4) : null,
+          timeoutAfter:    Platform.isAndroid ? timeout : null,
+          payload:         payload,
         ),
       );
 }
