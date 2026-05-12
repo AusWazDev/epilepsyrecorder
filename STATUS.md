@@ -2,6 +2,15 @@
 
 ---
 
+## Session: 13 May 2026 — Windows (Claude Code CLI)
+
+**Google Play MER v1.0.2 CONFIRMED LIVE** ✅
+- v1.0.2 (version code 3) approved and published on Google Play
+- Submitted 10 May 2026, confirmed live 13 May 2026
+- All three stores now on v1.0.2: Apple App Store ✅ · Google Play ✅ · Microsoft Store (v1.0.0, no update submitted)
+
+---
+
 ## Session: 6 May 2026 — Windows (Claude Code CLI)
 
 **CR-43: Android notification flow — complete** ✅
