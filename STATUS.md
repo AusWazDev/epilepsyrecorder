@@ -213,6 +213,8 @@
 | CR-42 | Change | iOS lock screen notification actions — Live Activity, consecutive event support, reliable duration capture, simplified navigation signal, help screen updates, home screen banner | `285bb74`, `17a0a4b`, `2b18cdd`, `6dac380`, `5cb044f`, `a82742d`, `6e0f4f4`, `48631d6`, `2f02365`, `55e3354`, `8f204df` |
 | v1.0.2 | Release | Version bump 1.0.1+2 → 1.0.2+3, fix kAppVersion splash bug, Sentry dSYM build phase, widget icon assets | `192ae40` |
 | CR-43 | Change | Android notification flow: tap-to-edit, branded icons, correct wording, ordering fix, help screen update | `4d1514a`, `0468e6f` |
+| CR-44 | Config | Add ITSAppUsesNonExemptEncryption=false to ios/Runner/Info.plist — pre-declares export compliance, skips manual prompt on future TestFlight/App Store uploads | `5966425` |
+| v1.0.3 | Release | Version bump 1.0.2+3 → 1.0.3+4 for TestFlight external testing build (1.0.2 App Store train closed) | `4c18dd7` |
 
 Also note earlier commits not yet in Change Register:
 
@@ -274,8 +276,8 @@ Use the same SharedPreferences flag pattern as iOS cold-start (`kPendingOpenLate
 
 ## TODO — Next Windows Session
 - Update Notiva privacy policy (notiva-site) with Sentry disclosure — same pattern as SoundFind privacy update (short version callout, new Sentry section, rights section). Commit and deploy to notiva.com.au.
-- Add DEF-36 and CR-41 to MER Change Register (OneDrive doc)
-- Update ClickUp handoff doc
+- Add all pending Change Register entries to OneDrive doc (see table above)
+- Update ClickUp handoff doc — TestFlight external testing set up (4 Jun 2026 Mac session), public link https://testflight.apple.com/join/FasRwT2z, awaiting beta review
 
 ## Notes for Mac Claude
 
