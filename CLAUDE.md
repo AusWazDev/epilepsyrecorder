@@ -13,7 +13,7 @@
 - **App name:** Medical Event Recorder (MER)
 - **Developer:** Notiva
 - **GitHub:** branch `MedicalEventRecorder`
-- **Version:** 1.0.2+3 (current — v1.0.2 submission)
+- **Version:** 1.0.3+4 (current — TestFlight external testing build; next App Store submission must use 1.0.3+5 or higher)
 - **Owner:** Waz (wjl25) — Windows PC primary
 
 ## Package / Bundle IDs — CRITICAL

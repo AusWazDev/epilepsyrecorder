@@ -2,6 +2,22 @@
 
 ---
 
+## Session: 4 June 2026 — Mac (Claude Code CLI)
+
+**TestFlight external testing set up for MER** ✅
+
+- Bumped version to `1.0.3+4` — required because the 1.0.2 App Store train is fully closed to new builds
+- Added `ITSAppUsesNonExemptEncryption = false` to `ios/Runner/Info.plist` — prevents export compliance prompt on future builds
+- Built IPA 1.0.3+4 via `flutter build ipa --release` and uploaded to App Store Connect via `xcrun altool`
+- External TestFlight group created: **"MER External Limited Time Access"**
+- Public link: `https://testflight.apple.com/join/FasRwT2z` (inactive until build approved)
+- Build 4 submitted for beta review — Apple review in progress (1–2 days)
+- Commits: `739b693`, `4c18dd7`, `5966425`. Pushed to origin.
+
+**Note:** 1.0.3 is now the active version string — next App Store submission must use 1.0.3+5 or higher.
+
+---
+
 ## Session: 13 May 2026 — Windows (Claude Code CLI)
 
 **Google Play MER v1.0.2 CONFIRMED LIVE** ✅
