@@ -11,7 +11,8 @@
 - Built IPA 1.0.3+4 via `flutter build ipa --release` and uploaded to App Store Connect via `xcrun altool`
 - External TestFlight group created: **"MER External Limited Time Access"**
 - Public link: `https://testflight.apple.com/join/FasRwT2z` (inactive until build approved)
-- Build 4 submitted for beta review — Apple review in progress (1–2 days)
+- Build 4 submitted for beta review — **APPROVED** ✅ (~5 Jun 2026)
+- Tester added and invite sent via public link
 - Commits: `739b693`, `4c18dd7`, `5966425`. Pushed to origin.
 
 **Note:** 1.0.3 is now the active version string — next App Store submission must use 1.0.3+5 or higher.
