@@ -84,6 +84,9 @@ class EventRecord {
     this.triggers  = const [],
   });
 
+  static DateTime? _parseTimestamp(dynamic raw) =>
+      (raw is String) ? DateTime.tryParse(raw) : null;
+
   Map<String, dynamic> toMap() => {
         'id':               id,
         'timestamp':        timestamp.toIso8601String(),
@@ -96,15 +99,24 @@ class EventRecord {
         'triggers':         triggers,
       };
 
-  static EventRecord fromMap(Map<String, dynamic> map) {
+  /// Parses a stored record, or returns null if it cannot be trusted.
+  ///
+  /// A record with an absent or unparseable timestamp yields null and must be
+  /// skipped by the caller. It is deliberately NOT defaulted to the current
+  /// date: a silently wrong date in a medical record is worse than an
+  /// omission. Every other field already falls back to a safe default.
+  static EventRecord? fromMap(Map<String, dynamic> map) {
+    final timestamp = _parseTimestamp(map['timestamp']);
+    if (timestamp == null) return null;
+
     final feelingsRaw = map['feelings'];
     final triggersRaw = map['triggers'];
     final notesRaw    = map['notes'];
     final referralRaw = map['referralRequired'];
 
     return EventRecord(
-      id:        (map['id'] ?? '') as String,
-      timestamp: DateTime.parse(map['timestamp'] as String),
+      id:        (map['id'] is String) ? map['id'] as String : '',
+      timestamp: timestamp,
       duration: DurationCategory.values.firstWhere(
         (e) => e.name == map['duration'],
         orElse: () => DurationCategory.lt1,
@@ -135,15 +147,19 @@ class EventRecord {
    =========================== */
 
 class EventStore {
-  static const String _storageKey = 'epilepsy_event_records_v1';
-
+  /// One unreadable record must never cost the user the whole history: every
+  /// record lives in a single JSON string under a single key, so an
+  /// exception here would make all of them unreachable. Entries that are not
+  /// maps, and records fromMap rejects, are skipped individually.
   Future<List<EventRecord>> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw   = prefs.getString(_storageKey);
+    final raw   = prefs.getString(kEventStorageKey);
     if (raw == null || raw.isEmpty) return [];
     final decoded = jsonDecode(raw) as List<dynamic>;
     return decoded
-        .map((e) => EventRecord.fromMap(e as Map<String, dynamic>))
+        .whereType<Map>()
+        .map((e) => EventRecord.fromMap(Map<String, dynamic>.from(e)))
+        .whereType<EventRecord>()
         .toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
@@ -151,7 +167,7 @@ class EventStore {
   Future<void> save(List<EventRecord> records) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      _storageKey,
+      kEventStorageKey,
       jsonEncode(records.map((e) => e.toMap()).toList()),
     );
   }

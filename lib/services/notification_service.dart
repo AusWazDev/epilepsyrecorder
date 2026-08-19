@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../constants.dart';
 import '../models/event_record.dart';
 
 // ── IDs & storage keys ────────────────────────────────────────────────────────
@@ -20,7 +21,6 @@ const _btnEnd         = 'QUICK_LOG_END';
 const _chanActive     = 'mer_active_v2';
 const _chanFeedback   = 'mer_feedback';
 
-const _storageKey     = 'epilepsy_event_records_v1';
 const _activeEventKey = 'mer_active_event';
 
 const _timeoutMins    = 30;
@@ -170,12 +170,12 @@ class NotificationService {
       severity:         EventSeverity.mild,
     );
 
-    final raw  = prefs.getString(_storageKey);
+    final raw  = prefs.getString(kEventStorageKey);
     final list = raw == null || raw.isEmpty
         ? <dynamic>[]
         : jsonDecode(raw) as List<dynamic>;
     list.insert(0, record.toMap());
-    await prefs.setString(_storageKey, jsonEncode(list));
+    await prefs.setString(kEventStorageKey, jsonEncode(list));
 
     await prefs.setString(_activeEventKey, jsonEncode({
       'id':       record.id,
@@ -203,7 +203,7 @@ class NotificationService {
       final startTime = DateTime.parse(active['startIso'] as String);
       final endTime   = DateTime.now();
 
-      final raw  = prefs.getString(_storageKey);
+      final raw  = prefs.getString(kEventStorageKey);
       final list = raw == null || raw.isEmpty
           ? <dynamic>[]
           : jsonDecode(raw) as List<dynamic>;
@@ -211,20 +211,25 @@ class NotificationService {
       final idx = list.indexWhere(
           (e) => (e as Map<String, dynamic>)['id'] == eventId);
       if (idx != -1) {
-        final existing = EventRecord.fromMap(list[idx] as Map<String, dynamic>);
-        list[idx] = EventRecord(
-          id:               existing.id,
-          timestamp:        existing.timestamp,
-          duration:         _durationFromDiff(startTime, endTime),
-          feelings:         existing.feelings,
-          triggers:         existing.triggers,
-          referralRequired: existing.referralRequired,
-          notes:            existing.notes,
-          eventType:        existing.eventType,
-          severity:         existing.severity,
-        ).toMap();
+        final existing =
+            EventRecord.fromMap(list[idx] as Map<String, dynamic>);
+        // A record we cannot parse is left untouched rather than rebuilt —
+        // skipping the duration update is preferable to discarding it.
+        if (existing != null) {
+          list[idx] = EventRecord(
+            id:               existing.id,
+            timestamp:        existing.timestamp,
+            duration:         _durationFromDiff(startTime, endTime),
+            feelings:         existing.feelings,
+            triggers:         existing.triggers,
+            referralRequired: existing.referralRequired,
+            notes:            existing.notes,
+            eventType:        existing.eventType,
+            severity:         existing.severity,
+          ).toMap();
+        }
       }
-      await prefs.setString(_storageKey, jsonEncode(list));
+      await prefs.setString(kEventStorageKey, jsonEncode(list));
 
       final elapsed = _fmtElapsed(startTime, endTime);
       await _showFeedback(

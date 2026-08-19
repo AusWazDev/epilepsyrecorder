@@ -6,6 +6,11 @@ const String kCompanyName       = 'Notiva';
 // Any user who accepted an older version will be shown the screen again.
 const String kDisclaimerVersion = '1.1';
 
+// Storage key for the saved event list. Referenced by EventStore and by the
+// notification service. NEVER change this string — it would orphan every
+// record already on a user's device.
+const String kEventStorageKey = 'epilepsy_event_records_v1';
+
 const String kWebsiteUrl   = 'https://www.notiva.com.au';
 const String kPrivacyUrl   = 'https://www.notiva.com.au/medical-event-recorder/privacy/';
 const String kTermsUrl     = 'https://www.notiva.com.au/medical-event-recorder/terms/';

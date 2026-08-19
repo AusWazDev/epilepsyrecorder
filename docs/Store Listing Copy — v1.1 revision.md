@@ -23,7 +23,7 @@ pasting.
 Medical Event Recorder is a private, on-device record of medical events — for
 individuals and carers who need an accurate written record of what happened and when.
 
-Record an event as it happens, or enter it afterwards. Each entry is timestamped and
+Record an event as it happens. Each entry is timestamped and
 structured: event type, duration, how severe it felt, what you noticed before and
 after, possible triggers, and any notes you want to add.
 
@@ -37,9 +37,9 @@ WHAT IT RECORDS
 • Date and time, captured automatically
 • Event type
 • Duration and severity
-• How you felt before, during and after
+• How you were feeling
 • Possible triggers
-• Referral information
+• Whether a medical referral is needed
 • Free-text notes
 
 PRIVACY
@@ -70,6 +70,10 @@ event log,symptom,seizure,diary,carer,timestamp,csv,export,offline,private,recor
 
 ## Outstanding
 
+- **"or enter it afterwards" deliberately removed.** There is no date or time
+  picker in the app, so an event logged later is timestamped to the moment of
+  logging, not the moment it occurred. Reinstate that wording only once an
+  `occurredAt` field separate from the record timestamp exists.
 - **Play and Microsoft Store listings never audited.** Only the Apple listing was
   reviewed when this was drafted. Both may contain phrasing not covered here.
 - **Naming epilepsy in keywords** is not itself a claim, but it establishes the target
