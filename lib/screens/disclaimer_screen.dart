@@ -197,12 +197,28 @@ class DisclaimerScreen extends StatelessWidget {
                               style: theme.textTheme.labelLarge,
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              'This app records events; it does not '
-                              'respond to them, and it must not be relied on '
-                              'for help in an emergency. If you believe you '
-                              'are experiencing a medical emergency, contact '
-                              'emergency services immediately.',
+                            Text.rich(
+                              const TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Medical Event Recorder records '
+                                        'events; it does not respond to them '
+                                        'and cannot summon help. ',
+                                  ),
+                                  TextSpan(
+                                    text: 'Never delay calling for help in '
+                                        'order to record an event.',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' In a medical emergency, call 000 '
+                                        '(Australia) or your local emergency '
+                                        'number immediately.',
+                                  ),
+                                ],
+                              ),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 height: 1.5,
                               ),
@@ -253,6 +269,22 @@ class DisclaimerScreen extends StatelessWidget {
                               ),
                               child: Text(
                                 'Read our full Privacy Policy →',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color:           MERColours.primary,
+                                  fontWeight:      FontWeight.w600,
+                                  decoration:      TextDecoration.underline,
+                                  decorationColor: MERColours.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () => launchUrl(
+                                Uri.parse(kTermsUrl),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                              child: Text(
+                                'Read our full Terms of Service →',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color:           MERColours.primary,
                                   fontWeight:      FontWeight.w600,
