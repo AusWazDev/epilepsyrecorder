@@ -23,9 +23,9 @@ pasting.
 Medical Event Recorder is a private, on-device record of medical events — for
 individuals and carers who need an accurate written record of what happened and when.
 
-Record an event as it happens. Each entry is timestamped and
-structured: event type, duration, how severe it felt, what you noticed before and
-after, possible triggers, and any notes you want to add.
+Record an event as it happens. Each entry is timestamped and structured: event
+type, duration, how severe it felt, possible triggers, and any notes you want to
+add.
 
 Start and stop an event from the Lock Screen or notification shade, without unlocking
 your phone.
