@@ -98,10 +98,21 @@ class DisclaimerScreen extends StatelessWidget {
                           const SizedBox(height: 6),
                           Text(
                             'This application is provided for personal '
-                            'record‑keeping purposes only. It is not a '
-                            'medical device and is not intended to diagnose, '
-                            'treat, cure, or prevent any disease or medical '
-                            'condition.',
+                            'record‑keeping purposes only.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color:  const Color(0xFF993C1D),
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'It is not a medical device. It is not intended '
+                            'to diagnose, screen for, prevent, monitor, '
+                            'predict, make a prognosis of, mitigate, '
+                            'alleviate, treat or cure any disease, condition, '
+                            'ailment or defect, and it is not intended to '
+                            'make or support any recommendation or decision '
+                            'about treatment.',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color:  const Color(0xFF993C1D),
                               height: 1.5,
@@ -127,6 +138,10 @@ class DisclaimerScreen extends StatelessWidget {
                             const _DisclaimerBullet(
                               text: 'This app does not provide medical advice '
                                   'or clinical recommendations.',
+                            ),
+                            const _DisclaimerBullet(
+                              text: 'This app does not analyse, interpret or '
+                                  'draw conclusions from what you record.',
                             ),
                             const _DisclaimerBullet(
                               text: 'Data recorded may be incomplete, '
@@ -183,10 +198,11 @@ class DisclaimerScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'This app must not be used in emergency '
-                              'situations. If you believe you are experiencing '
-                              'a medical emergency, contact emergency services '
-                              'immediately.',
+                              'This app records events; it does not '
+                              'respond to them, and it must not be relied on '
+                              'for help in an emergency. If you believe you '
+                              'are experiencing a medical emergency, contact '
+                              'emergency services immediately.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 height: 1.5,
                               ),
@@ -210,10 +226,21 @@ class DisclaimerScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'All data entered into this application is '
-                              'stored locally on your device. The developer '
-                              'does not collect, transmit, or store your '
-                              'personal or medical information.',
+                              'All event data entered into this application '
+                              'is stored locally on your device. The '
+                              'developer does not collect, transmit or store '
+                              'your personal or medical information.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'The app sends anonymous crash reports to a '
+                              'third-party error-monitoring service so faults '
+                              'can be diagnosed and fixed. These reports '
+                              'contain no event data and no information that '
+                              'identifies you.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 height: 1.5,
                               ),
