@@ -2,6 +2,76 @@
 
 ---
 
+## Session: 19–20 August 2026 — Windows (Claude Code CLI)
+
+**v1.1.0 work: data-loss fix, version drift fix, JSON backup/restore. Plus a full
+claims pass across the app and notiva.com.au.** ✅ Nothing built, released or deployed.
+
+### Data loss (P0)
+- `EventRecord.fromMap` returned non-nullable and parsed the timestamp unguarded.
+  One malformed record threw inside `load()` and made the ENTIRE history
+  unreachable — every record lives in one JSON string under one key, so there was
+  no partial recovery. `fromMap` now returns `EventRecord?`; bad records are
+  skipped individually. Two adjacent casts with the same blast radius were guarded
+  the same way. `jsonDecode` of the whole payload left unguarded on purpose.
+- A bad timestamp is NOT defaulted to `now()` — a silently wrong date in a medical
+  record is worse than an omission.
+- Proven, not reasoned: `test/event_store_load_test.dart`, plus a scratch run
+  showing the pre-fix path threw and recovered nothing on the same payload.
+- Commit `8b73ad2`.
+
+### Version drift (#130)
+- pubspec said `1.0.3+4`, `constants.dart` said `1.0.2`, `main.dart` hardcoded the
+  Sentry release as `1.0.2+3` — so every error since 1.0.2 was misattributed.
+- `kAppVersion` removed. `lib/app_info.dart` reads platform package metadata via
+  `package_info_plus`; the Sentry release derives from it. No hardcoded version
+  remains anywhere.
+- Bumped to **1.1.0+5**. Release format unchanged (`package@version+build`).
+- Then taken OFF the cold-start path: `AppInfo.load()` is no longer awaited before
+  `NotificationService.init()`, because on Android a cold start from a notification
+  action IS the capture path. The release is stamped in `beforeSend` instead.
+- Commits `bc4dc77`, `5f1c457`.
+
+### Backup / restore (#133), rollback key (#135), reminder (#134), warnings (#136)
+- JSON envelope with schema version, merge-by-id restore that only ever adds,
+  refusing corrupt / foreign / newer-schema files without touching stored data.
+- Rollback copy before every save — **never on iOS**, deliberately: the native
+  Swift capture path bypasses Dart, so a rollback copy there would go stale and
+  restoring from it would resurrect deleted events. Guard carries a DO NOT REMOVE
+  comment.
+- Reminder banner at 10 events, suppressed entirely around the capture path.
+  Counter now resets only on a demonstrably completed backup, not on opening the
+  share sheet.
+- Help and disclaimer warnings about what destroys data.
+- Commits `bd5a28d`, `27981ca`, `e2edbe6`, `fa44b29`, `a56fd28`.
+
+### Audits (read-only)
+- Capture model: the model is NINE fields, and published copy claimed several it
+  does not support.
+- Notification/capture baseline: **five** record-creation sites, not three — two
+  are native Swift, invisible from Dart.
+- iOS provenance: all 92 commits reachable from HEAD; no unmerged iOS work exists
+  anywhere. `AppDelegate.swift` and `ios/MERWidget/` are byte-identical to the
+  shipped release.
+
+### Documentation
+- `docs/ARCHITECTURE.md` added, generated from code.
+- `CLAUDE.md` corrected — it recorded 1.0.3+4 and described iOS notifications as
+  awesome_notifications with `ActionType.Default`. iOS has been native Swift since
+  CR-42.
+- claude.ai Project instructions written and versioned in `docs/`.
+- Commits `c0e15d2`, `8fc957e`, `1532f43`, `509b744`, `e8405eb`, `be69254`, `5c2fc73`.
+
+### Verified
+`flutter analyze` 51 infos, zero errors/warnings — identical per-file distribution
+to the session-start baseline. 21 tests pass, up from 0. Two pre-existing widget
+test failures remain (`app_smoke_test`, `export_options_test`) — they set an
+obsolete `disclaimerAccepted` bool and already failed at `ce2b964`. Not fixed.
+
+**iOS native untouched this session, deliberately.** v1.1.0 is additions only.
+
+---
+
 ## Session: 4 June 2026 — Mac (Claude Code CLI)
 
 **TestFlight external testing set up for MER** ✅
