@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -11,15 +13,27 @@ import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
 
 void main() async {
-  // Must precede AppInfo.load(), which uses a platform channel, and therefore
-  // precedes Sentry init so the release can be derived rather than hardcoded.
+  // Binding only — this is local setup, not a platform-channel round trip, and
+  // NotificationService.init() needs it. Nothing here waits on IO.
   WidgetsFlutterBinding.ensureInitialized();
-  await AppInfo.load();
+
+  // Started, deliberately NOT awaited. On Android a cold start from a
+  // notification action is the capture path, and it must not queue behind a
+  // platform channel. The release is stamped at send time instead (below).
+  unawaited(AppInfo.load());
 
   await SentryFlutter.init(
     (options) {
       options.dsn = 'https://48b157764abd294968a63ff25dfb1a49@o4511281612849152.ingest.us.sentry.io/4511284989394944';
-      options.release = AppInfo.sentryRelease;
+      // options.release is NOT set here: it is not known yet, and Sentry only
+      // needs it when an event is sent, not when it is configured. beforeSend
+      // resolves AppInfo first, so every event that leaves the device carries
+      // the correct release — including one thrown before startup finished.
+      options.beforeSend = (event, hint) async {
+        await AppInfo.load();
+        if (AppInfo.isLoaded) event.release = AppInfo.sentryRelease;
+        return event;
+      };
       options.environment = 'production';
       options.tracesSampleRate = 0.1;
       options.sendDefaultPii = false;
@@ -156,7 +170,7 @@ class _SplashLoadingScreen extends StatelessWidget {
 
             // ── VERSION ──
             Text(
-              'Version ${AppInfo.version}',
+              'Version ${AppInfo.versionLabel}',
               style: TextStyle(
                 fontSize: 11,
                 color:    Colors.white.withOpacity(0.35),
