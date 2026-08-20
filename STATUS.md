@@ -280,6 +280,34 @@ Use the same SharedPreferences flag pattern as iOS cold-start (`kPendingOpenLate
 - Add all pending Change Register entries to OneDrive doc (see table above)
 - Update ClickUp handoff doc — TestFlight external testing set up (4 Jun 2026 Mac session), public link https://testflight.apple.com/join/FasRwT2z, awaiting beta review
 
+## Backlog — recorded, not fixed
+
+### v1.3.0 (capture model) — abandoned events get a wrong duration
+`NotificationService._clearIfTimedOut()` discards an active event after 30
+minutes, but the record it leaves behind keeps `duration` at its `lt1`
+default. An event that was started and never ended therefore reads as
+"< 1 minute" in the user's medical record. Wrong data is worse than missing
+data, and a clinician reading the export cannot tell the two apart.
+
+Fixing it needs a distinct "unknown / abandoned" value in `DurationCategory`,
+which changes the capture model, the CSV schema and every stored record's
+possible values — v1.3.0, not v1.1.0.
+
+### v1.2.0+ (native) — iOS has no rollback copy
+`writeEventPayload` deliberately skips the rollback key on iOS, because the
+native Swift capture path writes the primary key without passing through
+Dart. The proper fix is to replicate the snapshot in
+`AppDelegate.handleQuickLogStart` and `EndMEREventIntent`, so iOS gets real
+protection rather than none. Required before any migration (e.g. SQLite) that
+would want to roll back.
+
+### Stale — this repo's CLAUDE.md
+`CLAUDE.md` still records "Version: 1.0.3+4" (now 1.1.0+5) and describes iOS
+notifications as `awesome_notifications` with `ActionType.Default`. iOS has
+been native Swift since CR-42 (May 2026) and awesome_notifications is
+deliberately never initialised there. Not corrected in this pass — flagged so
+it is not read as current.
+
 ## Notes for Mac Claude
 
 - `sentry_flutter: ^9.0.0` added to `pubspec.yaml`
