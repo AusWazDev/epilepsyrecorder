@@ -224,9 +224,19 @@ submitted.
 
 | Store | MER | SoundFind |
 |---|---|---|
-| Apple App Store | Released | Released (ID 6769255354) |
-| Google Play | Released | **Release testing — not yet public** |
-| Microsoft Store | Released (ID 9PMJ09CDSL6K) | Released |
+| Apple App Store | Released, v1.0.2 (ID 6764339880) | Released, v1.1.0 (ID 6769255354) |
+| Google Play | Released, v1.0.2 | **Closed testing Alpha — not public** |
+| Microsoft Store | Released, v1.0.1 (ID 9PMJ09CDSL6K) | Released, v1.0.1 (ID 9PG86ZDTB3P0) |
+| TestFlight | v1.0.3+4 external testing | — |
+
+Versions above are from memory files dated 7–10 Jun 2026 and are the most
+specific record available; they are NOT audited. Note MER's Microsoft Store sits
+a version behind Apple and Google Play, and the repo is further ahead again at
+1.1.0+5.
+
+SoundFind Google Play needs 12 opted-in testers for 14 consecutive days; 3 were
+recorded as added, so roughly 9 short. Opt-in link:
+https://play.google.com/apps/testing/au.com.uniquegames.soundfind
 
 Both apps are on all three stores. The single exception is SoundFind on Google
 Play, which is still in testing and needs 12 opted-in testers for 14 consecutive
