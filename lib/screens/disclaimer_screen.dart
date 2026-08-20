@@ -261,6 +261,36 @@ class DisclaimerScreen extends StatelessWidget {
                                 height: 1.5,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            Text.rich(
+                              const TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Because there is no account and no '
+                                        'cloud copy, ',
+                                  ),
+                                  TextSpan(
+                                    text: 'deleting the app deletes every '
+                                        'event with it, and neither you nor '
+                                        'Notiva can recover them.',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' Your events are included in a '
+                                        'normal device backup, so restoring '
+                                        'one onto a new phone does bring them '
+                                        'across. Backing up or exporting to a '
+                                        'file is the only way to keep a copy '
+                                        'that does not depend on this device.',
+                                  ),
+                                ],
+                              ),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                height: 1.5,
+                              ),
+                            ),
                             const SizedBox(height: 10),
                             GestureDetector(
                               onTap: () => launchUrl(

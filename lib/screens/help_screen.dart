@@ -147,7 +147,59 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   icon:   Icons.download_outlined,
                   title:  'Export to CSV',
                   body:   'Tap ⋮ → Export CSV (all events) to share your event data as a spreadsheet file.',
+                ),
+                _HelpRow(
+                  icon:   Icons.backup_outlined,
+                  title:  'Back up and restore',
+                  body:   'Tap ⋮ → Back up now to save every event to a file you choose. '
+                          '⋮ → Restore from backup reads one back in. Restoring only adds events — '
+                          'anything already on this device is left exactly as it is.',
                   isLast: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            _Section(
+              title: 'YOUR DATA — PLEASE READ',
+              children: [
+                const _HelpRow(
+                  icon:  Icons.phone_iphone,
+                  title: 'It is on this device and nowhere else',
+                  body:  'Every event you record is stored on this device only. '
+                         'There is no account, no cloud copy, and no server. '
+                         'Notiva never receives your events and cannot recover them for you.',
+                ),
+                _HelpRow(
+                  icon:      Icons.delete_forever_outlined,
+                  iconColor: const Color(0xFFD32F2F),
+                  title:     'Deleting the app deletes your events',
+                  body:      Platform.isIOS
+                      ? 'Deleting Medical Event Recorder removes every event stored on this device. '
+                        'Offloading is different: Settings → General → iPhone Storage → Offload App '
+                        'frees up space but keeps your data, and reinstalling brings it back. '
+                        'It is Delete App that destroys it.'
+                      : 'Uninstalling Medical Event Recorder removes every event stored on this device. '
+                        'Clearing app storage in Android settings does the same thing.',
+                ),
+                const _HelpRow(
+                  icon:      Icons.phonelink_setup_outlined,
+                  iconColor: Color(0xFF388E3C),
+                  title:     'Moving to a new phone is different',
+                  body:      'Your events are included in a normal device backup. Restoring that '
+                             'backup onto a new phone brings them across with the app. '
+                             'That is not the same as deleting and reinstalling the app on this '
+                             'phone, which starts you with nothing.',
+                ),
+                const _HelpRow(
+                  icon:      Icons.save_alt,
+                  iconColor: Color(0xFF1976D2),
+                  title:     'A backup file is the only copy you control',
+                  body:      'Exporting or backing up is the only way to keep your events '
+                             'independently of this device. Save the file somewhere else — a '
+                             'computer, cloud storage, an email to yourself — and it will still '
+                             'be there whatever happens to the phone.',
+                  isLast:    true,
                 ),
               ],
             ),
