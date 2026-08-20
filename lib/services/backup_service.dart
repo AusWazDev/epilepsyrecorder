@@ -22,8 +22,24 @@ String _backupFilename() =>
     'medical_event_recorder_backup_'
     '${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json';
 
+/// Whether a share outcome counts as a backup actually taken.
+///
+/// Only an explicit success does. The reminder is a safety feature, so it must
+/// fail in the safe direction: leaving the reminder running when a backup did
+/// happen is a minor annoyance, whereas clearing it when one did not tells the
+/// user they are protected when they are not, and they find out only after
+/// losing everything.
+///
+/// Platform reality: iOS and Android report success or dismissed, so a
+/// cancelled sheet is distinguishable there and is not counted. Windows, macOS
+/// and Linux report `unavailable` — nothing is knowable, so nothing is counted
+/// and the reminder simply keeps running. Desktop users still clear it via
+/// Save to a file, where completion is known.
+bool backupCountsAsTaken(ShareResultStatus status) =>
+    status == ShareResultStatus.success;
+
 /// Records that a backup was taken, so the reminder banner can count events
-/// logged since. Called only after the write or share actually completed.
+/// logged since. Called only where completion is actually knowable.
 Future<void> markBackupTaken() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString(kLastBackupKey, DateTime.now().toIso8601String());
@@ -53,7 +69,7 @@ Future<void> backupShare(
   await file.writeAsString(json, flush: true);
   if (!context.mounted) return;
 
-  await SharePlus.instance.share(
+  final result = await SharePlus.instance.share(
     ShareParams(
       subject: '$kAppName backup',
       text:    '$kAppName backup (JSON)',
@@ -61,7 +77,10 @@ Future<void> backupShare(
       sharePositionOrigin: shareOriginRect(context),
     ),
   );
-  await markBackupTaken();
+
+  // Invoking the sheet is not evidence of a backup. A user who opens it and
+  // cancels must keep their reminder, not be told they are covered.
+  if (backupCountsAsTaken(result.status)) await markBackupTaken();
 }
 
 Future<void> backupSaveAs(
