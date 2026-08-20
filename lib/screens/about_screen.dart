@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app_info.dart';
 import '../constants.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
@@ -75,7 +76,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Version $kAppVersion',
+                    'Version ${AppInfo.version}',
                     style: TextStyle(
                       fontSize: 13,
                       color:    Colors.white.withOpacity(0.55),
@@ -119,7 +120,7 @@ class AboutScreen extends StatelessWidget {
                           ),
                           _InfoRow(
                             label: 'Version',
-                            value: kAppVersion,
+                            value: AppInfo.version,
                           ),
                           _InfoRow(
                             label: 'Platforms',

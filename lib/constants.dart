@@ -1,6 +1,10 @@
 const String kAppName           = 'Medical Event Recorder';
-const String kAppVersion        = '1.0.2';
 const String kCompanyName       = 'Notiva';
+
+// The app version is NOT declared here. It is read from the platform's own
+// packaged metadata at runtime via AppInfo (lib/app_info.dart), so it cannot
+// drift from pubspec.yaml. This replaced a three-way drift: pubspec said
+// 1.0.3+4, this file said 1.0.2, and main.dart told Sentry 1.0.2+3.
 
 // Bump this string whenever the disclaimer or privacy policy changes.
 // Any user who accepted an older version will be shown the screen again.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'app_info.dart';
 import 'constants.dart';
 import 'theme/mer_theme.dart';
 import 'screens/disclaimer_screen.dart';
@@ -10,16 +11,20 @@ import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
 
 void main() async {
+  // Must precede AppInfo.load(), which uses a platform channel, and therefore
+  // precedes Sentry init so the release can be derived rather than hardcoded.
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppInfo.load();
+
   await SentryFlutter.init(
     (options) {
       options.dsn = 'https://48b157764abd294968a63ff25dfb1a49@o4511281612849152.ingest.us.sentry.io/4511284989394944';
-      options.release = 'au.com.notiva.medicaleventrecorder@1.0.2+3';
+      options.release = AppInfo.sentryRelease;
       options.environment = 'production';
       options.tracesSampleRate = 0.1;
       options.sendDefaultPii = false;
     },
     appRunner: () async {
-      WidgetsFlutterBinding.ensureInitialized();
       await NotificationService.instance.init();
       runApp(const AppBootstrap());
     },
@@ -151,7 +156,7 @@ class _SplashLoadingScreen extends StatelessWidget {
 
             // ── VERSION ──
             Text(
-              'Version $kAppVersion',
+              'Version ${AppInfo.version}',
               style: TextStyle(
                 fontSize: 11,
                 color:    Colors.white.withOpacity(0.35),
