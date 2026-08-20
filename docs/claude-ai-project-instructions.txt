@@ -99,8 +99,8 @@ only after actually running it.
   HintModal fires only when !isNative() — it is the web fallback, not a stub.
   Prices in PURCHASE_OPTIONS are fallback display strings only.
 - Sentry: @sentry/react ^10.50.0.
-- Platforms: Apple App Store (ID: 6769255354) LIVE, Microsoft Store LIVE,
-  Google Play Closed Testing only — not publicly listed.
+- Platforms: see STORE PRESENCE below. Apple and Microsoft released; Google Play
+  still in release testing and not publicly listed.
 - AdMob: approved for iOS, ad serving limits lifted.
   Publisher ID: pub-1060374954785370. Ad unit: ca-app-pub-...680080909.
 - Google Play Closed Testing: via Google Group soundfind-testers@googlegroups.com.
@@ -145,6 +145,8 @@ Full detail in WordFind-Adventure/docs/ARCHITECTURE.md.
 - Android namespace (R-class only): au.com.notiva.medical_event_recorder
 - Apple App ID: 6764339880 | Team ID: B7LWF6Z674
 - Microsoft Store ID: 9PMJ09CDSL6K
+- Released on all three stores — Apple, Google Play and Microsoft. See STORE
+  PRESENCE below. Last App Store release was 1.0.2; the repo is ahead at 1.1.0+5.
 - iOS Podfile: Flutter-generated, platform :ios '15.0', no hand-added pods.
 - Pricing: listed as $4.99 USD / $7.99 AUD — UNVERIFIED, check App Store Connect.
 - Primary category and live keywords: not in repo, check App Store Connect.
@@ -205,6 +207,30 @@ Raise these before designing it; do not assume a resolution.
 
 ## TOOLS & PLATFORMS
 
-App Store Connect (both) · Google Play Console (SoundFind) · AdMob (SoundFind
-iOS) · Google Groups soundfind-testers@googlegroups.com · ClickUp · Sentry
-(both) · AppFollow (recommended, not confirmed as set up).
+- App Store Connect — BOTH apps
+- Google Play Console — BOTH apps
+- Microsoft Partner Center — BOTH apps
+- AdMob — SoundFind
+- Google Groups soundfind-testers@googlegroups.com — SoundFind closed testing
+- ClickUp — task tracking
+- Sentry — BOTH apps
+- AppFollow — recommended, not confirmed as set up
+
+## STORE PRESENCE (developer-supplied, corrected 20 Aug 2026)
+
+Console state cannot be read from a repo. Treat the table as the developer's
+statement and confirm in the consoles before relying on it for anything
+submitted.
+
+| Store | MER | SoundFind |
+|---|---|---|
+| Apple App Store | Released | Released (ID 6769255354) |
+| Google Play | Released | **Release testing — not yet public** |
+| Microsoft Store | Released (ID 9PMJ09CDSL6K) | Released |
+
+Both apps are on all three stores. The single exception is SoundFind on Google
+Play, which is still in testing and needs 12 opted-in testers for 14 consecutive
+days before production unlocks.
+
+An earlier version of these instructions listed Google Play as SoundFind-only and
+omitted the Microsoft Store entirely. Both were wrong.
