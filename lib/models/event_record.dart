@@ -166,8 +166,8 @@ class EventStore {
 
   Future<void> save(List<EventRecord> records) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      kEventStorageKey,
+    await writeEventPayload(
+      prefs,
       jsonEncode(records.map((e) => e.toMap()).toList()),
     );
   }
@@ -177,6 +177,24 @@ class EventStore {
     await prefs.clear();
     return prefs;
   }
+}
+
+/// Writes the event payload, keeping the previous payload under
+/// [kEventRollbackKey] first.
+///
+/// Every record lives in a single string under a single key, so a write
+/// interrupted midway (process killed, device powers off) can leave that key
+/// truncated and unreadable. The rollback copy bounds the loss to whatever the
+/// in-flight save was adding, rather than the entire history.
+///
+/// On first run there is no previous payload, so nothing is copied and the
+/// rollback key simply does not exist yet. It appears on the second save.
+Future<void> writeEventPayload(SharedPreferences prefs, String payload) async {
+  final previous = prefs.getString(kEventStorageKey);
+  if (previous != null && previous.isNotEmpty) {
+    await prefs.setString(kEventRollbackKey, previous);
+  }
+  await prefs.setString(kEventStorageKey, payload);
 }
 
 /* ===========================

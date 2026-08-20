@@ -175,7 +175,7 @@ class NotificationService {
         ? <dynamic>[]
         : jsonDecode(raw) as List<dynamic>;
     list.insert(0, record.toMap());
-    await prefs.setString(kEventStorageKey, jsonEncode(list));
+    await writeEventPayload(prefs, jsonEncode(list));
 
     await prefs.setString(_activeEventKey, jsonEncode({
       'id':       record.id,
@@ -229,7 +229,7 @@ class NotificationService {
           ).toMap();
         }
       }
-      await prefs.setString(kEventStorageKey, jsonEncode(list));
+      await writeEventPayload(prefs, jsonEncode(list));
 
       final elapsed = _fmtElapsed(startTime, endTime);
       await _showFeedback(
