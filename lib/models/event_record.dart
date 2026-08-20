@@ -190,9 +190,34 @@ class EventStore {
 /// On first run there is no previous payload, so nothing is copied and the
 /// rollback key simply does not exist yet. It appears on the second save.
 Future<void> writeEventPayload(SharedPreferences prefs, String payload) async {
-  final previous = prefs.getString(kEventStorageKey);
-  if (previous != null && previous.isNotEmpty) {
-    await prefs.setString(kEventRollbackKey, previous);
+  // ── DO NOT REMOVE THIS GUARD ──────────────────────────────────────────────
+  // iOS deliberately keeps NO rollback copy.
+  //
+  // On iOS the quick-log capture path is native Swift, not Dart:
+  // AppDelegate.handleQuickLogStart writes flutter.epilepsy_event_records_v1
+  // in UserDefaults directly, and EndMEREventIntent (the Live Activity button,
+  // running in the widget extension process) mutates it again. Neither goes
+  // through this function and neither knows the rollback key exists.
+  //
+  // So on iOS the primary payload advances while a rollback copy would sit
+  // frozen at whenever Dart last wrote. Restoring from it later would
+  // resurrect deleted events and lose recent ones. An absent copy is safe; a
+  // silently stale one is a data-loss mechanism.
+  //
+  // The proper long-term fix is to replicate this snapshot in the Swift write
+  // paths so iOS gets real protection. That is a native change, deliberately
+  // out of scope for v1.1.0, which does not touch ios/ at all.
+  if (Platform.isIOS) {
+    // Clear anything a pre-guard build left behind, so nothing misleading
+    // remains on a device that ran an internal build.
+    if (prefs.containsKey(kEventRollbackKey)) {
+      await prefs.remove(kEventRollbackKey);
+    }
+  } else {
+    final previous = prefs.getString(kEventStorageKey);
+    if (previous != null && previous.isNotEmpty) {
+      await prefs.setString(kEventRollbackKey, previous);
+    }
   }
   await prefs.setString(kEventStorageKey, payload);
 }

@@ -175,6 +175,11 @@ void main() {
   });
 
   group('rollback key', () {
+    // These assert the non-iOS branch of writeEventPayload, which is what the
+    // Windows/macOS test host exercises. On iOS the rollback copy is
+    // deliberately never written, because the native Swift capture path writes
+    // the primary key without going through writeEventPayload — see the guard
+    // and its comment in event_record.dart.
     test('absent on first save, holds previous payload after the second',
         () async {
       SharedPreferences.setMockInitialValues({});
