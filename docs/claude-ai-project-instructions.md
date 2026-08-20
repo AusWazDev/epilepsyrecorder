@@ -14,17 +14,20 @@ wrong briefs.
 `platform :ios, '15.0'`; four static notiva.com.au links plus the Sentry DSN as
 the only outbound connections; platform dirs android/ ios/ windows/ macos/ web/.
 
-**SoundFind content is carried over unverified** — no CLI session has audited
-that repo. Treat every SoundFind claim below as the developer's note, not a
-checked fact.
+**SoundFind audited 20 Aug 2026** at `WordFind-Adventure` commit `4b80d21`.
+Corrections: Capacitor integration confirmed real (was an open question); version
+1.1.0 added; RevenueCat, AdMob, Sentry, Electron and the bundle id added; Base44
+confirmed absent from the code. See `WordFind-Adventure/docs/ARCHITECTURE.md`.
 
 Project knowledge to attach, in descending order of durability:
 
 1. `~/.claude/CLAUDE.md` — global pitfalls. Rarely stale.
 2. `C:\dev\CLAUDE.md` — workspace rules and operational patterns.
 3. `epilepsyrecorder/docs/ARCHITECTURE.md` — regenerate at every version bump.
-4. `epilepsyrecorder/CLAUDE.md` — corrected 20 Aug 2026; safe to attach again.
-5. `epilepsyrecorder/STATUS.md` — session log and backlog.
+4. `WordFind-Adventure/docs/ARCHITECTURE.md` — same, for SoundFind.
+5. `epilepsyrecorder/CLAUDE.md` — corrected 20 Aug 2026; safe to attach again.
+6. `WordFind-Adventure/CLAUDE.md` — corrected 20 Aug 2026; safe to attach again.
+7. `epilepsyrecorder/STATUS.md` — session log and backlog.
 
 ---
 
@@ -107,22 +110,53 @@ only after actually running it.
 
 ---
 
-## SOUNDFIND  (carried over — not verified by any CLI audit)
+## SOUNDFIND
 
-- Word-find/word-search game with an audio challenge mode (words spoken aloud,
+- Word-search game with FIVE modes, one of which is audio (words spoken aloud,
   player finds the spelling in a grid).
 - Developer/brand: Unique Interactive Games (uniquegames.com.au)
-- Stack: React (Base44 origin), Capacitor wrapper for mobile — Capacitor
-  integration still needs verification in codebase (open ClickUp task).
-- Platforms: Apple App Store (ID: 6769255354), Microsoft Store, Google Play
-  (Closed Testing only — not publicly listed).
+- Repo: C:\dev\WordFind-Adventure (name predates the rebrand — do not rename).
+  Branch `main`. NOT listed in the C:\dev\CLAUDE.md project table.
+- Version: package.json 1.1.0. Never assert what is live — check the consoles.
+- Bundle/app id, all platforms: au.com.uniquegames.soundfind
+- Stack: React 18 + Vite 6, Tailwind, shadcn/ui, Framer Motion, HashRouter.
+  Capacitor 8.3.0 for iOS/Android. Electron 41 for the Microsoft Store appx.
+  localStorage only — no backend, no accounts.
+- CAPACITOR INTEGRATION IS CONFIRMED REAL (audited 20 Aug 2026), not scaffolding:
+  capacitor.config.json, ios/ and android/ projects, and runtime Capacitor API
+  use. The old ClickUp task asking to verify this is answered.
+- NO BASE44 DEPENDENCY. Base44 is origin history only; zero references in src/
+  or package.json.
+- Monetisation is WIRED, not stubbed: @revenuecat/purchases-capacitor via
+  src/lib/purchases.js (remove_ads plus hints_3 / hints_10 / hints_25), and
+  @capacitor-community/admob via src/lib/admob.js. The "Coming soon" toast in
+  HintModal fires only when !isNative() — it is the web fallback, not a stub.
+  Prices in PURCHASE_OPTIONS are fallback display strings only.
+- Sentry: @sentry/react ^10.50.0.
+- Platforms: Apple App Store (ID: 6769255354) LIVE, Microsoft Store LIVE,
+  Google Play Closed Testing only — not publicly listed.
 - AdMob: approved for iOS, ad serving limits lifted.
   Publisher ID: pub-1060374954785370. Ad unit: ca-app-pub-...680080909.
-- Google Play Closed Testing: managed via Google Group
-  (soundfind-testers@googlegroups.com). Needs 12 opted-in testers for 14
-  consecutive days to unlock production.
+- Google Play Closed Testing: via Google Group soundfind-testers@googlegroups.com.
+  Needs 12 opted-in testers for 14 consecutive days to unlock production.
 - App Store visibility: post-launch boost has worn off, organic ranking still
   developing. Listing copy not yet optimised.
+
+### SoundFind facts that briefs keep getting wrong
+
+Full detail in WordFind-Adventure/docs/ARCHITECTURE.md.
+
+1. FIVE MODES, and the internal ids differ from the player-facing labels. Store
+   copy must use the labels: standard = "Word Find", audio = "Audio",
+   anagram = "Anagram", association = "Clue Hunt", mystery_word = "Mystery Word".
+2. NO MODE REQUIRES A CONNECTION. Only audio degrades offline, falling back to
+   the Web Speech API. Do not describe the game as needing to be online.
+3. HASHROUTER, NOT BROWSERROUTER. Reading or writing window.location directly
+   has broken this app twice. Use the router hooks.
+4. THE MICROSOFT STORE BUILD IS ELECTRON, not a PWA wrapper.
+5. THREE HARDCODED images.unsplash.com URLs mean the app makes third-party
+   requests at runtime, so Unsplash sees player IPs. Everything else is local.
+   Confirm the privacy policy and store privacy declarations reflect this.
 
 ## MER (MEDICAL EVENT RECORDER)
 
@@ -179,7 +213,8 @@ treatment to the adviser rather than deciding it.
 
 ## OPEN TASKS (from ClickUp)
 
-SoundFind: verify Capacitor integration; write App Store listing copy;
+SoundFind: ~~verify Capacitor integration~~ ANSWERED 20 Aug 2026 — it is real;
+write App Store listing copy;
 DNS play.uniquegames.com.au → Vercel (review if still needed); weekly store
 review check.
 
