@@ -2,6 +2,9 @@
 
 > **Auto-loaded by Claude Code on every session start.**
 > This file covers code context only — tech stack, key files, architecture, gotchas.
+> **For the full derived architecture — capture model, all five record-creation
+> sites, the two notification solutions, storage shape — see `docs/ARCHITECTURE.md`,
+> which is regenerated from the code at each version bump.**
 > For current status, blockers, and next steps → fetch the ClickUp handoff document:
 > **"Project Context & Status — Claude Handoff Document"** (Team Space, workspace 90161564576)
 > Keep this file updated when architecture or key patterns change.
@@ -13,7 +16,7 @@
 - **App name:** Medical Event Recorder (MER)
 - **Developer:** Notiva
 - **GitHub:** branch `MedicalEventRecorder`
-- **Version:** 1.0.3+4 (current — TestFlight external testing build; next App Store submission must use 1.0.3+5 or higher)
+- **Version:** 1.1.0+5 (unreleased). Last App Store release was 1.0.2. Never hardcode this — it is read at runtime from the platform package metadata by `lib/app_info.dart`
 - **Owner:** Waz (wjl25) — Windows PC primary
 
 ## Package / Bundle IDs — CRITICAL
@@ -32,10 +35,13 @@
 
 ## Tech Stack
 
-- Flutter (Dart) — cross-platform (Android, iOS, Windows, macOS, Web)
+- Flutter (Dart, SDK >=3.4.0 <4.0.0) — Android, iOS, Windows, macOS, Web
 - `shared_preferences` — local data storage (no backend, no cloud)
-- `share_plus` — CSV export
-- `url_launcher` — external links (privacy policy, support)
+- `share_plus` / `file_selector` / `cross_file` / `path_provider` — CSV export and JSON backup
+- `url_launcher` — external links (privacy policy, terms, support)
+- `awesome_notifications` ^0.11.0 — Android quick-log notification. **NOT used on iOS or Windows**
+- `sentry_flutter` ^9.0.0 — crash reporting, `sendDefaultPii = false`
+- `package_info_plus` — runtime version and Sentry release, so neither can drift from pubspec
 - `msix` — Windows Store packaging
 
 ---
@@ -44,10 +50,12 @@
 
 ```
 lib/
-  constants.dart          — app-wide constants (kDisclaimerVersion, URLs, company name)
-  main.dart               — entry point, calls NotificationService.init() before runApp()
+  app_info.dart           — runtime version/build/package from package_info_plus; Sentry release
+  constants.dart          — app-wide constants (kDisclaimerVersion, storage keys, URLs)
+  main.dart               — entry point; binding, Sentry, NotificationService.init(), runApp()
   models/
-    event_record.dart     — EventRecord model, SharedPreferences serialisation
+    event_record.dart     — EventRecord model, SharedPreferences serialisation, CSV export
+    backup.dart           — JSON backup envelope, parsing/validation, id-merge restore plan
   screens/
     home_screen.dart      — event list, Getting Started card (first use), Help link card (returning), splash redirect
     log_event_screen.dart — new event form
@@ -56,7 +64,8 @@ lib/
     disclaimer_screen.dart — versioned disclaimer accept gate
     help_screen.dart      — How to use guide; Quick Log Notification setup with live permission status
   services/
-    notification_service.dart — awesome_notifications persistent quick-log notification; SilentAction buttons; SharedPreferences cross-isolate storage
+    notification_service.dart — Android quick-log notification (awesome_notifications); SilentAction buttons; background-isolate SharedPreferences
+    backup_service.dart       — backup/restore UI flows, reminder counter
   theme/                  — app theme, colours, typography
   widgets/                — shared widgets (app icon widget etc.)
 assets/
@@ -71,8 +80,26 @@ assets/
 
 ## Key Architecture Decisions
 
-### Quick-log notification
-- `awesome_notifications` v0.11.0 — iOS uses `ActionType.Default` (prompts FaceID/unlock, then logs reliably); Android uses `SilentAction` (fires without opening app)
+### Quick-log notification — TWO SOLUTIONS, SPLIT BY PLATFORM
+
+⚠️ **iOS does NOT use awesome_notifications.** Since CR-42 (May 2026) iOS
+notifications are native Swift: `ios/Runner/AppDelegate.swift` owns
+`UNUserNotificationCenter`, plus an ActivityKit Live Activity and an App Intent
+in `ios/MERWidget/`. `notification_service.dart:60` returns early on iOS because
+`AwesomeNotifications().initialize()` reassigns `UNUserNotificationCenter.delegate`
+to itself and breaks the native locked-screen handler. `onActionReceived` also
+returns immediately on iOS. **Do not "fix" either by removing the platform check.**
+
+⚠️ **iOS creates event records in Swift**, not Dart —
+`AppDelegate.handleQuickLogStart` writes `flutter.epilepsy_event_records_v1` in
+`UserDefaults` directly, and `EndMEREventIntent` (the Live Activity button, in the
+widget extension process) mutates it. Neither passes through `writeEventPayload`.
+Anything added to the Dart write path is absent on the iOS quick-log path.
+
+⚠️ **Windows has no notification path at all.** `init()` returns before any
+channel is created. Capture on Windows is in-app only.
+
+- `awesome_notifications` v0.11.0 — **Android only**, uses `SilentAction` (fires without opening the app)
 - Channel key `mer_active_v2` — v2 forced recreation after `defaultColor` + `NotificationImportance.Default` changes
 - `locked: false` — notification is in the standard (non-system) section so it shows expanded by default; can be swiped away but restores on next app open via `_restoreNotification()`
 - `@pragma('vm:entry-point')` required on BOTH the class AND the static callback
@@ -106,8 +133,11 @@ Omitting any one of these produces either no icon, a black circle, or incorrect 
 - `_SplashRedirect` in `home_screen.dart` reads this key — **do not revert to boolean**
 
 ### Data storage
-- All events stored in SharedPreferences as JSON — no SQLite, no cloud sync
+- All events stored in SharedPreferences as one JSON array under `kEventStorageKey` — no SQLite, no cloud sync
 - No user accounts, no analytics — privacy-first design
+- `EventRecord.fromMap` returns **nullable**; a bad timestamp yields null and that record is skipped, so one unreadable record cannot cost the whole history
+- `writeEventPayload` keeps a rollback copy under `kEventRollbackKey` — **never on iOS**, deliberately, because the native write path bypasses it and a stale copy would be a data-loss mechanism. The guard carries a DO NOT REMOVE comment
+- JSON backup/restore (`models/backup.dart`): versioned envelope, merge-by-id, never replaces
 
 ### CSV export
 - `history_screen.dart` uses `share_plus` — works cross-platform including Windows
