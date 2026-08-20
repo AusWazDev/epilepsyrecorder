@@ -29,6 +29,15 @@ const int kBackupSchemaVersion = 1;
 // reject another app's JSON before anything is read from it.
 const String kBackupFormatId = 'medical-event-recorder-backup';
 
+// Timestamp of the last backup the user took, used only to count events logged
+// since, for the reminder banner. NEVER change this string.
+const String kLastBackupKey = 'mer_last_backup_at';
+
+// Events logged since the last backup before the reminder banner appears.
+// Low enough that a loss would still hurt, high enough not to nag someone who
+// logs rarely. The banner is suppressed entirely around the capture path.
+const int kBackupReminderThreshold = 10;
+
 const String kWebsiteUrl   = 'https://www.notiva.com.au';
 const String kPrivacyUrl   = 'https://www.notiva.com.au/medical-event-recorder/privacy/';
 const String kTermsUrl     = 'https://www.notiva.com.au/medical-event-recorder/terms/';

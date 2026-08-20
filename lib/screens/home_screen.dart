@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter/services.dart';
 
 import '../constants.dart';
+import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../models/event_record.dart';
 import '../screens/about_screen.dart';
@@ -30,6 +31,8 @@ class HomeScreen extends StatefulWidget {
 enum _HomeMenuAction {
   history,
   exportAll,
+  backUp,
+  restore,
   about,
   help,
 }
@@ -47,6 +50,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _notificationsAllowed = true;
   bool _showPreviewsAlways   = true;
 
+  // ── BACKUP REMINDER STATE ──
+  // The capture path is load-bearing: the banner must never gate, delay or
+  // obstruct logging an event. Each of these suppresses it outright.
+  bool _openedFromNotification = false; // cold-started by a notification action
+  bool _loggedThisSession      = false; // an event was logged in this session
+  bool _backupBannerDismissed  = false; // user dismissed it
+  int  _eventsSinceBackup      = 0;
+
+  /// An event in progress suppresses the banner too, but needs no flag: the
+  /// active-event branch of the banner chain already takes precedence.
+  bool get _showBackupReminder =>
+      _loaded &&
+      !_openedFromNotification &&
+      !_loggedThisSession &&
+      !_backupBannerDismissed &&
+      _eventsSinceBackup >= kBackupReminderThreshold;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       try {
         final shouldOpen = await _navChannel.invokeMethod<bool>('getPendingOpenLatest');
         if (shouldOpen == true && mounted && _records.isNotEmpty) {
+          _openedFromNotification = true;
           _openLogScreen(existing: _records.first);
           return;
         }
@@ -69,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           await prefs.reload();
           if (prefs.getBool('mer_open_latest_event') ?? false) {
             await prefs.remove('mer_open_latest_event');
+            _openedFromNotification = true;
             if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
             break;
           }
@@ -156,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _activeEvent = active;
       if (initial) _loaded = true;
     });
-
+    await _refreshBackupCount();
   }
 
   Future<void> _endActiveEvent() async {
@@ -165,7 +187,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await _loadRecords();
   }
 
-  Future<void> _persist() => _store.save(_records);
+  Future<void> _persist() async {
+    await _store.save(_records);
+    await _refreshBackupCount();
+  }
+
+  Future<void> _refreshBackupCount() async {
+    final count = await eventsSinceLastBackup(_records);
+    if (!mounted) return;
+    setState(() => _eventsSinceBackup = count);
+  }
 
   // ── STATS ──
   int get _thisMonthCount {
@@ -202,7 +233,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       notes:            '',
     );
 
-    setState(() => _records.insert(0, rec));
+    setState(() {
+      _records.insert(0, rec);
+      _loggedThisSession = true;
+    });
     await _persist();
 
     if (!mounted) return;
@@ -235,6 +269,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (result == null) return;
 
     setState(() {
+      _loggedThisSession = true;
       if (existing == null) {
         _records.insert(0, result);
       } else {
@@ -357,6 +392,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     filenamePrefix: 'medical_event_recorder_all',
                   );
                   break;
+                case _HomeMenuAction.backUp:
+                  await showBackupOptions(context, _records);
+                  await _refreshBackupCount();
+                  break;
+                case _HomeMenuAction.restore:
+                  final merged = await restoreFromBackup(context, _records);
+                  if (merged != null) {
+                    final added = merged.length - _records.length;
+                    setState(() => _records = merged);
+                    await _persist();
+                    if (!mounted) break;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Restored $added '
+                            '${added == 1 ? "event" : "events"}'),
+                      ),
+                    );
+                  }
+                  break;
                 case _HomeMenuAction.about:
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -383,6 +437,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               PopupMenuItem(
                 value: _HomeMenuAction.exportAll,
                 child: Text('Export CSV (all events)'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.backUp,
+                child: Text('Back up now'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.restore,
+                child: Text('Restore from backup'),
               ),
               PopupMenuItem(
                 value: _HomeMenuAction.about,
@@ -444,6 +506,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 _activeEvent!['startIso'] as String),
                             onEnd:         _endActiveEvent,
                             showEndButton: !Platform.isIOS,
+                          ),
+                          const SizedBox(height: 12),
+                        ] else if (_showBackupReminder) ...[
+                          _BackupReminderBanner(
+                            count: _eventsSinceBackup,
+                            onBackUp: () async {
+                              await showBackupOptions(context, _records);
+                              await _refreshBackupCount();
+                            },
+                            onDismiss: () =>
+                                setState(() => _backupBannerDismissed = true),
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -677,6 +750,82 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
 /* ===========================
    SETTINGS NUDGE CARD
    =========================== */
+
+/// Dismissible reminder that events have been logged since the last backup.
+///
+/// A banner, not a modal and not a notification: it must never sit between the
+/// user and the record button, and a backup reminder must never compete with
+/// the event notification channel. It renders below the settings nudges and
+/// the active-event banner, and is suppressed entirely near the capture path.
+class _BackupReminderBanner extends StatelessWidget {
+  final int count;
+  final Future<void> Function() onBackUp;
+  final VoidCallback onDismiss;
+
+  const _BackupReminderBanner({
+    required this.count,
+    required this.onBackUp,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF81C784), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.backup_outlined,
+                  size: 20, color: Color(0xFF2E7D32)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '$count ${count == 1 ? "event" : "events"} since your last '
+                  'backup',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1B5E20),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                color: const Color(0xFF2E7D32),
+                visualDensity: VisualDensity.compact,
+                onPressed: onDismiss,
+                tooltip: 'Dismiss',
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Your events are stored only on this device. A backup is the only '
+            'way to get them onto another one.',
+            style: TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF2E7D32)),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton(
+              onPressed: onBackUp,
+              child: const Text('Back up now'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SettingsNudgeCard extends StatelessWidget {
   final IconData     icon;
