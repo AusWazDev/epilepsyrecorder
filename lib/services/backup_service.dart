@@ -163,14 +163,27 @@ Future<void> showBackupOptions(
               style: TextStyle(fontSize: 13),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.save_alt),
-            title: const Text('Save to a file'),
-            onTap: () async {
-              Navigator.pop(sheet);
-              await backupSaveAs(context, records);
-            },
-          ),
+          // ── SAVE (non-iOS only) ──
+          // file_selector ships no save-dialog implementation for iOS:
+          // FileSelectorIOS implements openFile/openFiles only, so getSaveLocation
+          // falls through to the platform-interface default, which delegates to
+          // getSavePath and throws UnimplementedError. Offering an option that
+          // throws is worse than not offering it, and it cannot be caught into
+          // anything useful — there is no iOS save dialog to fall back to.
+          // Share reaches Files on iOS, so the user can still put the backup
+          // wherever they choose and nothing is lost.
+          // Android has no save implementation either, but never reaches it:
+          // backupSaveAs returns from its own Downloads branch first.
+          // Same guard as showExportOptions in models/event_record.dart.
+          if (!Platform.isIOS)
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: const Text('Save to a file'),
+              onTap: () async {
+                Navigator.pop(sheet);
+                await backupSaveAs(context, records);
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.ios_share),
             title: const Text('Share'),

@@ -218,13 +218,15 @@ New surface no prior test covers.
 
 ### Backup
 
-**"Save to a file" cannot work on iOS.** See section 9 — the backup sheet offers it on
-every platform, and on iOS it raises `UnimplementedError`. Use **Share**.
+On iOS the backup sheet offers exactly **Share** and **Cancel**. "Save to a file" is
+deliberately absent — see section 9. Share reaches Files, so a backup can still be put
+anywhere the user chooses.
 
+- [ ] The sheet shows **only** "Share" and "Cancel" — no "Save to a file", and no disabled or greyed-out item
 - [ ] Back up via **Share** — the sheet appears and a `.json` file is produced
+- [ ] Share to **Files** specifically, and confirm the saved file opens and is valid JSON — this is the path that replaces "Save to a file"
 - [ ] Open the backup file and confirm its `appVersion` field reads the expected `version+build` (`backup.dart:23-24`)
 - [ ] Confirm cancelling the share sheet does **not** reset the reminder count (`backup_service.dart:83`)
-- [ ] "Save to a file" tapped on iOS — record what happened: ______________
 
 ### Restore
 
@@ -297,6 +299,8 @@ regression check — bundling a deployment-target raise into it would forfeit th
   It does not block the action. Surfaced to users in the Help screen.
 - **Live Activity has no end button below iOS 17.** Expected; see 3.3.
 - **No in-app End button on iOS.** Expected; see 3.4.
+- **No "Save to a file" in the backup sheet on iOS.** Intended; see 9. Share reaches
+  Files, which is the iOS equivalent.
 - **`awesome_notifications` must never initialise on iOS.** Its `initialize()` resets
   `UNUserNotificationCenter.delegate` to itself and breaks the native handler. There are
   **two** `initialize()` call sites in `notification_service.dart` and each has its own
@@ -308,20 +312,44 @@ regression check — bundling a deployment-target raise into it would forfeit th
   trusting the line numbers — they have moved before.
 - **Windows has no notification path at all.** Capture there is in-app only.
 
-## 9. Open defect found while verifying this checklist (22 August 2026)
+## 9. Why the backup sheet has no "Save to a file" on iOS
 
-**"Save to a file" in the backup sheet cannot succeed on iOS.** Not yet fixed; recorded
-here so a tester does not report it as new or waste time on it.
+**Fixed 22 August 2026. This is intended behaviour, not a missing feature — do not
+"restore" the option.**
 
-`showBackupOptions` offers "Save to a file" and "Share" on every platform with no
-filtering (`backup_service.dart:165-180`). On iOS, `backupSaveAs` skips its Android branch
-and calls `getSaveLocation` (`:118`). `FileSelectorIOS extends FileSelectorPlatform` and
-implements only `openFile` and `openFiles`, so `getSaveLocation` falls through to the
-platform interface default, which delegates to `getSavePath` and raises
-`UnimplementedError`. Nothing catches it: the `try`/`catch` in `backupSaveAs` covers the
-Android branch only, and the menu caller (`home_screen.dart:395`) does not guard either.
+`file_selector` ships no save-dialog implementation for iOS. `FileSelectorIOS` implements
+`openFile` and `openFiles` only, so `getSaveLocation` falls through to the
+platform-interface default, which delegates to `getSavePath` and raises
+`UnimplementedError`. `backupSaveAs` reaches that call on iOS because it skips its Android
+branch (`backup_service.dart:118`), and nothing catches it: the `try`/`catch` there covers
+the Android branch only.
 
-Restore is unaffected — `openFile` is implemented on iOS.
+The sheet now suppresses the option at the point it is built
+(`if (!Platform.isIOS)` in `showBackupOptions`) rather than catching the throw, because an
+option that appears and then fails is worse than one that never appears — and there is no
+iOS save dialog to fall back to, so a caught error could only become an apology. This is
+the same guard `showExportOptions` has always had (`models/event_record.dart:494`); the
+backup sheet was written later and did not inherit it.
+
+**Nothing is lost.** Share reaches Files on iOS, so the user still chooses where the backup
+lands, which is the actual requirement.
+
+Platform support for `getSaveLocation`, checked against the resolved packages:
+
+| Platform | Save dialog | Reached by this app? |
+|---|---|---|
+| iOS | **No** — `file_selector_ios` implements open only | No longer — option hidden |
+| Android | **No** — `file_selector_android` implements open and directory only | No — `backupSaveAs` returns from its own Downloads branch first |
+| Windows | Yes | Yes |
+| macOS | Yes | Yes |
+| web | Yes | Not a shipped target |
+| Linux | Yes | No `linux/` target in this repo |
+
+So the plugin gap is iOS **and** Android; only iOS ever reached it, because Android
+short-circuits to `/storage/emulated/0/Download` before the call.
+
+Restore is unaffected on every platform — it uses `openFile`, which iOS and Android both
+implement. Share is unaffected: it goes through `share_plus`, not `file_selector`.
 
 ---
 

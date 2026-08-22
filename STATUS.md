@@ -43,6 +43,20 @@ claims pass across the app and notiva.com.au.** ✅ Nothing built, released or d
   Counter now resets only on a demonstrably completed backup, not on opening the
   share sheet.
 - Help and disclaimer warnings about what destroys data.
+- **iOS backup sheet: "Save to a file" removed (22 Aug).** It threw
+  `UnimplementedError` — `file_selector` ships no save dialog for iOS, so
+  `getSaveLocation` fell through to the platform-interface default. Suppressed where
+  the sheet is built (`if (!Platform.isIOS)`), not by catching the throw: an option
+  that appears and then fails is worse than one that never appears, and with no iOS
+  save dialog to fall back to a caught error could only become an apology. iOS now
+  offers Share and Cancel; Share reaches Files, so the user still chooses where the
+  backup lands. `showExportOptions` has always carried this exact guard — the backup
+  sheet was written later and did not inherit it, which is the same
+  local-correctness-does-not-propagate pattern recorded elsewhere. Audited all six
+  file_selector platforms: iOS **and Android** lack a save dialog, but Android never
+  reaches it (its own Downloads branch returns first); Windows, macOS, web and Linux
+  support it. CSV export was checked and was never affected. Share and restore
+  untouched on every platform.
 - Commits `bd5a28d`, `27981ca`, `e2edbe6`, `fa44b29`, `a56fd28`.
 
 ### Audits (read-only)
@@ -70,8 +84,9 @@ claims pass across the app and notiva.com.au.** ✅ Nothing built, released or d
   missed that step 5 proves nothing on an event under a minute because `lt1` is both
   the default and the correct answer. **Verifying it surfaced an open defect: "Save to
   a file" in the backup sheet raises `UnimplementedError` on iOS** — `file_selector_ios`
-  does not implement `getSaveLocation`. Share works. Recorded in the checklist's
-  section 9, not fixed.
+  does not implement `getSaveLocation`. Share works. Fixed the same day (see Backup /
+  restore above); checklist section 9 now explains why the option is absent instead of
+  recording it as a defect.
 - Commits `c0e15d2`, `8fc957e`, `1532f43`, `509b744`, `e8405eb`, `be69254`, `5c2fc73`.
 
 ### Claims audit and site deploy
