@@ -84,7 +84,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Track · Record · Understand',
+                    'Record · Review · Share',
                     style: TextStyle(
                       fontSize:      11,
                       color:         Colors.white.withOpacity(0.4),

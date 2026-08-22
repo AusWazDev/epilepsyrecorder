@@ -50,6 +50,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _notificationsAllowed = true;
   bool _showPreviewsAlways   = true;
 
+  /// Decorative flash on the record button. A Timer, not an awaited delay, so
+  /// it cannot sit in the path between a tap and the record being written.
+  Timer? _flashTimer;
+
+  // ── UNSAVED-WRITE WARNING STATE ──
+  // Set when a write failed and the list on screen is ahead of storage. Loaded
+  // at startup as well as set at runtime, because the condition outlives the
+  // session that caused it.
+  bool _hasUnsavedEvents = false;
+  bool _retryingPersist  = false;
+
   // ── BACKUP REMINDER STATE ──
   // The capture path is load-bearing: the banner must never gate, delay or
   // obstruct logging an event. Each of these suppresses it outright.
@@ -60,8 +71,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// An event in progress suppresses the banner too, but needs no flag: the
   /// active-event branch of the banner chain already takes precedence.
+  ///
+  /// The backup reminder is advisory; the unsaved-write warning is about data at
+  /// risk right now. When both would apply the reminder yields, so the two never
+  /// compete for the same space.
   bool get _showBackupReminder =>
       _loaded &&
+      !_hasUnsavedEvents &&
       !_openedFromNotification &&
       !_loggedThisSession &&
       !_backupBannerDismissed &&
@@ -110,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _flashTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -172,10 +189,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (activeRaw != null) {
       try { active = jsonDecode(activeRaw) as Map<String, dynamic>; } catch (_) {}
     }
+    // A warning raised in an earlier session must come back with the app.
+    final unsaved = await hasUnsavedEvents();
     if (!mounted) return;
     setState(() {
-      _records     = loaded;
-      _activeEvent = active;
+      _records          = loaded;
+      _activeEvent      = active;
+      _hasUnsavedEvents = unsaved;
       if (initial) _loaded = true;
     });
     await _refreshBackupCount();
@@ -187,8 +207,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await _loadRecords();
   }
 
+  /// Writes the event list, surfacing a failure instead of losing it.
+  ///
+  /// Never throws: [persistEvents] reports to Sentry and returns false, and the
+  /// warning banner is the user-visible half. Every call site is a user action
+  /// that has already been confirmed on screen.
   Future<void> _persist() async {
-    await _store.save(_records);
+    final ok = await persistEvents(_store, _records);
+    if (!mounted) return;
+    setState(() => _hasUnsavedEvents = !ok);
+    await _refreshBackupCount();
+  }
+
+  /// Re-attempts the write behind the warning banner.
+  Future<void> _retryPersist() async {
+    setState(() => _retryingPersist = true);
+    final ok = await persistEvents(_store, _records);
+    if (!mounted) return;
+    setState(() {
+      _retryingPersist = false;
+      _hasUnsavedEvents = !ok;
+    });
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Events saved')),
+      );
+    }
     await _refreshBackupCount();
   }
 
@@ -214,14 +258,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _records.where((r) => r.referralRequired).length;
 
   // ── QUICK RECORD ──
-  Future<void> _quickRecord() async {
-    // ── HAPTIC FEEDBACK ──
+  /// Records an event. Synchronous by design.
+  ///
+  /// Everything that matters — the timestamp, the insert, and handing the
+  /// payload to the store — happens before this returns, with no `await` in
+  /// between, so there is no window in which a second tap can interleave with
+  /// the first. That is what makes the handler non-re-entrant: not a guard that
+  /// drops the second tap, but an ordering in which two taps deterministically
+  /// produce two records.
+  ///
+  /// A debounce was considered and rejected. Taps 150 ms apart are how this
+  /// button is actually used — the device test produced a run of them — so
+  /// suppressing the second would silently discard a real event on the capture
+  /// path. Losing a seizure to a debounce is worse than the race it would hide.
+  ///
+  /// Order: timestamp, insert, write started, confirmation, flash. The 200 ms
+  /// flash used to sit before the timestamp and be awaited, which both delayed
+  /// the recorded time by 200 ms and created the re-entrancy window. It is now
+  /// decorative and gates nothing.
+  void _quickRecord() {
     HapticFeedback.heavyImpact();
-
-    // ── BUTTON FLASH ──
-    setState(() => _buttonFlash = true);
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (mounted) setState(() => _buttonFlash = false);
 
     final rec = EventRecord(
       id:               _uuid.v4(),
@@ -236,15 +292,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       _records.insert(0, rec);
       _loggedThisSession = true;
+      _buttonFlash       = true;
     });
-    await _persist();
 
-    if (!mounted) return;
+    // Started, deliberately NOT awaited: the confirmation must not wait on
+    // storage. A failure raises the warning banner instead of being silent.
+    unawaited(_persist());
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Event recorded'),
-      ),
+      const SnackBar(content: Text('Event recorded')),
     );
+
+    // Decorative only. Restarted on each tap so a run of taps keeps flashing.
+    _flashTimer?.cancel();
+    _flashTimer = Timer(const Duration(milliseconds: 200), () {
+      if (mounted) setState(() => _buttonFlash = false);
+    });
   }
 
   // ── RECORD WITH DETAILS ──
@@ -368,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 Text(
-                  'Track · Record · Understand',
+                  'Record · Review · Share',
                   style: TextStyle(
                     fontSize: 10,
                     color:    Colors.white54,
@@ -475,6 +538,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
+                        // ── UNSAVED-WRITE WARNING ──
+                        // Rendered ABOVE the banner chain below, not as another
+                        // branch of it. The chain is exclusive, so putting this
+                        // in it would hide whichever banner it displaced —
+                        // including the active-event banner, whose End button is
+                        // the only way to end an event on Android. Data at risk
+                        // and an event in progress are both worth showing, so
+                        // this stacks. The advisory backup reminder yields to it
+                        // instead, via _showBackupReminder.
+                        if (_hasUnsavedEvents) ...[
+                          _UnsavedEventsBanner(
+                            onRetry: _retryPersist,
+                            retrying: _retryingPersist,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         // ── SETTINGS NUDGE / ACTIVE EVENT BANNER ──
                         if (!_notificationsAllowed && !Platform.isWindows) ...[
                           _SettingsNudgeCard(
@@ -502,8 +582,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           const SizedBox(height: 12),
                         ] else if (_activeEvent != null) ...[
                           _ActiveEventBanner(
-                            startTime:     DateTime.parse(
-                                _activeEvent!['startIso'] as String),
+                            // .toLocal() for the same reason EventRecord
+                            // normalises: AppDelegate.swift writes startIso
+                            // with ISO8601DateFormatter, so on iOS this is UTC
+                            // and DateFormat rendered its UTC wall clock —
+                            // "Started 10:38 AM · 5s ago" at 8:38 PM, a banner
+                            // contradicting itself because the elapsed counter
+                            // is instant-based and correct while the start time
+                            // was not. This value does not pass through
+                            // EventRecord.fromMap, so it needs its own
+                            // conversion. No-op on Android, which writes naive
+                            // local.
+                            startTime: DateTime.parse(
+                                    _activeEvent!['startIso'] as String)
+                                .toLocal(),
                             onEnd:         _endActiveEvent,
                             showEndButton: !Platform.isIOS,
                           ),
@@ -757,6 +849,92 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
 /// user and the record button, and a backup reminder must never compete with
 /// the event notification channel. It renders below the settings nudges and
 /// the active-event banner, and is suppressed entirely near the capture path.
+/// Shown when the list on screen is ahead of what is in storage.
+///
+/// Deliberately has no dismiss control. The condition is not advice the user can
+/// judge and set aside — it means events they can see are not stored — so the
+/// only ways out are a write that succeeds or the app being reinstalled. The
+/// banner clears itself the moment one succeeds.
+///
+/// Amber rather than red: the events are still on screen and still recoverable,
+/// and the person reading this may have just logged a seizure. It needs to be
+/// noticed and acted on, not to frighten.
+class _UnsavedEventsBanner extends StatelessWidget {
+  final Future<void> Function() onRetry;
+  final bool retrying;
+
+  const _UnsavedEventsBanner({
+    required this.onRetry,
+    required this.retrying,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFF9800), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.save_outlined,
+                  size: 20, color: Color(0xFFE65100)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Some events aren't saved yet",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFE65100),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // The last sentence is only honest because the backup path
+          // serialises the in-memory list, not stored prefs: buildBackupJson
+          // takes the records it is handed, and ⋮ → Back up now passes
+          // _records. So a backup taken while this banner is up DOES contain
+          // the unsaved events. Verified by test; if the backup path is ever
+          // changed to read from storage, this sentence must go.
+          const Text(
+            "They're in your list, but this device hasn't stored them. Tap "
+            'Retry, and avoid closing the app until it succeeds. If it keeps '
+            'failing, use Back up now to save a copy.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: Color(0xFFE65100),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton(
+              onPressed: retrying ? null : onRetry,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE65100),
+                foregroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: Text(retrying ? 'Saving…' : 'Retry'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BackupReminderBanner extends StatelessWidget {
   final int count;
   final Future<void> Function() onBackUp;

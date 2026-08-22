@@ -33,6 +33,15 @@ const String kBackupFormatId = 'medical-event-recorder-backup';
 // since, for the reminder banner. NEVER change this string.
 const String kLastBackupKey = 'mer_last_backup_at';
 
+// Set when a write of the event list failed, cleared when one succeeds.
+//
+// Persisted rather than held in memory because the failure it records outlives
+// the session: the events are in the list the user can see but not in storage,
+// so if the app is killed before a later write succeeds they are gone. The
+// warning must still be there when the app comes back. NEVER change this
+// string — it would silently drop a pending warning on upgrade.
+const String kUnsavedEventsKey = 'mer_unsaved_events';
+
 // Events logged since the last backup before the reminder banner appears.
 // Low enough that a loss would still hurt, high enough not to nag someone who
 // logs rarely. The banner is suppressed entirely around the capture path.

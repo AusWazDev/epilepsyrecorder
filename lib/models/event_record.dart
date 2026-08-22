@@ -177,11 +177,42 @@ class EventRecord {
    =========================== */
 
 class EventStore {
+  /// Serialises every store operation, so two can never interleave.
+  ///
+  /// Every record lives in one string under one key, so a write is
+  /// read-modify-write over the whole history and two overlapping ones are a
+  /// lost update. That is not hypothetical: the quick-record button was
+  /// re-entrant, so taps 150 ms apart each started their own save, and whichever
+  /// `setString` happened to land last won. Live device data showed 27
+  /// Dart-written records from about 29 taps.
+  ///
+  /// [load] joins the same chain as [save]. A read that jumped the queue would
+  /// return pre-write state, and `_loadRecords` assigns that straight over the
+  /// in-memory list — so a resume racing a write could drop a just-logged event
+  /// from memory and the next save would then make the loss permanent.
+  ///
+  /// Static because it guards a single storage key, not an instance: two
+  /// `EventStore` objects still write the same string and must share the queue.
+  static Future<void> _queue = Future<void>.value();
+
+  /// Appends [operation] to the queue and returns its result.
+  ///
+  /// The chain is kept alive across failures: a rejected Future would poison
+  /// every later operation, so what is stored back is a Future that always
+  /// completes. The caller still sees the real error.
+  static Future<T> _serialise<T>(Future<T> Function() operation) {
+    final result = _queue.then((_) => operation());
+    _queue = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
   /// One unreadable record must never cost the user the whole history: every
   /// record lives in a single JSON string under a single key, so an
   /// exception here would make all of them unreachable. Entries that are not
   /// maps, and records fromMap rejects, are skipped individually.
-  Future<List<EventRecord>> load() async {
+  Future<List<EventRecord>> load() => _serialise(_load);
+
+  static Future<List<EventRecord>> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw   = prefs.getString(kEventStorageKey);
     if (raw == null || raw.isEmpty) return [];
@@ -194,12 +225,21 @@ class EventStore {
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
 
-  Future<void> save(List<EventRecord> records) async {
+  /// Writes [records] as they are at the moment of the call.
+  ///
+  /// The payload is encoded synchronously, before anything is awaited, so the
+  /// write is a snapshot rather than a view of a list that keeps changing.
+  /// Callers pass `_records`, which is mutated in place by `insert` and replaced
+  /// wholesale by `_loadRecords`; encoding after an await meant a save could
+  /// serialise records it never intended to, or state from before a reload.
+  Future<void> save(List<EventRecord> records) {
+    final payload = jsonEncode(records.map((e) => e.toMap()).toList());
+    return _serialise(() => _write(payload));
+  }
+
+  static Future<void> _write(String payload) async {
     final prefs = await SharedPreferences.getInstance();
-    await writeEventPayload(
-      prefs,
-      jsonEncode(records.map((e) => e.toMap()).toList()),
-    );
+    await writeEventPayload(prefs, payload);
   }
 
   Future<SharedPreferences> clearAll() async {
@@ -250,6 +290,67 @@ Future<void> writeEventPayload(SharedPreferences prefs, String payload) async {
     }
   }
   await prefs.setString(kEventStorageKey, payload);
+}
+
+/* ===========================
+   OPTIMISTIC PERSIST
+   =========================== */
+
+/// Whether a previous write of the event list failed and has not since
+/// succeeded.
+Future<bool> hasUnsavedEvents() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.reload();
+  return prefs.getBool(kUnsavedEventsKey) ?? false;
+}
+
+/// Records that events are in memory but not in storage.
+Future<void> setUnsavedEventsWarning() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(kUnsavedEventsKey, true);
+}
+
+/// Clears the warning. Called only where a write demonstrably succeeded.
+Future<void> clearUnsavedEventsWarning() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove(kUnsavedEventsKey);
+}
+
+/// Saves [records] and reports whether it worked, without ever throwing.
+///
+/// Returns true when the write succeeded and any standing warning was cleared,
+/// false when it failed and the warning was raised.
+///
+/// The failure is optimistic by design and the caller has already confirmed to
+/// the user. Three deliberate choices sit behind that:
+///
+///  * The confirmation is not delayed until the write returns. This is the
+///    capture path — someone logging a seizure — and latency there is the one
+///    cost not worth paying for correctness elsewhere.
+///  * The record is NOT removed from the list on failure. A just-logged event
+///    disappearing in front of the person who logged it is the worst outcome
+///    available, even when it is the truthful one.
+///  * So the gap between what is on screen and what is in storage is made
+///    visible instead: a persistent warning the user can act on, rather than a
+///    silent divergence they discover after a restart.
+///
+/// Reported to Sentry explicitly on every failure, never swallowed: before
+/// this, an exception here escaped into a discarded Future and was captured by
+/// the guarded zone with nothing shown on screen at all.
+Future<bool> persistEvents(EventStore store, List<EventRecord> records) async {
+  try {
+    await store.save(records);
+    await clearUnsavedEventsWarning();
+    return true;
+  } catch (e, st) {
+    await Sentry.captureException(e, stackTrace: st);
+    try {
+      await setUnsavedEventsWarning();
+    } catch (_) {
+      // Storage is failing; the in-memory banner still shows for this session.
+    }
+    return false;
+  }
 }
 
 /* ===========================
