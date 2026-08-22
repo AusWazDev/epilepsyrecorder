@@ -85,8 +85,37 @@ class EventRecord {
     this.triggers  = const [],
   });
 
+  /// Parses a stored timestamp and normalises it to local wall-clock time.
+  ///
+  /// Two writers produce two shapes, and they must not display differently:
+  ///
+  ///  * Dart writes naive local time — `2026-08-22T18:18:35.180820`, no zone
+  ///    suffix — because [toMap] calls `toIso8601String()` on a local
+  ///    `DateTime`. `DateTime.tryParse` returns a local `DateTime` for these.
+  ///  * Native iOS capture writes UTC — `2026-08-22T06:29:59.000Z` — because
+  ///    `AppDelegate.swift` uses `ISO8601DateFormatter` (`:248`). That is the
+  ///    Lock Screen and Live Activity path, which is the PRIMARY way events are
+  ///    captured on iOS. `DateTime.tryParse` returns a UTC `DateTime` for
+  ///    these.
+  ///
+  /// `DateFormat` renders whatever wall clock the `DateTime` carries, so
+  /// without this conversion a UTC record displayed at its UTC time — ten hours
+  /// early in AEST, year-round. Sorting hid it: `compareTo` compares absolute
+  /// instants, so the order was right while the times were wrong.
+  ///
+  /// `toLocal()` returns the receiver unchanged when it is already local, so
+  /// Dart-written records are untouched; only the UTC ones move, and they move
+  /// to the same instant expressed locally.
+  ///
+  /// Normalising here rather than at each display site is deliberate: there are
+  /// four consumers today (history list, home event tiles, the month count, CSV
+  /// export) and every future one would have to remember.
+  ///
+  /// Stored data is deliberately NOT rewritten. A UTC timestamp is not wrong,
+  /// it is unambiguous, and a migration that rewrote timestamps would risk far
+  /// more than a parse-time conversion.
   static DateTime? _parseTimestamp(dynamic raw) =>
-      (raw is String) ? DateTime.tryParse(raw) : null;
+      (raw is String) ? DateTime.tryParse(raw)?.toLocal() : null;
 
   Map<String, dynamic> toMap() => {
         'id':               id,
