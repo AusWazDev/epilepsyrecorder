@@ -5,6 +5,11 @@
 > **For the full derived architecture — capture model, all five record-creation
 > sites, the two notification solutions, storage shape — see `docs/ARCHITECTURE.md`,
 > which is regenerated from the code at each version bump.**
+> **Pre-release test and submission checklists live in `docs/`:**
+> `docs/iOS Device Test Checklist.md` — run on a physical device before every App Store
+> Connect upload, and `docs/Store Submission Checklist.md` for Windows/Partner Center.
+> The iOS one is verified against the code and cites file:line; treat those citations as
+> stale once the files it names change.
 > For current status, blockers, and next steps → fetch the ClickUp handoff document:
 > **"Project Context & Status — Claude Handoff Document"** (Team Space, workspace 90161564576)
 > Keep this file updated when architecture or key patterns change.

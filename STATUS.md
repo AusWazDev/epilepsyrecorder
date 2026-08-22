@@ -60,6 +60,18 @@ claims pass across the app and notiva.com.au.** ✅ Nothing built, released or d
   awesome_notifications with `ActionType.Default`. iOS has been native Swift since
   CR-42.
 - claude.ai Project instructions written and versioned in `docs/`.
+- `docs/iOS Device Test Checklist.md` added — the iOS counterpart to the Windows
+  Store Submission Checklist, pointed to from `CLAUDE.md`. Written from a chat draft,
+  then verified line by line against `AppDelegate.swift`, `ios/MERWidget/`,
+  `notification_service.dart`, `home_screen.dart` and the v1.1.0 backup code. Eleven
+  corrections; the draft had the Android foreground-service model in step 1, put the
+  Face ID constraint on the start path instead of the end intent, said Show Previews
+  makes the lock-screen action unreachable when it only requires a password, and
+  missed that step 5 proves nothing on an event under a minute because `lt1` is both
+  the default and the correct answer. **Verifying it surfaced an open defect: "Save to
+  a file" in the backup sheet raises `UnimplementedError` on iOS** — `file_selector_ios`
+  does not implement `getSaveLocation`. Share works. Recorded in the checklist's
+  section 9, not fixed.
 - Commits `c0e15d2`, `8fc957e`, `1532f43`, `509b744`, `e8405eb`, `be69254`, `5c2fc73`.
 
 ### Claims audit and site deploy
