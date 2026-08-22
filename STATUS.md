@@ -2,7 +2,7 @@
 
 ---
 
-## Session: 19–20 August 2026 — Windows (Claude Code CLI)
+## Session: 19–22 August 2026 — Windows (Claude Code CLI)
 
 **v1.1.0 work: data-loss fix, version drift fix, JSON backup/restore. Plus a full
 claims pass across the app and notiva.com.au.** ✅ Nothing built, released or deployed.
@@ -62,11 +62,62 @@ claims pass across the app and notiva.com.au.** ✅ Nothing built, released or d
 - claude.ai Project instructions written and versioned in `docs/`.
 - Commits `c0e15d2`, `8fc957e`, `1532f43`, `509b744`, `e8405eb`, `be69254`, `5c2fc73`.
 
+### Claims audit and site deploy
+- **Nine unsupported claims** corrected across the app, notiva.com.au and the
+  draft store copy. These are claims the product does not support — distinct from
+  the nine-field capture model noted above, which is what it does.
+- **notiva.com.au deployed and verified live.** Deployed and verified are two
+  separate claims; both were checked, not inferred from the deploy succeeding.
+
+### Storage key de-duplicated
+- The event storage key was spelled out in more than one place. Now a single
+  `kEventStorageKey` in `constants.dart`, referenced everywhere. A key written
+  twice is a key that can drift in one copy only, and what it addresses is the
+  entire event history in one JSON string.
+
+### Notification failure history (read-only)
+- **Seven** recorded notification failures across the project's history. All
+  seven were caught pre-submission on a physical device. **None reached Apple.**
+- **Four of the seven shared one root cause**, fixed by CR-42.
+- The finding is the pattern, not the count: a physical-device check caught every
+  one of them, and no analyzer or simulator pass would have.
+
+### App Store Connect — verified for the first time
+- The **Apple Developer Program License Agreement had lapsed**, and it was
+  blocking the entire App Store Connect API — including the Xcode Organizer
+  route, which fails for the same reason and does not announce why. Now accepted.
+- First time App Store Connect state has been read directly rather than inferred.
+- Detail lives in the ClickUp sub-page **"MER — App Store Connect Verified State
+  (20 Aug 2026)"** and is not duplicated here.
+
+### Decision: v1.1.0 ships for the P0 fix
+- v1.1.0 goes out for the data-loss fix alone. **iOS is deliberately unchanged**,
+  which makes the iOS device test a regression check rather than a test of new
+  work: if iOS misbehaves, this release did not cause it.
+- **`IPHONEOS_DEPLOYMENT_TARGET` raise to 17.0 is deferred to v1.2.0.** Bundling
+  it with the P0 fix would forfeit exactly that property.
+
+### Test device coverage
+- Physical device coverage recorded — see the Change Register amendments.
+- **iOS 15 through 18 are untested against the CR-42 design.** Recorded as a
+  known gap rather than left as an unstated assumption. CR-42 is the native Swift
+  notification architecture, so this is the least-covered load-bearing path.
+
+### Housekeeping
+- `.gitattributes` now covers `*.txt` (commit `c8b284d`). Preventative only: all
+  246 tracked files were enumerated and **zero text blobs contain CRLF**, so
+  `git add --renormalize .` had nothing to renormalise. The 102 CR-bearing blobs
+  are all binary. Reasoning is in that commit message.
+
 ### Verified
 `flutter analyze` 51 infos, zero errors/warnings — identical per-file distribution
 to the session-start baseline. 21 tests pass, up from 0. Two pre-existing widget
 test failures remain (`app_smoke_test`, `export_options_test`) — they set an
 obsolete `disclaimerAccepted` bool and already failed at `ce2b964`. Not fixed.
+
+Re-verified 22 Aug after the line-ending commit: `flutter analyze` 51 infos,
+the list byte-identical to the session-start baseline (not merely the same count);
+21 pass and the same 2 pre-existing failures.
 
 **iOS native untouched this session, deliberately.** v1.1.0 is additions only.
 
