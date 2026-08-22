@@ -18,6 +18,7 @@ import '../screens/disclaimer_screen.dart';
 import '../screens/help_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
+import '../screens/your_data_screen.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 
@@ -28,11 +29,16 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// Four items, not six.
+///
+/// Export CSV, Back up now and Restore from backup moved behind Your data. They
+/// were three of six flat items with no grouping or icons, mixed in with
+/// navigation, and nothing distinguished Export from Back up — so someone
+/// wanting to preserve their history could pick the one file that cannot
+/// restore it.
 enum _HomeMenuAction {
   history,
-  exportAll,
-  backUp,
-  restore,
+  yourData,
   about,
   help,
 }
@@ -348,6 +354,44 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try { await _navChannel.invokeMethod<void>('restoreNotification'); } catch (_) {}
   }
 
+  // ── YOUR DATA ──
+  /// The three data actions stay here rather than moving into the screen: this
+  /// State owns _records and _persist, and a restore has to write through them.
+  /// YourDataScreen passes its own context back so sheets and dialogs anchor to
+  /// the screen the user is looking at.
+  void _openYourData() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => YourDataScreen(
+          onExport: (ctx) => showExportOptions(
+            ctx,
+            _records,
+            filenamePrefix: 'medical_event_recorder_all',
+            sheetTitle: 'Export all events',
+          ),
+          onBackUp: (ctx) async {
+            await showBackupOptions(ctx, _records);
+            await _refreshBackupCount();
+          },
+          onRestore: (ctx) async {
+            final merged = await restoreFromBackup(ctx, _records);
+            if (merged == null) return;
+            final added = merged.length - _records.length;
+            setState(() => _records = merged);
+            await _persist();
+            if (!ctx.mounted) return;
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(
+                content: Text('Restored $added '
+                    '${added == 1 ? "event" : "events"}'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   // ── HISTORY ──
   void _openHistory() {
     Navigator.of(context).push(
@@ -448,31 +492,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 case _HomeMenuAction.history:
                   _openHistory();
                   break;
-                case _HomeMenuAction.exportAll:
-                  await showExportOptions(
-                    context,
-                    _records,
-                    filenamePrefix: 'medical_event_recorder_all',
-                  );
-                  break;
-                case _HomeMenuAction.backUp:
-                  await showBackupOptions(context, _records);
-                  await _refreshBackupCount();
-                  break;
-                case _HomeMenuAction.restore:
-                  final merged = await restoreFromBackup(context, _records);
-                  if (merged != null) {
-                    final added = merged.length - _records.length;
-                    setState(() => _records = merged);
-                    await _persist();
-                    if (!mounted) break;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Restored $added '
-                            '${added == 1 ? "event" : "events"}'),
-                      ),
-                    );
-                  }
+                case _HomeMenuAction.yourData:
+                  _openYourData();
                   break;
                 case _HomeMenuAction.about:
                   Navigator.of(context).push(
@@ -498,16 +519,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: Text('History'),
               ),
               PopupMenuItem(
-                value: _HomeMenuAction.exportAll,
-                child: Text('Export CSV (all events)'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.backUp,
-                child: Text('Back up now'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.restore,
-                child: Text('Restore from backup'),
+                value: _HomeMenuAction.yourData,
+                child: Text('Your data'),
               ),
               PopupMenuItem(
                 value: _HomeMenuAction.about,
@@ -815,6 +828,27 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
                     color:    Color(0xFFD32F2F),
                   ),
                 ),
+                // iOS gets no End button: showEndButton is !Platform.isIOS and
+                // _endActiveEvent returns early there, because the Live Activity
+                // owns ending an event. Without this line the banner shows a
+                // running timer and no way to stop it — and if the notification
+                // has been dismissed and the Live Activity is gone, the event
+                // auto-clears after 30 minutes with duration left at its lt1
+                // default, which is wrong data rather than missing data.
+                // An End button here would route through native code: v1.2.0.
+                if (Platform.isIOS)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 3),
+                    child: Text(
+                      'End this event from the Lock Screen or the '
+                      'notification.',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        height:   1.3,
+                        color:    Color(0xFFD32F2F),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

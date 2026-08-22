@@ -624,10 +624,16 @@ Future<void> exportCsvSaveAs(
   );
 }
 
+/// [sheetTitle] overrides the header label so the sheet can state its own
+/// scope. That matters most from History, whose AppBar button exports only the
+/// filtered list but says so in a tooltip — and tooltips need hover or a long
+/// press, so no iPhone user ever sees it. The sheet header is the only place
+/// the scope can be stated where it will actually be read.
 Future<void> showExportOptions(
   BuildContext context,
   List<EventRecord> items, {
   String? filenamePrefix,
+  String? sheetTitle,
 }) async {
   if (items.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -651,16 +657,20 @@ Future<void> showExportOptions(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
               child: Row(
                 children: [
-                  const Text(
-                    'Export events',
-                    style: TextStyle(
-                      fontSize:   13,
-                      fontWeight: FontWeight.w600,
-                      color:      Colors.black45,
-                      letterSpacing: 0.4,
+                  // Expanded, not a bare Text + Spacer: a scope-bearing title
+                  // is longer than "Export events" and must not overflow.
+                  Expanded(
+                    child: Text(
+                      sheetTitle ?? 'Export events',
+                      style: const TextStyle(
+                        fontSize:   13,
+                        fontWeight: FontWeight.w600,
+                        color:      Colors.black45,
+                        letterSpacing: 0.4,
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   const _ExportIconWidget(),
                 ],
               ),

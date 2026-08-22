@@ -224,6 +224,7 @@ Future<void> showBackupOptions(
 
   await showModalBottomSheet<void>(
     context: context,
+    showDragHandle: true,
     builder: (sheet) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -237,9 +238,13 @@ Future<void> showBackupOptions(
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+            // NOT "a file you choose": on iOS the save tile below is compiled
+            // out and Share is the only option, so nothing here lets the user
+            // choose a location. Share does reach Files, but that is the user
+            // choosing where to put it afterwards, not a save dialog.
             child: Text(
-              'Saves every event to a file you choose. Keep it somewhere off '
-              'this device.',
+              'Saves every event to a file you can share or store. Keep it '
+              'somewhere off this device.',
               style: TextStyle(fontSize: 13),
             ),
           ),
@@ -264,9 +269,12 @@ Future<void> showBackupOptions(
                 await backupSaveAs(context, records);
               },
             ),
+          // Same wording as the export sheet for the same action. Two labels
+          // for one thing read as two different features.
           ListTile(
             leading: const Icon(Icons.ios_share),
-            title: const Text('Share'),
+            title: const Text('Share to apps'),
+            subtitle: const Text('Email, cloud storage, spreadsheets'),
             onTap: () async {
               Navigator.pop(sheet);
               await backupShare(context, records);
@@ -394,9 +402,13 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
         '${plan.unreadable == 1 ? "record" : "records"} could not be read and '
         'will be skipped.');
   }
+  // toAdd is an int, and was interpolated with no noun — the dialog read
+  // "Restore 5?" while every other count in it was pluralised correctly.
+  final toAddLabel =
+      '${plan.toAdd} ${plan.toAdd == 1 ? "event" : "events"}';
   lines.add(plan.addsNothing
       ? 'There is nothing new to restore.'
-      : 'Restore ${plan.toAdd}?');
+      : 'Restore $toAddLabel?');
   lines.add('Restoring only adds events. Nothing already on this device is '
       'changed or removed.');
 
@@ -413,7 +425,7 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
         if (!plan.addsNothing)
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Restore ${plan.toAdd}'),
+            child: Text('Restore $toAddLabel'),
           ),
       ],
     ),

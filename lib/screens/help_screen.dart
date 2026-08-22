@@ -146,14 +146,27 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 _HelpRow(
                   icon:   Icons.download_outlined,
                   title:  'Export to CSV',
-                  body:   'Tap ⋮ → Export CSV (all events) to share your event data as a spreadsheet file.',
+                  body:   'Tap ⋮ → Your data → Export all events to share your events as a '
+                          'spreadsheet file. A CSV cannot be read back into the app — it is a '
+                          'copy to share, not a backup.',
+                ),
+                _HelpRow(
+                  icon:   Icons.filter_alt_outlined,
+                  title:  'Exporting only what you are looking at',
+                  body:   'The share button at the top of the History screen exports just the '
+                          'events your current search and filters are showing, not all of them. '
+                          'The sheet that opens says how many.',
                 ),
                 _HelpRow(
                   icon:   Icons.backup_outlined,
                   title:  'Back up and restore',
-                  body:   'Tap ⋮ → Back up now to save every event to a file you choose. '
-                          '⋮ → Restore from backup reads one back in. Restoring only adds events — '
-                          'anything already on this device is left exactly as it is.',
+                  // NOT "a file you choose": on iOS the save option does not
+                  // exist and Share is the only route, so nothing offers a
+                  // location to choose.
+                  body:   'Tap ⋮ → Your data → Back up now to save every event to a file you '
+                          'can share or store. Restore from a backup on the same screen reads '
+                          'one back in. Restoring only adds events — anything already on this '
+                          'device is left exactly as it is.',
                   isLast: true,
                 ),
               ],

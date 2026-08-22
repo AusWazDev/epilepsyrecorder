@@ -171,10 +171,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
           IconButton(
             tooltip:  'Export CSV (filtered)',
             icon:     const Icon(Icons.ios_share),
+            // The tooltip above is the only place this button says it exports
+            // the FILTERED list, and tooltips need hover or a long press — so
+            // no iPhone user ever sees it. The sheet header carries the scope
+            // instead, where it will be read.
             onPressed: () => showExportOptions(
               context,
               shown,
               filenamePrefix: 'medical_event_recorder_filtered',
+              sheetTitle: 'Export ${shown.length} filtered '
+                  '${shown.length == 1 ? "event" : "events"}',
             ),
           ),
         ],
