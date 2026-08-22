@@ -26,6 +26,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Already present transitively via file_selector. Declared here so
+  # test/backup_type_group_test.dart can drive the real iOS type-group
+  # translation instead of a copy of its rules — the boundary no test crossed
+  # when "Restore from backup does nothing on iOS" shipped.
+  file_selector_ios: ^0.5.3
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.4
 

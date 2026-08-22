@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,6 +18,39 @@ import '../models/event_record.dart';
 /// remembered between runs: no stored path, no security-scoped bookmark, no
 /// cloud credential, no background write. Every backup is a deliberate action
 /// the user took.
+
+/// The one file-type filter every backup file picker uses.
+///
+/// All four platforms must be satisfied by this single group, and each reads a
+/// different field of it. Verified against the plugin sources in pubspec.lock:
+///
+///  * iOS (`file_selector_ios` 0.5.3+5, `file_selector_ios.dart:63-75`) reads
+///    ONLY `uniformTypeIdentifiers`. iOS filters by UTI, not by extension, so a
+///    group that sets `extensions` and nothing else is neither "allow any" nor
+///    translatable, and the plugin throws `ArgumentError` in Dart before the
+///    platform channel is touched — no picker is ever created. That was the
+///    defect behind "Restore from backup does nothing on iOS".
+///  * macOS (`file_selector_macos` 0.9.5:180-193) accepts any one of
+///    extensions / UTIs / mimeTypes, and unions those it is given.
+///  * Windows (`file_selector_windows` 0.9.3+5:131-141) requires `extensions`
+///    non-empty and ignores the rest.
+///  * Android (`file_selector_android` 0.5.2+4:83-99) requires `extensions` or
+///    `mimeTypes` non-empty and ignores UTIs.
+///
+/// `public.json` is the system UTI for the `.json` extension, which is what
+/// [_backupFilename] always writes, so a file produced by this app's own backup
+/// path is selectable rather than greyed out. It is a system-declared type — the
+/// app does not need to declare it in Info.plist, and no Info.plist entry is
+/// required to present a document picker.
+///
+/// Anything not covered by the filter is still handled: a file that gets past
+/// it is validated by [parseBackup] and refused with an explanation, never
+/// applied.
+const kBackupTypeGroup = XTypeGroup(
+  label: 'Backup files',
+  extensions: ['json'],
+  uniformTypeIdentifiers: ['public.json'],
+);
 
 String _backupFilename() =>
     'medical_event_recorder_backup_'
@@ -69,10 +103,14 @@ Future<void> backupShare(
   await file.writeAsString(json, flush: true);
   if (!context.mounted) return;
 
+  // No `text` alongside `files`. iOS treats a text parameter as a second shared
+  // item, so "Save to Files" wrote a stray companion file containing only the
+  // text and nothing else — leaving the user two files with no way to tell
+  // which one restores. `subject` is metadata (the mail subject line) and does
+  // not become an item, so it stays.
   final result = await SharePlus.instance.share(
     ShareParams(
       subject: '$kAppName backup',
-      text:    '$kAppName backup (JSON)',
       files:   [XFile(file.path, mimeType: 'application/json')],
       sharePositionOrigin: shareOriginRect(context),
     ),
@@ -115,9 +153,7 @@ Future<void> backupSaveAs(
   // ── DESKTOP — file picker save dialog ──
   final location = await getSaveLocation(
     suggestedName: filename,
-    acceptedTypeGroups: const [
-      XTypeGroup(label: 'Backup files', extensions: ['json']),
-    ],
+    acceptedTypeGroups: const [kBackupTypeGroup],
   );
   if (location == null) return;
 
@@ -217,11 +253,30 @@ Future<List<EventRecord>?> restoreFromBackup(
   BuildContext context,
   List<EventRecord> existing,
 ) async {
-  final file = await openFile(
-    acceptedTypeGroups: const [
-      XTypeGroup(label: 'Backup files', extensions: ['json']),
-    ],
-  );
+  // The picker call is guarded because a throw here is invisible otherwise.
+  // restoreFromBackup is awaited from a PopupMenuButton onSelected callback,
+  // whose Future the framework discards, so an escaping error becomes an
+  // unhandled zone error: captured by Sentry's guarded zone and shown to the
+  // user as nothing at all. That is exactly how the iOS type-group defect
+  // presented — a menu item that did nothing on tap. Any future failure of the
+  // picker on any platform now says so on screen instead of vanishing.
+  XFile? file;
+  try {
+    file = await openFile(acceptedTypeGroups: const [kBackupTypeGroup]);
+  } catch (e, st) {
+    // Reported, not swallowed: the diagnostic value of the exception is the
+    // reason this defect was findable at all.
+    await Sentry.captureException(e, stackTrace: st);
+    if (!context.mounted) return null;
+    await _refuse(
+      context,
+      'This device could not open the file picker, so no backup could be '
+      'chosen.',
+    );
+    return null;
+  }
+
+  // Cancelling is not a failure and must stay silent.
   if (file == null) return null;
 
   String raw;
