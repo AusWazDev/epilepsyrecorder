@@ -97,28 +97,44 @@ Future<void> backupShare(
   BuildContext context,
   List<EventRecord> records,
 ) async {
-  final json = buildBackupJson(records);
-  final dir  = await getTemporaryDirectory();
-  final file = File('${dir.path}/${_backupFilename()}');
-  await file.writeAsString(json, flush: true);
-  if (!context.mounted) return;
+  // Resolved before any await so no BuildContext crosses an async gap.
+  final messenger = ScaffoldMessenger.of(context);
 
-  // No `text` alongside `files`. iOS treats a text parameter as a second shared
-  // item, so "Save to Files" wrote a stray companion file containing only the
-  // text and nothing else — leaving the user two files with no way to tell
-  // which one restores. `subject` is metadata (the mail subject line) and does
-  // not become an item, so it stays.
-  final result = await SharePlus.instance.share(
-    ShareParams(
-      subject: '$kAppName backup',
-      files:   [XFile(file.path, mimeType: 'application/json')],
-      sharePositionOrigin: shareOriginRect(context),
-    ),
-  );
+  try {
+    final json = buildBackupJson(records);
+    final dir  = await getTemporaryDirectory();
+    final file = File('${dir.path}/${_backupFilename()}');
+    await file.writeAsString(json, flush: true);
+    if (!context.mounted) return;
 
-  // Invoking the sheet is not evidence of a backup. A user who opens it and
-  // cancels must keep their reminder, not be told they are covered.
-  if (backupCountsAsTaken(result.status)) await markBackupTaken();
+    // No `text` alongside `files`. iOS treats a text parameter as a second
+    // shared item, so "Save to Files" wrote a stray companion file containing
+    // only the text and nothing else — leaving the user two files with no way
+    // to tell which one restores. `subject` is metadata (the mail subject line)
+    // and does not become an item, so it stays.
+    final result = await SharePlus.instance.share(
+      ShareParams(
+        subject: '$kAppName backup',
+        files:   [XFile(file.path, mimeType: 'application/json')],
+        sharePositionOrigin: shareOriginRect(context),
+      ),
+    );
+
+    // Invoking the sheet is not evidence of a backup. A user who opens it and
+    // cancels must keep their reminder, not be told they are covered.
+    if (backupCountsAsTaken(result.status)) await markBackupTaken();
+  } catch (e, st) {
+    // markBackupTaken is inside the guard on purpose. If it is what failed, the
+    // reminder keeps running — the safe direction for a safety feature, per
+    // backupCountsAsTaken above.
+    await reportUserFacingFailure(
+      messenger,
+      e,
+      st,
+      'Could not prepare the backup to share. Your events have not been '
+      'changed.',
+    );
+  }
 }
 
 Future<void> backupSaveAs(
@@ -151,14 +167,42 @@ Future<void> backupSaveAs(
   }
 
   // ── DESKTOP — file picker save dialog ──
-  final location = await getSaveLocation(
-    suggestedName: filename,
-    acceptedTypeGroups: const [kBackupTypeGroup],
-  );
+  // Resolved before any await so no BuildContext crosses an async gap.
+  final messenger = ScaffoldMessenger.of(context);
+
+  FileSaveLocation? location;
+  try {
+    location = await getSaveLocation(
+      suggestedName: filename,
+      acceptedTypeGroups: const [kBackupTypeGroup],
+    );
+  } catch (e, st) {
+    await reportUserFacingFailure(
+      messenger,
+      e,
+      st,
+      'Could not open the save dialog. Try Share instead.',
+    );
+    return;
+  }
+
+  // Cancelling is not a failure and must stay silent.
   if (location == null) return;
 
-  await File(location.path).writeAsString(json, flush: true);
-  await markBackupTaken();
+  try {
+    await File(location.path).writeAsString(json, flush: true);
+    await markBackupTaken();
+  } catch (e, st) {
+    // Nothing is marked as backed up unless the write actually succeeded, so a
+    // failure here leaves the reminder running rather than claiming cover.
+    await reportUserFacingFailure(
+      messenger,
+      e,
+      st,
+      'Could not write the backup file. Your events have not been changed.',
+    );
+    return;
+  }
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Backup saved')),

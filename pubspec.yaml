@@ -31,6 +31,15 @@ dev_dependencies:
   # translation instead of a copy of its rules — the boundary no test crossed
   # when "Restore from backup does nothing on iOS" shipped.
   file_selector_ios: ^0.5.3
+  # Also already transitive. Declared so test/share_failure_test.dart can swap
+  # in a fake FileSelectorPlatform and prove a cancelled dialog stays silent
+  # while a failing one surfaces — file_selector itself re-exports only
+  # FileSaveLocation, XFile and XTypeGroup, not the platform interface.
+  file_selector_platform_interface: ^2.6.0
+  # Also already transitive. The share paths build a temp file first, and under
+  # the widget-test binding a real path_provider call never completes rather
+  # than failing, so the guard could not be reached without a fake here.
+  path_provider_platform_interface: ^2.1.0
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.4
 

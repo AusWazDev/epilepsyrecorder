@@ -5,6 +5,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -236,6 +237,39 @@ Rect shareOriginRect(BuildContext context) {
   return rect;
 }
 
+/// Reports a failure to Sentry AND tells the user, for a failure that would
+/// otherwise be invisible.
+///
+/// Every export and backup action runs inside an async callback whose Future
+/// the framework discards — a `ListTile` `onTap`, a `PopupMenuButton`
+/// `onSelected`. An exception escaping one of those becomes an unhandled zone
+/// error: recorded by Sentry's guarded zone and rendered on screen as nothing
+/// whatsoever. That is how "Restore from backup does nothing on iOS" presented,
+/// and every path here had the same shape.
+///
+/// Both audiences are served deliberately: the exception is still captured, so
+/// the diagnostic value that made that defect findable is not lost, and the
+/// user is told, so a failure can never again look like a no-op.
+///
+/// Callers must only reach this for a genuine failure. A cancelled dialog is
+/// not a failure and must stay silent.
+///
+/// Takes the messenger rather than a [BuildContext] so no context crosses an
+/// async gap: callers resolve `ScaffoldMessenger.of(context)` synchronously
+/// before starting work, and this checks the messenger is still mounted before
+/// using it. Sentry is told either way — a user who has navigated away still
+/// deserves the bug to be fixed.
+Future<void> reportUserFacingFailure(
+  ScaffoldMessengerState messenger,
+  Object error,
+  StackTrace stackTrace,
+  String message,
+) async {
+  await Sentry.captureException(error, stackTrace: stackTrace);
+  if (!messenger.mounted) return;
+  messenger.showSnackBar(SnackBar(content: Text(message)));
+}
+
 /* ===========================
    CSV EXPORT
    =========================== */
@@ -321,17 +355,34 @@ Future<void> exportCsvShare(
     );
     return;
   }
-  final file =
-      await _buildCsvTempFile(items, filenamePrefix: filenamePrefix);
-  if (!context.mounted) return;
-  await SharePlus.instance.share(
-    ShareParams(
-      subject: '$kAppName export (CSV)',
-      text:    '$kAppName CSV export',
-      files:   [XFile(file.path, mimeType: 'text/csv')],
-      sharePositionOrigin: shareOriginRect(context),
-    ),
-  );
+  // Resolved before any await so no BuildContext crosses an async gap.
+  final messenger = ScaffoldMessenger.of(context);
+
+  try {
+    final file =
+        await _buildCsvTempFile(items, filenamePrefix: filenamePrefix);
+    if (!context.mounted) return;
+    // No `text` alongside `files`. iOS treats a text parameter as a second
+    // shared item, so "Save to Files" wrote a stray companion file containing
+    // only the text — leaving the user two files from one export. `subject` is
+    // metadata (the mail subject line) and does not become an item, so it
+    // stays. Same fix as the backup share in b7df6f1; this one has been in the
+    // shipped app since CSV export existed.
+    await SharePlus.instance.share(
+      ShareParams(
+        subject: '$kAppName export (CSV)',
+        files:   [XFile(file.path, mimeType: 'text/csv')],
+        sharePositionOrigin: shareOriginRect(context),
+      ),
+    );
+  } catch (e, st) {
+    await reportUserFacingFailure(
+      messenger,
+      e,
+      st,
+      'Could not prepare the CSV to share. Your events have not been changed.',
+    );
+  }
 }
 
 Future<void> exportCsvSaveAs(
@@ -378,15 +429,45 @@ Future<void> exportCsvSaveAs(
   }
 
   // ── DESKTOP — file picker save dialog ──
-  final location = await getSaveLocation(
-    suggestedName: filename,
-    acceptedTypeGroups: const [
-      XTypeGroup(label: 'CSV files', extensions: ['csv']),
-    ],
-  );
+  // Resolved before any await so no BuildContext crosses an async gap.
+  final messenger = ScaffoldMessenger.of(context);
+
+  FileSaveLocation? location;
+  try {
+    location = await getSaveLocation(
+      suggestedName: filename,
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'CSV files', extensions: ['csv']),
+      ],
+    );
+  } catch (e, st) {
+    await reportUserFacingFailure(
+      messenger,
+      e,
+      st,
+      'Could not open the save dialog. Try Share instead.',
+    );
+    return;
+  }
+
+  // Cancelling is not a failure and must stay silent.
   if (location == null) return;
 
-  await File(location.path).writeAsString(csv, flush: true);
+  // Bound to a non-nullable local so the "Open" action below can close over the
+  // path: promotion of a mutable local does not reach inside a closure.
+  final savedPath = location.path;
+
+  try {
+    await File(savedPath).writeAsString(csv, flush: true);
+  } catch (e, st) {
+    await reportUserFacingFailure(
+      messenger,
+      e,
+      st,
+      'Could not write the CSV file. Your events have not been changed.',
+    );
+    return;
+  }
   if (!context.mounted) return;
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -397,13 +478,13 @@ Future<void> exportCsvSaveAs(
         onPressed: () async {
           try {
             if (Platform.isWindows) {
-              await Process.start('explorer', [location.path],
+              await Process.start('explorer', [savedPath],
                   runInShell: true);
             } else if (Platform.isMacOS) {
-              await Process.start('open', [location.path],
+              await Process.start('open', [savedPath],
                   runInShell: true);
             } else if (Platform.isLinux) {
-              await Process.start('xdg-open', [location.path],
+              await Process.start('xdg-open', [savedPath],
                   runInShell: true);
             }
           } catch (_) {}
