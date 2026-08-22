@@ -50,3 +50,6 @@ upload-keystore.jks
 *.keystore
 *.pfx
 .claude/
+
+# Session scratch — saved chat artefacts, referenced but not part of the project
+scratchpad/
