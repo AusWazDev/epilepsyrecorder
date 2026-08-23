@@ -5,8 +5,8 @@ import SwiftUI
 struct MERWidgetBundle: WidgetBundle {
     @WidgetBundleBuilder
     var body: some Widget {
-        if #available(iOS 16.2, *) {
-            MERLiveActivity()
-        }
+        // Unconditional at the 16.2 deployment target. The gate here existed for
+        // the 15.0-16.1 tier, where Live Activities did not exist at all.
+        MERLiveActivity()
     }
 }

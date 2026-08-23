@@ -17,7 +17,6 @@ import SwiftUI
 /// still believes an event is running long after it has given up on it.
 let merActiveEventTimeoutSeconds: TimeInterval = 30 * 60
 
-@available(iOS 16.2, *)
 struct MERLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: MERActivityAttributes.self) { context in
@@ -103,7 +102,6 @@ struct MERLiveActivity: Widget {
     }
 }
 
-@available(iOS 16.2, *)
 struct MERLockScreenView: View {
     let context: ActivityViewContext<MERActivityAttributes>
 

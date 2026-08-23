@@ -171,7 +171,7 @@ import shared_preferences_foundation
     if standardActive != nil && sharedActive == nil {
       standard.removeObject(forKey: kActiveEventKey)
       standard.synchronize()
-      if #available(iOS 16.2, *) { endLiveActivity() }
+      endLiveActivity()
     }
   }
 
@@ -189,7 +189,7 @@ import shared_preferences_foundation
           shared.removeObject(forKey: kSharedActiveKey)
           shared.synchronize()
         }
-        if #available(iOS 16.2, *) { endLiveActivity() }
+        endLiveActivity()
         showPersistentNormalNotification()
       } else {
         if #available(iOS 17.0, *) {
@@ -209,7 +209,6 @@ import shared_preferences_foundation
 
   // ── Live Activity helpers ─────────────────────────────────────────────────
 
-  @available(iOS 16.2, *)
   private func startLiveActivity(eventId: String, startIso: String) {
     let attributes = MERActivityAttributes()
     let state      = MERActivityAttributes.ContentState(eventId: eventId, startIso: startIso)
@@ -232,7 +231,6 @@ import shared_preferences_foundation
     _ = try? Activity<MERActivityAttributes>.request(attributes: attributes, content: content)
   }
 
-  @available(iOS 16.2, *)
   private func endLiveActivity() {
     Task {
       for activity in Activity<MERActivityAttributes>.activities {
@@ -417,10 +415,8 @@ import shared_preferences_foundation
     standard.synchronize()
     shared?.synchronize()
 
-    // Start Live Activity (iOS 16.2+)
-    if #available(iOS 16.2, *) {
-      startLiveActivity(eventId: id, startIso: isoNow)
-    }
+    // Live Activity, unconditional at the 16.2 deployment target.
+    startLiveActivity(eventId: id, startIso: isoNow)
 
     if #available(iOS 17.0, *) {
       // Live Activity button handles end — no active notification needed
@@ -467,14 +463,10 @@ import shared_preferences_foundation
     shared?.removeObject(forKey: kSharedActiveKey)
     shared?.synchronize()
 
-    if #available(iOS 16.2, *) { endLiveActivity() }
+    endLiveActivity()
 
     showFeedbackNotification(elapsed: elapsedStr)
     showPersistentNormalNotification(completion: completion)
-  }
-
-  func endEvent() async {
-    handleQuickLogEnd(completion: {})
   }
 
   // ── Notification builders ─────────────────────────────────────────────────
