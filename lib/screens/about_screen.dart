@@ -44,23 +44,42 @@ class AboutScreen extends StatelessWidget {
             Container(
               width:  double.infinity,
               color:  MERColours.primary,
-              // Proportion, not height. 32px of padding against a text stack
-              // whose internal gaps total 26px put the outer frame at 2.46x the
-              // inner spacing, so the mark floated in the upper half while the
-              // three lines crowded the lower. 24 and 20 bring that to 1.60.
-              // The ~12px height saving is a consequence, not the goal, and it
-              // returns most of the 16px the mark's growth to 88px added.
-              padding: const EdgeInsets.symmetric(
-                vertical:   24,
-                horizontal: 24,
+              // Spaced for what is VISIBLE, not for the nominal values.
+              //
+              // The mark is 88px of footprint but only 55.2px of artwork: the
+              // transparent cut carries 14.06% padding above and 23.24% below,
+              // so at this size it supplies 12.4px of space over the mark and
+              // 20.5px under it for free. Nominal spacing therefore misreads
+              // the composition — a first pass set symmetric 24px padding with
+              // a 20px gap, which looked balanced on paper but made the gap
+              // under the mark 40.5px, the largest space in the block, and left
+              // the top padding half again the bottom.
+              //
+              // Top padding is 14 rather than 24 to absorb the asset's 12.4px
+              // top inset, and the gap below the mark is 8 because the asset
+              // already provides 20.5px. Perceived, that gives:
+              //
+              //   above the mark      14 + 12.4 = 24.4
+              //   mark -> title       20.5 + 8  = 28.5
+              //   title -> version              = 4
+              //   version -> tagline            = 6
+              //   below the tagline             = 24
+              //
+              // Outer frame and mark gap in the same range, the three text
+              // lines clearly tighter than both, and the block optically
+              // centred rather than sitting high.
+              padding: const EdgeInsets.only(
+                top:    14,
+                bottom: 24,
+                left:   24,
+                right:  24,
               ),
               child: Column(
                 children: [
                   const MERIconWidget(size: 88, style: MERIconStyle.mark),
-                  // Larger than the 4 and 6 below on purpose: this gap
-                  // separates the mark from the wording, while those two hold
-                  // three lines together as one block.
-                  const SizedBox(height: 20),
+                  // 8, not 20: the asset's own bottom padding supplies the
+                  // rest. See the perceived-spacing note above.
+                  const SizedBox(height: 8),
                   const Text(
                     kAppName,
                     style: TextStyle(
