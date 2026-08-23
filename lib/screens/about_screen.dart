@@ -44,14 +44,23 @@ class AboutScreen extends StatelessWidget {
             Container(
               width:  double.infinity,
               color:  MERColours.primary,
+              // Proportion, not height. 32px of padding against a text stack
+              // whose internal gaps total 26px put the outer frame at 2.46x the
+              // inner spacing, so the mark floated in the upper half while the
+              // three lines crowded the lower. 24 and 20 bring that to 1.60.
+              // The ~12px height saving is a consequence, not the goal, and it
+              // returns most of the 16px the mark's growth to 88px added.
               padding: const EdgeInsets.symmetric(
-                vertical:   32,
+                vertical:   24,
                 horizontal: 24,
               ),
               child: Column(
                 children: [
                   const MERIconWidget(size: 88, style: MERIconStyle.mark),
-                  const SizedBox(height: 16),
+                  // Larger than the 4 and 6 below on purpose: this gap
+                  // separates the mark from the wording, while those two hold
+                  // three lines together as one block.
+                  const SizedBox(height: 20),
                   const Text(
                     kAppName,
                     style: TextStyle(
