@@ -312,6 +312,9 @@ Future<List<EventRecord>?> restoreFromBackup(
   // user as nothing at all. That is exactly how the iOS type-group defect
   // presented — a menu item that did nothing on tap. Any future failure of the
   // picker on any platform now says so on screen instead of vanishing.
+  // Resolved before any await so no BuildContext crosses an async gap.
+  final messenger = ScaffoldMessenger.of(context);
+
   XFile? file;
   try {
     file = await openFile(acceptedTypeGroups: const [kBackupTypeGroup]);
@@ -348,6 +351,10 @@ Future<List<EventRecord>?> restoreFromBackup(
   }
 
   final plan = planRestore(existing, parsed);
+  // The one remaining silent null, and deliberately so: the screen this was
+  // started from is gone, so there is nobody looking at it to tell. Every other
+  // null from this function either shows a _refuse dialog, shows a snackbar, or
+  // is an explicit user cancellation.
   if (!context.mounted) return null;
 
   if (plan.inBackup == 0) {
@@ -362,7 +369,38 @@ Future<List<EventRecord>?> restoreFromBackup(
   }
 
   final confirmed = await _confirmRestore(context, plan);
-  if (confirmed != true) return null;
+
+  // Cancel and dismissal are NOT the same thing, and the difference is already
+  // available here — it was simply being discarded.
+  //
+  //   Cancel button  -> pops false
+  //   Restore button -> pops true
+  //   barrier tap or system back -> pops nothing, so showDialog resolves NULL
+  //
+  // `if (confirmed != true)` collapsed the last two into one silent return. On
+  // an 800x1280 tablet a tap that lands on the barrier beside a small action
+  // button is easy, and the result was indistinguishable from a completed
+  // restore: dialog closed, nothing written, nothing said. It cost two
+  // diagnostic passes to establish that, and a user would have concluded their
+  // backup file was worthless.
+  if (confirmed == false) {
+    // An explicit cancellation is a decision, not a failure. Stays silent.
+    return null;
+  }
+  if (confirmed == null) {
+    // Dismissed without deciding. Not an error either, so not a _refuse
+    // dialog — but it must not be silent, because the likeliest way to get
+    // here is aiming for Restore and missing.
+    if (messenger.mounted) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Nothing was restored — the dialog was dismissed. '
+              'Your events have not been changed.'),
+        ),
+      );
+    }
+    return null;
+  }
 
   return plan.merged;
 }

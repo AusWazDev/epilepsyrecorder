@@ -435,6 +435,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           },
           onRestore: (ctx) async {
             final merged = await restoreFromBackup(ctx, _records);
+            // Null means "no list to write", and restoreFromBackup has already
+            // said whatever needed saying: a _refuse dialog for a real failure,
+            // a snackbar for a dismissed confirm, and deliberate silence for an
+            // explicit cancellation. This return is only silent because the
+            // messaging belongs to the function that knows WHICH outcome it was.
             if (merged == null) return;
             final added = merged.length - _records.length;
             setState(() => _records = merged);
