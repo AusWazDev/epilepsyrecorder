@@ -49,10 +49,19 @@ class InboxDrainResult {
   /// Distinct reasons, for a once-per-session report.
   final Set<InboxDefer> deferReasons;
 
-  /// Ids of end instructions with no matching record. Dropped, and reported by
-  /// the caller. A record is deliberately NOT fabricated: that would require
-  /// inventing a start time, and a wrong timestamp in a medical record is worse
-  /// than an absent duration.
+  /// Ids of end instructions that match nothing at all — no record, and no
+  /// deferred entry either. Dropped, and reported by the caller.
+  ///
+  /// A record is deliberately NOT fabricated: that would require inventing a
+  /// start time, and a wrong timestamp in a medical record is worse than an
+  /// absent duration. The case this covers is a record the user deleted in
+  /// History.
+  ///
+  /// An end whose start is merely DEFERRED is not here — it is held back in
+  /// [deferredKeys] under [InboxDefer.awaitingDeferredStart] instead, because
+  /// its start is present and readable and only waiting on a build that
+  /// understands it. The two stay separate so telemetry can tell a drop from a
+  /// deferral.
   final List<String> orphanEndIds;
 
   /// Whether [merged] actually differs from what was passed in. False means the
@@ -101,6 +110,10 @@ InboxDrainResult applyInbox(
   final deferReasons = <InboxDefer>{};
   final instructions = <CaptureInstruction>[];
 
+  /// Ids carried by entries this build cannot apply. An `end` matching one of
+  /// these is not an orphan — its start is in the inbox, just not yet legible.
+  final deferredIds = <String>{};
+
   // Every entry lands in exactly one bucket: applicable or deferred. Nothing is
   // silently outside the classification.
   for (final entry in entries) {
@@ -109,6 +122,8 @@ InboxDrainResult applyInbox(
       deferredKeys.add(entry.key);
       final reason = entry.defer;
       if (reason != null) deferReasons.add(reason);
+      final id = entry.id;
+      if (id != null) deferredIds.add(id);
       continue;
     }
     instructions.add(instruction);
@@ -161,14 +176,35 @@ InboxDrainResult applyInbox(
 
   // ── PASS 2 — ends ──
   for (final instruction in instructions.where((i) => i.isEnd)) {
-    drainableKeys.add(instruction.key);
-
     final record = byId[instruction.id];
+
     if (record == null) {
-      // Orphan: no record with that id, and one is not invented.
+      // THE DEFERRED-START CASE. The orphan rule exists for an end whose record
+      // the user deleted in History — there is genuinely nothing to attach to,
+      // and inventing a record would mean inventing a start time. It was NOT
+      // written for an end whose start is sitting undrained in this same inbox,
+      // waiting for a build that understands it. Dropping it there loses a
+      // duration that is present and readable.
+      //
+      // So: hold it back alongside its start. A later build that understands
+      // the deferred kind drains both together — pass 1 creates the record,
+      // pass 2 sets the duration — and the outcome is the same as if neither
+      // had ever been deferred. Still idempotent: nothing is written and the
+      // key is untouched, so a repeat drain repeats this decision.
+      if (deferredIds.contains(instruction.id)) {
+        deferredKeys.add(instruction.key);
+        deferReasons.add(InboxDefer.awaitingDeferredStart);
+        continue;
+      }
+
+      // A genuine orphan: matches nothing at all, deferred or applied. Dropped
+      // and reported, unchanged.
+      drainableKeys.add(instruction.key);
       orphanEndIds.add(instruction.id);
       continue;
     }
+
+    drainableKeys.add(instruction.key);
 
     final bucket = bucketFromSeconds(instruction.seconds!);
     if (record.duration == bucket) continue; // replay, or already correct

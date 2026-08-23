@@ -308,6 +308,122 @@ void main() {
             'retried forever');
   });
 
+  // ── 12 ─────────────────────────────────────────────────────────────────────
+  group('12. an end whose start is deferred is held back, not dropped', () {
+    // A start this build cannot read, and its end, which this build CAN read.
+    // Dropping the end would lose a duration sitting three keys away.
+    List<InboxEntry> pair() => <InboxEntry>[
+          parseInboxEntry(
+              '${kInboxKeyPrefix}deferred_start',
+              jsonEncode({
+                'v': kInboxSchemaVersion + 1,
+                'kind': kInboxKindStart,
+                'id': 'x',
+                'at': t0.toIso8601String(),
+              })),
+          parseInboxEntry('${kInboxKeyPrefix}readable_end',
+              endPayload('x', t0.add(const Duration(seconds: 400)), 400)),
+        ];
+
+    test('the end is deferred alongside its start, not orphaned', () {
+      final result = applyInbox(const <EventRecord>[], pair());
+
+      expect(result.orphanEndIds, isEmpty,
+          reason: 'its start is present and readable, just not yet legible to '
+              'this build — that is not an orphan');
+      expect(result.deferredKeys,
+          containsAll(<String>['${kInboxKeyPrefix}deferred_start',
+              '${kInboxKeyPrefix}readable_end']));
+      expect(result.deferReasons, contains(InboxDefer.awaitingDeferredStart),
+          reason: 'reported as a deferral, distinctly from a drop, so the two '
+              'stay separable in telemetry');
+      expect(result.drainableKeys, isEmpty,
+          reason: 'nothing may be deleted while either half is held back');
+      expect(result.merged, isEmpty);
+      expect(result.changed, isFalse);
+    });
+
+    test('both keys survive a drain, and neither is applied', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          '${kInboxKeyPrefix}deferred_start',
+          jsonEncode({
+            'v': kInboxSchemaVersion + 1,
+            'kind': kInboxKindStart,
+            'id': 'x',
+            'at': t0.toIso8601String(),
+          }));
+      await prefs.setString('${kInboxKeyPrefix}readable_end',
+          endPayload('x', t0.add(const Duration(seconds: 400)), 400));
+
+      final outcome = await drainInbox(
+        prefs: prefs,
+        store: EventStore(),
+        loaded: const <EventRecord>[],
+      );
+
+      expect(outcome.attempted, isFalse);
+      expect(outcome.deferredCount, 2);
+      expect(outcome.orphanEndIds, isEmpty);
+      expect(await inboxKeys(), hasLength(2));
+      expect(await storedIds(), isEmpty);
+    });
+
+    test('a later build that understands the kind applies both and gets the '
+        'right duration', () {
+      // The same two instructions, now both legible — which is what the newer
+      // build sees. The end must land on the record its start creates.
+      final understood = <InboxEntry>[
+        parseInboxEntry('${kInboxKeyPrefix}deferred_start',
+            startPayload('x', t0)),
+        parseInboxEntry('${kInboxKeyPrefix}readable_end',
+            endPayload('x', t0.add(const Duration(seconds: 400)), 400)),
+      ];
+
+      final result = applyInbox(const <EventRecord>[], understood);
+
+      expect(result.orphanEndIds, isEmpty);
+      expect(result.deferredKeys, isEmpty);
+      expect(result.drainableKeys, hasLength(2));
+      expect(result.merged, hasLength(1));
+      expect(result.merged.single.id, 'x');
+      expect(result.merged.single.timestamp, t0);
+      expect(result.merged.single.duration, DurationCategory.gt5,
+          reason: '400 seconds, so the duration the deferral preserved is the '
+              'one that finally gets stored');
+    });
+
+    test('UNCHANGED PATH: an end matching nothing at all is still dropped and '
+        'reported', () {
+      // No record, and no deferred entry either. This is the deletion case the
+      // orphan rule was written for, and it must behave exactly as before.
+      final result = applyInbox(<EventRecord>[record('a', 1)], <InboxEntry>[
+        parseInboxEntry('${kInboxKeyPrefix}1', endPayload('ghost', t0, 120)),
+      ]);
+
+      expect(result.orphanEndIds, <String>['ghost']);
+      expect(result.deferReasons, isNot(contains(InboxDefer.awaitingDeferredStart)));
+      expect(result.deferredKeys, isEmpty);
+      expect(result.drainableKeys, hasLength(1),
+          reason: 'a genuine orphan is consumed, not retried forever');
+      expect(result.merged.map((r) => r.id), <String>['a']);
+    });
+
+    test('a malformed entry with an unreadable id cannot hold an end back', () {
+      // The id is what makes the match possible. Without one, the end has
+      // nothing to be held against and the orphan rule correctly applies.
+      final result = applyInbox(const <EventRecord>[], <InboxEntry>[
+        parseInboxEntry('${kInboxKeyPrefix}junk', 'not json at all'),
+        parseInboxEntry('${kInboxKeyPrefix}end', endPayload('x', t0, 400)),
+      ]);
+
+      expect(result.deferReasons, contains(InboxDefer.malformed));
+      expect(result.orphanEndIds, <String>['x'],
+          reason: 'an unmatched end is an orphan; a deferred entry only rescues '
+              'one when it carries the same id');
+    });
+  });
+
   // ── 8 ──────────────────────────────────────────────────────────────────────
   test('8. keys are deleted only after the write is confirmed', () async {
     final prefs = await SharedPreferences.getInstance();

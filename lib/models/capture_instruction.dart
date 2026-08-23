@@ -75,6 +75,15 @@ enum InboxDefer {
   /// Structurally unreadable: not JSON, not a map, or a required field is
   /// missing or the wrong type.
   malformed,
+
+  /// A readable `end` whose record does not exist YET, because the matching
+  /// start is itself deferred in this same inbox.
+  ///
+  /// The odd one out: every other reason is decided while parsing one entry,
+  /// this one is decided while applying, by looking at the rest of the inbox.
+  /// It shares the enum because it has the same consequence — leave the key
+  /// alone — and callers report deferrals as one class.
+  awaitingDeferredStart,
 }
 
 /// Parses an instruction's `at` field.
@@ -138,11 +147,21 @@ class InboxEntry {
   final CaptureInstruction? instruction;
   final InboxDefer? defer;
 
-  const InboxEntry._(this.key, this.instruction, this.defer);
+  /// The event id, read opportunistically even when the entry is deferred, or
+  /// null when it could not be read at all.
+  ///
+  /// A deferred entry still needs an id so a related `end` can be held back
+  /// with it instead of being dropped as an orphan. See the note in
+  /// [parseInboxEntry] on why reading exactly this one field out of an
+  /// otherwise un-inspectable payload is safe.
+  final String? id;
 
-  factory InboxEntry.ok(CaptureInstruction i) => InboxEntry._(i.key, i, null);
-  factory InboxEntry.deferred(String key, InboxDefer reason) =>
-      InboxEntry._(key, null, reason);
+  const InboxEntry._(this.key, this.instruction, this.defer, this.id);
+
+  factory InboxEntry.ok(CaptureInstruction i) =>
+      InboxEntry._(i.key, i, null, i.id);
+  factory InboxEntry.deferred(String key, InboxDefer reason, {String? id}) =>
+      InboxEntry._(key, null, reason, id);
 
   bool get isDeferred => instruction == null;
 }
@@ -165,26 +184,42 @@ InboxEntry parseInboxEntry(String key, String? raw) {
     return InboxEntry.deferred(key, InboxDefer.malformed);
   }
 
-  // Version first: an instruction from a newer build must not be inspected
+  // `id` is read FIRST, and it is the one field read out of a payload this
+  // build may not otherwise understand.
+  //
+  // Why that is safe, and why it is worth doing: a deferred entry that carries
+  // no id cannot be matched, so a readable `end` whose start is deferred would
+  // look like an orphan and be dropped — losing a duration that is sitting
+  // three keys away, present and readable. `id` is the join key of the whole
+  // contract and the one field that cannot change meaning without the schema
+  // ceasing to be the same schema.
+  //
+  // It is used ONLY to decide whether to hold a related entry back. Nothing is
+  // applied from a deferred payload. If a future version did redefine `id`, the
+  // worst outcome is holding back an end that could have been dropped, which
+  // deletes nothing.
+  final rawId = map['id'];
+  final id = (rawId is String && rawId.isNotEmpty) ? rawId : null;
+
+  // Version next: an instruction from a newer build must not be inspected
   // further, because this build does not know what its other fields mean.
   final v = map['v'];
   if (v is! int || v != kInboxSchemaVersion) {
-    return InboxEntry.deferred(key, InboxDefer.unsupportedVersion);
+    return InboxEntry.deferred(key, InboxDefer.unsupportedVersion, id: id);
   }
 
   final kind = map['kind'];
   if (kind != kInboxKindStart && kind != kInboxKindEnd) {
-    return InboxEntry.deferred(key, InboxDefer.unknownKind);
+    return InboxEntry.deferred(key, InboxDefer.unknownKind, id: id);
   }
 
-  final id = map['id'];
-  if (id is! String || id.isEmpty) {
+  if (id == null) {
     return InboxEntry.deferred(key, InboxDefer.malformed);
   }
 
   final at = parseInstructionAt(map['at']);
   if (at == null) {
-    return InboxEntry.deferred(key, InboxDefer.malformed);
+    return InboxEntry.deferred(key, InboxDefer.malformed, id: id);
   }
 
   int? seconds;
@@ -193,7 +228,7 @@ InboxEntry parseInboxEntry(String key, String? raw) {
     // A negative elapsed is not a duration. Deferred rather than clamped:
     // clamping would invent a number, and the clock is the suspect.
     if (raw is! int || raw < 0) {
-      return InboxEntry.deferred(key, InboxDefer.malformed);
+      return InboxEntry.deferred(key, InboxDefer.malformed, id: id);
     }
     seconds = raw;
   }
