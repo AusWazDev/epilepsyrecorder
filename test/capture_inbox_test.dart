@@ -156,7 +156,7 @@ void main() {
       await store.save(<EventRecord>[record('a', 1), record('b', 2)]);
 
       final outcome = await drainInbox(
-        prefs: prefs,
+        transport: PrefsInboxTransport(prefs),
         store: store,
         loaded: await store.load(),
       );
@@ -357,7 +357,7 @@ void main() {
           endPayload('x', t0.add(const Duration(seconds: 400)), 400));
 
       final outcome = await drainInbox(
-        prefs: prefs,
+        transport: PrefsInboxTransport(prefs),
         store: EventStore(),
         loaded: const <EventRecord>[],
       );
@@ -431,7 +431,7 @@ void main() {
     expect(await inboxKeys(), hasLength(1));
 
     final failed = await drainInbox(
-      prefs: prefs,
+      transport: PrefsInboxTransport(prefs),
       store: _FailingStore(),
       loaded: const <EventRecord>[],
     );
@@ -447,7 +447,7 @@ void main() {
             'the next foreground retries.');
 
     final ok = await drainInbox(
-      prefs: prefs,
+      transport: PrefsInboxTransport(prefs),
       store: EventStore(),
       loaded: const <EventRecord>[],
     );
@@ -500,7 +500,7 @@ void main() {
     expect(result.changed, isFalse);
 
     final outcome = await drainInbox(
-      prefs: prefs,
+      transport: PrefsInboxTransport(prefs),
       store: EventStore(),
       loaded: const <EventRecord>[],
     );

@@ -9,13 +9,33 @@ import shared_preferences_foundation
 @objc class AppDelegate: FlutterAppDelegate {
 
   // ── SharedPreferences key prefix (Flutter uses "flutter." on iOS) ─────────
-  private let kStorageKey      = "flutter.epilepsy_event_records_v1"
+  //
+  // NOTE the absence of a record-list key. Swift no longer reads or writes the
+  // stored record list at all: Dart's main isolate is the only writer of it,
+  // and this side posts facts to the capture inbox instead. A grep test under
+  // ios/ asserts the key literal never reappears in Swift, so it is spelled
+  // nowhere here — not even in a comment.
   private let kActiveEventKey  = "flutter.mer_active_event"
 
   // ── App Groups shared storage (used by MERWidget / EndMEREventIntent) ──────
   private let kAppGroupId      = "group.au.com.notiva.medicaleventrecorder"
-  private let kSharedRecords   = "mer_records"
   private let kSharedActiveKey = "mer_active_event"
+
+  // The pre-inbox record mirror. Read once by Dart's reconciliation and then
+  // deleted; never written. Kept only so the fold-in can find it.
+  private let kLegacySharedRecords = "mer_records"
+
+  // ── Capture inbox ─────────────────────────────────────────────────────────
+  // One key per instruction, in the App Group so the widget extension can write
+  // it too. Must match kInboxKeyPrefix in lib/models/capture_instruction.dart.
+  private let kInboxPrefix = "mer_inbox_"
+
+  // ── Abandoned-event timeout ───────────────────────────────────────────────
+  // Must equal _timeoutMins * 60 in lib/services/notification_service.dart. It
+  // was an inline `30 * 60` compared in exact seconds while Dart compared
+  // truncated minutes; a cross-language test now pins the two together, which
+  // is the closest thing to one source across a language boundary.
+  private let kActiveEventTimeoutSeconds: TimeInterval = 30 * 60
 
   // ── Notification identifiers ──────────────────────────────────────────────
   private let kPersistentId        = "1"
@@ -68,6 +88,26 @@ import shared_preferences_foundation
         case "restoreNotification":
           DispatchQueue.main.async { self?.restorePersistentNotification() }
           result(nil)
+        case "readCaptureInbox":
+          result(self?.readInboxEntries() ?? [:])
+        case "deleteCaptureInbox":
+          self?.deleteInboxKeys(call.arguments as? [String] ?? [])
+          result(nil)
+        case "readLegacySharedRecords":
+          // The pre-inbox record mirror, read once by Dart's reconciliation.
+          // Read-only: nothing in Swift writes this key any more.
+          let shared = UserDefaults(suiteName: self?.kAppGroupId ?? "")
+          result(shared?.string(forKey: self?.kLegacySharedRecords ?? ""))
+        case "clearLegacySharedRecords":
+          // Retire the mirror so nothing can later read it as a source of truth.
+          // Called only after Dart confirmed the merged write.
+          if let group = self?.kAppGroupId,
+             let key = self?.kLegacySharedRecords,
+             let shared = UserDefaults(suiteName: group) {
+            shared.removeObject(forKey: key)
+            shared.synchronize()
+          }
+          result(nil)
         default:
           result(FlutterMethodNotImplemented)
         }
@@ -82,7 +122,7 @@ import shared_preferences_foundation
     super.applicationDidBecomeActive(application)
     UNUserNotificationCenter.current().delegate = self
     registerNativeNotificationCategories()
-    syncFromSharedIfNeeded()
+    clearStaleActiveStateIfEnded()
     UNUserNotificationCenter.current().requestAuthorization(
       options: [.alert, .sound, .badge]
     ) { [weak self] _, _ in
@@ -91,10 +131,18 @@ import shared_preferences_foundation
   }
 
   // ── Shared storage sync ───────────────────────────────────────────────────
-  // Called on every foreground. If MERWidget's EndMEREventIntent ran while the
-  // app was backgrounded/locked, the shared suite has the end-event data but
-  // Flutter's standard UserDefaults does not. Detect and reconcile here.
-  private func syncFromSharedIfNeeded() {
+  // DELETED, not bypassed. This copied the whole record list from the App Group
+  // over the store, keyed by the record-list key. It was safe
+  // only because its guard happened to be true when the mirror was fresh, and
+  // it was one guard change away from the ungated version below it.
+  //
+  // What it existed for — an event the widget extension ended while the app was
+  // not running — is now an `end` instruction in the inbox, applied by the drain
+  // with the record list read and written by Dart alone.
+  //
+  // The active-state half it also did is kept, because that is a single key
+  // where last-write-wins is the correct semantics for "what is running now".
+  private func clearStaleActiveStateIfEnded() {
     guard let shared = UserDefaults(suiteName: kAppGroupId) else { return }
     let standard = UserDefaults.standard
 
@@ -102,10 +150,6 @@ import shared_preferences_foundation
     let standardActive = standard.string(forKey: kActiveEventKey)
 
     if standardActive != nil && sharedActive == nil {
-      // Widget intent ended the event while app was not running — sync records
-      if let sharedRecs = shared.string(forKey: kSharedRecords) {
-        standard.set(sharedRecs, forKey: kStorageKey)
-      }
       standard.removeObject(forKey: kActiveEventKey)
       standard.synchronize()
       if #available(iOS 16.2, *) { endLiveActivity() }
@@ -119,7 +163,7 @@ import shared_preferences_foundation
        let active = try? JSONSerialization.jsonObject(with: data) as? NSDictionary,
        let startIso = active["startIso"] as? String,
        let startDate = ISO8601DateFormatter().date(from: startIso) {
-      if Date().timeIntervalSince(startDate) >= 30 * 60 {
+      if Date().timeIntervalSince(startDate) >= kActiveEventTimeoutSeconds {
         defaults.removeObject(forKey: kActiveEventKey)
         defaults.synchronize()
         if let shared = UserDefaults(suiteName: kAppGroupId) {
@@ -150,7 +194,18 @@ import shared_preferences_foundation
   private func startLiveActivity(eventId: String, startIso: String) {
     let attributes = MERActivityAttributes()
     let state      = MERActivityAttributes.ContentState(eventId: eventId, startIso: startIso)
-    let content    = ActivityContent(state: state, staleDate: nil)
+    // staleDate, not nil. Without it the activity has no self-expiry and its
+    // content is a self-driving timer, so an abandoned event displayed a running
+    // timer for as long as iOS kept the activity alive — hours, bounded only by
+    // the system's own limits. Observed on device: 30+ minutes with nothing
+    // clearing, because the only thing that clears state runs on foreground and
+    // the app was backgrounded throughout.
+    //
+    // This fixes the DISPLAY. It does not clear the state, which still waits for
+    // a foreground — see restorePersistentNotification.
+    let staleAt = ISO8601DateFormatter().date(from: startIso)?
+      .addingTimeInterval(kActiveEventTimeoutSeconds)
+    let content    = ActivityContent(state: state, staleDate: staleAt)
     _ = try? Activity<MERActivityAttributes>.request(attributes: attributes, content: content)
   }
 
@@ -215,14 +270,17 @@ import shared_preferences_foundation
       handleQuickLogEnd(completion: completionHandler)
     case UNNotificationDefaultActionIdentifier
          where notifId == kFeedbackId || notifId == "mer_feedback_intent":
-      // Directly sync the App Group records to standard UserDefaults so Flutter
-      // always reads the duration that EndMEREventIntent wrote, regardless of
-      // whether syncFromSharedIfNeeded ran with the right conditions.
+      // The wholesale copy that used to be here is DELETED, not bypassed. It
+      // read the App Group mirror and overwrote the whole record list with it,
+      // ungated — no merge, no staleness check. Dart never wrote that mirror, so
+      // it was stale by design: end an event natively, ignore this notification,
+      // log five events in-app, tap it days later, and the five were destroyed.
+      // Restore two hundred from a backup first and it was two hundred.
+      //
+      // Nothing replaces it. The duration the extension recorded arrives as an
+      // `end` instruction in the inbox and is applied by the drain, which is the
+      // only thing that writes the record list.
       let standard = UserDefaults.standard
-      if let shared = UserDefaults(suiteName: kAppGroupId),
-         let sharedRecs = shared.string(forKey: kSharedRecords) {
-        standard.set(sharedRecs, forKey: kStorageKey)
-      }
       standard.removeObject(forKey: kActiveEventKey)
       standard.synchronize()
       if let channel = navChannel {
@@ -238,6 +296,78 @@ import shared_preferences_foundation
     }
   }
 
+  // ── Capture inbox ─────────────────────────────────────────────────────────
+  //
+  // One key per instruction. NEVER an array append: appending to a JSON array is
+  // itself a read-modify-write, which is the whole thing being removed.
+  //
+  // Kept deliberately small and duplicated in EndMEREventIntent.swift rather
+  // than shared, because Runner and MERWidget are separate targets and sharing
+  // a new file means editing project.pbxproj. The project already duplicates
+  // MERActivityAttributes.swift across the same boundary for the same reason.
+  // Any change here must be mirrored there — a schema test on the Dart side
+  // pins the shape both must produce.
+  //
+  // Schema, matching lib/models/capture_instruction.dart:
+  //   start : { "v": 1, "kind": "start", "id": <string>, "at": <ISO8601> }
+  //   end   : { "v": 1, "kind": "end",   "id": <string>, "at": <ISO8601>,
+  //             "seconds": <int >= 0> }
+  //
+  // `v` must decode as an int: NSNumber(value: 1) does, a Double would defer.
+  // `id` is written exactly as generated — UUID().uuidString is UPPERCASE and
+  // must stay that way, because merge-by-id is exact string equality and records
+  // already in the wild carry both cases.
+
+  private func writeInboxInstruction(_ payload: [String: Any]) {
+    guard let shared = UserDefaults(suiteName: kAppGroupId),
+          let data = try? JSONSerialization.data(withJSONObject: payload),
+          let json = String(data: data, encoding: .utf8) else { return }
+    shared.set(json, forKey: "\(kInboxPrefix)\(UUID().uuidString)")
+    shared.synchronize()
+  }
+
+  private func writeInboxStart(id: String, at iso: String) {
+    writeInboxInstruction([
+      "v": NSNumber(value: 1),
+      "kind": "start",
+      "id": id,
+      "at": iso,
+    ])
+  }
+
+  private func writeInboxEnd(id: String, at iso: String, seconds: Int) {
+    writeInboxInstruction([
+      "v": NSNumber(value: 1),
+      "kind": "end",
+      "id": id,
+      "at": iso,
+      "seconds": NSNumber(value: max(0, seconds)),
+    ])
+  }
+
+  /// Every inbox entry, for the drain. Enumerated by prefix over
+  /// `dictionaryRepresentation()` — there is deliberately no index key, because
+  /// an index would be a read-modify-write again.
+  private func readInboxEntries() -> [String: String] {
+    guard let shared = UserDefaults(suiteName: kAppGroupId) else { return [:] }
+    var out: [String: String] = [:]
+    for (key, value) in shared.dictionaryRepresentation()
+    where key.hasPrefix(kInboxPrefix) {
+      if let json = value as? String { out[key] = json }
+    }
+    return out
+  }
+
+  /// Deletes exactly the keys Dart acked, and nothing else. Called only after
+  /// Dart confirmed the write that consumed them.
+  private func deleteInboxKeys(_ keys: [String]) {
+    guard let shared = UserDefaults(suiteName: kAppGroupId) else { return }
+    for key in keys where key.hasPrefix(kInboxPrefix) {
+      shared.removeObject(forKey: key)
+    }
+    shared.synchronize()
+  }
+
   // ── Action handlers ───────────────────────────────────────────────────────
 
   private func handleQuickLogStart(completion: @escaping () -> Void) {
@@ -247,30 +377,12 @@ import shared_preferences_foundation
     let id   = UUID().uuidString
     let isoNow = ISO8601DateFormatter().string(from: now)
 
-    let record = NSMutableDictionary()
-    record["id"]               = id
-    record["timestamp"]        = isoNow
-    record["duration"]         = "lt1"
-    record["feelings"]         = NSArray()
-    record["triggers"]         = NSArray()
-    record["referralRequired"] = NSNumber(value: false)
-    record["notes"]            = ""
-    record["eventType"]        = "seizure"
-    record["severity"]         = "mild"
-
-    // Prepend to standard (Flutter) storage
-    var list = NSMutableArray()
-    if let raw = standard.string(forKey: kStorageKey),
-       let data = raw.data(using: .utf8),
-       let decoded = try? JSONSerialization.jsonObject(with: data) as? NSArray {
-      list = NSMutableArray(array: decoded)
-    }
-    list.insert(record, at: 0)
-    if let encoded = try? JSONSerialization.data(withJSONObject: list),
-       let str = String(data: encoded, encoding: .utf8) {
-      standard.set(str, forKey: kStorageKey)
-      shared?.set(str, forKey: kSharedRecords)
-    }
+    // Post a START fact. No record is built and no list is read: the seven
+    // defaults this used to invent — lt1, empty feelings, empty triggers, no
+    // referral, empty notes, seizure, mild — are the drain's business now, so a
+    // queued instruction materialises with whatever the defaults are when it is
+    // applied rather than whatever they were when it was written.
+    writeInboxStart(id: id, at: isoNow)
 
     // Mark active event in both suites
     let active: NSDictionary = ["id": id, "startIso": isoNow]
@@ -313,31 +425,18 @@ import shared_preferences_foundation
       let secs = max(0, Int(endTime.timeIntervalSince(startTime)))
       let m = secs / 60, s = secs % 60
       elapsedStr = m == 0 ? "\(s)s" : (s == 0 ? "\(m)m" : "\(m)m \(s)s")
-      let duration = secs < 60 ? "lt1" : (secs < 300 ? "oneToFive" : "gt5")
 
-      func updateList(_ raw: String?) -> String? {
-        guard let raw = raw,
-              let listData = raw.data(using: .utf8),
-              let decoded = try? JSONSerialization.jsonObject(with: listData) as? NSArray else { return nil }
-        let list = NSMutableArray(array: decoded)
-        for i in 0..<list.count {
-          if let item = list[i] as? NSMutableDictionary, (item["id"] as? String) == eventId {
-            item["duration"] = duration; break
-          }
-          if let item = list[i] as? NSDictionary, (item["id"] as? String) == eventId {
-            let mutable = NSMutableDictionary(dictionary: item)
-            mutable["duration"] = duration; list[i] = mutable; break
-          }
-        }
-        guard let enc = try? JSONSerialization.data(withJSONObject: list),
-              let str = String(data: enc, encoding: .utf8) else { return nil }
-        return str
-      }
-
-      if let updated = updateList(standard.string(forKey: kStorageKey)) {
-        standard.set(updated, forKey: kStorageKey)
-        shared?.set(updated, forKey: kSharedRecords)
-      }
+      // Post an END fact carrying SECONDS, not a bucket. The
+      // lt1/oneToFive/gt5 mapping used to be computed here, and identically in
+      // two other places; it is now bucketFromSeconds in capture_inbox.dart,
+      // once. max(0, …) above means the value can never be the negative that
+      // the schema defers on.
+      //
+      // Note what is NOT read: the record list. Everything needed is in the
+      // active-event key, which is why the whole read-modify-write is gone
+      // rather than relocated.
+      writeInboxEnd(id: eventId, at: ISO8601DateFormatter().string(from: endTime),
+                    seconds: secs)
     }
 
     standard.removeObject(forKey: kActiveEventKey)

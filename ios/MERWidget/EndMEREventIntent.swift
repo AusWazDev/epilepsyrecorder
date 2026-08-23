@@ -10,9 +10,9 @@ struct EndMEREventIntent: AppIntent {
     static var authenticationPolicy: IntentAuthenticationPolicy { .alwaysAllowed }
 
     func perform() async throws -> some IntentResult {
-        let kAppGroupId    = "group.au.com.notiva.medicaleventrecorder"
-        let kSharedActive  = "mer_active_event"
-        let kSharedRecords = "mer_records"
+        let kAppGroupId   = "group.au.com.notiva.medicaleventrecorder"
+        let kSharedActive = "mer_active_event"
+        let kInboxPrefix  = "mer_inbox_"
 
         guard let shared = UserDefaults(suiteName: kAppGroupId) else {
             return .result()
@@ -31,29 +31,38 @@ struct EndMEREventIntent: AppIntent {
             let secs = max(0, Int(endTime.timeIntervalSince(startTime)))
             let m = secs / 60, s = secs % 60
             elapsedStr = m == 0 ? "\(s)s" : (s == 0 ? "\(m)m" : "\(m)m \(s)s")
-            let duration = secs < 60 ? "lt1" : (secs < 300 ? "oneToFive" : "gt5")
 
-            if let raw = shared.string(forKey: kSharedRecords),
-               let listData = raw.data(using: .utf8),
-               let decoded  = try? JSONSerialization.jsonObject(with: listData) as? NSArray {
-                let list = NSMutableArray(array: decoded)
-                for i in 0..<list.count {
-                    if let item = list[i] as? NSMutableDictionary,
-                       (item["id"] as? String) == eventId {
-                        item["duration"] = duration; break
-                    }
-                    if let item = list[i] as? NSDictionary,
-                       (item["id"] as? String) == eventId {
-                        let m2 = NSMutableDictionary(dictionary: item)
-                        m2["duration"] = duration; list[i] = m2; break
-                    }
-                }
-                if let enc = try? JSONSerialization.data(withJSONObject: list),
-                   let str = String(data: enc, encoding: .utf8) {
-                    shared.set(str, forKey: kSharedRecords)
-                }
+            // Post an END fact. This replaces reading the whole record list,
+            // finding the matching entry, rewriting it and writing the list
+            // back — from a SEPARATE PROCESS, with the app free to be doing the
+            // same thing at the same time.
+            //
+            // Everything needed is already here: the id and start time come from
+            // the active-event key. This extension now has no knowledge of the
+            // record list at all, which is the single most important property of
+            // the design — the cross-process read-modify-write is removed rather
+            // than relocated.
+            //
+            // Seconds, not a bucket: the lt1/oneToFive/gt5 mapping lived here and
+            // in two places in AppDelegate. It is now bucketFromSeconds in
+            // capture_inbox.dart, once. max(0, …) above means the value can never
+            // be the negative the schema defers on.
+            //
+            // Duplicated from AppDelegate.writeInboxInstruction rather than
+            // shared: Runner and MERWidget are separate targets, and the project
+            // already duplicates MERActivityAttributes.swift across the same
+            // boundary. Any change to the schema must be mirrored in both.
+            let payload: [String: Any] = [
+                "v": NSNumber(value: 1),
+                "kind": "end",
+                "id": eventId,
+                "at": ISO8601DateFormatter().string(from: endTime),
+                "seconds": NSNumber(value: secs),
+            ]
+            if let enc = try? JSONSerialization.data(withJSONObject: payload),
+               let json = String(data: enc, encoding: .utf8) {
+                shared.set(json, forKey: "\(kInboxPrefix)\(UUID().uuidString)")
             }
-
         }
 
         shared.removeObject(forKey: kSharedActive)

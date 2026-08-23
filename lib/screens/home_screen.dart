@@ -13,6 +13,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../constants.dart';
 import '../services/backup_service.dart';
+import '../services/ios_capture_bridge.dart';
 import '../services/notification_service.dart';
 import '../models/capture_inbox.dart';
 import '../models/event_record.dart';
@@ -218,10 +219,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
 
+    var base = await _store.load();
+
+    // ── ONE-TIME iOS RECONCILIATION ──
+    // Folds the pre-inbox App Group record mirror into the store, then retires
+    // it. Runs before the drain so an `end` instruction can attach to a record
+    // recovered from the mirror in the same foreground. iOS only: no other
+    // platform ever had a second mirror.
+    if (Platform.isIOS) {
+      final fold = await reconcileLegacySharedRecords(
+        channel: _navChannel,
+        prefs:   prefs,
+        store:   _store,
+        loaded:  base,
+        onError: reportCaptureChannelError,
+      );
+      base = fold.records;
+      if (fold.addedIds.isNotEmpty || fold.durationsRecovered.isNotEmpty) {
+        await Sentry.captureMessage(
+          'iOS handoff: legacy shared records folded in',
+          level: SentryLevel.info,
+          withScope: (scope) => scope.setContexts('handoff', {
+            'added':              fold.addedIds.length,
+            'durationsRecovered': fold.durationsRecovered.length,
+            'wrote':              fold.wrote,
+          }),
+        );
+      }
+    }
+
     final drain = await drainInbox(
-      prefs:  prefs,
-      store:  _store,
-      loaded: await _store.load(),
+      transport: _inboxTransport(prefs),
+      store:     _store,
+      loaded:    base,
     );
     final loaded = drain.records;
 
@@ -266,6 +296,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     await _refreshBackupCount();
   }
+
+  /// The inbox transport for this platform.
+  ///
+  /// iOS goes over the navigation channel because Dart cannot read the App
+  /// Group, and the App Group is where the inbox must live for a widget
+  /// extension in another process to write it. Everything else reads the same
+  /// store the drain writes.
+  ///
+  /// The channel transport never throws: a missing, erroring or hung channel
+  /// degrades to "no entries this time", which costs one foreground and loses
+  /// nothing, because deletion is gated on a confirmed write. Letting it throw
+  /// would take the first render of the list with it — and this sits on the
+  /// cold-start path, where four of the seven historical notification failures
+  /// lived.
+  CaptureInboxTransport _inboxTransport(SharedPreferences prefs) =>
+      Platform.isIOS
+          ? IosChannelInboxTransport(_navChannel,
+              onError: reportCaptureChannelError)
+          : PrefsInboxTransport(prefs);
 
   Future<void> _endActiveEvent() async {
     if (Platform.isIOS) return; // iOS: Live Activity owns event end

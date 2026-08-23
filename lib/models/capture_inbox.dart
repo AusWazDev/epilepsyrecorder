@@ -265,6 +265,44 @@ class InboxDrainOutcome {
   });
 }
 
+/// Where inbox entries come from, and where the ack goes.
+///
+/// Introduced for step 2 and no wider than step 2 needs. On Android the inbox
+/// lives in the same `SharedPreferences` the main isolate already reads, so the
+/// transport is a thin wrapper. On iOS it cannot: `shared_preferences` reads
+/// `UserDefaults.standard` and filters to the `flutter.` prefix, while the
+/// inbox has to live in the App Group so a widget extension in another process
+/// can write it. Giving `shared_preferences` a suite name would relocate every
+/// preference in the app, so the iOS transport goes over a method channel
+/// instead — Swift enumerates, Dart applies, Dart acks, Swift deletes.
+///
+/// [applyInbox] is deliberately NOT part of this. The whole correctness surface
+/// — ordering, idempotency, merge-by-id, defaults, orphan versus deferral — is
+/// pure and shared by both transports unchanged.
+abstract class CaptureInboxTransport {
+  /// Every entry currently present, parsed. Must not throw: a transport that
+  /// cannot be reached returns empty, and the keys are read again next
+  /// foreground.
+  Future<List<InboxEntry>> read();
+
+  /// Removes drained keys. Called ONLY after the write that consumed them was
+  /// confirmed.
+  Future<void> delete(Iterable<String> keys);
+}
+
+/// The Android transport: the inbox is in the same store the drain writes.
+class PrefsInboxTransport implements CaptureInboxTransport {
+  const PrefsInboxTransport(this.prefs);
+
+  final SharedPreferences prefs;
+
+  @override
+  Future<List<InboxEntry>> read() async => readInboxEntries(prefs);
+
+  @override
+  Future<void> delete(Iterable<String> keys) => deleteInboxKeys(prefs, keys);
+}
+
 /// Drains the inbox into [store]: apply, write, verify, and only then delete.
 ///
 /// The order is the whole point. Clearing the keys before the write is
@@ -277,11 +315,11 @@ class InboxDrainOutcome {
 /// owns Sentry and the once-per-session bookkeeping, and so this stays testable
 /// without a widget or an initialised Sentry.
 Future<InboxDrainOutcome> drainInbox({
-  required SharedPreferences prefs,
+  required CaptureInboxTransport transport,
   required EventStore store,
   required List<EventRecord> loaded,
 }) async {
-  final entries = readInboxEntries(prefs);
+  final entries = await transport.read();
   if (entries.isEmpty) {
     return InboxDrainOutcome(
       records: loaded,
@@ -300,7 +338,7 @@ Future<InboxDrainOutcome> drainInbox({
   if (plan.drainableKeys.isNotEmpty) {
     wrote = await persistEvents(store, plan.merged);
     records = plan.merged;
-    if (wrote) await deleteInboxKeys(prefs, plan.drainableKeys);
+    if (wrote) await transport.delete(plan.drainableKeys);
   }
 
   return InboxDrainOutcome(
