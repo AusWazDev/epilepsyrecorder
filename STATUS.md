@@ -2,6 +2,140 @@
 
 ---
 
+## Session: 24 August 2026 — Windows (Claude Code CLI)
+
+**Android capture inbox built and tested on a physical device. Backlog items 13
+and 14 closed.** ✅ Built and installed to a device; nothing archived, uploaded
+or submitted. `ios/` untouched.
+
+Full detail in the Change Register entry **"Android inbox — device test,
+24 August 2026"** — measurements, certificate digests and the device property
+dump are there rather than repeated here.
+
+### Android capture inbox (`ba3f99a`)
+
+- **The property: Dart's main isolate is now the only writer of
+  `epilepsy_event_records_v1`.** Every other capture path posts a fact.
+  Established mechanically, not asserted — `setString(kEventStorageKey, …)`
+  appears exactly once in `lib/`, inside `writeEventPayload`, whose only caller
+  is `EventStore._write`, behind the serialising queue. A test walks every
+  `.dart` under `lib/` and fails if any other file writes that key.
+- **One key per instruction**, `mer_inbox_<uuidv4>`, never an array append —
+  appending to a JSON array is itself a read-modify-write, so an inbox built
+  that way would fix nothing. Two kinds, facts only, the drain applies defaults.
+  An end carries **seconds**, not a bucket; the bucket is a storage decision and
+  belongs with the writer of the store.
+- **The drain lives in `_loadRecords`**: apply, write, verify, and only then
+  delete the keys. Clearing first would lose whatever the write failed to
+  persist. Off the capture path entirely — `_quickRecord` and the unawaited
+  `_persist()` are untouched.
+- **`_handleStart` and `_handleEnd` no longer read or write the record list.**
+  They previously decoded the whole stored list, inserted or amended, and
+  re-encoded it past the queue. That was backlog item 13.
+- **Windows guard on `endEvent()`** (backlog item 14). Changes nothing today,
+  which is the point: it was unreachable only by a two-step argument about
+  another key, and is now a guard.
+- Schema documented as a cross-platform contract, because step 2 adds a Swift
+  writer against it. Two contract requirements are written into the schema docs
+  rather than only the code: `at` is parsed `DateTime.tryParse(raw)?.toLocal()`,
+  never bare — the same normalisation as `EventRecord`, and the ten-hour trap
+  fixed in `e48d91b` — and ids are compared by exact string equality and never
+  case-folded, because Swift emits uppercase UUIDs and restore matches exactly.
+
+### Deferred-start orphan case closed (`ad14413`)
+
+- An end whose start is deferred (unknown `v` or kind) is now **held back
+  alongside it** instead of being dropped as an orphan. The orphan rule was
+  written for an end whose record the user deleted; applied to an end whose
+  start sits undrained three keys away, it lost a duration that was present and
+  readable.
+- The unchanged path is asserted as unchanged: an end matching nothing at all is
+  still dropped and still reported. Deferral and drop stay distinguishable in
+  telemetry.
+- Required reading `id` out of a payload the version gate otherwise says not to
+  inspect — narrow and deliberate, reasoned at the point of the read.
+
+### Android device test — Teclast P30 tablet
+
+- **Release build**, not debug, deliberately: the historical Android failures
+  lived in the background isolate and isolate behaviour differs between the two.
+  `flutter build apk --release`, signed with the release keystore, `apksigner
+  verify` reports **Verifies**, v2 scheme.
+- Device: **Teclast P30 tablet** (`P30_ROW`, 800×1280 @ 160dpi, ~9.4"),
+  **Android 15 / API 35**, `arm64-v8a`. Unchanged since the May test. See the
+  24-Aug-26 clarification on the 6 May entry below — "P30" is a tablet, not a
+  Huawei phone.
+- **In-place upgrade, data preserved** — established BEFORE installing, because
+  the answer turns entirely on the signature: same certificate, same package,
+  versionCode 3 → 5. Confirmed on device afterwards by `firstInstallTime`
+  unchanged at 2026-05-06 with a new `lastUpdateTime`. Device reports back
+  `1.1.0` / `5`.
+- A Play-installed build would NOT have matched, since Play App Signing re-signs;
+  that install fails cleanly and only a subsequent uninstall would wipe.
+
+### Verified on device
+
+- **`kDisclaimerVersion` 1.0 → 1.1 re-prompted an existing user. First
+  confirmation of that path anywhere** — the iPhone was always a fresh install
+  after the earlier wipe, so the upgrade branch had never actually run.
+- Data retained across the upgrade.
+- **Notification round trip with correct bucketing:** start → 2m30s → end →
+  "1-5 minutes" in the edit screen. The seconds travelled as an end instruction
+  and were bucketed at drain time, not at capture time.
+- Feedback notification then the restored persistent notification — the
+  3-second-delay ordering, correct.
+- **BACKLOG ITEM 13 CLOSED on hardware.** Red button followed immediately by a
+  notification start/stop produced **both** events, neither clobbered. The
+  quick-record event kept its `lt1` default — correct, nothing measured it — and
+  the notification event showed "1-5 minutes" from 1m15s. That interleaving used
+  to lose one of the two.
+- **Ten rapid taps produced exactly ten records.**
+- **Backup and restore verified on Android for the first time.** Both had only
+  ever been exercised on Windows and iOS.
+- Backup reminder banner showing correctly, and its suppression rules not firing
+  when they should not.
+
+### Removed from the device
+
+- **`au.com.notiva.medical_event_recorder`** (v1.0.0, pre-rebrand) was still
+  installed alongside the real `au.com.notiva.medicaleventrecorder`. It shipped
+  the underscored **namespace** as its `applicationId` — the value `CLAUDE.md`
+  records as "internal R class only" — so the app drawer held two identical MER
+  icons. Uninstalled by the developer during this test.
+- Recorded for the failure mode, not the clutter: **opening the wrong icon would
+  have looked exactly like the drain failing** — an event captured in one app and
+  absent in the other, with no visible reason, on the one code path this release
+  changed.
+
+### Gaps — recorded, not closed
+
+- **No Android coverage below API 35** (backlog item 15). MER ships to roughly
+  API 23, and the entire tested range is one API level. Foreground-service and
+  background-isolate behaviour changed materially at **26**, **31** and **34** —
+  and the inbox writes from exactly that isolate.
+- **No Android phone form factor, ever** (backlog item 16). Every Android test on
+  record is on a tablet.
+- **EMUI has never been exercised.** `ro.build.version.emui` is empty on a
+  Teclast. EMUI is one of the more aggressive notification regimes on Android, so
+  treating past "P30" results as covering it would overstate exactly the surface
+  where four of the seven historical failures lived.
+- The 30-minute abandonment timeout remains untested, and is still the only
+  recovery when an event cannot be ended.
+
+### Verified
+
+`flutter analyze` 42 issues, zero errors and zero warnings — unchanged from the
+session baseline, read as the total rather than a filtered count. Tests 91 pass,
+up from 86, with the same two pre-existing widget failures (`app_smoke_test`,
+`export_options_test`, both on the obsolete `disclaimerAccepted` key;
+`export_options_test` additionally targets a menu item that no longer exists).
+
+**`ios/` byte-identical throughout:** subtree `40aacaa8363a450038750af8d2225144811d7e0f`
+at every commit this session, so v1.1.0's iOS device test remains a regression
+check rather than full re-verification.
+
+---
+
 ## Session: 19–22 August 2026 — Windows (Claude Code CLI)
 
 **v1.1.0 work: data-loss fix, version drift fix, JSON backup/restore. Plus a full
