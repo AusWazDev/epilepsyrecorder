@@ -239,11 +239,44 @@ would be interpretation.
 
 ---
 
-## 7. Migration
+## 7. Migration, and the inbox that does not go away
 
-Reads **one shape**: the JSON array under `epilepsy_event_records_v1`. The
-simplest migration MER will ever have — which is the whole argument for doing it
-now rather than after the model expands.
+> **CORRECTED, 22 August 2026.** This section originally opened:
+>
+> > "Reads **one shape**: the JSON array under `epilepsy_event_records_v1`. The
+> > simplest migration MER will ever have — which is the whole argument for
+> > doing it now rather than after the model expands."
+>
+> **That premise was wrong, and it will never become true.** The one-shape claim
+> holds for the INITIAL conversion only. A SQLite feasibility pass established
+> that `shared_preferences` and the iOS App Group cannot be retired, because two
+> writers live outside Dart — `AppDelegate` and `EndMEREventIntent`, the latter
+> in a separate widget extension process — and neither can reasonably speak
+> SQLite. They change job from store to **inbox**, permanently. The original
+> wording is kept above rather than deleted, because it was the stated basis for
+> the do-it-now argument and that basis has narrowed.
+
+**SQLite is the system of record.** `shared_preferences` and the App Group are a
+**drained inbox**, not legacy storage awaiting removal.
+
+**One reconciliation pattern on both platforms:** the native or background-isolate
+writer APPENDS to the inbox and never reads or rewrites the record list; the main
+isolate drains the inbox into SQLite on foreground and clears it. One writer per
+store, and no read-modify-write outside Dart.
+
+On Android that means the notification background isolate stays off SQLite
+entirely — `sqflite` documents that access "should be done in the main isolate"
+and that its "transaction mechanism is not cross-isolate safe". On iOS it means
+the native writers stop treating `UserDefaults.standard` as a source of truth,
+which is also the fix for a live data-loss defect — see the Change Register entry
+for 22 August 2026.
+
+**Sequence the iOS handoff fix BEFORE this migration.** Migrating on top of a
+lossy handoff bakes the loss into the new schema.
+
+### The initial conversion
+
+Reads one shape: the JSON array under `epilepsy_event_records_v1`.
 
 | From | To |
 |------|-----|
@@ -259,10 +292,14 @@ now rather than after the model expands.
 
 ### Non-negotiable
 
-- **Leave `epilepsy_event_records_v1` in place permanently this release.**
+- **Leave `epilepsy_event_records_v1` in place permanently this release.** Note
+  this is no longer only a safety net: it is the inbox, and it stays for good.
 - **Write a backup file before migrating.**
 - **Verify the row count before marking migration complete**, and fall back to
   the old store if it does not match.
+- **Drain, then clear.** The inbox must be emptied only after the SQLite write
+  for those records has succeeded, or a foreground that fails mid-drain loses
+  them.
 
 ---
 
