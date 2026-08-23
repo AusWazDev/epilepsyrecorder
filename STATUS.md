@@ -188,6 +188,13 @@ the list byte-identical to the session-start baseline (not merely the same count
 - Help screen: "Reviewing the event" row added for Android
 - Commits: `4d1514a`, `0468e6f`. Pushed to origin.
 - Tested on P30 ROW (Android 15) — all flows confirmed ✅
+  **Device clarified 24-Aug-26: "P30 ROW" is a TECLAST P30 TABLET** (`P30_ROW`,
+  800×1280 @ 160dpi, ~9.4"), not a Huawei P30 phone. Same model string, entirely
+  different device. So this and every other Android result on record are tablet
+  results, and no Huawei/EMUI notification behaviour applies to any of them
+  (`ro.build.version.emui` is empty). Nothing here is retracted — the line was
+  ambiguous rather than wrong, and the 7 May register entry already recorded it
+  as a tablet.
 
 ---
 
