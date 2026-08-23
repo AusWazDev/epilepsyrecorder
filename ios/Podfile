@@ -42,6 +42,34 @@ post_install do |installer|
     end
   end
 
+  # Link libc++ explicitly on the app target.
+  #
+  # Sentry compiles C++ (SentryBacktrace, SentryCrashMonitor_CPPException,
+  # SentryThreadMetadataCache, SentryContinuousProfiler) but its podspec declares
+  # CLANG_CXX_LIBRARY only in pod_target_xcconfig and declares no `libraries`, so
+  # CocoaPods never propagates libc++ to the app target. Below the 16.2 raise it
+  # still arrived, via auto-link requests clang emitted into the pod's object
+  # files; at 16.2 clang stops emitting them and the Release link fails with a
+  # page of undefined C++ runtime symbols (operator new, __cxa_*,
+  # __gxx_personality_v0, std::__1::mutex::lock).
+  #
+  # So the app was only ever linking libc++ by accident. This states it.
+  #
+  # ⚠️ DO NOT REMOVE. It looks like a stray flag with no owner in this project —
+  # nothing in ios/ or lib/ contains a line of C++. The owner is a transitive
+  # dependency, and the failure it prevents is a link error, not a warning.
+  # $(inherited) is load-bearing: without it this replaces the whole framework
+  # list CocoaPods puts in Pods-Runner.<config>.xcconfig.
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_project.native_targets.each do |target|
+      next unless target.name == 'Runner'
+      target.build_configurations.each do |config|
+        config.build_settings['OTHER_LDFLAGS'] = '$(inherited) -lc++'
+      end
+    end
+    aggregate_target.user_project.save
+  end
+
   ################  Awesome Notifications pod modification 1 ###################
   awesome_pod_file = File.expand_path(File.join('plugins', 'awesome_notifications', 'ios', 'Scripts', 'AwesomePodFile'), '.symlinks')
   require awesome_pod_file
