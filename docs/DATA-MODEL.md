@@ -8,10 +8,20 @@ expansion changes what a record *is* — designing tables against today's nine
 fields would mean migrating twice, and the second migration is the harder one.
 
 > **Not clinically validated.** The field set behind this model was drawn from
-> patient-facing charity diaries and Seizure Tracker's published field list, not
-> from peer-reviewed literature. See the Change Register entry for 22 August
-> 2026 for the sources and their limits. Nothing here should be described to a
-> user as clinical, standard, or validated.
+> patient-facing charity diaries, Seizure Tracker's published field list, and
+> migraine diary guidance from The Migraine Trust, Migraine Canada, the National
+> Headache Foundation, the American Migraine Foundation and InformedHealth.org
+> (NCBI Bookshelf NBK328459) — not from peer-reviewed literature. See the Change
+> Register entries for 22 August 2026 for the sources and their limits. Nothing
+> here should be described to a user as clinical, standard, or validated.
+
+**Paper-tested against migraine, 22 August 2026.** The model was checked against
+a second condition before any SQLite work, to establish whether it is genuinely
+general or epilepsy with extra tables. It mostly held: triggers, duration,
+notes, aura and a post-event phase all mapped unchanged, and the before / during
+/ after ordering fits migraine better than epilepsy because the phases are more
+distinct. Three gaps were found. Two are amended below; the third is recorded in
+§9 as designed-for and deferred.
 
 ---
 
@@ -58,7 +68,7 @@ go in.
 
 | Column | Notes |
 |--------|-------|
-| `id` | Preserved across migration — see §6. |
+| `id` | Preserved across migration — see §7. |
 | `condition_id` | |
 | `event_type_id` | **NULLABLE** until the wizard confirms it. |
 | `occurred_at` | Nullable. When it happened. |
@@ -69,6 +79,8 @@ go in.
 | `aura` | Nullable. Yes / no / unsure. |
 | `injury` | Nullable. |
 | `rescue_med_given` | Nullable. |
+| `rescue_med_helped` | Nullable. yes / partly / no. |
+| `rescue_med_second_dose` | Nullable. |
 | `recovery_seconds` | Nullable. |
 | `witnessed_by` | Nullable. |
 | `notes` | |
@@ -82,15 +94,40 @@ data in a medical record rather than absent data.
 **Severity is kept**, and the reason is recorded here so it is not re-litigated:
 it is a **relative self-assessment** — how this event felt compared with the
 person's other events of the same type. That is data a specialist cannot obtain
-any other way. Its absence from published diaries reflects that those are
-clinical instruments, not that it is useless here. Consider labelling it
-"Compared with your other events" in the UI so the relative framing is explicit
-rather than implied.
+any other way.
+
+The migraine paper test **independently supports this**, and corrects an earlier
+claim. Severity is a standard field in migraine diaries and is recorded
+explicitly by The Migraine Trust. An earlier note said severity "appears in NO
+published diary"; that was drawn from seizure diaries only and stated too
+broadly. Its absence from *seizure* diaries reflects that those are clinical
+instruments, not that self-rated severity is without value.
+
+Consider labelling it "Compared with your other events" in the UI so the
+relative framing is explicit rather than implied.
+
+Open, not solved: migraine severity is often a **0-10 scale** rather than three
+points, so severity's VALUE TYPE may need to vary by condition. Not solved now.
+`condition_field` already exists for exactly this kind of variance if it turns
+out to be needed, and severity's presentation may become condition-defined.
 
 ### observation / event_observation, trigger / event_trigger
 
 Shared vocabularies with many-to-many joins. Each vocabulary row carries
 `is_seeded` and `is_active` — **retire, never delete.**
+
+**`event_observation` carries a PHASE** — during / after. Nullable.
+
+MER's current observation list is entirely postictal: how the person was
+*afterwards*. Migraine diaries record symptoms DURING the attack — sensitivity
+to light, sound and smell, nausea, vomiting, dizziness, blurred vision, neck
+stiffness, tingling — and separately a postdrome. The model as first drafted had
+one observation set with no sense of when.
+
+**Do NOT split this into two vocabularies.** Several observations occur in both
+phases — nausea, confusion, fatigue — so duplicating them would double the list
+and break the shared-vocabulary decision in §1. One vocabulary; the phase is
+recorded on the join.
 
 **This replaces storing option strings inside each record**, which is the
 current model's most dangerous property: option strings are stored verbatim in
@@ -117,7 +154,19 @@ Relevance mapping only. Absence sorts an entry lower; **it does not hide it.**
 daily logging is the most abandoned feature in health apps, and a specialist
 does not need 340 confirmations of adherence, they need the 25 deviations.
 
-**No drug name field**, decided on burden grounds; `notes` covers it.
+**No drug name field**, decided on burden grounds; `notes` covers it. That
+applies to the rescue-medication fields on `event` too.
+
+**Rescue medication is three fields, not one.** A single bool captures none of
+what migraine sources consistently record: The Migraine Trust records medication
+taken INCLUDING whether a second dose was needed, and another source states
+plainly that response can matter as much as which medication was used. Hence
+`rescue_med_given`, `rescue_med_helped` and `rescue_med_second_dose`.
+
+This is at most three taps, all optional, all nullable, all skippable — and it
+passes the burden test in §1, because each is answerable in a second and none can
+be reconstructed at an appointment weeks later. It supersedes the earlier
+"one tap each" framing for this field specifically.
 
 ### condition_field / event_field_value
 
@@ -170,8 +219,13 @@ completed record opens the existing single page instead.
 ## 6. CSV
 
 Multi-stream, one file, with a `record_kind` column (`event` /
-`medication_note`) and a common timestamp, so sorting interleaves them — which
-is what lets a specialist see a missed dose sitting three days before a cluster.
+`medication_note`, and `daily_entry` when §9 lands) and a common timestamp, so
+sorting interleaves them — which is what lets a specialist see a missed dose
+sitting three days before a cluster.
+
+**`record_kind` must accommodate a third value from the outset.** Writing it as
+a two-valued flag would make §9 a breaking change to the export rather than an
+addition.
 
 Observations and triggers become **delimited columns**. Emoji stripped from
 **values** as well as headers.
@@ -198,7 +252,8 @@ now rather than after the model expands.
 | `eventType` **medication** | a `medication_note`, **NOT an event** |
 | `timestamp` | `logged_at`. **`occurred_at` stays NULL** — the old value was log time, and pretending otherwise fabricates data |
 | `duration` buckets | `duration_seconds` NULL, original bucket preserved. **Do not invent a number from a bucket** |
-| `feelings[]` / `triggers[]` | vocabulary rows plus joins, emoji stripped |
+| `feelings[]` | observation vocabulary rows plus joins, emoji stripped, **`phase` = `'after'`** — every existing entry is postictal, so the mapping is unambiguous |
+| `triggers[]` | trigger vocabulary rows plus joins, emoji stripped |
 | `referralRequired` | legacy column or notes |
 | `id` | **Preserved.** Restore matches on id; changing them breaks every existing backup file |
 
@@ -219,3 +274,53 @@ now rather than after the model expands.
 | Seeded catalogue | **Epilepsy only** this release. Migraine needs the same research pass; shipping one well beats two thinly. |
 | `medication_note` drug name | **No.** |
 | Primary condition | Set in **Settings**; the first condition added becomes it by default. Most users will only ever have one. **Nothing at capture time.** |
+
+---
+
+## 9. Designed for, deliberately not built: daily entries
+
+The genuine structural gap found by the migraine paper test. Recorded because it
+is deferred, not rejected.
+
+Migraine diaries record days when **nothing happened**. One source puts it
+directly: a diary that only records bad days cannot show you a rate. Non-attack
+days carry a tick and a sleep figure. Clinicians ask for migraine days PER
+MONTH — which needs a denominator MER cannot currently produce, because MER is
+entirely event-driven and has no way to record an absence.
+
+Planned as a **third record kind** alongside `event` and `medication_note`:
+
+| Column | Notes |
+|--------|-------|
+| `id` | |
+| `condition_id` | Nullable. |
+| `date` | |
+| `logged_at` | |
+| `had_event` | bool |
+| `sleep_hours` | Nullable. |
+| `notes` | |
+
+### Requirements on the CURRENT design, so this stays additive
+
+| # | Requirement |
+|---|-------------|
+| 1 | Nothing about `event` or `medication_note` may assume events are the only record kind. |
+| 2 | The CSV's `record_kind` column must already accommodate a third value — see §6. |
+| 3 | Any "events this month" figure must be written so a denominator can be added later **without changing its meaning**. |
+
+### Why deferred
+
+Daily logging is the most abandoned feature in health apps. It needs its own
+thinking about burden — likely an exceptions-and-prompts design rather than a
+form — and bolting it onto this release would compromise both it and the
+release.
+
+---
+
+## 10. Recorded, no action
+
+| # | Item |
+|---|------|
+| 1 | **Severity value type may become condition-defined.** Migraine severity is often 0-10 rather than three points. `condition_field` already covers this kind of variance if needed. Not solved now — see §2. |
+| 2 | **Pain LOCATION does not fit the standard shape at all.** Migraine templates use a head diagram, which is neither text nor numeric. `condition_field` territory if ever wanted; out of scope. |
+| 3 | **Wizard copy, for the copy pass.** Multiple migraine sources warn that a recorded "trigger" is often the attack already starting — food cravings, thirst, neck stiffness and light sensitivity commonly occur in the hours BEFORE pain, and one source calls this the main reason trigger hunting frustrates people. MER must NOT interpret this; that would cross the capture-only line. But the wizard's trigger step can be worded so it does not imply causation: **"What was happening beforehand?"** rather than "What caused this?". No action now. |
