@@ -106,7 +106,7 @@ class _SplashLoadingScreen extends StatelessWidget {
           children: [
 
             // ── ICON ──
-            const MERIconWidget(size: 100),
+            const MERIconWidget(size: 140, style: MERIconStyle.mark),
             const SizedBox(height: 24),
 
             // ── MER ──

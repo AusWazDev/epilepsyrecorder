@@ -27,7 +27,7 @@ class DisclaimerScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Row(
           children: [
-            MERIconWidget(size: 28),
+            MERIconWidget(size: 40, style: MERIconStyle.mark),
             SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

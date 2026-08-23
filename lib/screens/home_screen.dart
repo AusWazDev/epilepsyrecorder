@@ -452,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // badge, and a tile inside a tile was costing ~40% of the footprint.
         title: const Row(
           children: [
-            MERIconWidget(size: 30),
+            MERIconWidget(size: 40, style: MERIconStyle.mark),
             SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

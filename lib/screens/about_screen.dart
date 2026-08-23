@@ -50,7 +50,7 @@ class AboutScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const MERIconWidget(size: 72),
+                  const MERIconWidget(size: 88, style: MERIconStyle.mark),
                   const SizedBox(height: 16),
                   const Text(
                     kAppName,
