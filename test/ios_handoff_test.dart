@@ -231,6 +231,116 @@ void main() {
               'hours');
       expect(appDelegate, contains('staleDate: staleAt'));
     });
+
+    test('staleDate uses the STALENESS window, not the abandonment timeout',
+        () {
+      // They answer different questions and must not be tidied into one. 30
+      // minutes decides when an event is abandoned; this decides when the
+      // display stops asserting what the app cannot confirm.
+      final appDelegate = swiftFiles
+          .firstWhere((f) => f.path.endsWith('AppDelegate.swift'))
+          .readAsStringSync();
+      expect(appDelegate,
+          contains('kActivityStaleAfterSeconds: TimeInterval = 10 * 60'));
+      expect(appDelegate,
+          contains('.addingTimeInterval(kActivityStaleAfterSeconds)'),
+          reason: 'requesting with the 30-minute timeout left the display '
+              'confidently wrong for the whole window that matters');
+    });
+
+    test('the timeout is the same number in all three places', () {
+      // Swift app, Swift widget, Dart. Three copies because two target
+      // boundaries and a language boundary sit between them; this is the pin.
+      final appDelegate = swiftFiles
+          .firstWhere((f) => f.path.endsWith('AppDelegate.swift'))
+          .readAsStringSync();
+      expect(appDelegate,
+          contains('kActiveEventTimeoutSeconds: TimeInterval = 30 * 60'));
+
+      final widget = swiftFiles
+          .firstWhere((f) => f.path.endsWith('MERLiveActivity.swift'))
+          .readAsStringSync();
+      expect(widget,
+          contains('merActiveEventTimeoutSeconds: TimeInterval = 30 * 60'),
+          reason: 'the widget bounds its timer with its own copy');
+
+      final service =
+          File('lib/services/notification_service.dart').readAsStringSync();
+      expect(service, contains('_timeoutMins    = 30'));
+    });
+
+    group('the Live Activity tells the truth once it goes stale', () {
+      late String widget;
+
+      /// Code only. The comments here deliberately quote the defect they
+      /// replaced — "previously ran to startDate + 86400", '"Event in progress"
+      /// is a claim the app cannot support' — and a scan that could not tell a
+      /// comment from a claim would force those explanations out of the file to
+      /// keep itself green. That is the wrong trade: the comment is why the next
+      /// person does not reintroduce the bug.
+      late String widgetCode;
+
+      setUp(() {
+        widget = swiftFiles
+            .firstWhere((f) => f.path.endsWith('MERLiveActivity.swift'))
+            .readAsStringSync();
+        widgetCode = widget
+            .split('\n')
+            .where((l) => !l.trimLeft().startsWith('//'))
+            .join('\n');
+      });
+
+      test('the timer is bounded by the timeout, never 24 hours', () {
+        // startDate + 86400 is why the lock screen read 32:55 and climbing: a
+        // timer outrunning the timeout asserts the app still believes an event
+        // is running long after it gave up on it.
+        expect(widgetCode.contains('86400'), isFalse,
+            reason: 'the 24-hour interval end is the defect');
+        expect(widgetCode, contains('startDate + merActiveEventTimeoutSeconds'));
+      });
+
+      test('context.isStale is actually read', () {
+        // The whole finding: staleDate was set and never rendered, so it was
+        // working and unobservable. Three surfaces must consult it.
+        expect(widgetCode, contains('context.isStale'));
+        expect(widgetCode.split('isStale').length - 1, greaterThanOrEqualTo(6),
+            reason: 'lock screen, island expanded, compact and minimal');
+      });
+
+      test('"Event in progress" is never asserted unconditionally', () {
+        // It is a claim the app cannot support once it has stopped running.
+        for (final line in widgetCode.split('\n')) {
+          if (line.contains('"Event in progress"')) {
+            expect(line, contains('isStale'),
+                reason: 'every occurrence must be behind the stale branch: '
+                    '${line.trim()}');
+          }
+        }
+      });
+
+      test('the stale wording states uncertainty rather than a state', () {
+        expect(widgetCode, contains('"Event may still be running"'));
+        expect(widgetCode, contains('"May still be running"'));
+      });
+
+      test('the live timer is replaced by a static start time when stale', () {
+        expect(widgetCode, contains('Text(startDate, style: .time)'),
+            reason: 'a frozen number is honest; a climbing one is not');
+      });
+
+      test('the End button survives staleness', () {
+        // Removing it would strand the user with an event they cannot close.
+        // Both surfaces keep it, and neither guards it on isStale.
+        for (final line in widgetCode.split('\n')) {
+          if (line.contains('Button(intent: EndMEREventIntent())')) {
+            expect(line.contains('isStale'), isFalse, reason: line.trim());
+          }
+        }
+        expect(
+            widgetCode.split('Button(intent: EndMEREventIntent())').length - 1, 2,
+            reason: 'lock screen and Dynamic Island expanded');
+      });
+    });
   });
 
   group('IosChannelInboxTransport', () {

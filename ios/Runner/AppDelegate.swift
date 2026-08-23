@@ -37,6 +37,25 @@ import shared_preferences_foundation
   // is the closest thing to one source across a language boundary.
   private let kActiveEventTimeoutSeconds: TimeInterval = 30 * 60
 
+  // ── Live Activity staleness ───────────────────────────────────────────────
+  // When the app stops being able to VOUCH for what the Live Activity says.
+  // Deliberately NOT the same as the timeout above, and deliberately shorter.
+  //
+  // ⚠️ DO NOT "TIDY" THIS TO MATCH THE 30 ABOVE. They answer different
+  // questions. 30 minutes decides when an event is ABANDONED, which is a data
+  // question about the record. This decides when the DISPLAY should stop
+  // asserting something the app can no longer confirm — and the app has been
+  // unable to confirm it since the moment it was backgrounded.
+  //
+  // Why 10 and not 5: the duration buckets break at five minutes
+  // (oneToFive/gt5), so a genuinely long event crosses five minutes routinely.
+  // Staling there would mark almost every gt5 event stale while it was still
+  // running, which trains the user to ignore the stale state — and a signal
+  // that is usually wrong is worse than no signal, because it stops meaning
+  // anything. 10 clears that boundary and still corrects the display a full
+  // twenty minutes before the data gives up.
+  private let kActivityStaleAfterSeconds: TimeInterval = 10 * 60
+
   // ── Notification identifiers ──────────────────────────────────────────────
   private let kPersistentId        = "1"
   private let kActivePersistentId  = "2"
@@ -194,17 +213,21 @@ import shared_preferences_foundation
   private func startLiveActivity(eventId: String, startIso: String) {
     let attributes = MERActivityAttributes()
     let state      = MERActivityAttributes.ContentState(eventId: eventId, startIso: startIso)
-    // staleDate, not nil. Without it the activity has no self-expiry and its
-    // content is a self-driving timer, so an abandoned event displayed a running
-    // timer for as long as iOS kept the activity alive — hours, bounded only by
-    // the system's own limits. Observed on device: 30+ minutes with nothing
-    // clearing, because the only thing that clears state runs on foreground and
-    // the app was backgrounded throughout.
+    // staleDate, not nil, and set to the STALENESS window rather than the
+    // abandonment timeout — see kActivityStaleAfterSeconds.
     //
-    // This fixes the DISPLAY. It does not clear the state, which still waits for
-    // a foreground — see restorePersistentNotification.
+    // Setting this is necessary but not sufficient: an earlier pass set it and
+    // counted the item done, and the device still showed "Event in progress"
+    // with a live timer at 33 minutes, because MERLiveActivity never read
+    // context.isStale. staleDate that nothing renders is working and
+    // unobservable. The rendering is in MERLiveActivity.swift.
+    //
+    // This is the only mechanism that works with the app killed: nothing in MER
+    // can update or end an activity from a dead process, so the display has to
+    // correct itself. It still does NOT clear the state, which waits for a
+    // foreground — see restorePersistentNotification.
     let staleAt = ISO8601DateFormatter().date(from: startIso)?
-      .addingTimeInterval(kActiveEventTimeoutSeconds)
+      .addingTimeInterval(kActivityStaleAfterSeconds)
     let content    = ActivityContent(state: state, staleDate: staleAt)
     _ = try? Activity<MERActivityAttributes>.request(attributes: attributes, content: content)
   }
