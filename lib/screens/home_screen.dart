@@ -448,21 +448,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        // No wrapper on the icon: the artwork is already a rounded blue
+        // badge, and a tile inside a tile was costing ~40% of the footprint.
+        title: const Row(
           children: [
-            Container(
-              width:  30,
-              height: 30,
-              decoration: BoxDecoration(
-                color:        Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: MERIconWidget(size: 20),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Column(
+            MERIconWidget(size: 30),
+            SizedBox(width: 10),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize:       MainAxisSize.min,
               children: [

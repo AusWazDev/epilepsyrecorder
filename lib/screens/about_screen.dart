@@ -50,21 +50,7 @@ class AboutScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width:  72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color:        Colors.white.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.22),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: const Center(
-                      child: MERIconWidget(size: 44),
-                    ),
-                  ),
+                  const MERIconWidget(size: 72),
                   const SizedBox(height: 16),
                   const Text(
                     kAppName,

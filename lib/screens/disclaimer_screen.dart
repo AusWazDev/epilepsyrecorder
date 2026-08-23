@@ -25,21 +25,11 @@ class DisclaimerScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           children: [
-            Container(
-              width:  28,
-              height: 28,
-              decoration: BoxDecoration(
-                color:        Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: MERIconWidget(size: 18),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Column(
+            MERIconWidget(size: 28),
+            SizedBox(width: 10),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize:       MainAxisSize.min,
               children: [

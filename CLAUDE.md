@@ -114,7 +114,9 @@ channel is created. Capture on Windows is in-app only.
 
 ### Android notification icon — REQUIRED pattern for every new notification
 
-`ic_notification_large.png` is a white/flat icon on a transparent background. The blue circle background comes entirely from the notification's `color` property — **not** from the asset itself and **not** reliably from the channel `defaultColor` (Android caches channel settings; updates to an existing channel may not take effect).
+`ic_notification_large.png` is a **full-bleed blue rounded square with the white glyph inside** — byte-identical to `mipmap-xxhdpi/ic_launcher.png` (md5 `12a2fce3`), 144x144, 96.3% opaque, edge pixels `#0C4F82`. It carries its own background; nothing tints it. An earlier version of this note claimed it was a white glyph on transparent whose blue came from the `color` property. That was wrong, and it contradicted the line four bullets above which correctly calls it a flat PNG from mipmap-xxhdpi.
+
+The `color` property is still required, for a different reason: it tints the **small** icon, `resource://drawable/ic_launcher_foreground`, which genuinely is a white glyph on a transparent background (32% opaque, transparent corners). The channel `defaultColor` cannot be relied on for that — Android caches channel settings and updates to an existing channel may not take effect.
 
 **Every `NotificationContent` on Android must include all three of these:**
 

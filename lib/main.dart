@@ -106,21 +106,7 @@ class _SplashLoadingScreen extends StatelessWidget {
           children: [
 
             // ── ICON ──
-            Container(
-              width:  100,
-              height: 100,
-              decoration: BoxDecoration(
-                color:        Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.22),
-                  width: 1.5,
-                ),
-              ),
-              child: const Center(
-                child: MERIconWidget(size: 62),
-              ),
-            ),
+            const MERIconWidget(size: 100),
             const SizedBox(height: 24),
 
             // ── MER ──
