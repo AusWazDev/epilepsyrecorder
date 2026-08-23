@@ -9,9 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/services.dart';
 
+import 'package:sentry_flutter/sentry_flutter.dart';
+
 import '../constants.dart';
 import '../services/backup_service.dart';
 import '../services/notification_service.dart';
+import '../models/capture_inbox.dart';
 import '../models/event_record.dart';
 import '../screens/about_screen.dart';
 import '../screens/disclaimer_screen.dart';
@@ -186,10 +189,67 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     MaterialPageRoute(builder: (_) => const HelpScreen()),
   );
 
+  /// Reports inbox anomalies. Version and kind deferrals are reported once per
+  /// session — an instruction this build cannot apply stays in the inbox and
+  /// would otherwise be reported on every single foreground.
+  static bool _inboxDeferralReported = false;
+
+  /// Drains the capture inbox, then loads.
+  ///
+  /// ## Why the drain lives here
+  ///
+  /// This is the one place that already reloads prefs and replaces the record
+  /// list wholesale, and it is off the capture path: the record button calls
+  /// `_quickRecord`, which is untouched. The drain must never sit between a tap
+  /// and a record being written.
+  ///
+  /// ## Order matters
+  ///
+  /// Apply, write, verify, and only then delete the keys. A foreground that
+  /// cleared first and failed second would lose the captures outright.
+  ///
+  /// `_loaded` is not set true until the drain has run, so the list is never
+  /// rendered while an unapplied capture sits in the inbox. If the write FAILS
+  /// the merged list is still shown — the user sees their captures — the keys
+  /// survive for the next attempt, and `persistEvents` raises the unsaved-events
+  /// banner, which is exactly its existing meaning: the list on screen is ahead
+  /// of storage. Re-draining is safe because every instruction is idempotent.
   Future<void> _loadRecords({bool initial = false}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
-    final loaded = await _store.load();
+
+    final drain = await drainInbox(
+      prefs:  prefs,
+      store:  _store,
+      loaded: await _store.load(),
+    );
+    final loaded = drain.records;
+
+    for (final id in drain.orphanEndIds) {
+      // An end with no record to attach to. Dropped, never fabricated: a
+      // record invented here would need a start time, and a wrong timestamp in
+      // a medical record is worse than an absent duration.
+      await Sentry.captureMessage(
+        'Capture inbox: end instruction with no matching record',
+        level: SentryLevel.warning,
+        withScope: (scope) => scope.setContexts('inbox', {'eventId': id}),
+      );
+    }
+
+    // Once per session: a deferred entry stays in the inbox by design, so
+    // reporting per drain would report it on every foreground forever.
+    if (drain.deferReasons.isNotEmpty && !_inboxDeferralReported) {
+      _inboxDeferralReported = true;
+      await Sentry.captureMessage(
+        'Capture inbox: entries left in place, not applied',
+        level: SentryLevel.warning,
+        withScope: (scope) => scope.setContexts('inbox', {
+          'reasons': drain.deferReasons.map((r) => r.name).toList(),
+          'count':   drain.deferredCount,
+        }),
+      );
+    }
+
     final activeRaw = prefs.getString('mer_active_event');
     Map<String, dynamic>? active;
     if (activeRaw != null) {
