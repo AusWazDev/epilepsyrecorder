@@ -259,20 +259,32 @@ would be interpretation.
 **SQLite is the system of record.** `shared_preferences` and the App Group are a
 **drained inbox**, not legacy storage awaiting removal.
 
+**The property is single-writer, and it is not iOS-specific.** Dart's main
+isolate becomes the only writer of the record list; every other capture path
+posts a fact. The inbox is the mechanism, not the property — a cross-platform
+check established that framing this as "the App Group becomes an inbox" misses a
+loss window that exists on Android too, and that the Android one is reachable
+through ordinary use rather than across a process boundary.
+
 **One reconciliation pattern on both platforms:** the native or background-isolate
 writer APPENDS to the inbox and never reads or rewrites the record list; the main
-isolate drains the inbox into SQLite on foreground and clears it. One writer per
-store, and no read-modify-write outside Dart.
+isolate drains the inbox into the store, verifies, and only then clears it. One
+writer per store, and no read-modify-write anywhere but the main isolate.
 
-On Android that means the notification background isolate stays off SQLite
-entirely — `sqflite` documents that access "should be done in the main isolate"
-and that its "transaction mechanism is not cross-isolate safe". On iOS it means
-the native writers stop treating `UserDefaults.standard` as a source of truth,
-which is also the fix for a live data-loss defect — see the Change Register entry
-for 22 August 2026.
+One design, two transports — the transport differs for a hard platform reason:
 
-**Sequence the iOS handoff fix BEFORE this migration.** Migrating on top of a
-lossy handoff bakes the loss into the new schema.
+| | Transport |
+|---|---|
+| **Android** | `flutter.`-prefixed inbox keys in the same store, written by the notification background isolate, drained directly in Dart. Also satisfies the sqflite constraint: `sqflite` documents that access "should be done in the main isolate" and that its "transaction mechanism is not cross-isolate safe", so the background isolate stays off SQLite entirely. |
+| **iOS** | App Group keys, written by Swift in two processes, drained via method channel — **because Dart cannot read the App Group.** Also removes the native writers' treatment of `UserDefaults.standard` as a source of truth. |
+| **Windows** | Nothing. There is no second writer: no notification path, so no background isolate. The only platform already correct. |
+
+**Sequence the single-writer work BEFORE this migration, Android first.** Migrating
+on top of a lossy handoff bakes the loss into the new schema. Android comes first
+because it is Dart-only, so the instruction schema and the apply logic are proven
+where they are testable, before a process boundary is added. See the Change
+Register entry for 22 August 2026 for the loss windows on each platform and the
+three non-negotiable conditions.
 
 ### The initial conversion
 
