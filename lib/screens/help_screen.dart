@@ -123,12 +123,24 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 _HelpRow(
                   icon:  Icons.tune,
                   title: 'Record with details',
-                  body:  'Use the blue Record with details button to add notes, duration, triggers, and severity before saving.',
+                  // Named in the order the fields appear on the details screen,
+                  // using its own section labels: Event type, Duration, Severity,
+                  // "How are you feeling?", Possible triggers, "Medical referral
+                  // required?", "Notes (optional)". The previous wording listed
+                  // four of the seven and omitted event type and feelings — the
+                  // nine-field model UNDER-described.
+                  body:  'Use the blue Record with details button to set the event type, duration and severity, how you are feeling, possible triggers, whether a medical referral is needed, and notes — before saving.',
                 ),
                 _HelpRow(
                   icon:   Icons.edit_outlined,
                   title:  'Edit a record',
-                  body:   'Tap any event in the list to open it and make changes. Tap the ⋮ menu on the event card for more options.',
+                  // There is no per-event ⋮ menu anywhere in the app. The only
+                  // PopupMenuButton is the AppBar overflow in home_screen.dart;
+                  // Icons.more_vert in the Getting Started card is decoration.
+                  // What a History row actually offers, verified in
+                  // history_screen.dart: onTap opens the editor, and a trailing
+                  // delete IconButton whose handler confirms first.
+                  body:   'Tap any event in the list to open it and make changes. In History, each row also has a delete button, and deleting asks you to confirm first.',
                   isLast: true,
                 ),
               ],
@@ -241,7 +253,24 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   const _HelpRow(
                     icon:  Icons.timer_outlined,
                     title: 'Live Activity timer',
-                    body:  'After starting an event, a live timer appears on the Dynamic Island or as a banner on the lock screen. When the event is over, tap "Event Ended" on the timer — your phone can stay locked.',
+                    // Deliberately makes NO claim about ending while locked, and
+                    // does not say the button is on the timer.
+                    //   - "your phone can stay locked" was false: iOS 26 demands
+                    //     authentication for this button despite
+                    //     authenticationPolicy .alwaysAllowed (checklist §8).
+                    //   - "tap Event Ended on the timer" was false below iOS 17:
+                    //     Button(intent:) is gated on #available(iOS 17.0) in
+                    //     MERLiveActivity.swift, and the deployment target is 15.0.
+                    // The two end surfaces are mutually exclusive by version — the
+                    // Live Activity button on 17+, the active notification below it,
+                    // since handleQuickLogStart only schedules that notification
+                    // when #available(iOS 17.0) is false — so "whichever your
+                    // iPhone shows" is accurate on every version and stays accurate
+                    // after the deployment target rises. No version conditional to
+                    // become dead code.
+                    // The unlock caveat lives in the row above, which states it
+                    // correctly; repeating it here would duplicate.
+                    body:  'After starting an event, a live timer appears on the Dynamic Island or as a banner on the lock screen. To end the event, tap "Event Ended" on the timer or on the MER notification, whichever your iPhone shows.',
                   ),
                   const _HelpRow(
                     icon:  Icons.open_in_new,
