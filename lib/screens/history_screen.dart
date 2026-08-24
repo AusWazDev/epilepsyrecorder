@@ -24,14 +24,53 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
+/// The date windows offered by the range filter.
+///
+/// Presets rather than a picker: the clinical case this exists for is "the last
+/// three months, for my appointment", and a preset answers that in one tap
+/// where a picker takes four. See the report for why no custom range was added.
+enum _DateRange { all, days30, months3, months12 }
+
+extension _DateRangeLabel on _DateRange {
+  String get chipLabel {
+    switch (this) {
+      case _DateRange.all:      return 'All time';
+      case _DateRange.days30:   return 'Last 30 days';
+      case _DateRange.months3:  return 'Last 3 months';
+      case _DateRange.months12: return 'Last 12 months';
+    }
+  }
+
+  /// The inclusive lower bound, or null for [all].
+  ///
+  /// Anchored to the START of the day so "last 30 days" means 30 whole days,
+  /// not 30 days minus the time of day — which would silently drop events
+  /// recorded earlier this morning on the boundary day.
+  DateTime? startFrom(DateTime now) {
+    final midnight = DateTime(now.year, now.month, now.day);
+    switch (this) {
+      case _DateRange.all:      return null;
+      case _DateRange.days30:   return midnight.subtract(const Duration(days: 29));
+      case _DateRange.months3:  return DateTime(now.year, now.month - 3, now.day);
+      case _DateRange.months12: return DateTime(now.year - 1, now.month, now.day);
+    }
+  }
+}
+
 class _HistoryScreenState extends State<HistoryScreen> {
   late List<EventRecord> _records;
 
   final DateFormat _uiTimeFmt = DateFormat('EEE d MMM yyyy, h:mm a');
+  /// Row-level format. The date moved to the day header, so a row shows only
+  /// the time — which is also what stopped "PM" wrapping onto its own line.
+  final DateFormat _rowTimeFmt = DateFormat('h:mm a');
+  /// Day-header format, used when the day is neither today nor yesterday.
+  final DateFormat _dayHeaderFmt = DateFormat('EEE d MMM yyyy');
   final TextEditingController _searchController = TextEditingController();
 
   String _searchText      = '';
   bool   _referralOnly    = false;
+  _DateRange _dateRange   = _DateRange.all;
   final Set<EventType> _selectedTypes = {};
 
   @override
@@ -50,6 +89,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<EventRecord> get _filteredRecords {
     final q = _searchText.trim().toLowerCase();
 
+    // Resolved once, not per record: DateTime.now() inside the predicate would
+    // move the boundary while the list is being filtered.
+    final from = _dateRange.startFrom(DateTime.now());
+
     return _records.where((r) {
       // Referral filter
       if (_referralOnly && !r.referralRequired) return false;
@@ -58,6 +101,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(r.eventType)) {
         return false;
       }
+
+      // ── DATE RANGE ──
+      // Filters on `timestamp`, which the target data model maps to `logged_at`
+      // — "never null, never editable". Deliberately NOT `occurred_at`: that
+      // field is nullable and the migration leaves it NULL for every record
+      // that exists today, so a filter written against it would match none of
+      // them and would change meaning the day the expansion lands. Filtering on
+      // the log time means this predicate keeps working, and keeps meaning the
+      // same thing, across that migration.
+      if (from != null && r.timestamp.isBefore(from)) return false;
 
       // Text search
       if (q.isEmpty) return true;
@@ -87,6 +140,79 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       return haystack.contains(q);
     }).toList();
+  }
+
+  /// Whether any filter is narrowing the list.
+  ///
+  /// Derived from the filters themselves rather than by comparing counts: a
+  /// count comparison would call an active filter "not narrowed" whenever it
+  /// happened to exclude nothing, which is the same class of accidentally-true
+  /// label this replaces.
+  bool get _isNarrowed =>
+      _searchText.trim().isNotEmpty ||
+      _referralOnly ||
+      _selectedTypes.isNotEmpty ||
+      _dateRange != _DateRange.all;
+
+  /// Sheet header. States what is actually being exported, and distinguishes a
+  /// narrowed export from the whole set.
+  String _exportSheetTitle() {
+    final shown = _filteredRecords.length;
+    final total = _records.length;
+    final noun  = shown == 1 ? 'event' : 'events';
+    return _isNarrowed
+        ? 'Export $shown of $total $noun'
+        : 'Export all $total $noun';
+  }
+
+  /// Flattens a newest-first list into day headers followed by their events.
+  ///
+  /// Input order is preserved exactly — this regroups, it never re-sorts. The
+  /// CSV export is built separately by `buildCsv` from the record list and is
+  /// oldest-first and ungrouped; nothing here touches it.
+  List<_HistoryItem> _groupByDay(List<EventRecord> records) {
+    final now       = DateTime.now();
+    final today     = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final items = <_HistoryItem>[];
+    DateTime? currentDay;
+
+    for (var i = 0; i < records.length; i++) {
+      final r   = records[i];
+      final day = DateTime(r.timestamp.year, r.timestamp.month, r.timestamp.day);
+
+      if (currentDay == null || day != currentDay) {
+        final label = day == today
+            ? 'Today'
+            : day == yesterday
+                ? 'Yesterday'
+                : _dayHeaderFmt.format(day);
+        items.add(_HistoryItem.header(label));
+        currentDay = day;
+      }
+
+      // Whether this is the last event of its day, so the divider can be
+      // dropped there and each day reads as one cluster.
+      final next = i + 1 < records.length ? records[i + 1] : null;
+      final nextDay = next == null
+          ? null
+          : DateTime(next.timestamp.year, next.timestamp.month, next.timestamp.day);
+      items.add(_HistoryItem.record(r, isLastOfDay: nextDay != day));
+    }
+
+    return items;
+  }
+
+  /// Removes every active filter in one action.
+  void _clearFilters() {
+    setState(() {
+      _searchText = '';
+      _searchController.clear();
+      _referralOnly = false;
+      _selectedTypes.clear();
+      _dateRange = _DateRange.all;
+    });
   }
 
   // ── DELETE ──
@@ -169,18 +295,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         actions: [
           IconButton(
-            tooltip:  'Export CSV (filtered)',
+            tooltip:  'Export CSV',
             icon:     const Icon(Icons.ios_share),
-            // The tooltip above is the only place this button says it exports
-            // the FILTERED list, and tooltips need hover or a long press — so
-            // no iPhone user ever sees it. The sheet header carries the scope
-            // instead, where it will be read.
+            // The header said "Export N filtered events" unconditionally, which
+            // was true only by coincidence — showExportOptions recomputes the
+            // count from what it is handed, so it always reports 100% of the
+            // export set and can never tell the user whether anything was
+            // narrowed. It read correctly in a screenshot because a search
+            // happened to be active at the time.
+            //
+            // The scope has to be decided HERE, where both numbers exist: the
+            // filtered count and the total. Tooltips need hover or a long
+            // press, so no touch user ever sees one — the sheet header is the
+            // only place this gets read.
             onPressed: () => showExportOptions(
               context,
               shown,
-              filenamePrefix: 'medical_event_recorder_filtered',
-              sheetTitle: 'Export ${shown.length} filtered '
-                  '${shown.length == 1 ? "event" : "events"}',
+              filenamePrefix: _isNarrowed
+                  ? 'medical_event_recorder_filtered'
+                  : 'medical_event_recorder_all',
+              sheetTitle: _exportSheetTitle(),
             ),
           ),
         ],
@@ -246,15 +380,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             const SizedBox(height: 8),
 
-            // ── RESULTS COUNT ──
+            // ── DATE RANGE ──
+            _DateRangeFilterChips(
+              selected: _dateRange,
+              onSelect: (r) => setState(() => _dateRange = r),
+            ),
+            const SizedBox(height: 8),
+
+            // ── RESULTS COUNT + CLEAR ──
+            // The count states the scope the same way the export header does,
+            // so what the screen says and what the export says cannot drift.
+            // "Clear filters" appears only while something is active: a filter
+            // the user cannot tell is on is worse than no filter at all.
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 6),
-              child: Text(
-                shown.isEmpty
-                    ? 'No events match'
-                    : '${shown.length} '
-                      '${shown.length == 1 ? "event" : "events"}',
-                style: Theme.of(context).textTheme.bodySmall,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      shown.isEmpty
+                          ? 'No events match'
+                          : _isNarrowed
+                              ? '${shown.length} of ${_records.length} '
+                                '${_records.length == 1 ? "event" : "events"}'
+                              : '${shown.length} '
+                                '${shown.length == 1 ? "event" : "events"}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  if (_isNarrowed)
+                    TextButton.icon(
+                      onPressed: _clearFilters,
+                      icon: const Icon(Icons.filter_alt_off_outlined, size: 16),
+                      label: const Text('Clear filters'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                ],
               ),
             ),
 
@@ -272,17 +436,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     )
-                  : ListView.separated(
-                      itemCount:        shown.length,
-                      separatorBuilder: (_, __) =>
-                          const Divider(height: 1),
-                      itemBuilder: (ctx, i) {
-                        final r = shown[i];
-                        return _EventListTile(
-                          record:   r,
-                          timeFmt:  _uiTimeFmt,
-                          onTap:    () => _editRecord(r),
-                          onDelete: () => _deleteAndPersist(r.id),
+                  : Builder(
+                      builder: (_) {
+                        // Flattened to headers-and-rows so the list stays LAZY.
+                        // Grouping by nesting a ListView per day would need
+                        // shrinkWrap, which builds every row up front — the
+                        // opposite of what this screen needs as a diary grows.
+                        // This builds a small index list instead and lets
+                        // ListView.builder realise only what is on screen.
+                        final items = _groupByDay(shown);
+                        return ListView.builder(
+                          itemCount: items.length,
+                          itemBuilder: (ctx, i) {
+                            final item = items[i];
+                            if (item.isHeader) {
+                              return _DayHeader(label: item.header!);
+                            }
+                            final r = item.record!;
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _EventListTile(
+                                  record:   r,
+                                  timeFmt:  _rowTimeFmt,
+                                  onTap:    () => _editRecord(r),
+                                  onDelete: () => _deleteAndPersist(r.id),
+                                ),
+                                if (!item.isLastOfDay)
+                                  const Divider(height: 1, indent: 16),
+                              ],
+                            );
+                          },
                         );
                       },
                     ),
@@ -479,6 +663,98 @@ class _EventTypeBadge extends StatelessWidget {
           fontWeight: FontWeight.w500,
           color:      _fg,
         ),
+      ),
+    );
+  }
+}
+/* ===========================
+   DAY GROUPING
+   =========================== */
+
+/// One entry in the flattened history list: either a day header or an event.
+///
+/// Exactly one of [header] and [record] is non-null, so a row can never be
+/// silently neither.
+class _HistoryItem {
+  final String? header;
+  final EventRecord? record;
+
+  /// True when this is the last event of its day, so the trailing divider can
+  /// be dropped and each day reads as a single cluster.
+  final bool isLastOfDay;
+
+  const _HistoryItem.header(this.header)
+      : record = null,
+        isLastOfDay = false;
+
+  const _HistoryItem.record(this.record, {required this.isLastOfDay})
+      : header = null;
+
+  bool get isHeader => header != null;
+}
+
+class _DayHeader extends StatelessWidget {
+  final String label;
+  const _DayHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontSize:      11,
+          fontWeight:    FontWeight.w700,
+          letterSpacing: 0.6,
+          color:         MERColours.primary,
+        ),
+      ),
+    );
+  }
+}
+
+/* ===========================
+   DATE RANGE FILTER CHIPS
+   =========================== */
+
+class _DateRangeFilterChips extends StatelessWidget {
+  final _DateRange selected;
+  final ValueChanged<_DateRange> onSelect;
+
+  const _DateRangeFilterChips({
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final range in _DateRange.values) ...[
+            ChoiceChip(
+              label: Text(range.chipLabel),
+              selected: selected == range,
+              // Single-select: the ranges are mutually exclusive, unlike the
+              // type chips above, which are additive. Re-tapping the active
+              // one returns to All rather than doing nothing, so the filter
+              // can always be undone from where it was set.
+              onSelected: (_) =>
+                  onSelect(selected == range ? _DateRange.all : range),
+              // NO labelStyle override. The theme sets labelStyle for the
+              // unselected state and secondaryLabelStyle (white) for the
+              // selected one; passing a labelStyle here overrides BOTH, which
+              // left the selected chip rendering textPrimary on the dark blue
+              // selectedColor — a checkmark with an invisible label. Caught on
+              // the device, not in review.
+              visualDensity: VisualDensity.compact,
+            ),
+            const SizedBox(width: 6),
+          ],
+        ],
       ),
     );
   }
