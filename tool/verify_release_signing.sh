@@ -50,6 +50,7 @@ done
 [ -n "$APP" ] || APP="$REPO/build/ios/iphoneos/Runner.app"
 APPEX="$APP/PlugIns/MERWidget.appex"
 RUNNER_BIN="$APP/Runner"
+DART_BIN="$APP/Frameworks/App.framework/App"
 APPEX_BIN="$APPEX/MERWidget"
 PBXPROJ="$REPO/ios/Runner.xcodeproj/project.pbxproj"
 RUNNER_ENTS="$REPO/ios/Runner/Runner.entitlements"
@@ -90,12 +91,28 @@ if [ "$CHECK_STALENESS" -eq 1 ]; then
   # For the rest, mtime is the only signal available, and it errs safe: a false
   # failure costs a rebuild, whereas a false pass is the thing this exists to
   # prevent.
-  NEWER="$(find \
-    "$REPO/lib" "$REPO/ios/Runner" "$REPO/ios/MERWidget" "$REPO/pubspec.yaml" \
+  # Each source set is compared against the artefact it actually produces.
+  #
+  # A Dart-only change does NOT relink the Swift binary — nothing in ios/
+  # changed, so Xcode leaves Runner alone and only App.framework is rebuilt.
+  # Comparing lib/ against Runner therefore reported STALE on every Dart-only
+  # build, which was a false failure on a correct artefact. Found the first time
+  # this script met a Dart-only pass. A check that cries wolf gets disabled, so
+  # this one is mapped properly instead.
+  SWIFT_NEWER="$(find "$REPO/ios/Runner" "$REPO/ios/MERWidget" \
     -newer "$RUNNER_BIN" -print -quit 2>/dev/null)"
+  DART_NEWER=""
+  if [ -e "$DART_BIN" ]; then
+    DART_NEWER="$(find "$REPO/lib" "$REPO/pubspec.yaml" \
+      -newer "$DART_BIN" -print -quit 2>/dev/null)"
+  else
+    DART_NEWER="$APP/Frameworks/App.framework/App (missing)"
+  fi
+  NEWER="$SWIFT_NEWER$DART_NEWER"
   if [ -n "$NEWER" ]; then
     fail "0b. artefact is newer than its sources"
-    note "newer than the binary: ${NEWER#"$REPO"/}"
+    [ -n "$SWIFT_NEWER" ] && note "newer than Runner: ${SWIFT_NEWER#"$REPO"/}"
+    [ -n "$DART_NEWER" ] && note "newer than App.framework: ${DART_NEWER#"$REPO"/}"
     note "the build is STALE — rebuild before trusting any assertion below"
   else
     pass "0b. artefact is newer than its sources"
