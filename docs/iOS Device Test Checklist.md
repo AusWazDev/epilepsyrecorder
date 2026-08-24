@@ -30,6 +30,45 @@ authentication policy and App Group reconciliation all require hardware.
 
 ---
 
+## 0. Preflight — verify the build before touching a device
+
+**Run this first. If it fails, stop: there is no point testing a build that is not the
+build you think it is.**
+
+```
+flutter build ios --release && tool/verify_release_signing.sh
+```
+
+It must print `OK — all assertions passed.` and exit 0.
+
+- [ ] `tool/verify_release_signing.sh` exits 0 against the build about to be tested
+
+### Why this is step 0
+
+Two defects reached hardware because **every automated check in this repo is blind to
+build output**. `flutter analyze` and `flutter test` sign nothing and link nothing; the
+Swift guard tests read source text.
+
+| Defect | How long | What passed anyway |
+|---|---|---|
+| `CODE_SIGN_ENTITLEMENTS` missing from Runner's **Release** configuration, so the app was signed without the App Group while the widget extension had it | CR-42, 4 May 2026 → `824cd16`, 24 Aug 2026 — **nearly four months, including shipped 1.0.2** | analyze, tests, and the device checklist itself |
+| The 16.2 raise broke the Release **link** outright | `efae60d`, hours | analyze, tests, subtree hashes |
+
+The script asserts, on the built artefacts: the App Group Runner carries matches what
+`Runner.entitlements` declares; **MERWidget carries the same group**, so the two cannot
+drift apart — which is the actual defect, because an unentitled suite name does not fail,
+it silently gets a private store; the application-identifier and team match the project; the
+deployment floor agrees across `Info.plist`, both binaries and the Release configuration;
+and Runner links `libc++.1.dylib`.
+
+It also refuses to run against a stale artefact, and says which source file is newer. A
+check that passes on yesterday's binary is worse than no check.
+
+**This section is numbered 0 deliberately** — the sections below are referenced by number
+from the Change Register, so renumbering them would invalidate those references.
+
+---
+
 ## 1. When to run
 
 Every iOS build that goes to App Store Connect. No exceptions for "Dart-only" changes —
