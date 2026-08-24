@@ -3,7 +3,6 @@ import UIKit
 import UserNotifications
 import ActivityKit
 import awesome_notifications
-import shared_preferences_foundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -97,11 +96,34 @@ import shared_preferences_foundation
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+
+    // SharedPreferencesPlugin is deliberately NOT registered on the background
+    // engine any more.
+    //
+    // It was added by 52b41b9, when the iOS quick-log path still ran through
+    // Dart in a background isolate and needed `SharedPreferences.getInstance()`
+    // to work there. Pass A moved iOS capture entirely into Swift, and
+    // `onActionReceived` in notification_service.dart returns at its first line
+    // on iOS, so nothing Dart-side reads preferences on this path. Dart also
+    // never calls `setListeners` on iOS — `init()` returns before it — so
+    // awesome_notifications never creates a background engine here and this
+    // callback is not invoked at all.
+    //
+    // Removed rather than left as a harmless no-op because it is the plugin
+    // whose startup cost was suspected of consuming the notification action's
+    // window, and a reader finding it here would reasonably conclude the
+    // background isolate is still a live path on iOS. It is not.
+    //
+    // NOTE what this does NOT remove, and cannot: `GeneratedPluginRegistrant`
+    // above and the engine boot inside `super.application(...)` below both run
+    // on EVERY cold launch, including one serving a notification action, and
+    // both must complete before `didReceive` is delivered. That is the real
+    // startup cost on this path, it registers shared_preferences among
+    // everything else, and the app does not run without it. The fix for the
+    // window is the ordering inside handleQuickLogEnd, not this line.
     SwiftAwesomeNotificationsPlugin.setPluginRegistrantCallback { registry in
       SwiftAwesomeNotificationsPlugin.register(
         with: registry.registrar(forPlugin: "io.flutter.plugins.awesomenotifications.AwesomeNotificationsPlugin")!)
-      SharedPreferencesPlugin.register(
-        with: registry.registrar(forPlugin: "SharedPreferencesPlugin")!)
     }
 
     let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -436,12 +458,45 @@ import shared_preferences_foundation
   // must stay that way, because merge-by-id is exact string equality and records
   // already in the wild carry both cases.
 
+  /// Writes one instruction with a direct `UserDefaults` call — no plugin, no
+  /// channel, no Flutter engine.
+  ///
+  /// ## ⚠️ DO NOT MOVE THIS TO A DIFFERENT CONTAINER
+  ///
+  /// When the sub-17 notification end path was found to fail silently on a
+  /// locked device, the obvious remedy was proposed and investigated: move the
+  /// inbox and the active-event key into the App Group, on the belief that the
+  /// shared container carries a more available data-protection class.
+  ///
+  /// **It cannot work, for two independent reasons.**
+  ///
+  /// 1. **The inbox is already here.** This function has always written the App
+  ///    Group suite, and `handleQuickLogStart` has always written the
+  ///    active-event key to BOTH suites. The write that failed on a locked
+  ///    device was already an App Group write. If the container were the reason,
+  ///    it would already have worked.
+  /// 2. **The two containers carry the same protection class.** Neither
+  ///    `Runner.entitlements` nor `MERWidget.entitlements` requests
+  ///    `com.apple.developer.default-data-protection`, and no `NSFileProtection`
+  ///    key appears anywhere in `ios/`. Both containers therefore take the
+  ///    system default. An App Group container is not more available by virtue
+  ///    of being shared, and the handset had been unlocked since boot, so both
+  ///    were readable regardless.
+  ///
+  /// Encryption was never the blocker. What blocks is the cost of getting ready
+  /// to write — engine boot, plugin registration, plist decode — inside the
+  /// short window iOS grants a notification action on a cold background launch.
+  ///
+  /// `synchronize()` is gone deliberately. It has been deprecated since iOS 12,
+  /// the OS flushes without it, and it is the one call on this path that can sit
+  /// waiting on `cfprefsd` while the window runs out. Losing a flush costs at
+  /// worst a replay: the keys are idempotent and the drain deletes them only
+  /// after a confirmed write.
   private func writeInboxInstruction(_ payload: [String: Any]) {
     guard let shared = UserDefaults(suiteName: kAppGroupId),
           let data = try? JSONSerialization.data(withJSONObject: payload),
           let json = String(data: data, encoding: .utf8) else { return }
     shared.set(json, forKey: "\(kInboxPrefix)\(UUID().uuidString)")
-    shared.synchronize()
   }
 
   private func writeInboxStart(id: String, at iso: String) {
@@ -525,9 +580,25 @@ import shared_preferences_foundation
     }
   }
 
+  /// Ends an event from the notification action, on 16.2-16.x.
+  ///
+  /// ## Order is the fix, and it is deliberate: WRITE, then NOTIFY, then the rest
+  ///
+  /// iOS grants a notification action a short window on a cold background launch
+  /// and the app closes that window itself. Before this ordering, the two things
+  /// a user depends on — the record and the feedback — came LAST, after the
+  /// active-key clears and the ActivityKit dismissal. On a locked device the
+  /// process died partway and the user got nothing at all: no "Event ended", no
+  /// standing notification, no duration, and a Live Activity still counting. The
+  /// record kept its `lt1` default, which is wrong data rather than missing data.
+  ///
+  /// So: the instruction is written first, then both notifications are posted,
+  /// and only then does anything that can hang get a turn. If the process is
+  /// killed after the notify step, the user has been told and the duration has
+  /// landed. Nothing below the notify step is load-bearing for correctness —
+  /// each of it is re-done on the next foreground.
   private func handleQuickLogEnd(completion: @escaping () -> Void) {
     let standard = UserDefaults.standard
-    let shared   = UserDefaults(suiteName: kAppGroupId)
     var elapsedStr = ""
 
     if let activeRaw = standard.string(forKey: kActiveEventKey),
@@ -555,23 +626,30 @@ import shared_preferences_foundation
                     seconds: secs)
     }
 
-    standard.removeObject(forKey: kActiveEventKey)
-    standard.synchronize()
-    shared?.removeObject(forKey: kSharedActiveKey)
-    shared?.synchronize()
-
-    // The inbox write above is already durable, and stays where it is: nothing
-    // here may move it later in the sequence.
-    //
-    // What changed is who hands the notification action's window back to iOS.
-    // It used to be showPersistentNormalNotification, which meant the window
-    // closed while the ActivityKit dismissal was still in flight — see
-    // endLiveActivity(completion:). Both notification requests below are still
-    // added immediately and unchanged; only the handing back is deferred.
-    endLiveActivity(completion: completion)
-
+    // ── 2. NOTIFY ──
+    // Both requests are handed to usernotificationsd here, before anything that
+    // can wait on cfprefsd or ActivityKit. Copy, timing, identifiers and
+    // categories are unchanged; only their position moved. Once `add` lands, the
+    // daemon owns the schedule and fires it even if this process dies.
     showFeedbackNotification(elapsed: elapsedStr)
     showPersistentNormalNotification()
+
+    // ── 3. EVERYTHING ELSE ──
+    // The App Group suite is opened HERE and not at the top of the function:
+    // nothing above this line needs it, and opening it is one of the calls that
+    // can wait. Clearing the active keys is idempotent — if this does not flush
+    // before the process dies, the next foreground clears it again via
+    // restorePersistentNotification, at the cost of one stale "Event in
+    // progress" notification. That is a visible, self-correcting cost, which is
+    // the trade this whole ordering makes: never lose the record or the
+    // feedback, and let the tidying be retried.
+    standard.removeObject(forKey: kActiveEventKey)
+    UserDefaults(suiteName: kAppGroupId)?.removeObject(forKey: kSharedActiveKey)
+
+    // Hands the action's window back to iOS only once the Live Activity is
+    // actually gone, or the deadline passes — see endLiveActivity(completion:).
+    // Last, because it is the only step whose failure the user can already see.
+    endLiveActivity(completion: completion)
   }
 
   // ── Notification builders ─────────────────────────────────────────────────
