@@ -4,6 +4,7 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../constants.dart';
 import '../theme/mer_theme.dart';
 
 class HelpScreen extends StatefulWidget {
@@ -91,29 +92,21 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            if (!_notificationsAllowed && !Platform.isWindows) ...[
-              _WarningCard(
-                title:          'Notifications are disabled',
-                body:           'Tap the button below to open notification settings, then turn on notifications for MER.',
-                buttonLabel:    'Open Notification Settings',
-                onOpenSettings: _openNotificationSettings,
-              ),
-              const SizedBox(height: 12),
-            ],
+            // Both settings facts, stated ONCE. They previously appeared as
+            // warning cards here AND as status rows at the bottom of the
+            // notification section. Same two conditions as before: notifications
+            // on every platform but Windows, Show Previews on iOS only.
+            _StatusBand(
+              showNotifications:    !Platform.isWindows,
+              notificationsAllowed: _notificationsAllowed,
+              showPreviewsRow:      Platform.isIOS,
+              showPreviewsAlways:   _showPreviewsAlways,
+              onOpenSettings:       _openNotificationSettings,
+            ),
 
-            if (!_showPreviewsAlways && Platform.isIOS) ...[
-              _WarningCard(
-                title:          'Starting events from the lock screen requires a password',
-                body:           'To log instantly without unlocking, tap the button below and set Show Previews to Always.',
-                buttonLabel:    'Open Notification Settings',
-                onOpenSettings: _openNotificationSettings,
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            _Section(
+            const _Section(
               title: 'RECORDING EVENTS',
-              children: const [
+              children: [
                 _HelpRow(
                   icon:      Icons.circle,
                   iconColor: Color(0xFFD32F2F),
@@ -147,9 +140,9 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 12),
 
-            _Section(
+            const _Section(
               title: 'HISTORY & EXPORT',
-              children: const [
+              children: [
                 _HelpRow(
                   icon:  Icons.history,
                   title: 'View history',
@@ -217,6 +210,19 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                              'phone, which starts you with nothing.',
                 ),
                 const _HelpRow(
+                  icon:      Icons.compare_arrows,
+                  iconColor: Color(0xFF1976D2),
+                  title:     'Export and backup do different jobs',
+                  // Mirrors the Your data screen's own framing deliberately, so
+                  // the two cannot drift, and points at that screen rather than
+                  // re-explaining where things live. This is the distinction
+                  // users get wrong.
+                  body:      'A CSV export is a copy to share or work with — it opens in a '
+                             'spreadsheet and cannot be read back into the app. A backup file '
+                             'is your copy — it restores your history onto a new phone but is '
+                             'not a spreadsheet file. Both live under Your data in the menu.',
+                ),
+                const _HelpRow(
                   icon:      Icons.save_alt,
                   iconColor: Color(0xFF1976D2),
                   title:     'A backup file is the only copy you control',
@@ -233,6 +239,27 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
             if (!Platform.isWindows)
             _Section(
               title: 'QUICK LOG NOTIFICATION',
+              // ⚠️ NEVER COLLAPSED. This is the only documentation of the
+              // long-press on iOS and of the notification-settings path on
+              // Android. Behind a collapsed heading, a user never learns either.
+              //
+              // ⚠️ THE TWO INSTRUCTIONS ARE OPPOSITE AND BOTH ARE CORRECT. iOS
+              // needs a long-press to reveal the action; Android shows it
+              // directly. The Android build shipped the iOS wording until
+              // CR-43. Do not unify them and do not write one from the other.
+              alwaysVisible: Platform.isIOS
+                  ? const _HelpRow(
+                      icon:   Icons.swipe_down_outlined,
+                      title:  'Starting an event',
+                      body:   'Pull down from the top of your screen and long-press the MER notification to reveal the action button, then tap "Log Event Now". A timer starts immediately.',
+                      isLast: true,
+                    )
+                  : const _HelpRow(
+                      icon:   Icons.swipe_down_outlined,
+                      title:  'Starting an event',
+                      body:   'Pull down from the top of your screen, find the MER notification, and tap "Log Event Now". Tap "Event Ended" when it\'s over to save the duration.',
+                      isLast: true,
+                    ),
               children: [
                 const _HelpRow(
                   icon:  Icons.notifications_outlined,
@@ -241,14 +268,31 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
                 if (Platform.isIOS) ...[
                   const _HelpRow(
-                    icon:  Icons.swipe_down_outlined,
-                    title: 'Starting an event',
-                    body:  'Pull down from the top of your screen and long-press the MER notification to reveal the action button, then tap "Log Event Now". A timer starts immediately.',
-                  ),
-                  const _HelpRow(
                     icon:  Icons.lock_outline,
                     title: 'Starting from the lock screen',
-                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now". With Show Previews set to Always, no password is needed — the event starts immediately. Ending the event requires unlocking, which is the right time to add details.',
+                    // The unlock caveat that used to close this row now has its
+                    // own row below, because it is the single most useful
+                    // sentence in the section and was buried at the end of a
+                    // paragraph about starting.
+                    body:  'Long-press the MER notification on your lock screen and tap "Log Event Now". With Show Previews set to Always, no password is needed — the event starts immediately.',
+                  ),
+                  const _HelpRow(
+                    icon:  Icons.lock_open_outlined,
+                    title: 'Ending an event needs your phone unlocked',
+                    // iOS ONLY, and this is a correction to the brief, which
+                    // asserted the wording is "accurate everywhere". It is not.
+                    // On Android both notification actions are
+                    // ActionType.SilentAction — they fire without opening the
+                    // app and without unlocking, so ending from a locked device
+                    // works there. Rendering this on Android would tell users to
+                    // do something unnecessary.
+                    //
+                    // No iOS version is named and the sub-17 behaviour is not
+                    // described as a fault: the instruction that works is the
+                    // useful content. On 17+ the system demands authentication
+                    // before ending; on 16.2-16.x a locked device does not
+                    // deliver the action at all.
+                    body:  'Starting an event never does — one tap from the Lock Screen and it is recorded. Ending one is different: unlock your phone first, then tap "Event Ended" on the timer or the notification.',
                   ),
                   const _HelpRow(
                     icon:  Icons.timer_outlined,
@@ -268,8 +312,9 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                     // iPhone shows" is accurate on every version and stays accurate
                     // after the deployment target rises. No version conditional to
                     // become dead code.
-                    // The unlock caveat lives in the row above, which states it
-                    // correctly; repeating it here would duplicate.
+                    // The unlock caveat lives in its own row above ("Ending an
+                    // event needs your phone unlocked"); repeating it here would
+                    // duplicate.
                     body:  'After starting an event, a live timer appears on the Dynamic Island or as a banner on the lock screen. To end the event, tap "Event Ended" on the timer or on the MER notification, whichever your iPhone shows.',
                   ),
                   const _HelpRow(
@@ -278,11 +323,6 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                     body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
                   ),
                 ] else ...[
-                  const _HelpRow(
-                    icon:  Icons.swipe_down_outlined,
-                    title: 'Starting an event',
-                    body:  'Pull down from the top of your screen, find the MER notification, and tap "Log Event Now". Tap "Event Ended" when it\'s over to save the duration.',
-                  ),
                   const _HelpRow(
                     icon:  Icons.lock_outline,
                     title: 'Using from the lock screen',
@@ -295,89 +335,51 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   ),
                 ],
                 const _HelpRow(
-                  icon:  Icons.refresh,
-                  title: 'If the notification disappears',
-                  body:  'The notification can be swiped away accidentally. Open the MER app and it will restore automatically.',
+                  icon:   Icons.refresh,
+                  title:  'If the notification disappears',
+                  body:   'The notification can be swiped away accidentally. Open the MER app and it will restore automatically.',
+                  isLast: true,
                 ),
-                if (Platform.isIOS)
-                  _HelpRow(
-                    icon:      _showPreviewsAlways
-                        ? Icons.lock_open_outlined
-                        : Icons.lock_outlined,
-                    iconColor: _showPreviewsAlways
-                        ? const Color(0xFF388E3C)
-                        : const Color(0xFFF57C00),
-                    title: 'Lock screen access',
-                    body:  _showPreviewsAlways
-                        ? 'Show Previews is set to "Always" — events can be started from the lock screen without a password.'
-                        : 'With default settings, starting an event from the lock screen requires a password. Use the button at the top of this page to set Show Previews to Always.',
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width:  10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _showPreviewsAlways
-                                ? const Color(0xFF4CAF50)
-                                : const Color(0xFFF57C00),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _showPreviewsAlways ? 'Active' : 'Not set',
-                          style: TextStyle(
-                            fontSize:   13,
-                            fontWeight: FontWeight.w600,
-                            color: _showPreviewsAlways
-                                ? const Color(0xFF388E3C)
-                                : const Color(0xFFF57C00),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (!Platform.isWindows)
-                  _HelpRow(
-                    icon:      _notificationsAllowed
-                        ? Icons.notifications_active_outlined
-                        : Icons.notifications_off_outlined,
-                    iconColor: _notificationsAllowed
-                        ? const Color(0xFF388E3C)
-                        : const Color(0xFFF57C00),
-                    title:  'Notification status',
-                    body:   _notificationsAllowed
-                        ? 'Notifications are enabled for MER.'
-                        : 'Tap the button at the top of this page to open notification settings and turn on notifications for MER.',
-                    isLast: true,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width:  10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _notificationsAllowed
-                                ? const Color(0xFF4CAF50)
-                                : const Color(0xFFF57C00),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _notificationsAllowed ? 'Active' : 'Disabled',
-                          style: TextStyle(
-                            fontSize:   13,
-                            fontWeight: FontWeight.w600,
-                            color: _notificationsAllowed
-                                ? const Color(0xFF388E3C)
-                                : const Color(0xFFF57C00),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              ],
+            ),
+            // Windows has no notification path at all: NotificationService.init()
+            // returns before any channel is created. Said plainly rather than
+            // omitted — a Windows user who finds nothing here cannot tell
+            // whether the section is missing or the feature is absent.
+            if (Platform.isWindows)
+              const _Section(
+                title: 'QUICK LOG NOTIFICATION',
+                alwaysVisible: _HelpRow(
+                  icon:   Icons.desktop_windows_outlined,
+                  title:  'Not available on Windows',
+                  body:   'The quick log notification is a phone feature. On Windows, record events in the app — everything else works the same way.',
+                  isLast: true,
+                ),
+                children: [],
+              ),
+            if (Platform.isWindows) const SizedBox(height: 12),
+
+            const _Section(
+              title: 'GETTING HELP',
+              children: [
+                _HelpRow(
+                  icon:  Icons.mail_outline,
+                  title: 'Contact support',
+                  body:  'Email $kSupportEmail with what happened and what you '
+                         'expected. Your events are never included — they stay on '
+                         'this device, so anything you want us to see has to be '
+                         'described or attached by you.',
+                ),
+                _HelpRow(
+                  icon:   Icons.info_outline,
+                  title:  'Version, privacy and terms',
+                  // Points at About rather than restating it. The same reason
+                  // the Your data row points at the Your data screen: two copies
+                  // of the same fact drift, and About already carries the
+                  // version, the privacy policy and the terms as live links.
+                  body:   'The About screen shows which version you are running and links to the privacy policy and terms. Open it from the menu in the top right.',
+                  isLast: true,
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -388,72 +390,142 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
   }
 }
 
-// ── Warning banner (notifications disabled / lock screen not configured) ───────
+// ── Status band ───────────────────────────────────────────────────────────────
 
-class _WarningCard extends StatelessWidget {
-  final String       title;
-  final String       body;
-  final String       buttonLabel;
+/// The two settings facts, stated once, always visible.
+///
+/// These used to appear TWICE: as warning cards above every section, and again
+/// as status rows buried at the bottom of the notification section. A user with
+/// notifications off read it twice; a user with everything correct had to scroll
+/// to the end to find that out.
+///
+/// A warning state must read as needing attention rather than as information,
+/// so the row carries colour, a dot, and an explicit "tap to" instruction — the
+/// whole row is the target, and it opens the same Settings page the old warning
+/// card's button did.
+///
+/// ⚠️ The Show Previews wording deliberately does NOT assert what happens when
+/// it is not "Always". That claim was downgraded to "believed, not tested" on
+/// 24 August 2026: its only source is this screen's own prose, the notification
+/// action is registered `options: []`, and the app therefore does not decide it.
+/// The row says what the SETTING is, not what iOS will do about it.
+class _StatusBand extends StatelessWidget {
+  final bool showNotifications;
+  final bool notificationsAllowed;
+  final bool showPreviewsRow;
+  final bool showPreviewsAlways;
   final VoidCallback onOpenSettings;
 
-  const _WarningCard({
-    required this.title,
-    required this.body,
-    required this.buttonLabel,
+  const _StatusBand({
+    required this.showNotifications,
+    required this.notificationsAllowed,
+    required this.showPreviewsRow,
+    required this.showPreviewsAlways,
     required this.onOpenSettings,
   });
 
   @override
   Widget build(BuildContext context) {
+    final rows = <Widget>[
+      if (showNotifications)
+        _StatusRow(
+          ok:      notificationsAllowed,
+          label:   'Notifications',
+          okText:  'Active',
+          badText: 'Off — tap to enable',
+          okIcon:  Icons.notifications_active_outlined,
+          badIcon: Icons.notifications_off_outlined,
+          onTap:   onOpenSettings,
+        ),
+      if (showPreviewsRow)
+        _StatusRow(
+          ok:      showPreviewsAlways,
+          label:   'Show Previews',
+          okText:  'Always',
+          badText: 'Not set to Always — tap to fix',
+          okIcon:  Icons.lock_open_outlined,
+          badIcon: Icons.lock_outlined,
+          onTap:   onOpenSettings,
+        ),
+    ];
+
+    // Windows reaches neither row. An empty band is quieter than an explained
+    // absence — a Windows user does not need to be told what is not there.
+    if (rows.isEmpty) return const SizedBox.shrink();
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color:        const Color(0xFFFFF3E0),
+        color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFB74D), width: 0.5),
+        border: Border.all(color: MERColours.border, width: 0.5),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded,
-              color: Color(0xFFF57C00), size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color:      const Color(0xFFE65100),
-                  ),
+      child: Column(children: rows),
+    );
+  }
+}
+
+class _StatusRow extends StatelessWidget {
+  final bool         ok;
+  final String       label;
+  final String       okText;
+  final String       badText;
+  final IconData     okIcon;
+  final IconData     badIcon;
+  final VoidCallback onTap;
+
+  const _StatusRow({
+    required this.ok,
+    required this.label,
+    required this.okText,
+    required this.badText,
+    required this.okIcon,
+    required this.badIcon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colour = ok ? const Color(0xFF388E3C) : const Color(0xFFF57C00);
+    return InkWell(
+      // Tappable in BOTH states, deliberately: someone whose setting is correct
+      // may still want the Settings page, and a row that is only sometimes a
+      // target is a row people stop trying.
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Icon(ok ? okIcon : badIcon, size: 18, color: colour),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color:      MERColours.textPrimary,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  body,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color:  const Color(0xFFBF360C),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: onOpenSettings,
-                  icon:  const Icon(Icons.settings_outlined, size: 16),
-                  label: Text(buttonLabel),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFF57C00),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical:   6,
-                    ),
-                    textStyle: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Container(
+              width:  10,
+              height: 10,
+              decoration: BoxDecoration(color: colour, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                ok ? okText : badText,
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color:      colour,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -461,11 +533,38 @@ class _WarningCard extends StatelessWidget {
 
 // ── Section card ──────────────────────────────────────────────────────────────
 
-class _Section extends StatelessWidget {
-  final String         title;
-  final List<Widget>   children;
+/// A collapsible section, closed by default.
+///
+/// Not tabs: tabs hide content behind a choice made before the user knows what
+/// is in each one. Collapsed headings show the whole map at a glance and cost
+/// one tap. Someone opening Help usually has a single question, and the map is
+/// what they need first.
+///
+/// [alwaysVisible] survives collapsing. It exists for one specific hazard: the
+/// platform-specific instruction for STARTING an event is the only documentation
+/// of the long-press on iOS and the notification-settings path on Android.
+/// Collapsed by default, a user would never learn either.
+///
+/// State is NOT persisted between visits, deliberately. Someone returning to
+/// Help usually has a different question, so a remembered layout is a remembered
+/// wrong answer.
+class _Section extends StatefulWidget {
+  final String       title;
+  final List<Widget> children;
+  final Widget?      alwaysVisible;
 
-  const _Section({required this.title, required this.children});
+  const _Section({
+    required this.title,
+    required this.children,
+    this.alwaysVisible,
+  });
+
+  @override
+  State<_Section> createState() => _SectionState();
+}
+
+class _SectionState extends State<_Section> {
+  bool _open = false;
 
   @override
   Widget build(BuildContext context) {
@@ -475,16 +574,44 @@ class _Section extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: MERColours.border, width: 0.5),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _open = !_open),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(widget.title,
+                        style: Theme.of(context).textTheme.labelLarge),
+                  ),
+                  Icon(
+                    _open ? Icons.expand_less : Icons.expand_more,
+                    size:  22,
+                    color: MERColours.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (widget.alwaysVisible != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: widget.alwaysVisible,
+            ),
+          if (_open)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  14, widget.alwaysVisible == null ? 0 : 4, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: widget.children,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -498,7 +625,6 @@ class _HelpRow extends StatelessWidget {
   final String    title;
   final String    body;
   final bool      isLast;
-  final Widget?   trailing;
 
   const _HelpRow({
     required this.icon,
@@ -506,7 +632,6 @@ class _HelpRow extends StatelessWidget {
     required this.title,
     required this.body,
     this.isLast   = false,
-    this.trailing,
   });
 
   @override
@@ -537,10 +662,6 @@ class _HelpRow extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(height: 1.5),
                   ),
-                  if (trailing != null) ...[
-                    const SizedBox(height: 8),
-                    trailing!,
-                  ],
                 ],
               ),
             ),
@@ -548,7 +669,7 @@ class _HelpRow extends StatelessWidget {
         ),
         if (!isLast) ...[
           const SizedBox(height: 10),
-          Divider(height: 1, thickness: 0.5, color: MERColours.border),
+          const Divider(height: 1, thickness: 0.5, color: MERColours.border),
           const SizedBox(height: 10),
         ],
       ],
