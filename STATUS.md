@@ -2,6 +2,88 @@
 
 ---
 
+## Session: 25 August 2026 — Windows (Claude Code CLI)
+
+**History screen: date range filter, day grouping, an honest export label. Plus a
+test that could not fail on Windows.** ✅ Built and installed to the Teclast P30;
+nothing archived, uploaded or submitted. `ios/` untouched.
+
+### History screen (`51fa65e`)
+
+- **Export label corrected.** The sheet header said "Export N filtered events"
+  unconditionally, which was true only by coincidence: `showExportOptions`
+  recomputes the count from what it is handed, so it always reports 100% of the
+  export set and can never say whether anything was narrowed. It now reads
+  **"Export 56 of 66 events"** when narrowed and **"Export all 66 events"** when
+  not. `_isNarrowed` is derived from the FILTERS, not by comparing counts — a
+  count comparison would call an active filter "not narrowed" whenever it
+  happened to exclude nothing, the same accidentally-true failure being replaced.
+- **Date range filter added** — four presets, no custom range. Filters on
+  `timestamp`, which `DATA-MODEL.md` maps to `logged_at` ("never null, never
+  editable"), deliberately NOT `occurred_at`: that column is nullable and the
+  migration leaves it NULL for every record that exists today, so a filter
+  against it would match none of them and would change meaning when the
+  expansion lands.
+- **Day grouping** — one header per day, times beneath, Today/Yesterday then the
+  date. The list stays lazy: grouping by nesting a ListView per day would need
+  `shrinkWrap`, which builds every row up front.
+- A defect was caught **on the device before commit**: the selected chip rendered
+  a checkmark with an invisible label, because an explicit `labelStyle` overrode
+  both the theme's `labelStyle` and its `secondaryLabelStyle` (white), leaving
+  dark text on the dark blue `selectedColor`.
+
+### `ios_handoff_test` could not fail on Windows
+
+`Directory.listSync` returns native separators, so on Windows every path arrives
+as `ios\MERWidget\...` and three `contains('/Foo/')` predicates silently missed.
+The consequences ran both ways:
+
+- `/MERWidget/` is an **inclusion**, so the extension list came back empty, the
+  test's own positive control fired, and the guard was **unfalsifiable on
+  Windows while passing on the Mac**.
+- `/Pods/` and `/.symlinks/` are **exclusions**, so they excluded nothing.
+  Harmless only because neither directory exists on a Windows checkout —
+  CocoaPods is Mac-only. One vendored-Pods checkout and the scan quietly becomes
+  a search through other people's example apps, which is precisely what the
+  `setUp` comment warns against.
+
+Fixed by normalising at the comparison rather than rewriting `f.path`, so failure
+messages still print the real native path.
+
+**Proved it can now fail**, rather than asserting it: a line containing
+`mer_records` was appended to `ios/MERWidget/MERWidget.swift`, the guard failed on
+the REAL assertion (`Expected: false, Actual: <true>`, naming
+`ios\MERWidget\MERWidget.swift`) rather than on the positive control, and the file
+was restored with `git checkout`. `ios/` subtree hash confirmed identical before
+and after: `7c7a71623846fdb6337dae5cc4cf562b0e7fa33c`.
+
+### Test baseline — corrected
+
+**The baseline is 2 known failures on BOTH platforms.**
+
+Between the Mac's iOS-transport work landing and this fix, Windows showed **3**.
+The third was never a real failure: it was the path-separator bug above, firing
+its own positive control. Earlier entries in this log record "2 pre-existing
+failures" and were accurate when written — `ios_handoff_test` did not exist in
+those windows — and they are accurate again now. Nothing in them needs amending.
+
+The two that remain are unchanged and still not fixed:
+
+| Test | Why |
+|---|---|
+| `app_smoke_test` | sets the obsolete `disclaimerAccepted` bool; the app reads `disclaimerAcceptedVersion` |
+| `export_options_test` | same obsolete key, and additionally taps a menu item that no longer exists after the Your data restructure |
+
+### Verified
+
+`flutter analyze` 39 issues, zero errors and zero warnings. Tests **132 pass, 2
+known failures**. `ios/` subtree `7c7a71623846fdb6337dae5cc4cf562b0e7fa33c`,
+unchanged. Verified on the Teclast P30 from the running screen: both export
+headers, the narrowed count, Clear filters, day grouping including a
+non-relative header (`WED 6 MAY 2026`), and the empty state.
+
+---
+
 ## Session: 24 August 2026 — Windows (Claude Code CLI)
 
 **Android capture inbox built and tested on a physical device. Backlog items 13

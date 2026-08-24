@@ -7,8 +7,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:medical_event_recorder/constants.dart';
 import 'package:medical_event_recorder/models/capture_instruction.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
+
 import 'package:medical_event_recorder/services/ios_capture_bridge.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Path with platform separators normalised to forward slashes.
+///
+/// `Directory.listSync` returns native separators, so on Windows every path
+/// here arrives as `ios\MERWidget\...`. Every `contains('/Foo/')` predicate in
+/// this file silently missed as a result, and the consequences ran BOTH ways:
+///
+///  * `/MERWidget/` was an INCLUSION, so the extension list came back empty and
+///    the test's own positive control fired — it could not fail on Windows, and
+///    passed on the Mac, so the guard was unfalsifiable on one of the two
+///    machines that runs it.
+///  * `/Pods/` and `/.symlinks/` are EXCLUSIONS, so they excluded nothing.
+///    Harmless only because neither directory exists on a Windows checkout —
+///    CocoaPods is Mac-only. One vendored-Pods checkout and the scan quietly
+///    becomes the thing the setUp comment below warns against: a search through
+///    other people's example apps, where a coincidental hit is a spurious
+///    failure and a real one is buried.
+///
+/// Normalising is deliberately done at the comparison rather than by rewriting
+/// `f.path`, so failure messages still print the real native path.
+String _posix(String p) => p.replaceAll(Platform.pathSeparator, '/');
 
 /// The iOS transport, the one-time reconciliation, and the guarantees that stop
 /// being guarantees once a second language starts writing.
@@ -116,8 +138,8 @@ void main() {
           .listSync(recursive: true, followLinks: false)
           .whereType<File>()
           .where((f) => f.path.endsWith('.swift'))
-          .where((f) => !f.path.contains('/Pods/'))
-          .where((f) => !f.path.contains('/.symlinks/'))
+          .where((f) => !_posix(f.path).contains('/Pods/'))
+          .where((f) => !_posix(f.path).contains('/.symlinks/'))
           .toList();
     });
 
@@ -164,7 +186,7 @@ void main() {
       // the one that could not be serialised against anything. It should now
       // know nothing about records.
       final extension = swiftFiles
-          .where((f) => f.path.contains('/MERWidget/'))
+          .where((f) => _posix(f.path).contains('/MERWidget/'))
           .toList();
       expect(extension, isNotEmpty, reason: 'positive control');
 
