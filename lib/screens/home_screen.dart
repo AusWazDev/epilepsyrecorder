@@ -75,6 +75,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // The capture path is load-bearing: the banner must never gate, delay or
   // obstruct logging an event. Each of these suppresses it outright.
   bool _openedFromNotification = false; // cold-started by a notification action
+
+  /// Guards the "open the latest event" funnel against a double push.
+  ///
+  /// Two independent signals now arrive for the SAME notification tap, by
+  /// design: the durable `mer_open_latest_event` flag and the transient
+  /// `openLatestEvent` channel call. Making the native side send both is what
+  /// removes its dependence on the Flutter engine being ready at `didReceive`
+  /// time — see the comment in AppDelegate's default-action branch. This is what
+  /// stops both of them landing and opening the edit screen twice.
+  ///
+  /// Held across the push, so it stays true for as long as the edit screen is
+  /// open and clears when the user closes it. A genuinely new tap later is still
+  /// honoured.
+  bool _openingLatest = false;
   bool _loggedThisSession      = false; // an event was logged in this session
   bool _backupBannerDismissed  = false; // user dismissed it
   int  _eventsSinceBackup      = 0;
@@ -102,14 +116,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadRecords(initial: true);
       // Cold-start: iOS uses native channel flag; Android uses SharedPreferences flag
-      try {
-        final shouldOpen = await _navChannel.invokeMethod<bool>('getPendingOpenLatest');
-        if (shouldOpen == true && mounted && _records.isNotEmpty) {
-          _openedFromNotification = true;
-          _openLogScreen(existing: _records.first);
-          return;
-        }
-      } catch (_) {}
+      if (await _drainPendingOpenLatest()) return;
       if (Platform.isAndroid) {
         final prefs = await SharedPreferences.getInstance();
         for (int i = 0; i < 8; i++) {
@@ -126,11 +133,45 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
   }
 
+  /// Opens the newest record's edit screen, at most once at a time.
+  ///
+  /// [reload] is false when the caller has just loaded the list — which both
+  /// drain sites have. Reloading again would put a second reconciliation and
+  /// inbox drain on the cold-start path, where four of the seven historical
+  /// notification failures lived.
+  Future<void> _openLatestEvent({required bool reload}) async {
+    if (_openingLatest) return;
+    _openingLatest = true;
+    try {
+      if (reload) await _loadRecords();
+      if (!mounted || _records.isEmpty) return;
+      _openedFromNotification = true;
+      await _openLogScreen(existing: _records.first);
+    } finally {
+      _openingLatest = false;
+    }
+  }
+
+  /// Reads and CLEARS the native pending-open flag, then acts on it.
+  ///
+  /// The read happens even when the funnel is busy, deliberately: the native
+  /// `getPendingOpenLatest` consumes the flag as it reads it, so draining here is
+  /// what stops a flag set alongside a channel call firing spuriously on some
+  /// later foreground. Returns whether it opened anything.
+  Future<bool> _drainPendingOpenLatest() async {
+    bool pending = false;
+    try {
+      pending = await _navChannel.invokeMethod<bool>('getPendingOpenLatest') ?? false;
+    } catch (_) {}
+    if (!pending) return false;
+    await _openLatestEvent(reload: false);
+    return true;
+  }
+
   Future<dynamic> _handleNativeCall(MethodCall call) async {
     if (call.method == 'openLatestEvent') {
       if (!mounted) return;
-      await _loadRecords();
-      if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+      await _openLatestEvent(reload: true);
     }
   }
 
@@ -150,6 +191,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await _loadRecords();
     NotificationService.instance.restoreNotification();
     if (!Platform.isWindows) _checkNotificationStatus();
+    if (Platform.isIOS) {
+      // iOS had NO resume-time consumer for the pending-open flag: the only read
+      // was the cold-start one in initState, which does not run again on a warm
+      // resume. That is why tapping the feedback notification landed on the
+      // dashboard whenever the app was already alive — which on 16.2-16.x is
+      // always, because the app serviced the END action itself.
+      //
+      // One read, not a retry loop. The Android loop below exists for a
+      // different reason and is left alone.
+      await _drainPendingOpenLatest();
+    }
     if (Platform.isAndroid) {
       // Poll for the flag set by onActionReceived — it may arrive slightly
       // after resume since the background isolate skips channel init now.

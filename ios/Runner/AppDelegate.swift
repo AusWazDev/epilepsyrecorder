@@ -56,6 +56,29 @@ import shared_preferences_foundation
   // twenty minutes before the data gives up.
   private let kActivityStaleAfterSeconds: TimeInterval = 10 * 60
 
+  // ── Live Activity dismissal deadline ──────────────────────────────────────
+  // How long the notification-action path waits for ActivityKit to dismiss the
+  // Live Activity before handing the action's completion handler back to iOS.
+  //
+  // ⚠️ NOT related to either constant above, and not a tidy-up candidate. Those
+  // two are durations of an EVENT. This is a deadline on a single IPC
+  // round-trip, and the only reason it exists is the asymmetry below.
+  //
+  // **On iOS 17+ an event ends in a process whose lifetime the system
+  // guarantees.** `EndMEREventIntent.perform()` is async and awaits the
+  // dismissal inline, so it always lands. **On 16.2-16.x the event ends inside a
+  // notification-action callback whose window the app closes itself** by calling
+  // the completion handler. Anything started and not waited for before that call
+  // is lost when iOS suspends the process.
+  //
+  // Too short and the dismissal is lost again. Too long and iOS kills the app
+  // instead of suspending it, which is worse. Three seconds is orders of
+  // magnitude above a normal ActivityKit response and far inside any plausible
+  // system limit. It is deliberately the same value as kCaptureChannelTimeout in
+  // lib/services/ios_capture_bridge.dart: both bound one IPC hop on a path a
+  // user is waiting on.
+  private let kLiveActivityDismissDeadline: TimeInterval = 3
+
   // ── Notification identifiers ──────────────────────────────────────────────
   private let kPersistentId        = "1"
   private let kActivePersistentId  = "2"
@@ -203,6 +226,20 @@ import shared_preferences_foundation
         }
       }
     } else {
+      // No active event in either store, so any Live Activity still on screen is
+      // stranded. A safety net, NOT the fix — the fix is the deadline in
+      // endLiveActivity(completion:). This catches the case where that deadline
+      // expired, or where the process died before the dismissal landed, and it
+      // costs one no-op ActivityKit query on a launch with nothing running.
+      //
+      // Deliberately here and not in clearStaleActiveStateIfEnded: that function
+      // reconciles the app's stale copy against the App Group, and its guard
+      // `standardActive != nil && sharedActive == nil` describes the 17+ shape
+      // where the extension ended the event. It cannot see the sub-17 shape,
+      // where the app ended it and cleared both keys. Widening it would give one
+      // function two unrelated jobs and a name that lies; this branch already
+      // computes exactly the condition the reap needs.
+      endLiveActivity()
       showPersistentNormalNotification()
     }
   }
@@ -231,11 +268,57 @@ import shared_preferences_foundation
     _ = try? Activity<MERActivityAttributes>.request(attributes: attributes, content: content)
   }
 
-  private func endLiveActivity() {
+  /// Ends every running Live Activity, optionally holding a caller's execution
+  /// window open until it has actually happened.
+  ///
+  /// ## Why this takes a completion handler
+  ///
+  /// **On iOS 17+ an event ends in a process whose lifetime the system
+  /// guarantees** — `EndMEREventIntent.perform()` is async and awaits the
+  /// dismissal inline, so it always lands. **On 16.2-16.x the event ends inside
+  /// a notification-action callback whose window the app closes itself** by
+  /// calling the completion handler, after which iOS is free to suspend.
+  ///
+  /// This function used to be fire-and-forget for every caller. On the sub-17
+  /// path that lost the race every time: the Live Activity kept counting until
+  /// `staleDate` flipped it to the stale rendering ten minutes later. Reported
+  /// from a real iPhone 8 on 16.7.15 — the first hardware test of that tier.
+  ///
+  /// So callers that own a closing window pass `completion` and get it back only
+  /// once the dismissal has resolved, or the deadline has passed. Callers on an
+  /// ordinary foreground pass nothing and keep the fire-and-forget behaviour,
+  /// which is correct there precisely because nothing is about to suspend them.
+  private func endLiveActivity(completion: (() -> Void)? = nil) {
+    guard let completion = completion else {
+      Task {
+        for activity in Activity<MERActivityAttributes>.activities {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
+      }
+      return
+    }
+
+    // `handedBack` is only ever touched on the main queue, by both the deadline
+    // and the dismissal, so the two cannot both hand the window back.
+    var handedBack = false
+    let handBack = {
+      if handedBack { return }
+      handedBack = true
+      completion()
+    }
+
+    // The completion handler MUST be called. If ActivityKit is slow or wedged,
+    // iOS terminating the app is a worse outcome than a Live Activity that
+    // outlives its event — and staleDate still corrects that display.
+    DispatchQueue.main.asyncAfter(deadline: .now() + kLiveActivityDismissDeadline) {
+      handBack()
+    }
+
     Task {
       for activity in Activity<MERActivityAttributes>.activities {
         await activity.end(nil, dismissalPolicy: .immediate)
       }
+      DispatchQueue.main.async { handBack() }
     }
   }
 
@@ -304,13 +387,27 @@ import shared_preferences_foundation
       let standard = UserDefaults.standard
       standard.removeObject(forKey: kActiveEventKey)
       standard.synchronize()
-      if let channel = navChannel {
-        channel.invokeMethod("openLatestEvent", arguments: nil)
-      } else {
-        // Cold start — Flutter not ready yet; set flag for getPendingOpenLatest poll
-        standard.set(true, forKey: kPendingOpenLatest)
-        standard.synchronize()
-      }
+      // BOTH, deliberately. The flag is durable; the channel call is immediate.
+      // Whichever arrives first wins, and consumption is idempotent on the Dart
+      // side, so both arriving does not open the edit screen twice.
+      //
+      // This used to be an either/or on channel availability — and **the branch
+      // that worked was the one that assumed failure.** On 17+ the event ends in
+      // the widget extension, so the app usually is not running, navChannel is
+      // nil, the flag is written, and initState's post-frame read consumes it.
+      // On 16.2-16.x the app serviced the END action itself, so it is alive,
+      // navChannel is non-nil, and only the transient call was made — sent to an
+      // engine still paused, because didReceive runs BEFORE
+      // applicationDidBecomeActive. Nothing durable was left behind, and iOS had
+      // no resume-time consumer, so the tap landed on the dashboard instead of
+      // the event's edit screen.
+      //
+      // Same asymmetry as endLiveActivity(completion:): on 17+ the work happens
+      // somewhere the system keeps alive, and on 16.2-16.x it happens in a window
+      // the app is about to close.
+      standard.set(true, forKey: kPendingOpenLatest)
+      standard.synchronize()
+      navChannel?.invokeMethod("openLatestEvent", arguments: nil)
       completionHandler()
     default:
       completionHandler()
@@ -463,10 +560,18 @@ import shared_preferences_foundation
     shared?.removeObject(forKey: kSharedActiveKey)
     shared?.synchronize()
 
-    endLiveActivity()
+    // The inbox write above is already durable, and stays where it is: nothing
+    // here may move it later in the sequence.
+    //
+    // What changed is who hands the notification action's window back to iOS.
+    // It used to be showPersistentNormalNotification, which meant the window
+    // closed while the ActivityKit dismissal was still in flight — see
+    // endLiveActivity(completion:). Both notification requests below are still
+    // added immediately and unchanged; only the handing back is deferred.
+    endLiveActivity(completion: completion)
 
     showFeedbackNotification(elapsed: elapsedStr)
-    showPersistentNormalNotification(completion: completion)
+    showPersistentNormalNotification()
   }
 
   // ── Notification builders ─────────────────────────────────────────────────
