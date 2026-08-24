@@ -21,6 +21,15 @@ Seven iOS notification failures are recorded. All seven were caught on a physica
 by a person, before submission — none reached Apple. The process works; what has never
 existed is a written form of it, so it depends on remembering.
 
+**Where the seven live, and what "instance #2" means.** Steps below cite individual failures
+by number. **That numbering exists only as narrative in the Change Register — there is no
+table of the seven anywhere, in this repository or outside it, and the numbers are not
+independently citable.** They are kept because each one is the reason a specific step exists,
+and dropping them would sever a step from its motivation. But do not go looking for a
+register you can check them against, and do not treat a number as verifiable: if a step's
+rationale matters, read the Change Register entry, and if it cannot be found there, the step
+should be justified afresh rather than by its number.
+
 Four of the seven shared one root cause: iOS notification handling depending on Dart across
 a boundary that is unreliable in release builds on a locked device. CR-42 moved iOS to a
 native Swift handler.
@@ -126,11 +135,22 @@ gap this checklist closes.
 | Tester | |
 
 **Check Settings → Notifications → Medical Event Recorder → Show Previews.** Record the
-value. This does **not** make the lock-screen action unreachable when it is not "Always" —
-per the app's own copy in `help_screen.dart` — starting an event from the lock screen then
-**requires a password** instead of starting instantly. Test at least once with Show Previews
-set to "Always"; testing the password-gated variant as well is worthwhile, because that is
-the default users arrive at.
+value.
+
+**BELIEVED, NOT TESTED.** The app tells users that with Show Previews at anything other than
+"Always", starting an event from the lock screen **requires a password** rather than starting
+instantly, and that it is not blocked outright. That claim appears in `help_screen.dart` and
+in the on-screen nudge — **which is the app asserting it, not evidence that it is true.**
+Nothing in the record shows it confirmed on a device.
+
+It is also not the app's decision to make. The "Log Event Now" action is registered with
+`options: []` in `registerNativeNotificationCategories` — no `.authenticationRequired` — so
+whatever happens is iOS policy responding to the Show Previews setting. The app neither
+requests authentication nor suppresses it.
+
+**Do not assert either outcome.** Record what the device actually does, at the recorded Show
+Previews value, and note whether it matches the app's copy. If it does not, the Help screen
+is wrong and that is a defect in its own right.
 
 - [ ] Show Previews value recorded: ______________
 
@@ -494,14 +514,15 @@ dismissed-Live-Activity gap. See the Change Register before proposing it again.
   which is the iOS equivalent.
 - **`awesome_notifications` must never initialise on iOS.** Its `initialize()` resets
   `UNUserNotificationCenter.delegate` to itself and breaks the native handler. There are
-  **two** `initialize()` call sites in `notification_service.dart` — one in `init()` and one
-  in the background isolate's `onActionReceived` — and each has its own iOS guard with the
-  reason in the comment above it. Further iOS early-returns sit in `_restoreNotification`,
-  `showPersistent…` and their neighbours, with an inverse guard on the Android-only branch.
-  `AppDelegate.applicationDidBecomeActive` also re-asserts
-  `UNUserNotificationCenter.current().delegate = self` on every foreground as a second line
-  of defence. **Locate these by name rather than trusting any line number** — they have
-  moved repeatedly.
+  **two** `initialize()` call sites in `notification_service.dart` — one in `init` and one in
+  the background isolate's `onActionReceived` — and each has its own iOS guard with the
+  reason in the comment above it. Three further iOS early-returns sit in
+  `restoreNotification`, `_showNormal` and `_showActive`, the last two carrying the comment
+  "Swift owns iOS persistent notification". `applicationDidBecomeActive` in
+  `AppDelegate.swift` also re-asserts `UNUserNotificationCenter.current().delegate = self`
+  on every foreground as a second line of defence. **Locate these by name rather than
+  trusting any line number** — they have moved repeatedly, which is why
+  `test/checklist_citations_test.dart` now fails if any name here stops existing.
 - **Windows has no notification path at all.** `NotificationService.init()` returns before
   any channel is created. Capture there is in-app only.
 - **A stale Live Activity is correct behaviour, not a bug.** With the app killed, nothing can
