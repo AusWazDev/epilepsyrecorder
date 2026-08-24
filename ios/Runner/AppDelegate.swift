@@ -351,10 +351,44 @@ import awesome_notifications
       title: "Log Event Now",
       options: []
     )
+    // ⚠️ ASYMMETRY IS DELIBERATE: End requires authentication, Start does not.
+    //
+    // This looks like an oversight. It is not. The two actions carry different
+    // options because the risk is not symmetric and because CONTINUITY ACROSS
+    // TIERS points different ways for each.
+    //
+    // **End — .authenticationRequired.** On iOS 17+ ActivityKit already refuses
+    // to run EndMEREventIntent on a locked device and demands Face ID, ignoring
+    // the .alwaysAllowed policy the intent requests. Declaring the same
+    // requirement here makes 16.2-16.x behave the SAME way instead of diverging.
+    //
+    // Before this, ending from a locked device did nothing at all, silently:
+    // the notification was dismissed by the UI, the handler never ran, no end
+    // instruction was written, neither notification posted, the Live Activity
+    // kept counting, and the record kept its lt1 default. Wrong data, on the
+    // only end path this tier has. `options: []` means "deliver in the
+    // background, no authentication needed", and with no
+    // .authenticationRequired there is no prompt-and-defer path — so iOS had
+    // nowhere to park the action and dropped it.
+    //
+    // The verified 17+ behaviour is the model: **iOS declines to start work it
+    // cannot finish, rather than starting it in a state where it silently
+    // cannot.** That is obtained by declaration, not by luck.
+    //
+    // **Start stays background, unchanged.** Recording without opening the app
+    // is what makes MER usable mid-episode, and on 17+ a lock-screen start
+    // already records without unlocking. Adding .foreground or
+    // .authenticationRequired here would make the tiers DIVERGE rather than
+    // converge, and it would gate the capture path — which nothing is allowed
+    // to do.
+    //
+    // The asymmetry matches where the harm sits: **a spurious start is a stray
+    // record the user can delete; a missed end is a duration that no longer
+    // exists.**
     let endAction = UNNotificationAction(
       identifier: kBtnEnd,
       title: "Event Ended",
-      options: []
+      options: [.authenticationRequired]
     )
     let normalCategory = UNNotificationCategory(
       identifier: kCategoryNormal,
