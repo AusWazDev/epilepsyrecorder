@@ -418,70 +418,41 @@ import awesome_notifications
     completionHandler([.alert, .sound])
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // ⚠️ DIAGNOSTIC BREADCRUMBS — TEMPORARY. DELETE WHEN THE CAUSE IS FOUND.
-  //
-  // These exist to answer ONE question that six passes of code reasoning could
-  // not: **is didReceive entered at all when the action is tapped on a locked
-  // device?** Five hypotheses were argued from source and were all wrong — a
-  // body tap, force-quit suppression, plugin startup cost, the App Group
-  // protection class, and endLiveActivity blocking. This measures instead.
-  //
-  // Everything here is prefixed `mer_diag_` so it is greppable, obviously not
-  // app state, and cannot be mistaken for something load-bearing. Nothing reads
-  // these keys — not Dart, not Swift. They are written and never consumed.
-  //
-  // TO REMOVE: delete this block, the two diagCrumb calls in didReceive, and
-  // `import os.log`. Nothing else refers to any of it.
-  //
-  // ## Why BOTH an os_log and a UserDefaults write
-  //
-  // A UserDefaults breadcrumb alone cannot distinguish "never entered" from
-  // "entered but the write failed", because UserDefaults is one of the things
-  // under suspicion. os_log touches no file and no cfprefsd, so:
-  //
-  //   both present   -> entered, and UserDefaults works here
-  //   os_log only    -> entered, and the UserDefaults write is what fails
-  //   neither        -> never entered
-  //
-  // The os_log is emitted FIRST for exactly that reason. If the UserDefaults
-  // write is what hangs, the log line has already left.
-  //
-  // %{public}@ is required. Without it the values redact to <private> and the
-  // line says nothing.
-  private static let diagLog = OSLog(subsystem: "au.com.notiva.mer",
-                                    category: "capture-diag")
-
-  private func diagCrumb(_ name: String, _ detail: String) {
-    let line = "\(ISO8601DateFormatter().string(from: Date())) \(detail)"
-    os_log("DIAG %{public}@ %{public}@", log: Self.diagLog, type: .default, name, line)
-    let d = UserDefaults.standard
-    d.set(line, forKey: "mer_diag_\(name)")
-    // A monotonic counter, so a locked tap that never ran is distinguishable
-    // from one that ran and was overwritten by a later unlocked tap.
-    d.set(d.integer(forKey: "mer_diag_seq") + 1, forKey: "mer_diag_seq")
-  }
-  // ══════════════════════════════════════════════════════════════════════════
+  /// One line, on entry to the notification-action handler. Deliberately kept
+  /// after the diagnostic breadcrumbs were removed.
+  ///
+  /// The native capture path has NO telemetry otherwise: nothing in Swift
+  /// reports to Sentry, and on a background delivery the Dart isolate that owns
+  /// Sentry may not be running. When the locked-device end failure was
+  /// investigated, six hypotheses were argued from source and five were wrong,
+  /// because nothing could answer the first question — is this method even
+  /// entered? One instrumented run answered it.
+  ///
+  /// This is what remains of that instrumentation, and it is the cheap half.
+  /// `os_log` writes to an in-memory ring buffer: no file, no cfprefsd, no
+  /// plugin, nothing that can fail or block, and nothing on the capture path to
+  /// slow down. The UserDefaults breadcrumbs are gone because they wrote to a
+  /// store on the path they were measuring.
+  ///
+  /// To read it: attach the device, Console.app, filter subsystem
+  /// `au.com.notiva.mer`. Note that `log show` on the Mac CANNOT see device
+  /// logs — there is no --device option — so this needs either a live Console
+  /// session or a sysdiagnose from the handset.
+  private static let captureLog = OSLog(subsystem: "au.com.notiva.mer",
+                                        category: "capture")
 
   override func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
-    // ⚠️ DIAG 1 — first statement. Only an in-memory property read precedes it.
-    // Presence proves didReceive was entered; absence is the whole question.
-    diagCrumb("1_didreceive", "action=\(response.actionIdentifier)")
-
     let notifId = response.notification.request.identifier
 
-    // ⚠️ DIAG 2 — a read for diagnosis ONLY. handleQuickLogEnd does its own read
-    // and is deliberately untouched, so this cannot change the path under test.
-    // Records whether the active-event key was READABLE at delivery time, which
-    // is what separates a data-protection cause from every other cause.
-    let diagActive = UserDefaults.standard.string(forKey: kActiveEventKey)
-    diagCrumb("2_activeread",
-              diagActive == nil ? "active=nil notif=\(notifId)"
-                                : "active=len:\(diagActive!.count) notif=\(notifId)")
+    // Entry marker. See captureLog: this is the one thing that answers "was the
+    // handler reached", which took an instrumented run to establish once and
+    // should not need another.
+    os_log("didReceive action=%{public}@ notif=%{public}@",
+           log: Self.captureLog, type: .default, response.actionIdentifier, notifId)
 
     switch response.actionIdentifier {
     case kBtnStart:
