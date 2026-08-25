@@ -77,6 +77,26 @@ flutter_native_splash:
     image: assets/Transparent_without_MER.png
 
 msix_config:
+  # ── STORE IDENTITY — IMMUTABLE ONCE PUBLISHED ────────────────────────────
+  # identity_name, publisher and publisher_display_name below must match
+  # Partner Center EXACTLY. They are fixed for the life of the listing, in the
+  # same class as the Android applicationId, the iOS bundle id and
+  # kEventStorageKey: changing one does not rename the app, it creates a
+  # DIFFERENT app that existing users cannot upgrade to.
+  #
+  # Find them at: partner.microsoft.com/dashboard > Product > Product identity
+  #   identity_name          -> Package/Identity/Name
+  #   publisher              -> Package/Identity/Publisher
+  #   publisher_display_name -> Package/Properties/PublisherDisplayName
+  #
+  # A mismatch is rejected at submission, and a local build gives no hint of
+  # it: the msix tool substitutes its own defaults for anything absent and
+  # packages happily. Verify against the built AppxManifest.xml, not against
+  # a successful build.
+  #
+  # `publisher` is also the certificate SUBJECT. Signing requires a cert whose
+  # subject matches it character for character; the real one is on this
+  # machine in CurrentUser\My, thumbprint 1F47F898D58528C072D4B19AFD81814117FFBF6A.
   display_name: Medical Event Recorder
   publisher_display_name: Notiva
   identity_name: Notiva.MedicalEventRecorder
