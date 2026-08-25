@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants.dart';
@@ -27,7 +28,15 @@ class _LogEventScreenState extends State<LogEventScreen> {
   /// NULL = unknown. An unanswered duration now LOOKS unanswered — before
   /// this, every field carried a default and the user could not tell a default
   /// from an answer.
+  /// The legacy BUCKET, shown but never edited. A record captured before
+  /// duration was a quantity has a range and will never have a number; it is
+  /// displayed as context so the user can see what was recorded, and it is
+  /// never derived from, or overwritten by, what they type.
   DurationCategory? _duration;
+
+  final _minsController = TextEditingController();
+  final _secsController = TextEditingController();
+  int? _origSeconds;
   late EventSeverity _severity;
   late Set<String> _selectedFeelings;
   late Set<String> _selectedTriggers;
@@ -51,6 +60,10 @@ class _LogEventScreenState extends State<LogEventScreen> {
     _eventType         = e?.eventType        ?? EventType.seizure;
     // No `?? lt1`. A record with no duration opens with nothing selected.
     _duration          = e?.duration;
+    if (e?.durationSeconds != null) {
+      _minsController.text = '${e!.durationSeconds! ~/ 60}';
+      _secsController.text = '${e.durationSeconds! % 60}';
+    }
     _severity          = e?.severity         ?? EventSeverity.mild;
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
@@ -60,6 +73,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     // Store originals
     _origEventType = _eventType;
     _origDuration  = _duration;
+    _origSeconds   = _enteredSeconds;
     _origSeverity  = _severity;
     _origFeelings  = Set.from(_selectedFeelings);
     _origTriggers  = Set.from(_selectedTriggers);
@@ -70,13 +84,15 @@ class _LogEventScreenState extends State<LogEventScreen> {
   @override
   void dispose() {
     _notesController.dispose();
+    _minsController.dispose();
+    _secsController.dispose();
     super.dispose();
   }
 
   bool get _hasChanges {
     if (_isNew) return true;
     return _eventType        != _origEventType ||
-        _duration            != _origDuration  ||
+        _enteredSeconds      != _origSeconds   ||
         _severity            != _origSeverity  ||
         _referralRequired    != _origReferral  ||
         _notesController.text.trim() != _origNotes ||
@@ -94,9 +110,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
         'Event type: ${eventTypeLabel(_origEventType)} → ${eventTypeLabel(_eventType)}',
       );
     }
-    if (_duration != _origDuration) {
+    if (_enteredSeconds != _origSeconds) {
       changes.add(
-        'Duration: ${_durLabel(_origDuration)} → ${_durLabel(_duration)}',
+        'Duration: ${_durLabel(_origDuration, _origSeconds)} → ${_durLabel(_duration, _enteredSeconds)}',
       );
     }
     if (_severity != _origSeverity) {
@@ -123,8 +139,17 @@ class _LogEventScreenState extends State<LogEventScreen> {
 
   /// Change-log label. "not recorded" rather than "Unknown": the log is a
   /// sentence about what the user did, not a data cell.
-  String _durLabel(DurationCategory? d) =>
-      d == null ? 'not recorded' : durationLabel(d);
+  /// Reads the two fields as one quantity, or null when neither is filled.
+  /// Blank is UNKNOWN, never zero — typing nothing must not assert 0 seconds.
+  int? get _enteredSeconds {
+    final m = int.tryParse(_minsController.text.trim());
+    final s = int.tryParse(_secsController.text.trim());
+    if (m == null && s == null) return null;
+    return (m ?? 0) * 60 + (s ?? 0);
+  }
+
+  String _durLabel(DurationCategory? d, int? secs) =>
+      durationDisplay(d, secs) ?? 'not recorded';
 
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
@@ -174,7 +199,11 @@ class _LogEventScreenState extends State<LogEventScreen> {
       id:               widget.existing?.id ?? _uuid.v4(),
       timestamp:        widget.existing?.timestamp ?? DateTime.now(),
       eventType:        _eventType,
+      // The bucket is carried through UNCHANGED. Never derived from the
+      // number, never cleared by it: what was recorded then and what the user
+      // supplies now are different facts.
       duration:         _duration,
+      durationSeconds:  _enteredSeconds,
       severity:         _severity,
       feelings:         _selectedFeelings.toList(),
       triggers:         _selectedTriggers.toList(),
@@ -246,20 +275,42 @@ appBar: AppBar(
                         // ── DURATION ──
                         _SectionLabel('Duration'),
                         const SizedBox(height: 8),
-                        _SelectionRow<DurationCategory>(
-                          options:    DurationCategory.values,
-                          selected:   _duration,
-                          labelFor:   durationLabel,
-                          // Tapping the selected chip CLEARS it. Without this,
-                          // null is a state the user can leave but never return
-                          // to — and "I do not know" is exactly what someone
-                          // editing an abandoned event needs to be able to say.
-                          onSelected: (d) => setState(
-                              () => _duration = _duration == d ? null : d),
+                        // A legacy record's RANGE, shown as context. It is not
+                        // editable and it is never converted: "1-5 minutes"
+                        // contains no number, and inventing one would put a
+                        // fabricated quantity in a medical record.
+                        if (_duration != null && _enteredSeconds == null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'Recorded as ${durationLabel(_duration!)}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: MERColours.textMuted,
+                              ),
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _DurationField(
+                                controller: _minsController,
+                                label: 'minutes',
+                                onChanged: () => setState(() {}),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _DurationField(
+                                controller: _secsController,
+                                label: 'seconds',
+                                onChanged: () => setState(() {}),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 28),
 
-                        // ── SEVERITY ──
                         _SectionLabel('Severity'),
                         const SizedBox(height: 8),
                         _SelectionRow<EventSeverity>(
@@ -630,6 +681,42 @@ class _SelectionWrap extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+/// Minutes or seconds. Digits only, and BLANK MEANS UNKNOWN.
+///
+/// The app had no numeric input anywhere before this — the only two TextFields
+/// are the History search and the Notes box, both free text. So the keyboard
+/// type and the formatter are deliberate rather than inherited.
+///
+/// Deliberately NOT defaulted to 0. A zero typed by the widget rather than the
+/// user is the same fabrication as the `lt1` this change exists to retire.
+class _DurationField extends StatelessWidget {
+  const _DurationField({
+    required this.controller,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      textInputAction: TextInputAction.done,
+      onChanged: (_) => onChanged(),
+      onSubmitted: (_) => FocusScope.of(context).unfocus(),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: '--',
+      ),
     );
   }
 }

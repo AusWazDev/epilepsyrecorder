@@ -138,7 +138,7 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'logged_at': r.timestamp.toIso8601String(),
       'occurred_at': null,
       'duration_bucket': r.duration?.name,
-      'duration_seconds': null,
+      'duration_seconds': r.durationSeconds,
       'event_type': r.eventType.name,
       'severity': severityToInt(r.severity),
       'feelings_json': jsonEncode(r.feelings),
@@ -174,6 +174,8 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     id: row['id'] is String ? row['id'] as String : '',
     timestamp: ts.toLocal(),
     duration: durationFromName(row['duration_bucket']),
+    durationSeconds:
+        (row['duration_seconds'] is int) ? row['duration_seconds'] as int : null,
     feelings: decodeStringList(row['feelings_json']),
     referralRequired: row['referral_required'] == 1,
     notes: row['notes'] is String ? row['notes'] as String : '',

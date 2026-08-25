@@ -230,7 +230,12 @@ void main() {
     });
   });
 
-  group('the 26 CSV columns are unchanged', () {
+  // 27 since duration became a quantity. The column was ADDED deliberately,
+  // ahead of the multi-stream rewrite, because one column cannot serve both
+  // readers: a clinician wants the readable value and anyone computing a mean
+  // needs the number, which cannot be recovered from "1-5 minutes". Nothing
+  // else moved — `duration_seconds` sits immediately after `duration`.
+  group('the CSV columns are unchanged apart from duration_seconds', () {
     test('header row, in order', () {
       final header = buildCsv(<EventRecord>[
         record('a', DateTime(2026, 8, 22, 18, 0)),
@@ -242,6 +247,7 @@ void main() {
         'time',
         'event_type',
         'duration',
+        'duration_seconds',
         'severity',
         'Tired and weary',
         'Just tired',

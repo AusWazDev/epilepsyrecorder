@@ -259,14 +259,18 @@ void main() {
 
       final first = applyInbox(start.merged, endEntries);
       expect(first.changed, isTrue);
-      expect(first.merged.single.duration, DurationCategory.oneToFive);
+      // The drain STORES THE SECONDS now. It no longer derives a bucket:
+      // duration is a quantity, and a coarser second copy of the same fact
+      // could later disagree with it.
+      expect(first.merged.single.durationSeconds, 200);
+      expect(first.merged.single.duration, isNull);
       expect(first.merged.single.timestamp, t0,
           reason: 'an end sets the duration and nothing else; the start time '
               'is the record\'s own');
 
       final second = applyInbox(first.merged, endEntries);
       expect(second.changed, isFalse);
-      expect(second.merged.single.duration, DurationCategory.oneToFive);
+      expect(second.merged.single.durationSeconds, 200);
     });
   });
 
@@ -287,7 +291,7 @@ void main() {
         reason: 'the start must apply first even though its `at` is later, or '
             'a clock change turns a real capture into an orphan');
     expect(result.merged, hasLength(1));
-    expect(result.merged.single.duration, DurationCategory.gt5);
+    expect(result.merged.single.durationSeconds, 400);
   });
 
   // ── 7 ──────────────────────────────────────────────────────────────────────
@@ -390,7 +394,7 @@ void main() {
       expect(result.merged, hasLength(1));
       expect(result.merged.single.id, 'x');
       expect(result.merged.single.timestamp, t0);
-      expect(result.merged.single.duration, DurationCategory.gt5,
+      expect(result.merged.single.durationSeconds, 400,
           reason: '400 seconds, so the duration the deferral preserved is the '
               'one that finally gets stored');
     });
@@ -459,25 +463,19 @@ void main() {
     expect(await storedIds(), <String>['x']);
   });
 
-  // ── 9 ──────────────────────────────────────────────────────────────────────
-  test('9. seconds->bucket equals the shipped _durationFromDiff at every '
-      'boundary', () {
-    for (final seconds in <int>[0, 59, 60, 299, 300, 301]) {
-      expect(
-        bucketFromSeconds(seconds),
-        legacyDurationFromDiff(t0, t0.add(Duration(seconds: seconds))),
-        reason: 'the mapping must be preserved exactly at $seconds seconds; a '
-            'silent shift here would rewrite the meaning of every stored '
-            'duration',
-      );
-    }
-    // Pinned explicitly as well, so a matching pair of wrong implementations
-    // still fails.
-    expect(bucketFromSeconds(59), DurationCategory.lt1);
-    expect(bucketFromSeconds(60), DurationCategory.oneToFive);
-    expect(bucketFromSeconds(299), DurationCategory.oneToFive);
-    expect(bucketFromSeconds(300), DurationCategory.gt5);
-  });
+    // RETIRED with `bucketFromSeconds`, which this pinned at every boundary
+    // against a verbatim transcription of the shipped `_durationFromDiff` —
+    // a silent shift there would have rewritten the meaning of every stored
+    // duration.
+    //
+    // The drain no longer computes a bucket: it stores the measured seconds,
+    // so there is no mapping left to preserve. The function was DELETED rather
+    // than left unused, because a well-commented dead function that looks
+    // load-bearing is what a future author reintroduces a call to.
+    //
+    // `legacyDurationFromDiff` above is KEPT: it is the transcription of what
+    // shipped, and it is what proves the buckets on the 69 existing records
+    // mean what this codebase thinks they mean.
 
   // ── 10 ─────────────────────────────────────────────────────────────────────
   test('10. an unreadable version or kind is left in place, not applied',

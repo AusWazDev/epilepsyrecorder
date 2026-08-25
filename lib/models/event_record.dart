@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../constants.dart';
+import 'duration_format.dart';
 
 /* ===========================
    ENUMS
@@ -51,8 +52,18 @@ DurationCategory? durationFromName(Object? raw) {
 
 /// The CSV cell. EXPLICIT, never blank: a clinician reading a blank cannot tell
 /// "unknown" from "not recorded" from a broken export.
-String durationCsv(DurationCategory? c) =>
-    c == null ? 'unknown' : durationLabel(c);
+/// What a record's duration READS AS, across all three states.
+///
+/// Seconds win where present; otherwise the bucket; otherwise null, which every
+/// caller renders as absence rather than as a word.
+String? durationDisplay(DurationCategory? bucket, int? seconds) {
+  if (seconds != null) return durationSecondsLabel(seconds);
+  if (bucket != null) return durationLabel(bucket);
+  return null;
+}
+
+String durationCsv(DurationCategory? bucket, int? seconds) =>
+    durationDisplay(bucket, seconds) ?? 'unknown';
 
 enum EventType { seizure, absence, medication, other }
 
@@ -94,7 +105,25 @@ class EventRecord {
   /// Only the abandonment timeout produces one today; the wizard makes it
   /// reachable by a user in a later stage. Every migrated record has a
   /// bucket, so nothing existing is null.
+  /// The BUCKET. Never derived from [durationSeconds], and never derived FROM.
+  ///
+  /// Records captured before duration became a quantity hold a range and will
+  /// never hold a number: "1-5 minutes" contains no number, and inventing a
+  /// midpoint would put a fabricated quantity in a medical record. Same rule
+  /// the migration held to for occurred_at.
   final DurationCategory? duration;
+
+  /// The QUANTITY, in seconds. Measured, never estimated.
+  ///
+  /// Only the notification path produces one: it already computes the elapsed
+  /// time exactly and, before this, threw it away at drain. A quick record
+  /// measures nothing and leaves this null.
+  ///
+  /// THREE STATES, and every surface must handle all three:
+  ///   seconds != null                  a real quantity
+  ///   seconds == null, bucket != null  a legacy range, no number
+  ///   both null                        unknown
+  final int? durationSeconds;
   final List<String> feelings;
   final bool referralRequired;
   final String notes;
@@ -108,6 +137,7 @@ class EventRecord {
     required this.id,
     required this.timestamp,
     required this.duration,
+    this.durationSeconds,
     required this.feelings,
     required this.referralRequired,
     required this.notes,
@@ -152,6 +182,7 @@ class EventRecord {
         'id':               id,
         'timestamp':        timestamp.toIso8601String(),
         'duration':         duration?.name,
+        'durationSeconds':  durationSeconds,
         'feelings':         feelings,
         'referralRequired': referralRequired,
         'notes':            notes,
@@ -179,6 +210,8 @@ class EventRecord {
       id:        (map['id'] is String) ? map['id'] as String : '',
       timestamp: timestamp,
       duration: durationFromName(map['duration']),
+      durationSeconds:
+          (map['durationSeconds'] is int) ? map['durationSeconds'] as int : null,
       feelings: (feelingsRaw is List)
           ? feelingsRaw.map((e) => e.toString()).toList()
           : <String>[],
@@ -463,6 +496,11 @@ String buildCsv(List<EventRecord> items) {
     'time',
     'event_type',
     'duration',
+    // NEW COLUMN, deliberately, despite the multi-stream rewrite coming. One
+    // column cannot serve both readers: a clinician wants the readable value, and
+    // anyone computing a mean or a trend needs the number and cannot recover it
+    // from "1-5 minutes". Neither column ever contains a fabrication.
+    'duration_seconds',
     'severity',
     ...kFeelingsOptions.map(_feelingHeader),
     ...kTriggerOptions,
@@ -476,7 +514,11 @@ String buildCsv(List<EventRecord> items) {
       fmtDate.format(r.timestamp),
       fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
       eventTypeLabel(r.eventType),
-      durationCsv(r.duration),
+      durationCsv(r.duration, r.durationSeconds),
+      // EMPTY, not `unknown`, when there is no number. A word in a numeric
+      // column breaks every formula that touches it; a blank there is
+      // unambiguous in a way a blank in a text column is not.
+      r.durationSeconds?.toString() ?? '',
       severityLabel(r.severity),
       ...kFeelingsOptions.map((f) => r.feelings.contains(f) ? 'Yes' : ''),
       ...kTriggerOptions.map((t) => r.triggers.contains(t) ? 'Yes' : ''),

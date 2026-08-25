@@ -77,6 +77,7 @@ class MigrationOutcome {
 const List<String> kMigratedOptionalKeys = <String>[
   'id',
   'duration',
+  'durationSeconds',
   'eventType',
   'severity',
   'feelings',
@@ -111,6 +112,9 @@ Map<String, Object?>? rawMapToRow(
 
   final rawId = map['id'];
   countAbsent('id', rawId is String);
+
+  final rawSeconds = map['durationSeconds'];
+  countAbsent('durationSeconds', rawSeconds is int);
 
   final rawDuration = map['duration'];
   final durationName = DurationCategory.values
@@ -154,8 +158,10 @@ Map<String, Object?>? rawMapToRow(
     // The source is log time. Pretending it is event time fabricates data.
     'occurred_at': null,
     'duration_bucket': durationName,
-    // Never invented from a bucket.
-    'duration_seconds': null,
+    // NEVER invented from a bucket. A legacy payload carries no
+    // durationSeconds key at all, so this stays null and that record keeps its
+    // range forever — the same rule occurred_at is held to.
+    'duration_seconds': rawSeconds is int ? rawSeconds : null,
     'event_type': typeName,
     'severity': severity,
     'feelings_json':

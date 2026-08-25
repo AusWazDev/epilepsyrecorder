@@ -14,24 +14,6 @@ import 'event_record.dart';
 /// back in the result for the caller to report, which is what makes the whole
 /// drain testable without a widget, a platform channel, or Sentry.
 
-/// Elapsed seconds to the stored duration bucket.
-///
-/// THE ONE MAPPING. It was `_durationFromDiff` in `notification_service.dart`,
-/// which computed a bucket in the background isolate and stored it. Under the
-/// inbox the writer posts seconds and the drain decides the bucket, so the
-/// function moved here rather than being duplicated — a second copy of these
-/// thresholds is exactly the drift a test cannot see, because both copies would
-/// look reasonable.
-///
-/// Boundaries are asserted at 0, 59, 60, 299, 300 and 301 against a verbatim
-/// transcription of the original, so this is an equivalence guarantee rather
-/// than a claim.
-DurationCategory bucketFromSeconds(int seconds) {
-  if (seconds < 60) return DurationCategory.lt1;
-  if (seconds < 300) return DurationCategory.oneToFive;
-  return DurationCategory.gt5;
-}
-
 /// What a drain would do, and what it is safe to delete afterwards.
 class InboxDrainResult {
   /// The record list with every applicable instruction applied.
@@ -216,13 +198,17 @@ InboxDrainResult applyInbox(
 
     drainableKeys.add(instruction.key);
 
-    final bucket = bucketFromSeconds(instruction.seconds!);
-    if (record.duration == bucket) continue; // replay, or already correct
+    final secs = instruction.seconds!;
+    if (record.durationSeconds == secs) continue; // replay, or already correct
 
     byId[instruction.id] = EventRecord(
       id: record.id,
       timestamp: record.timestamp,
-      duration: bucket,
+      // The bucket is NOT set from the seconds. A measured event carries a
+      // number; deriving a range from it as well would create a second, coarser
+      // copy of the same fact that could later disagree.
+      duration: record.duration,
+      durationSeconds: secs,
       feelings: record.feelings,
       referralRequired: record.referralRequired,
       notes: record.notes,

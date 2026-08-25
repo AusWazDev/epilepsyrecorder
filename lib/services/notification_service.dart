@@ -16,6 +16,7 @@ import 'package:uuid/uuid.dart';
 // background isolate's surface is the schema and nothing more. Four of the
 // seven historical notification failures lived in that isolate.
 import '../models/capture_instruction.dart';
+import '../models/duration_format.dart';
 
 // ── IDs & storage keys ────────────────────────────────────────────────────────
 
@@ -36,14 +37,11 @@ const _timeoutMins    = 30;
 
 String _fmtTime(DateTime t) => DateFormat('h:mm a').format(t);
 
-String _fmtElapsed(DateTime start, DateTime end) {
-  final secs = end.difference(start).inSeconds.clamp(0, 9999);
-  final m    = secs ~/ 60;
-  final s    = secs  % 60;
-  if (m == 0) return '${s}s';
-  if (s == 0) return '${m}m';
-  return '${m}m ${s}s';
-}
+/// Delegates to `durationSecondsLabel`, so the duration a user is shown when an
+/// event ends is the SAME STRING History shows for it afterwards. Two copies of
+/// this formatting is exactly the drift a test cannot see.
+String _fmtElapsed(DateTime start, DateTime end) =>
+    durationSecondsLabel(end.difference(start).inSeconds);
 
 /// The live in-progress marker, parsed.
 class _ActiveEvent {
@@ -53,10 +51,10 @@ class _ActiveEvent {
 }
 
 // `_durationFromDiff` lived here and computed a stored bucket in the background
-// isolate. It moved to `bucketFromSeconds` in models/capture_inbox.dart: the
-// writer now posts SECONDS and the drain decides the bucket, so the mapping
-// belongs with the one writer of the store. Nothing here computes a bucket, and
-// nothing here needs the record model.
+// isolate. The writer now posts SECONDS and the drain STORES them: duration is
+// a quantity, so there is no bucket to compute anywhere and
+// `bucketFromSeconds` has been deleted rather than left unused. Nothing here
+// needs the record model.
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
@@ -216,7 +214,7 @@ class NotificationService {
       final endTime   = DateTime.now();
 
       // SECONDS, not a bucket. The bucket is a storage decision and belongs
-      // with the one writer of the store; the drain applies bucketFromSeconds.
+      // with the one writer of the store; the drain stores the seconds.
       await writeEndInstruction(
         prefs,
         id:      eventId,

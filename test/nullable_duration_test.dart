@@ -142,7 +142,7 @@ void main() {
           reason: 'at start the duration genuinely IS unknown');
     });
 
-    test('10. NEGATIVE CONTROL: a start followed by an END gets a real bucket',
+    test('10. NEGATIVE CONTROL: a start followed by an END gets a real quantity',
         () async {
       // Without this, test 9 passes just as well if the drain never set a
       // duration at all — which would break every normally-completed event.
@@ -153,8 +153,13 @@ void main() {
 
       final result = applyInbox(const <EventRecord>[], readInboxEntries(prefs));
 
-      expect(result.merged.single.duration, DurationCategory.oneToFive,
-          reason: '200s is 1-5 minutes; a completed event still measures');
+      // The drain stores the MEASURED SECONDS now, not a bucket derived from
+      // them. Without this control, test 9 passes just as well if the drain
+      // never set a duration at all — which would break every completed event.
+      expect(result.merged.single.durationSeconds, 200,
+          reason: 'a completed event still measures');
+      expect(result.merged.single.duration, isNull,
+          reason: 'and no bucket is invented alongside it');
     });
 
     test('11. an ABANDONED event keeps null with no timeout involvement',
@@ -185,13 +190,95 @@ void main() {
     });
   });
 
+  group('THREE STATES: a number, a bucket, or nothing', () {
+    EventRecord withState({DurationCategory? bucket, int? secs}) => EventRecord(
+          id: 'r',
+          timestamp: t0,
+          duration: bucket,
+          durationSeconds: secs,
+          feelings: const <String>[],
+          referralRequired: false,
+          notes: '',
+        );
+
+    test('16. a MEASURED record round-trips its seconds through the envelope',
+        () {
+      final back = parseBackup(buildBackupJson(
+              [withState(secs: 187)], exportedAt: t0))
+          .records
+          .single;
+
+      expect(back.durationSeconds, 187);
+      expect(back.duration, isNull);
+      expect(durationDisplay(back.duration, back.durationSeconds), '3m 7s');
+    });
+
+    test('17. a LEGACY record round-trips its bucket and gains no number', () {
+      final back = parseBackup(buildBackupJson(
+              [withState(bucket: DurationCategory.oneToFive)], exportedAt: t0))
+          .records
+          .single;
+
+      expect(back.duration, DurationCategory.oneToFive);
+      expect(back.durationSeconds, isNull,
+          reason: 'a range contains no number and never acquires one');
+      expect(durationDisplay(back.duration, back.durationSeconds), '1–5 minutes');
+    });
+
+    test('18. an UNKNOWN record round-trips as unknown', () {
+      final back = parseBackup(buildBackupJson([withState()], exportedAt: t0))
+          .records
+          .single;
+
+      expect(back.duration, isNull);
+      expect(back.durationSeconds, isNull);
+      expect(durationDisplay(back.duration, back.durationSeconds), isNull);
+    });
+
+    test('19. NEGATIVE CONTROL: a number fabricated from a bucket WOULD fail',
+        () {
+      // The rule this whole change is governed by. If anything ever derived
+      // seconds from a range - a midpoint, a lower bound, anything - the legacy
+      // record above would come back with a number, and test 17 would fail.
+      //
+      // Asserted directly so the rule is pinned rather than implied: these are
+      // the values a fabricating implementation would plausibly produce.
+      final back = parseBackup(buildBackupJson(
+              [withState(bucket: DurationCategory.oneToFive)], exportedAt: t0))
+          .records
+          .single;
+
+      for (final fabricated in <int>[60, 90, 180, 299, 300]) {
+        expect(back.durationSeconds, isNot(fabricated),
+            reason: 'a midpoint or bound derived from "1-5 minutes" is still an '
+                'invention');
+      }
+      expect(back.durationSeconds, isNull);
+    });
+
+    test('20. seconds WIN over a bucket where a record somehow has both', () {
+      // Reachable by editing a legacy record: the range is what was recorded
+      // then, the number is what the user supplied now. Both are kept - neither
+      // is derived from the other - and the number is what is shown.
+      final r = withState(bucket: DurationCategory.gt5, secs: 90);
+
+      expect(durationDisplay(r.duration, r.durationSeconds), '1m 30s');
+      expect(durationCsv(r.duration, r.durationSeconds), '1m 30s');
+      expect(r.duration, DurationCategory.gt5, reason: 'the bucket is not erased');
+    });
+  });
+
   group('what unknown looks like', () {
     test('14. the CSV cell is EXPLICIT, never blank', () {
       // A clinician reading a blank cannot tell "unknown" from "not recorded"
       // from a broken export.
-      expect(durationCsv(null), 'unknown',
+      expect(durationCsv(null, null), 'unknown',
           reason: 'a NEW value in a column that has only ever held three bucket strings');
-      expect(durationCsv(DurationCategory.lt1), '< 1 minute');
+      expect(durationCsv(DurationCategory.lt1, null), '< 1 minute');
+      expect(durationCsv(null, 187), '3m 7s',
+          reason: 'a measured quantity, not a raw second count');
+      expect(durationCsv(DurationCategory.lt1, 187), '3m 7s',
+          reason: 'seconds win where both exist; the bucket is never derived from');
     });
 
     test('15. the CSV keeps its 26 columns and its ordering', () {
@@ -200,8 +287,8 @@ void main() {
       final header = const LineSplitter().convert(csv).first;
 
       expect(header, contains('duration'));
-      expect(header.split(',').length, 26,
-          reason: 'stage 5 makes this multi-stream; nothing here anticipates it');
+      expect(header.split(',').length, 27,
+          reason: 'duration_seconds was added deliberately; stage 5 makes this multi-stream and nothing here anticipates that');
     });
   });
 }

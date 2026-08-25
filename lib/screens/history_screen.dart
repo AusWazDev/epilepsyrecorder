@@ -117,6 +117,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       final parsed = int.tryParse(q);
       if (parsed != null && RegExp(r'^\d+$').hasMatch(q)) {
+        // THREE STATES. A measured record matches on its whole minutes, which
+        // is the closest analogue of what the bucket ranges did — 187s is
+        // "3 minutes" to a searcher. This is NOT new filtering: it keeps the
+        // existing numeric search working for records that now carry a number
+        // instead of a range. Without it the search would silently stop
+        // matching every event captured from the notification.
+        final secs = r.durationSeconds;
+        if (secs != null) return secs ~/ 60 == parsed;
+
         // An UNKNOWN duration matches no numeric query. It is not zero and
         // not "any length" — the question is unanswerable for this record, so
         // excluding it is the only honest option. Including it in every
@@ -587,7 +596,10 @@ class _EventListTile extends StatelessWidget {
       // Absence reads as absence: the element is omitted, exactly as feelings,
       // triggers, referral and notes already are. The row reads "Mild" rather
       // than "< 1 minute · Mild" or "Unknown · Mild".
-      if (r.duration != null) durationLabel(r.duration!),
+      // Three states: a number, a legacy bucket, or nothing. Absence still
+      // reads as absence — the element is simply omitted.
+      if (durationDisplay(r.duration, r.durationSeconds) != null)
+        durationDisplay(r.duration, r.durationSeconds)!,
       severityLabel(r.severity),
       if (r.feelings.isNotEmpty)  r.feelings.join(', '),
       if (r.triggers.isNotEmpty)  'Triggers: ${r.triggers.join(', ')}',
