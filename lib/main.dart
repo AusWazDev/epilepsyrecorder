@@ -9,6 +9,8 @@ import 'constants.dart';
 import 'theme/mer_theme.dart';
 import 'screens/disclaimer_screen.dart';
 import 'screens/home_screen.dart';
+import 'models/storage_boot.dart';
+import 'models/storage_migration.dart';
 import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
 
@@ -39,6 +41,37 @@ void main() async {
       options.sendDefaultPii = false;
     },
     appRunner: () async {
+      // Storage is selected BEFORE anything renders. On first launch after the
+      // SQLite build this runs the one-shot migration; where verification fails
+      // it falls back to shared_preferences and the app is otherwise unchanged.
+      // It never throws.
+      final storage = await StorageBoot.init();
+      if (!storage.succeeded) {
+        await Sentry.captureMessage(
+          'Storage migration did not complete; running on shared_preferences',
+          level: SentryLevel.error,
+          withScope: (scope) => scope.setContexts('storage', {
+            'state':         storage.state.name,
+            'sourceEntries': storage.sourceEntries,
+            'loadable':      storage.loadableCount,
+            'inserted':      storage.insertedCount,
+            'error':         storage.error?.toString(),
+          }),
+        );
+      } else if (storage.state == MigrationState.migrated) {
+        await Sentry.captureMessage(
+          'Storage migrated to SQLite',
+          level: SentryLevel.info,
+          withScope: (scope) => scope.setContexts('storage', {
+            'sourceEntries': storage.sourceEntries,
+            'loadable':      storage.loadableCount,
+            'inserted':      storage.insertedCount,
+            'distinctIds':   storage.distinctIds,
+            'skipped':       storage.skipped,
+            'absent':        storage.absentCounts,
+          }),
+        );
+      }
       await NotificationService.instance.init();
       runApp(const AppBootstrap());
     },

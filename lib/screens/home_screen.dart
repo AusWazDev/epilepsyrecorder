@@ -17,6 +17,7 @@ import '../services/ios_capture_bridge.dart';
 import '../services/notification_service.dart';
 import '../models/capture_inbox.dart';
 import '../models/event_record.dart';
+import '../models/storage_boot.dart';
 import '../screens/about_screen.dart';
 import '../screens/disclaimer_screen.dart';
 import '../screens/help_screen.dart';
@@ -50,7 +51,11 @@ enum _HomeMenuAction {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   static const _navChannel = MethodChannel('au.com.notiva.mer/navigation');
 
-  final _store = EventStore();
+  /// The store chosen at boot: SQLite normally, shared_preferences on a
+  /// fallback launch. The drain in `_loadRecords` is handed whichever this
+  /// is, which is what makes the store a RUNTIME choice rather than a
+  /// compile-time one.
+  final _store = StorageBoot.store;
   final _uuid  = const Uuid();
 
   List<EventRecord> _records = [];

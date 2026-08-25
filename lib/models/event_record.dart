@@ -200,7 +200,11 @@ class EventStore {
   /// The chain is kept alive across failures: a rejected Future would poison
   /// every later operation, so what is stored back is a Future that always
   /// completes. The caller still sees the real error.
-  static Future<T> _serialise<T>(Future<T> Function() operation) {
+  /// Public so `SqliteEventStore` shares ONE queue with this store.
+  /// A fallback launch can have opened SQLite before verification failed, so
+  /// one queue is what stops an operation on either backend overlapping one
+  /// on the other.
+  static Future<T> serialise<T>(Future<T> Function() operation) {
     final result = _queue.then((_) => operation());
     _queue = result.then((_) {}, onError: (_) {});
     return result;
@@ -210,7 +214,7 @@ class EventStore {
   /// record lives in a single JSON string under a single key, so an
   /// exception here would make all of them unreachable. Entries that are not
   /// maps, and records fromMap rejects, are skipped individually.
-  Future<List<EventRecord>> load() => _serialise(_load);
+  Future<List<EventRecord>> load() => serialise(_load);
 
   static Future<List<EventRecord>> _load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -234,7 +238,7 @@ class EventStore {
   /// serialise records it never intended to, or state from before a reload.
   Future<void> save(List<EventRecord> records) {
     final payload = jsonEncode(records.map((e) => e.toMap()).toList());
-    return _serialise(() => _write(payload));
+    return serialise(() => _write(payload));
   }
 
   static Future<void> _write(String payload) async {

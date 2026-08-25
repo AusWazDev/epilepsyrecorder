@@ -42,6 +42,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --app)           APP="${2:-}"; shift 2 ;;
     --no-staleness)  CHECK_STALENESS=0; shift ;;
+    --msix)          MSIX="${2:-}"; shift 2 ;;
+    --msix-only)     MSIX_ONLY=1; shift ;;
     -h|--help)       sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -52,6 +54,8 @@ APPEX="$APP/PlugIns/MERWidget.appex"
 RUNNER_BIN="$APP/Runner"
 DART_BIN="$APP/Frameworks/App.framework/App"
 APPEX_BIN="$APPEX/MERWidget"
+[ -n "${MSIX:-}" ] || MSIX="$REPO/build/windows/x64/runner/Release/medical_event_recorder.msix"
+MSIX_ONLY="${MSIX_ONLY:-0}"
 PBXPROJ="$REPO/ios/Runner.xcodeproj/project.pbxproj"
 RUNNER_ENTS="$REPO/ios/Runner/Runner.entitlements"
 
@@ -62,6 +66,60 @@ note() { printf '        %s\n' "$1"; }
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+# --- Windows MSIX carries sqlite3.dll ----------------------------------------
+# SQLite is the system of record. The DLL is produced by a BUILD HOOK in the
+# sqlite3 package rather than checked in, and the msix tool packages whatever
+# happens to be in the Release directory -- so a packaging change can drop it
+# with NO build error. The app then installs cleanly and fails at the first
+# database open, on the user's machine.
+#
+# Runs BEFORE the iOS preconditions deliberately. Placed after them it was
+# unreachable: this script's precondition block exits when Runner.app is
+# absent, which is always true on Windows -- the only platform where an MSIX
+# exists. A check that cannot run is not a check.
+#
+# Windows packaging step:  bash tool/verify_release_signing.sh --msix-only
+check_msix() {
+  if [ ! -e "$MSIX" ]; then
+    note "M. sqlite3.dll in MSIX: SKIPPED (no MSIX at ${MSIX#"$REPO"/})"
+    return 0
+  fi
+  local py_bin="" c
+  for c in python3 python py; do
+    if command -v "$c" >/dev/null 2>&1; then py_bin="$c"; break; fi
+  done
+  if [ -z "$py_bin" ]; then
+    fail "M. sqlite3.dll in MSIX (no python available to read the archive)"
+    return 0
+  fi
+  local found
+  found="$("$py_bin" -c "import zipfile,sys
+z=zipfile.ZipFile(sys.argv[1])
+h=[i for i in z.infolist() if i.filename.lower().endswith('sqlite3.dll')]
+print(h[0].filename+' '+str(h[0].file_size) if h else '')" "$MSIX" 2>/dev/null)"
+  if [ -n "$found" ]; then
+    pass "M. MSIX contains sqlite3.dll ($found bytes)"
+  else
+    fail "M. MSIX contains sqlite3.dll"
+    note "The package has no sqlite3.dll. Every launch fails at the first"
+    note "database open. Do not submit this package."
+  fi
+}
+
+if [ "$MSIX_ONLY" -eq 1 ]; then
+  echo "MSIX packaging verification"
+  echo "  msix: ${MSIX#"$REPO"/}"
+  echo
+  check_msix
+  echo
+  if [ "$FAILURES" -eq 0 ]; then
+    echo "OK — all assertions passed."
+    exit 0
+  fi
+  echo "FAILED ($FAILURES assertion(s)). Do not submit this package."
+  exit 1
+fi
 
 echo "Release signing verification"
 echo "  app: ${APP#"$REPO"/}"
@@ -242,6 +300,8 @@ else
   note "explicitly; without it the Release link fails on undefined C++ symbols."
   note "If this fails but the build succeeded, the flag was dropped silently."
 fi
+
+check_msix
 
 echo
 if [ "$FAILURES" -eq 0 ]; then
