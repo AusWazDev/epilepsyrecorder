@@ -324,6 +324,24 @@ class NotificationService {
         category:           NotificationCategory.Service,
         largeIcon:          'resource://drawable/ic_notification_large',
         autoDismissible:    false,
+        // Ongoing (Android setOngoing). A DELIBERATE reduction in user control,
+        // not inherited from the category: this notification IS the capture path
+        // when an event starts, and burying it under a busy shade costs the
+        // one-tap-from-the-lock-screen property it exists for.
+        //
+        // Control is relocated, not removed: the MER Active channel and the app
+        // can both still be blocked in system settings.
+        //
+        // Android 14+ lets users dismiss ongoing notifications anyway, so this
+        // only pins on API <= 33. Above that it buys section placement, not
+        // permanence.
+        //
+        // Applied to the STANDING state ONLY. Note _showActive posts the SAME id
+        // on the SAME channel, so an active event REPLACES this content and the
+        // ongoing flag goes with it — the active-event notification stays
+        // dismissible as a consequence of that replacement, not because it
+        // carries its own flag.
+        locked:             true,
       ),
       actionButtons: [
         NotificationActionButton(
