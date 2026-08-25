@@ -227,8 +227,19 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
     // Both have it. The only field the mirror can legitimately be ahead on is
     // duration, and only when the store still holds the default it was created
     // with.
-    if (existing.duration == DurationCategory.lt1 &&
-        m.duration != DurationCategory.lt1) {
+    // NULL is now the honest "not known"; lt1 is the historical default that
+    // used to stand in for it. Both mean the store has nothing to lose, so a
+    // mirror carrying a real duration may fill either.
+    //
+    // The lt1 arm is kept DELIBERATELY: records written before nullable
+    // duration still carry lt1 where nobody answered, and dropping it would
+    // silently stop recovering their durations. It stays imprecise in the one
+    // direction it always has — a GENUINE sub-minute event looks unset — and
+    // that is exactly the imprecision nullable duration retires going forward.
+    if ((existing.duration == null ||
+            existing.duration == DurationCategory.lt1) &&
+        m.duration != null &&
+        m.duration != existing.duration) {
       byId[m.id] = EventRecord(
         id:               existing.id,
         timestamp:        existing.timestamp,

@@ -63,6 +63,15 @@ const int kInboxSchemaVersion = 1;
 const String kInboxKindStart = 'start';
 const String kInboxKindEnd = 'end';
 
+/// The 30-minute abandonment timeout. Carries NO seconds, deliberately: the
+/// point is that the duration is UNKNOWN, not that it is zero.
+///
+/// A new KIND rather than an `end` with seconds omitted, because the parse gate
+/// below correctly REFUSES an end without seconds — and because an older build
+/// then defers this instead of misreading it. Forward compatibility for an
+/// unrecognised kind is already designed and tested; see [InboxDefer.unknownKind].
+const String kInboxKindAbandon = 'abandon';
+
 /// Why an entry could not be applied. Every one of these means "leave the key
 /// alone", never "delete it".
 enum InboxDefer {
@@ -138,6 +147,7 @@ class CaptureInstruction {
 
   bool get isStart => kind == kInboxKindStart;
   bool get isEnd => kind == kInboxKindEnd;
+  bool get isAbandon => kind == kInboxKindAbandon;
 }
 
 /// One inbox key, either parsed or deferred. Exactly one of [instruction] and
@@ -209,7 +219,9 @@ InboxEntry parseInboxEntry(String key, String? raw) {
   }
 
   final kind = map['kind'];
-  if (kind != kInboxKindStart && kind != kInboxKindEnd) {
+  if (kind != kInboxKindStart &&
+      kind != kInboxKindEnd &&
+      kind != kInboxKindAbandon) {
     return InboxEntry.deferred(key, InboxDefer.unknownKind, id: id);
   }
 
@@ -262,6 +274,28 @@ Future<void> writeStartInstruction(
 
 /// Posts an end fact carrying SECONDS, not a bucket. Writes one key and reads
 /// no record.
+/// Records that an in-progress event was ABANDONED — the 30-minute timeout
+/// fired and no end ever arrived.
+///
+/// Before this the timeout simply dropped the active marker, and the record
+/// kept the `lt1` it was created with: wrong data, indistinguishable from a
+/// real short event. Confirmed on hardware — 37 minutes recorded as
+/// "< 1 minute".
+Future<void> writeAbandonInstruction(
+  SharedPreferences prefs, {
+  required String id,
+  required DateTime at,
+}) =>
+    prefs.setString(
+      _newInboxKey(),
+      jsonEncode({
+        'v': kInboxSchemaVersion,
+        'kind': kInboxKindAbandon,
+        'id': id,
+        'at': at.toIso8601String(),
+      }),
+    );
+
 Future<void> writeEndInstruction(
   SharedPreferences prefs, {
   required String id,

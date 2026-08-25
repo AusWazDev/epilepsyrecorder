@@ -17,6 +17,15 @@ import '../constants.dart';
 
 enum DurationCategory { lt1, oneToFive, gt5 }
 
+/// ⚠️ `durationLabel` and `severityLabel` are STRUCTURALLY IDENTICAL — both are
+/// bare exhaustive switches over a NON-NULLABLE enum with no default arm. Do not
+/// assume duration's tolerates null because duration is nullable: it does not,
+/// and it cannot be passed null without a compile error.
+///
+/// That compile error is the FEATURE. When severity is made nullable, every call
+/// site fails to build and has to decide what absence renders as, rather than a
+/// default silently appearing in a medical record. Nullability is handled AT THE
+/// CALL SITE here for exactly that reason.
 String durationLabel(DurationCategory c) {
   switch (c) {
     case DurationCategory.lt1:
@@ -27,6 +36,23 @@ String durationLabel(DurationCategory c) {
       return '> 5 minutes';
   }
 }
+
+/// Resolves a stored duration name, or NULL when it is absent or unrecognised.
+///
+/// Replaced an `orElse: () => DurationCategory.lt1` that turned every unanswered
+/// duration into a confident "< 1 minute" — wrong data, and indistinguishable
+/// from a real short event.
+DurationCategory? durationFromName(Object? raw) {
+  for (final d in DurationCategory.values) {
+    if (d.name == raw) return d;
+  }
+  return null;
+}
+
+/// The CSV cell. EXPLICIT, never blank: a clinician reading a blank cannot tell
+/// "unknown" from "not recorded" from a broken export.
+String durationCsv(DurationCategory? c) =>
+    c == null ? 'Unknown' : durationLabel(c);
 
 enum EventType { seizure, absence, medication, other }
 
@@ -63,7 +89,12 @@ String severityLabel(EventSeverity s) {
 class EventRecord {
   final String id;
   final DateTime timestamp;
-  final DurationCategory duration;
+  /// NULL means UNKNOWN — not zero, and not short.
+  ///
+  /// Only the abandonment timeout produces one today; the wizard makes it
+  /// reachable by a user in a later stage. Every migrated record has a
+  /// bucket, so nothing existing is null.
+  final DurationCategory? duration;
   final List<String> feelings;
   final bool referralRequired;
   final String notes;
@@ -120,7 +151,7 @@ class EventRecord {
   Map<String, dynamic> toMap() => {
         'id':               id,
         'timestamp':        timestamp.toIso8601String(),
-        'duration':         duration.name,
+        'duration':         duration?.name,
         'feelings':         feelings,
         'referralRequired': referralRequired,
         'notes':            notes,
@@ -147,10 +178,7 @@ class EventRecord {
     return EventRecord(
       id:        (map['id'] is String) ? map['id'] as String : '',
       timestamp: timestamp,
-      duration: DurationCategory.values.firstWhere(
-        (e) => e.name == map['duration'],
-        orElse: () => DurationCategory.lt1,
-      ),
+      duration: durationFromName(map['duration']),
       feelings: (feelingsRaw is List)
           ? feelingsRaw.map((e) => e.toString()).toList()
           : <String>[],
@@ -448,7 +476,7 @@ String buildCsv(List<EventRecord> items) {
       fmtDate.format(r.timestamp),
       fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
       eventTypeLabel(r.eventType),
-      durationLabel(r.duration),
+      durationCsv(r.duration),
       severityLabel(r.severity),
       ...kFeelingsOptions.map((f) => r.feelings.contains(f) ? 'Yes' : ''),
       ...kTriggerOptions.map((t) => r.triggers.contains(t) ? 'Yes' : ''),

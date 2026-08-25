@@ -293,6 +293,18 @@ class NotificationService {
     final active = jsonDecode(activeRaw) as Map<String, dynamic>;
     final start  = DateTime.parse(active['startIso'] as String);
     if (DateTime.now().difference(start).inMinutes >= _timeoutMins) {
+      // Post the fact, do not touch the record. The store has ONE writer and it
+      // is not this method — the drain applies this on the next load.
+      //
+      // Order matters: write the instruction FIRST. If the process dies between
+      // the two, the marker is still present and the timeout simply fires again
+      // next launch, writing a second abandon for the same id — which is
+      // idempotent. Removing the marker first and dying would lose the fact
+      // entirely and leave the record on its lt1 default forever.
+      final id = active['id'];
+      if (id is String && id.isNotEmpty) {
+        await writeAbandonInstruction(prefs, id: id, at: DateTime.now());
+      }
       await prefs.remove(_activeEventKey);
     }
   }

@@ -24,7 +24,10 @@ class _LogEventScreenState extends State<LogEventScreen> {
   final _notesController = TextEditingController();
 
   late EventType _eventType;
-  late DurationCategory _duration;
+  /// NULL = unknown. An unanswered duration now LOOKS unanswered — before
+  /// this, every field carried a default and the user could not tell a default
+  /// from an answer.
+  DurationCategory? _duration;
   late EventSeverity _severity;
   late Set<String> _selectedFeelings;
   late Set<String> _selectedTriggers;
@@ -32,7 +35,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
 
   // Originals for change detection
   late EventType _origEventType;
-  late DurationCategory _origDuration;
+  DurationCategory? _origDuration;
   late EventSeverity _origSeverity;
   late Set<String> _origFeelings;
   late Set<String> _origTriggers;
@@ -46,7 +49,8 @@ class _LogEventScreenState extends State<LogEventScreen> {
     super.initState();
     final e = widget.existing;
     _eventType         = e?.eventType        ?? EventType.seizure;
-    _duration          = e?.duration         ?? DurationCategory.lt1;
+    // No `?? lt1`. A record with no duration opens with nothing selected.
+    _duration          = e?.duration;
     _severity          = e?.severity         ?? EventSeverity.mild;
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
@@ -92,7 +96,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     }
     if (_duration != _origDuration) {
       changes.add(
-        'Duration: ${durationLabel(_origDuration)} → ${durationLabel(_duration)}',
+        'Duration: ${_durLabel(_origDuration)} → ${_durLabel(_duration)}',
       );
     }
     if (_severity != _origSeverity) {
@@ -116,6 +120,11 @@ class _LogEventScreenState extends State<LogEventScreen> {
     }
     return changes;
   }
+
+  /// Change-log label. "not recorded" rather than "Unknown": the log is a
+  /// sentence about what the user did, not a data cell.
+  String _durLabel(DurationCategory? d) =>
+      d == null ? 'not recorded' : durationLabel(d);
 
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
@@ -241,7 +250,12 @@ appBar: AppBar(
                           options:    DurationCategory.values,
                           selected:   _duration,
                           labelFor:   durationLabel,
-                          onSelected: (d) => setState(() => _duration = d),
+                          // Tapping the selected chip CLEARS it. Without this,
+                          // null is a state the user can leave but never return
+                          // to — and "I do not know" is exactly what someone
+                          // editing an abandoned event needs to be able to say.
+                          onSelected: (d) => setState(
+                              () => _duration = _duration == d ? null : d),
                         ),
                         const SizedBox(height: 20),
 
@@ -495,7 +509,9 @@ class _EventTypeButton extends StatelessWidget {
 
 class _SelectionRow<T> extends StatelessWidget {
   final List<T> options;
-  final T selected;
+  /// Nullable so a group can show NOTHING selected. Non-null callers are
+  /// unaffected: T is assignable to T?.
+  final T? selected;
   final String Function(T) labelFor;
   final Color Function(T)? colorFor;
   final ValueChanged<T> onSelected;

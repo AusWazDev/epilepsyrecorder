@@ -117,7 +117,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       final parsed = int.tryParse(q);
       if (parsed != null && RegExp(r'^\d+$').hasMatch(q)) {
-        switch (r.duration) {
+        // An UNKNOWN duration matches no numeric query. It is not zero and
+        // not "any length" — the question is unanswerable for this record, so
+        // excluding it is the only honest option. Including it in every
+        // numeric search would be worse than excluding it from all.
+        if (r.duration == null) return false;
+        switch (r.duration!) {
           case DurationCategory.lt1:
             return parsed < 1;
           case DurationCategory.oneToFive:
@@ -129,7 +134,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       final haystack = [
         eventTypeLabel(r.eventType),
-        durationLabel(r.duration),
+        // Contributes NOTHING when unknown, rather than the word "Unknown" —
+        // otherwise typing "unknown" surfaces these rows, a search feature
+        // nobody asked for.
+        if (r.duration != null) durationLabel(r.duration!),
         severityLabel(r.severity),
         r.feelings.join(' '),
         r.triggers.join(' '),
@@ -576,7 +584,10 @@ class _EventListTile extends StatelessWidget {
             : r.notes.trim());
 
     final parts = <String>[
-      durationLabel(r.duration),
+      // Absence reads as absence: the element is omitted, exactly as feelings,
+      // triggers, referral and notes already are. The row reads "Mild" rather
+      // than "< 1 minute · Mild" or "Unknown · Mild".
+      if (r.duration != null) durationLabel(r.duration!),
       severityLabel(r.severity),
       if (r.feelings.isNotEmpty)  r.feelings.join(', '),
       if (r.triggers.isNotEmpty)  'Triggers: ${r.triggers.join(', ')}',
