@@ -2,6 +2,151 @@
 
 ---
 
+## Session: 25 August 2026 (evening) — Windows (Claude Code CLI)
+
+**SQLite phase one shipped and verified on two platforms; notification and
+backup-selection work; Windows packaging identity settled.** Seven commits.
+`ios/` untouched by this machine throughout — the subtree moved only when the
+Mac pushed `537a613`, a `pod install` adding `sqflite_darwin` to `Podfile.lock`.
+
+### SQLite phase one (`9461f27`)
+
+Storage implementation swapped behind `EventStore`. Today's nine fields
+relationally, `schema_meta` from the start, every optional column nullable.
+
+- **The migration reads RAW JSON, not `EventRecord`.** `fromMap` coerces an
+  absent `eventType` to `seizure`, an absent `severity` to `mild` and an
+  unparseable `duration` to `lt1` — its own comment calls them "safe fallbacks".
+  Reading through it would convert UNKNOWN into a confident wrong value,
+  permanently, in the schema whose premise is that NULL means unknown. Absence
+  is written as NULL and counted into `schema_meta`, because the NULLs are not
+  durable: `save(List)` rewrites every row and `EventRecord` cannot express
+  unknown.
+- **`id` is deliberately NOT a primary key.** The JSON array permits duplicates;
+  rejecting one would turn "this device has two records sharing an id" into "the
+  migration lost a record". Duplicates are carried and counted.
+- `save(List)` and `load()` keep their signatures — the fallback path needs both
+  stores to satisfy one interface at run time.
+- **The fallback is tested**: verification fails, the launch runs on
+  shared_preferences, and the inbox still drains into the OLD store, with keys
+  deleted only after the write is confirmed.
+
+### Verified on the tablet — 66 records, zero field-level change
+
+`sourceEntries 66 / loadable 66 / inserted 66 / distinctIds 66 / skipped 0`,
+read from Sentry because an unrooted release build cannot be read by adb.
+Pre- and post-migration backups compared: **same 66 ids, 528 field comparisons,
+zero differences**, record order identical, and three double-encoded feelings
+preserved verbatim rather than "fixed".
+
+⚠️ **`absent: {}` — no optional key was missing from any record, so the
+NULL-vs-fabrication machinery DID NOT FIRE on real data.** It is covered by
+tests 3 and 4 only.
+
+### Version bumps (`513215c`, `2828faa`, `c129343`)
+
+`1.1.0+5` → `1.1.0+6`, because the SQLite and pre-SQLite builds were
+indistinguishable on device — which is how a pre-migration state was read as a
+completed migration. Derivation verified end to end: gradle reads
+`flutter.versionCode`, `package_info_plus` reads that manifest back.
+
+`msix_version` `1.0.0.0` → `1.1.6.0`, and **NOT derivable**: the msix tool's
+`_getPubspecVersion` returns `[major, minor, patch, 0]`, discarding the build
+number, so every build within a patch version packages identically. MSIX
+reserves the fourth part and requires zero, so `1.1.0+6` folds into the three
+usable parts. The identity values were already correct since the initial commit;
+what was missing was any statement that they are IMMUTABLE.
+
+### Notifications (`ed6fb7a`, `e6bb5a5`)
+
+`locked: true` on the standing notification. **It reaches the notification**
+(`flags=SHOW_LIGHTS|ONGOING_EVENT`, measured) and **Android 14+ ignores it** —
+since API 34 only foreground-service and call notifications resist dismissal.
+It pins on API ≤ 33; `minSdk` is 24.
+
+The foreground service was considered and REJECTED, with the reasoning recorded
+in `notification_service.dart` so it is not reached for again: one answer beats
+two (iOS has the identical defect and no service exists there), the cost recurs
+at every Play review, and it does not close the hole — `shortService` caps at
+three minutes and `health` asserts a clinical purpose this app does not claim.
+The plugin could not express it honestly regardless: no `specialUse`, `health`
+or `shortService` in its enum, and its manifest hardcodes `phoneCall`.
+
+**Root cause of the sinking is still unfixed:** Android treats a re-post of the
+same id as a silent in-place update, so it never resurfaces. iOS already does
+`removeDeliveredNotifications` then `add` — cancel-then-post is the fix and it
+is a port, not an invention.
+
+### Backup file selection (`cd53b28`, `d8a2291`)
+
+Prompted by a real mis-restore: a 37-record file restored onto a device holding
+66. No data lost — merge-only — but nothing made the mistake visible.
+
+- Filename `medical_event_recorder_backup_…` → `mer_backup_…`, 48 → 31 chars.
+  **Nothing matches on the prefix**, now guarded by a source scan with a control.
+- The dialog shows the **export timestamp**, already in the envelope and simply
+  not read. Two files identical in count, size and contents now differ by one
+  line. Verified on device.
+- A staleness caution was built and REMOVED: `timestamp` is `logged_at`, so
+  across two devices it compares which last logged something, not which holds
+  newer events. Deferred until `occurred_at` is populated.
+
+### Windows: SQLite packaged and run
+
+First packaging of the real app with SQLite. `sqlite3.dll` confirmed inside the
+archive by inspection (1,657,856 / 923,003 compressed). Packaged app launches,
+opens the database, migration completes: `schema_version 1`,
+`migration_state migrated`.
+
+⚠️ **AppData is NOT virtualised for this package.** `runFullTrust` /
+`Windows.FullTrustApplication`, `LocalCache` empty, and the database sits at the
+real `%APPDATA%\au.com.bedlin\epilepsyrecorder\`. Packaged and loose builds
+share one store — so the loose build IS a fair proxy for storage location.
+
+⚠️ **The Windows migration ran over an EMPTY store.** `sourceEntries 0`. The
+conversion remains untested on Windows.
+
+⚠️ **Windows Sentry release is `epilepsyrecorder@1.1.0+6`**, not
+`au.com.notiva.medicaleventrecorder@…` — `PackageInfo.packageName` returns the
+project name on Windows, so releases do not group across platforms.
+
+### The tablet lost the app, and it was recoverable
+
+After an OEM build update (V1.05 → V1.06; **Android 15 / API 35 unchanged**) the
+package was gone — not disabled, not hidden, no retained data, `firstInstallTime`
+reset on reinstall. Cause unknown and left unexplained: the events buffer only
+reaches back to 16:47 and the removal predates it.
+
+**Nothing was lost, because `/sdcard/Download` is not app-scoped.** Four backups
+survived there and three on this PC. Restored to 69 records.
+
+⚠️ **A OneDrive folder named `MER backup test` sits in the same picker namespace
+as real backups**, holding exports of 4, 11, 14, 31 and 37 records plus a
+deliberately corrupt file. That folder caused the mis-restore. Thirteen backup
+files are reachable from the picker across two providers; the default Recent
+view shows four, and **excludes the newest local file** — a 5:41 PM backup was
+still absent from Recent at 6:51 PM.
+
+### Windows certificate — blocked, deliberately
+
+Non-exportable signing certificate created, `EB323808D9E67D95888196E9388022CC7FC68299`,
+subject `CN=520D1E31-…`, valid to Aug 2027. Signing works.
+
+**`CurrentUser\TrustedPeople` is NOT sufficient for MSIX deployment** — still
+`0x800B0109`. Microsoft's "**Local Machine** Trusted People" is a hard
+requirement, and that needs admin. Not escalated without approval. Removal
+commands are in the session report; the certificate is currently trusted
+per-user only, which grants nothing.
+
+### Verified
+
+`flutter analyze` 40 issues, **0 errors, 0 warnings**. Tests **154 pass, 2 known
+failures** — the same two, unchanged all session. A `flutter create` control app
+and a compiled-plugin disassembly were both used to settle questions the
+documentation could not.
+
+---
+
 ## Session: 25 August 2026 — Windows (Claude Code CLI)
 
 **History screen: date range filter, day grouping, an honest export label. Plus a
