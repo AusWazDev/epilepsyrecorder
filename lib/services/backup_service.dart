@@ -52,8 +52,17 @@ const kBackupTypeGroup = XTypeGroup(
   uniformTypeIdentifiers: ['public.json'],
 );
 
+/// Short on purpose. The system file picker truncates the middle of a long
+/// name, and `medical_event_recorder_backup_20260825_142202.json` renders as
+/// something like `medical_event_record...2.json` — which hides the entire
+/// timestamp and makes two backups from the same day indistinguishable. That
+/// is not hypothetical: it caused a real mis-restore.
+///
+/// NOTHING matches on this prefix. Restore filters by extension and validates
+/// by the envelope's `format` field, so every file written under the old name
+/// still restores — verified by test.
 String _backupFilename() =>
-    'medical_event_recorder_backup_'
+    'mer_backup_'
     '${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json';
 
 /// Whether a share outcome counts as a backup actually taken.
@@ -431,6 +440,22 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
     'This backup contains ${plan.inBackup} '
         '${plan.inBackup == 1 ? "event" : "events"}$range.',
   ];
+
+  // WHEN the backup was taken, which is the signal the picker cannot show and
+  // the one that distinguishes two files whose contents overlap.
+  if (plan.exportedAt != null) {
+    lines.add('Backed up '
+        '${DateFormat('d MMM yyyy, h:mm a').format(plan.exportedAt!)}.');
+  }
+
+  // A caution, never a block, and deliberately not a verdict: the app cannot
+  // know which history is the user's, so it states the fact and leaves the
+  // judgement with them. Suppressed on an empty device, where restoring
+  // anything is the normal case and a warning would be noise.
+  if (plan.isStalerThanDevice) {
+    lines.add('This backup is older than your most recent event on this '
+        'device.');
+  }
   if (plan.alreadyPresent > 0) {
     lines.add('${plan.alreadyPresent} '
         '${plan.alreadyPresent == 1 ? "is" : "are"} already on this device.');
