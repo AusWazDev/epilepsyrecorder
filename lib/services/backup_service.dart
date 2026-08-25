@@ -448,14 +448,6 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
         '${DateFormat('d MMM yyyy, h:mm a').format(plan.exportedAt!)}.');
   }
 
-  // A caution, never a block, and deliberately not a verdict: the app cannot
-  // know which history is the user's, so it states the fact and leaves the
-  // judgement with them. Suppressed on an empty device, where restoring
-  // anything is the normal case and a warning would be noise.
-  if (plan.isStalerThanDevice) {
-    lines.add('This backup is older than your most recent event on this '
-        'device.');
-  }
   if (plan.alreadyPresent > 0) {
     lines.add('${plan.alreadyPresent} '
         '${plan.alreadyPresent == 1 ? "is" : "are"} already on this device.');

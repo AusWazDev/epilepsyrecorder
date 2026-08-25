@@ -178,13 +178,14 @@ class RestorePlan {
   /// exactly the case the picker cannot show.
   final DateTime? exportedAt;
 
-  /// The newest event in this backup predates the newest event already on the
-  /// device.
-  ///
-  /// A statement of fact, not a verdict: restoring an older backup is
-  /// legitimate, and merge-only means nothing is lost by it. False on an empty
-  /// device, where restoring anything is the normal case.
-  final bool isStalerThanDevice;
+  // DEFERRED: a staleness caution — "this backup is older than your most
+  // recent event" — was built here and removed. The comparison needs when
+  // EVENTS happened, and `timestamp` is logged_at: when the row was WRITTEN.
+  // Across two devices that compares which one last logged something, not
+  // which holds newer events, so it would caution on legitimate restores. The
+  // weaker variant, comparing export timestamps, is a much thinner signal for
+  // the same dialog space. Revisit when occurred_at is populated by the
+  // expansion — see docs/DATA-MODEL.md - and build it once.
 
   const RestorePlan({
     required this.merged,
@@ -195,7 +196,6 @@ class RestorePlan {
     this.earliest,
     this.latest,
     this.exportedAt,
-    this.isStalerThanDevice = false,
   });
 
   bool get addsNothing => toAdd == 0;
@@ -227,20 +227,6 @@ RestorePlan planRestore(List<EventRecord> existing, ParsedBackup backup) {
     if (latest == null || r.timestamp.isAfter(latest)) latest = r.timestamp;
   }
 
-  // Staleness. Computed from what is already here, so it needs no knowledge of
-  // which device wrote the file — the app cannot know that, and deliberately
-  // does not record it.
-  DateTime? deviceLatest;
-  for (final r in existing) {
-    if (deviceLatest == null || r.timestamp.isAfter(deviceLatest)) {
-      deviceLatest = r.timestamp;
-    }
-  }
-  final isStaler = existing.isNotEmpty &&
-      latest != null &&
-      deviceLatest != null &&
-      latest.isBefore(deviceLatest);
-
   return RestorePlan(
     merged: merged,
     inBackup: backup.records.length,
@@ -250,6 +236,5 @@ RestorePlan planRestore(List<EventRecord> existing, ParsedBackup backup) {
     earliest: earliest,
     latest: latest,
     exportedAt: backup.exportedAt,
-    isStalerThanDevice: isStaler,
   );
 }
