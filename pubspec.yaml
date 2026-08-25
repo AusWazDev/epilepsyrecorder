@@ -81,7 +81,26 @@ msix_config:
   publisher_display_name: Notiva
   identity_name: Notiva.MedicalEventRecorder
   publisher: CN=520D1E31-3542-4059-8124-5366ECCA4994
-  msix_version: 1.0.0.0
+  # NOT derivable from `version:` above, and this is the one place in the
+  # project where a version is deliberately written down twice.
+  #
+  # The msix tool CAN derive it — remove this line and it falls back to
+  # _getPubspecVersion(), which returns [major, minor, patch, 0]. For 1.1.0+6
+  # that is 1.1.0.0: the build number is discarded, so every build within a
+  # patch version packages as the same MSIX version. That is exactly the
+  # ambiguity this line exists to remove — on Android, two builds sharing a
+  # version is how a pre-migration state was read as a completed migration.
+  #
+  # THE MAPPING, because it will not be obvious: MSIX reserves the FOURTH part
+  # for the Store and requires it to be zero, so pubspec's build number cannot
+  # live there. 1.1.0+6 is folded into the three usable parts as 1.1.6.0 —
+  # major.minor.<build>.0. Bump the third part whenever pubspec's build number
+  # moves and a Windows package is cut.
+  #
+  # Live Store package is 1.0.0.0 (Submission 2, x64), so this is an upgrade.
+  # A version below the published one is rejected, and the Store treats the
+  # fourth part as its own.
+  msix_version: 1.1.6.0
   logo_path: windows/runner/resources/app_icon.ico
   create_assets: false
   sign_msix: false
