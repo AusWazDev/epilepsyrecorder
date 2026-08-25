@@ -454,7 +454,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final rec = EventRecord(
       id:               _uuid.v4(),
       timestamp:        DateTime.now(),
-      duration:         DurationCategory.lt1,
+      // A one-tap timestamp measures nothing, so it asserts nothing. This read
+      // "< 1 minute" because lt1 is the first enum value, not because anything
+      // observed it — and a clinician reading the export had no way to tell.
+      duration:         null,
       feelings:         const [],
       triggers:         const [],
       referralRequired: false,

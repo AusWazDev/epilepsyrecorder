@@ -144,9 +144,6 @@ InboxDrainResult applyInbox(
   final drainableKeys = <String>[];
   final orphanEndIds = <String>[];
 
-  /// Ids an `end` was applied for. Pass 3 must not null those durations: the
-  /// event finished and the abandonment timeout simply lost the race.
-  final endedIds = <String>{};
   var changed = false;
 
   // ── PASS 1 — starts ──
@@ -169,7 +166,16 @@ InboxDrainResult applyInbox(
     byId[instruction.id] = EventRecord(
       id: instruction.id,
       timestamp: instruction.at,
-      duration: DurationCategory.lt1,
+      // NULL, not lt1. At the moment a start is drained the duration genuinely
+      // IS unknown — only the matching end knows it. `lt1` here was an
+      // invention, and every abandoned event inherited it: an event left for
+      // 37 minutes read "< 1 minute".
+      //
+      // This is the ONE producer for both platforms. iOS builds no record
+      // either — handleQuickLogStart posts a start fact and defers every
+      // default to this drain — so fixing it here fixes Android and iOS at
+      // once, and the abandonment timeout needs no involvement at all.
+      duration: null,
       feelings: const [],
       referralRequired: false,
       notes: '',
@@ -209,7 +215,6 @@ InboxDrainResult applyInbox(
     }
 
     drainableKeys.add(instruction.key);
-    endedIds.add(instruction.id);
 
     final bucket = bucketFromSeconds(instruction.seconds!);
     if (record.duration == bucket) continue; // replay, or already correct
@@ -228,48 +233,6 @@ InboxDrainResult applyInbox(
     changed = true;
   }
 
-  // ── PASS 3 — abandonment ──
-  // Runs AFTER ends so a real end always wins: if both an end and an abandon
-  // exist for one id, the event was finished and the timeout simply lost the
-  // race. Setting duration to null there would DESTROY a known duration.
-  for (final instruction in instructions.where((i) => i.isAbandon)) {
-    drainableKeys.add(instruction.key);
-
-    // A real end WINS. Without this the timeout destroys a known duration —
-    // the abandon is simply moot, so its key is still drained.
-    if (endedIds.contains(instruction.id)) continue;
-
-    final record = byId[instruction.id];
-    if (record == null) {
-      if (deferredIds.contains(instruction.id)) {
-        drainableKeys.remove(instruction.key);
-        deferredKeys.add(instruction.key);
-        deferReasons.add(InboxDefer.awaitingDeferredStart);
-        continue;
-      }
-      orphanEndIds.add(instruction.id);
-      continue;
-    }
-
-    if (record.duration == null) continue; // replay, or already unknown
-
-    byId[instruction.id] = EventRecord(
-      id: record.id,
-      timestamp: record.timestamp,
-      duration: null,
-      feelings: record.feelings,
-      referralRequired: record.referralRequired,
-      notes: record.notes,
-      eventType: record.eventType,
-      severity: record.severity,
-      triggers: record.triggers,
-    );
-    changed = true;
-  }
-
-  // Built AFTER every pass. It used to be constructed before pass 3, so the
-  // abandonment pass mutated byId and the change never reached the returned
-  // list — the drain reported success and the record kept its lt1.
   final merged = [for (final id in order) byId[id]!]
     ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 

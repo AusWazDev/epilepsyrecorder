@@ -228,8 +228,10 @@ void main() {
       final made = first.merged.single;
       expect(made.id, 'x');
       expect(made.timestamp, t0);
-      // Facts in, defaults here — exactly what _handleStart used to write.
-      expect(made.duration, DurationCategory.lt1);
+      // Facts in, defaults here. The duration default CHANGED in stage 1a:
+      // a start knows only that an event began, so lt1 was an invention that
+      // every abandoned event inherited. Only the matching end measures.
+      expect(made.duration, isNull);
       expect(made.eventType, EventType.seizure);
       expect(made.severity, EventSeverity.mild);
       expect(made.feelings, isEmpty);

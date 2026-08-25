@@ -126,70 +126,59 @@ void main() {
     });
   });
 
-  group('the abandonment timeout', () {
+  group('creation writes null — the ONE producer, both platforms', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 
-    test('9. an abandon instruction sets the duration to null', () async {
+    test('9. a notification START creates a record with NO duration', () async {
+      // iOS routes here too: handleQuickLogStart posts a start fact and builds
+      // no record, deferring every default to this drain. One fix, both
+      // platforms.
       final prefs = await SharedPreferences.getInstance();
-      await writeAbandonInstruction(prefs, id: 'ev', at: t0);
-
-      // The record as the notification start created it: lt1 by default.
-      final existing = [rec('ev', t0, duration: DurationCategory.lt1)];
-      final result = applyInbox(existing, readInboxEntries(prefs));
-
-      expect(result.merged.single.duration, isNull,
-          reason: 'the whole point: unknown, not "< 1 minute"');
-      expect(result.changed, isTrue);
-      expect(result.drainableKeys, hasLength(1));
-    });
-
-    test('10. a real END beats an abandon for the same id', () async {
-      // Both present: the event WAS finished and the timeout lost the race.
-      // Setting null here would destroy a known duration.
-      final prefs = await SharedPreferences.getInstance();
-      await writeEndInstruction(prefs,
-          id: 'ev', at: t0.add(const Duration(seconds: 200)), seconds: 200);
-      await writeAbandonInstruction(prefs, id: 'ev', at: t0);
-
-      final result = applyInbox(
-          [rec('ev', t0, duration: DurationCategory.lt1)],
-          readInboxEntries(prefs));
-
-      expect(result.merged.single.duration, DurationCategory.oneToFive,
-          reason: '200s is 1-5 minutes; the end must win');
-    });
-
-    test('11. a repeated abandon is idempotent', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await writeAbandonInstruction(prefs, id: 'ev', at: t0);
-      await writeAbandonInstruction(prefs, id: 'ev', at: t0);
-
-      final result =
-          applyInbox([rec('ev', t0, duration: DurationCategory.lt1)],
-              readInboxEntries(prefs));
-
-      expect(result.merged, hasLength(1));
-      expect(result.merged.single.duration, isNull);
-    });
-
-    test('12. an abandon for a record that does not exist is an orphan',
-        () async {
-      final prefs = await SharedPreferences.getInstance();
-      await writeAbandonInstruction(prefs, id: 'gone', at: t0);
+      await writeStartInstruction(prefs, id: 'ev', at: t0);
 
       final result = applyInbox(const <EventRecord>[], readInboxEntries(prefs));
 
-      expect(result.orphanEndIds, contains('gone'));
-      expect(result.merged, isEmpty, reason: 'never invent a record');
+      expect(result.merged.single.duration, isNull,
+          reason: 'at start the duration genuinely IS unknown');
     });
 
-    test('13. an OLDER build defers the abandon rather than misreading it',
+    test('10. NEGATIVE CONTROL: a start followed by an END gets a real bucket',
         () async {
-      // Forward compatibility, and the reason this is a new KIND rather than an
-      // `end` with seconds omitted: a build that does not know `abandon` leaves
-      // the key in place untouched.
+      // Without this, test 9 passes just as well if the drain never set a
+      // duration at all — which would break every normally-completed event.
+      final prefs = await SharedPreferences.getInstance();
+      await writeStartInstruction(prefs, id: 'ev', at: t0);
+      await writeEndInstruction(prefs,
+          id: 'ev', at: t0.add(const Duration(seconds: 200)), seconds: 200);
+
+      final result = applyInbox(const <EventRecord>[], readInboxEntries(prefs));
+
+      expect(result.merged.single.duration, DurationCategory.oneToFive,
+          reason: '200s is 1-5 minutes; a completed event still measures');
+    });
+
+    test('11. an ABANDONED event keeps null with no timeout involvement',
+        () async {
+      // The abandonment case, end to end: a start arrives, no end ever does.
+      // The timeout clears mer_active_event and never touches the record, so
+      // the record simply stays as created.
+      final prefs = await SharedPreferences.getInstance();
+      await writeStartInstruction(prefs, id: 'ev', at: t0);
+
+      final first = applyInbox(const <EventRecord>[], readInboxEntries(prefs));
+      // ... time passes, the timeout fires, the marker goes, nothing else ...
+      final later = applyInbox(first.merged, const <InboxEntry>[]);
+
+      expect(later.merged.single.duration, isNull,
+          reason: '37 minutes must not read as "< 1 minute"');
+    });
+
+    test('12. the drain no longer knows an abandon kind', () {
+      // The instruction built for this was removed: it solved at the timeout a
+      // problem that belongs at creation, reached Android only, and could null
+      // a duration the user had since filled in by hand.
       final entry = parseInboxEntry('${kInboxKeyPrefix}x',
-          jsonEncode({'v': 1, 'kind': 'abandon-from-the-future', 'id': 'ev'}));
+          jsonEncode({'v': 1, 'kind': 'abandon', 'id': 'ev'}));
 
       expect(entry.instruction, isNull);
       expect(entry.defer, InboxDefer.unknownKind);
@@ -200,7 +189,8 @@ void main() {
     test('14. the CSV cell is EXPLICIT, never blank', () {
       // A clinician reading a blank cannot tell "unknown" from "not recorded"
       // from a broken export.
-      expect(durationCsv(null), 'Unknown');
+      expect(durationCsv(null), 'unknown',
+          reason: 'a NEW value in a column that has only ever held three bucket strings');
       expect(durationCsv(DurationCategory.lt1), '< 1 minute');
     });
 

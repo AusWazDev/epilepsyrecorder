@@ -52,7 +52,7 @@ DurationCategory? durationFromName(Object? raw) {
 /// The CSV cell. EXPLICIT, never blank: a clinician reading a blank cannot tell
 /// "unknown" from "not recorded" from a broken export.
 String durationCsv(DurationCategory? c) =>
-    c == null ? 'Unknown' : durationLabel(c);
+    c == null ? 'unknown' : durationLabel(c);
 
 enum EventType { seizure, absence, medication, other }
 
