@@ -27,7 +27,7 @@ class AppInfo {
   static String get versionLabel => _loaded ? version : '…';
 
   /// Sentry release identifier, e.g.
-  /// `au.com.notiva.medicaleventrecorder@1.1.0+5`.
+  /// `au.com.notiva.medicaleventrecorder@1.1.0+6`.
   ///
   /// Format is package@version+build, unchanged from the string this replaced,
   /// so release history is not split across two naming conventions.
