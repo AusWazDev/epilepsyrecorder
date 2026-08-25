@@ -310,6 +310,41 @@ class NotificationService {
     }
   }
 
+  // ── KNOWN LIMITATION, AND WHY THERE IS NO FOREGROUND SERVICE ──────────────
+  //
+  // BOTH persistent notifications are dismissible, and cannot be made otherwise.
+  // Since Android 14 (API 34) FLAG_ONGOING_EVENT is advisory: only a running
+  // foreground service or a call-style notification resists user dismissal.
+  // `locked: true` is set on the standing state and DOES reach the notification
+  // (verified on device: flags=SHOW_LIGHTS|ONGOING_EVENT) — the system simply
+  // declines to act on it. It still pins on API <= 33, and minSdk is 24.
+  //
+  // CONSEQUENCE, recorded rather than described as solved: a user who dismisses
+  // the ACTIVE-EVENT notification cannot end that event from the lock screen
+  // until they unlock and open the app. Restoration on resume (below) shortens
+  // that window; it does not remove it. iOS has the matching limitation while
+  // the device is locked.
+  //
+  // A FOREGROUND SERVICE WOULD FIX THE ANDROID HALF. It was considered and
+  // REJECTED. Do not reach for it again without re-reading these three:
+  //
+  //   1. ONE ANSWER BEATS TWO. iOS has the identical defect and no foreground
+  //      service exists there, so this buys a fix for half the problem with
+  //      machinery that cannot be reused.
+  //   2. THE COST RECURS. A permission, a manifest declaration, a Play Console
+  //      justification defended at every review, a service lifecycle on the
+  //      capture path, and a system notice telling users the app runs in the
+  //      background — against an app whose pitch is that it does nothing behind
+  //      your back.
+  //   3. IT DOES NOT CLOSE THE HOLE. `shortService` caps at three minutes,
+  //      wrong for a long event. `health` covers it but asserts a clinical
+  //      purpose this app deliberately does not claim — the same overreach
+  //      corrected across the store copy and the website.
+  //
+  // Mechanically, this plugin could not express it honestly in any case: its
+  // ForegroundServiceType enum has no specialUse, health or shortService, and
+  // its own manifest hardcodes android:foregroundServiceType="phoneCall".
+  //
   // ── Notification builders ─────────────────────────────────────────────────
 
   Future<void> _showNormal() async {
