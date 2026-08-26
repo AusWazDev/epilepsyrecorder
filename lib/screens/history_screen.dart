@@ -437,10 +437,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   // same rule. If it ever moves, it moves into this section.
                   const _SheetSectionLabel('Show only'),
                   const SizedBox(height: 8),
-                  _NeedsDetailsChip(
-                    selected: _incompleteOnly,
-                    onToggle: () =>
-                        update(() => _incompleteOnly = !_incompleteOnly),
+                  // ⚠️ WRAPPED. A direct child of the ListView is stretched to
+                  // full width, and a full-width chip reads as a BUTTON — which
+                  // is exactly the toggle-versus-chip distinction the decision
+                  // turned on. Found on the tablet: it rendered as a bordered
+                  // bar spanning the sheet. A Wrap sizes it to its content, the
+                  // way every other chip row on this screen is sized, and takes
+                  // a second chip without changing shape.
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _NeedsDetailsChip(
+                        selected: _incompleteOnly,
+                        onToggle: () =>
+                            update(() => _incompleteOnly = !_incompleteOnly),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
 
