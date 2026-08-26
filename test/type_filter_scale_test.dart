@@ -69,10 +69,22 @@ void main() {
 
   /// Where the first event row starts, in logical pixels from the top of the
   /// list area. This is the number the question is really about.
+  /// ⚠️ ANCHORED ON THE DAY HEADER, NOT ON `ListTile`.
+  ///
+  /// The referral toggle is a `Card > SwitchListTile` — so it IS a ListTile,
+  /// and it sits ABOVE the list. `find.byType(ListTile).first` returned its
+  /// position, and every figure this file reported was the toggle's, not an
+  /// event's. The numbers were quoted in two design reads and drove a
+  /// recommendation that the filter row needed no restructuring. It did.
+  ///
+  /// The assertions still PASSED throughout, because the toggle's position
+  /// satisfies them. A check that runs, reports clean, and measures something
+  /// adjacent to the question.
   Future<double> firstRowTop(WidgetTester tester) async {
-    final rows = find.byType(ListTile);
-    expect(rows, findsWidgets, reason: 'the list must have rendered');
-    return tester.getTopLeft(rows.first).dy;
+    final header = find.textContaining('AUG 2026');
+    expect(header, findsWidgets,
+        reason: 'the day header is the first thing in the list proper');
+    return tester.getTopLeft(header.first).dy;
   }
 
   Future<void> pumpHistory(WidgetTester tester) async {
@@ -120,6 +132,50 @@ void main() {
             'filter with a list underneath rather than a list with a filter');
   });
 
+  testWidgets(
+      '2a. THE PROPERTY THE REDESIGN BOUGHT: the list start is INDEPENDENT of '
+      'the type count', (tester) async {
+    // The whole argument for moving the filters into a sheet. Before, the type
+    // chips were a Wrap on the screen and every added type pushed the list
+    // down without bound — 364px at four, 472px at fifteen, and on a phone
+    // 487px rising to 847px, which left ZERO events visible.
+    //
+    // Asserting EQUALITY rather than a bound is the point: a bound would still
+    // pass if growth resumed slowly.
+    tester.view.physicalSize = const Size(800, 1280);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pumpHistory(tester);
+    final atFour = await firstRowTop(tester);
+
+    Vocabularies.debugSet(eventTypes: fifteenTypes());
+    await pumpHistory(tester);
+    final atFifteen = await firstRowTop(tester);
+
+    expect(atFifteen, atFour,
+        reason: 'a sheet scrolls where a wrapping row could only grow');
+  });
+
+  testWidgets('2b. and the same holds on a PHONE, where it was 92%',
+      (tester) async {
+    // The worst case in the measurement, and the one that made the redesign
+    // unarguable: at fifteen types the filters filled 791px of 859px and no
+    // event row fitted at all.
+    tester.view.physicalSize = const Size(411, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    Vocabularies.debugSet(eventTypes: fifteenTypes());
+    await pumpHistory(tester);
+    final top = await firstRowTop(tester);
+    // ignore: avoid_print
+    print('  PHONE, fifteen types: first row at ${top.toStringAsFixed(0)}px');
+
+    expect(top, lessThan(200),
+        reason: 'was 847px of a 915px screen');
+  });
+
   testWidgets('3. every type is still REACHABLE, none clipped', (tester) async {
     tester.view.physicalSize = const Size(800, 1280);
     tester.view.devicePixelRatio = 1.0;
@@ -127,6 +183,11 @@ void main() {
 
     Vocabularies.debugSet(eventTypes: fifteenTypes());
     await pumpHistory(tester);
+    // The chips live in the FILTER SHEET now. That is the change this file's
+    // measurement argued for: a sheet SCROLLS where a wrapping row could only
+    // grow, so fifteen types no longer push the list off the screen.
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
 
     // A Wrap does not clip — it grows. So the failure mode at fifteen is not a
     // hidden chip, it is a filter that eats the screen. Both are asserted so
@@ -144,6 +205,8 @@ void main() {
 
     Vocabularies.debugSet(eventTypes: fifteenTypes());
     await pumpHistory(tester);
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
 
     final other = tester.getTopLeft(find.text('Other / custom').first);
     for (final label in kFifteen.where((l) => l != 'Other / custom')) {

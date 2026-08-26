@@ -32,6 +32,42 @@ class HistoryScreen extends StatefulWidget {
 /// Presets rather than a picker: the clinical case this exists for is "the last
 /// three months, for my appointment", and a preset answers that in one tap
 /// where a picker takes four. See the report for why no custom range was added.
+/// The filters this screen has, ENUMERATED.
+///
+/// ⚠️ **THE HAZARD THIS EXISTS TO CLOSE.** The filters used to live on the
+/// screen, so a user could see one was on. They now live in a sheet, and the
+/// only thing telling them is a badge and a line — both computed from
+/// [_HistoryScreenState.activeFilters]. If a filter is ever added to the
+/// PREDICATE and forgotten HERE, the screen shows a partial history while
+/// claiming to be complete, and the export sheet says "Export all 74 events"
+/// while exporting twelve. That is a partial clinical record sent to an
+/// appointment.
+///
+/// The old `_isNarrowed` was four `||`s that someone had to remember to
+/// extend. This is an enum, so `FilterKind.values` is a list a TEST can walk —
+/// adding a case without wiring it fails, rather than shipping quietly.
+///
+/// NOT private, so the test can enumerate it. Nothing else in the app uses it.
+enum FilterKind {
+  search,
+  eventType,
+  referral,
+  dateRange,
+}
+
+/// What each reads as on the applied-filters line. Short, because several
+/// appear at once.
+extension FilterKindLabel on FilterKind {
+  String get lineLabel {
+    switch (this) {
+      case FilterKind.search:    return 'search';
+      case FilterKind.eventType: return 'type';
+      case FilterKind.referral:  return 'referral';
+      case FilterKind.dateRange: return 'date';
+    }
+  }
+}
+
 enum _DateRange { all, days30, months3, months12 }
 
 extension _DateRangeLabel on _DateRange {
@@ -177,11 +213,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// count comparison would call an active filter "not narrowed" whenever it
   /// happened to exclude nothing, which is the same class of accidentally-true
   /// label this replaces.
-  bool get _isNarrowed =>
-      _searchText.trim().isNotEmpty ||
-      _referralOnly ||
-      _selectedTypes.isNotEmpty ||
-      _dateRange != _DateRange.all;
+  /// EVERY filter currently narrowing the list.
+  ///
+  /// ONE source for three consumers — the AppBar badge, the applied-filters
+  /// line, and the export scope statement. They cannot disagree, because there
+  /// is nothing for them to disagree about.
+  ///
+  /// A `switch` over [FilterKind] rather than a set of `||`s, and deliberately
+  /// with NO `default` arm: adding a case to the enum fails to compile here
+  /// until it is handled. That is the same compile-error-as-feature the
+  /// nullable severity work relied on.
+  Set<FilterKind> get activeFilters {
+    final out = <FilterKind>{};
+    for (final k in FilterKind.values) {
+      final active = switch (k) {
+        FilterKind.search => _searchText.trim().isNotEmpty,
+        FilterKind.eventType => _selectedTypes.isNotEmpty,
+        FilterKind.referral => _referralOnly,
+        FilterKind.dateRange => _dateRange != _DateRange.all,
+      };
+      if (active) out.add(k);
+    }
+    return out;
+  }
+
+  bool get _isNarrowed => activeFilters.isNotEmpty;
 
   /// Sheet header. States what is actually being exported, and distinguishes a
   /// narrowed export from the whole set.
@@ -234,6 +290,146 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   /// Removes every active filter in one action.
+  /// Every filter, in one scrolling sheet.
+  ///
+  /// ## Why a sheet and not a screen
+  ///
+  /// The filtered list stays visible behind it, which is what the user is
+  /// judging — did that do what I meant. A full screen hides the answer.
+  ///
+  /// ## Immediate application, and what happens to the count
+  ///
+  /// No confirm: the list churning behind you is FEEDBACK, and with a count
+  /// visible it is the fastest way to see a filter did nothing. A confirm step
+  /// would add a tap to the common case (one filter) to help the rare one, and
+  /// would create a "set but not applied" state — a second place to forget
+  /// something is on, on a screen whose whole hazard is forgetting.
+  ///
+  /// ⚠️ **The count updates LIVE, and that is only safe because the banner is
+  /// above the sheet.** A sheet at 0.75 of the height leaves the AppBar and the
+  /// banner visible, so "12 of 74" changes where the user can see it change. A
+  /// count that moved behind an opaque sheet and settled on close would be
+  /// worse than one that never moved — the user would return to a number they
+  /// did not watch arrive.
+  ///
+  /// ## Windows
+  ///
+  /// The same sheet, no special case. It renders at 560px because the
+  /// constraint is a FRACTION of the height, not a fixed size, and the app's
+  /// existing sheets already work there. Fine beats optimal when optimal costs
+  /// a fork.
+  void _openFilterSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: MERColours.background,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          // StatefulBuilder so the sheet redraws its own controls, and
+          // setState on the SCREEN so the list and the banner redraw too.
+          // Both are needed: the sheet owns no state of its own.
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              void update(VoidCallback fn) {
+                setState(fn);
+                setSheetState(() {});
+              }
+
+              return ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text('Filters',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w600)),
+                      ),
+                      if (_isNarrowed)
+                        TextButton.icon(
+                          onPressed: () => update(() {
+                            _searchText = '';
+                            _searchController.clear();
+                            _referralOnly = false;
+                            _selectedTypes.clear();
+                            _dateRange = _DateRange.all;
+                          }),
+                          icon: const Icon(Icons.filter_alt_off_outlined,
+                              size: 16),
+                          label: const Text('Clear all'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── SEARCH ── first, because it is the one that narrows the
+                  // export most easily without being noticed.
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      hintText: 'Search notes, feelings, severity, triggers…',
+                      suffixIcon: _searchText.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () => update(() {
+                                _searchText = '';
+                                _searchController.clear();
+                              }),
+                            )
+                          : null,
+                    ),
+                    onChanged: (v) => update(() => _searchText = v),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── EVENT TYPE ── UNBOUNDED by design: user-defined types
+                  // are coming. It is placed after search and before the two
+                  // short controls so that a long vocabulary pushes only ITSELF
+                  // down — the sheet scrolls, and referral and date stay
+                  // reachable by scrolling rather than being unreachable.
+                  const _SheetSectionLabel('Event type'),
+                  const SizedBox(height: 8),
+                  _EventTypeFilterChips(
+                    selected: _selectedTypes,
+                    onToggle: (type) => update(() =>
+                        _selectedTypes.contains(type)
+                            ? _selectedTypes.remove(type)
+                            : _selectedTypes.add(type)),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const _SheetSectionLabel('Date range'),
+                  const SizedBox(height: 8),
+                  _DateRangeFilterChips(
+                    selected: _dateRange,
+                    onSelect: (r) => update(() => _dateRange = r),
+                  ),
+                  const SizedBox(height: 20),
+
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _referralOnly,
+                    title: const Text('Referral required only'),
+                    subtitle: const Text(
+                        'Show only events that required medical referral'),
+                    onChanged: (v) => update(() => _referralOnly = v),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
   void _clearFilters() {
     setState(() {
       _searchText = '';
@@ -330,6 +526,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ],
         ),
         actions: [
+          // ── FILTERS ──
+          // The badge is the SUMMARY; the banner below the AppBar is the
+          // detail. Placed before Export deliberately: the order of the two
+          // actions is the order of the decision — narrow, then send.
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                tooltip: 'Filters',
+                icon: const Icon(Icons.filter_list),
+                onPressed: _openFilterSheet,
+              ),
+              if (activeFilters.isNotEmpty)
+                Positioned(
+                  right: 6,
+                  top: 8,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: MERColours.alert,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints:
+                          const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        '${activeFilters.length}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             tooltip:  'Export CSV',
             icon:     const Icon(Icons.ios_share),
@@ -361,102 +597,54 @@ class _HistoryScreenState extends State<HistoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ── SEARCH ──
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchText.isNotEmpty
-                    ? IconButton(
-                        tooltip: 'Clear search',
-                        icon:    const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          setState(() {
-                            _searchText = '';
-                            _searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-                hintText: 'Search notes, feelings, severity, triggers…',
+            // ⚠️ THE APPLIED-FILTERS BANNER. Safety work, not decoration.
+            //
+            // Hiding the controls in a sheet makes this screen better and makes the
+            // FORGOTTEN-FILTER failure worse: someone who does not notice a filter is
+            // on exports a partial history for an appointment and sends an incomplete
+            // clinical record. This banner is what prevents that.
+            //
+            // Deliberately loud. It uses the ALERT colour, states the count in the
+            // same breath as the filters, and carries its own Clear action. It is
+            // ABSENT when nothing is active, so its PRESENCE is the signal — a
+            // permanent strip that usually reads "no filters" is chrome, and chrome
+            // is what gets skimmed.
+            //
+            // It sits ABOVE the list and BELOW the AppBar, the one band a bottom
+            // sheet does not cover — so it stays readable while filters are being
+            // changed. See _openFilterSheet.
+            if (_isNarrowed) ...[
+              _AppliedFiltersBanner(
+                active: activeFilters,
+                shown: shown.length,
+                total: _records.length,
+                onClear: _clearFilters,
               ),
-              onChanged: (v) => setState(() => _searchText = v),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
+            ],
 
-            // ── EVENT TYPE CHIPS ──
-            _EventTypeFilterChips(
-              selected: _selectedTypes,
-              onToggle: (type) {
-                setState(() {
-                  _selectedTypes.contains(type)
-                      ? _selectedTypes.remove(type)
-                      : _selectedTypes.add(type);
-                });
-              },
-            ),
-            const SizedBox(height: 8),
-
-            // ── REFERRAL TOGGLE ──
-            Card(
-              child: SwitchListTile(
-                dense: true,
-                title: Text(
-                  'Referral required only',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+            // ── RESULTS COUNT ──
+            // The QUIET count, and ONLY when nothing is filtered: "8 events".
+            //
+            // When a filter IS on, the banner above states the count in the same
+            // sentence as the reason. Repeating it here would put the number twice on
+            // one screen — once loud with its cause, once muted without it — and the
+            // muted one is what a skimming eye lands on. That is exactly the reading
+            // this redesign exists to prevent.
+            //
+            // "Clear filters" moved into the banner and the sheet, both of which only
+            // exist when there is something to clear.
+            if (!_isNarrowed)
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 6),
+                child: Text(
+                  shown.isEmpty
+                      ? 'No events yet'
+                      : '${shown.length} '
+                        '${shown.length == 1 ? "event" : "events"}',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                subtitle: const Text(
-                  'Show only events that required medical referral',
-                ),
-                value:     _referralOnly,
-                onChanged: (v) => setState(() => _referralOnly = v),
               ),
-            ),
-            const SizedBox(height: 8),
-
-            // ── DATE RANGE ──
-            _DateRangeFilterChips(
-              selected: _dateRange,
-              onSelect: (r) => setState(() => _dateRange = r),
-            ),
-            const SizedBox(height: 8),
-
-            // ── RESULTS COUNT + CLEAR ──
-            // The count states the scope the same way the export header does,
-            // so what the screen says and what the export says cannot drift.
-            // "Clear filters" appears only while something is active: a filter
-            // the user cannot tell is on is worse than no filter at all.
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      shown.isEmpty
-                          ? 'No events match'
-                          : _isNarrowed
-                              ? '${shown.length} of ${_records.length} '
-                                '${_records.length == 1 ? "event" : "events"}'
-                              : '${shown.length} '
-                                '${shown.length == 1 ? "event" : "events"}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  if (_isNarrowed)
-                    TextButton.icon(
-                      onPressed: _clearFilters,
-                      icon: const Icon(Icons.filter_alt_off_outlined, size: 16),
-                      label: const Text('Clear filters'),
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                ],
-              ),
-            ),
 
             // ── LIST ──
             Expanded(
@@ -517,6 +705,111 @@ class _HistoryScreenState extends State<HistoryScreen> {
 /* ===========================
    EVENT TYPE FILTER CHIPS
    =========================== */
+
+/// ⚠️ **THE SAFETY CONTROL OF THIS REDESIGN.**
+///
+/// The filters moved into a sheet, which reclaims the screen and creates one
+/// hazard: a user who does not know a filter is on reads a partial history as
+/// their whole history, and exports it for an appointment.
+///
+/// Everything about this widget is chosen to make that hard:
+///
+///   * **ALERT colour, not muted.** The rest of the app uses this colour for
+///     the seizure badge and destructive actions. Here it is doing the same
+///     job — saying "this is not the whole picture".
+///   * **It NAMES the filters**, so a user knows what to clear rather than
+///     only that something is set.
+///   * **The count is in the same sentence**, so "12 of 74" is read together
+///     with the reason rather than in a separate muted line.
+///   * **It is ABSENT when nothing is active.** A permanent strip reading "no
+///     filters" is chrome, and chrome is skimmed. Presence is the signal.
+///   * **Clear is inside it**, reachable without opening the sheet the user
+///     has forgotten about.
+/// A section heading inside the filter sheet. Its own widget so the four
+/// sections cannot drift apart the way the four filter CONTROLS did — chips,
+/// a Card, more chips and a bare TextField, no two sharing an implementation.
+class _SheetSectionLabel extends StatelessWidget {
+  const _SheetSectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text.toUpperCase(),
+        style: Theme.of(context).textTheme.labelLarge,
+      );
+}
+
+class _AppliedFiltersBanner extends StatelessWidget {
+  const _AppliedFiltersBanner({
+    required this.active,
+    required this.shown,
+    required this.total,
+    required this.onClear,
+  });
+
+  final Set<FilterKind> active;
+  final int shown;
+  final int total;
+  final VoidCallback onClear;
+
+  /// "Filtered by search" / "Filtered by search and type" / "…, type and date".
+  ///
+  /// Enumerated from [FilterKind.values] rather than from `active` so the
+  /// order is stable — a line whose words reorder as filters toggle is harder
+  /// to read at a glance than one that always reads the same way.
+  String get _reason {
+    final names = <String>[
+      for (final k in FilterKind.values)
+        if (active.contains(k)) k.lineLabel,
+    ];
+    if (names.length == 1) return names.single;
+    return '${names.take(names.length - 1).join(', ')} and ${names.last}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+        decoration: BoxDecoration(
+          color: MERColours.alert.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: MERColours.alert, width: 1),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.filter_alt, size: 18, color: MERColours.alert),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                // ONE sentence. The count and the cause are read together, so
+                // "showing 12 of 74" can never be seen without "filtered by".
+                'Showing $shown of $total — filtered by $_reason',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: MERColours.alert,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onClear,
+              style: TextButton.styleFrom(
+                foregroundColor: MERColours.alert,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: const Text('Clear'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _EventTypeFilterChips extends StatelessWidget {
   final Set<String> selected;

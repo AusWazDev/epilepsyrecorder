@@ -63,8 +63,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Types into the search box, which now lives in the FILTER SHEET rather
+  /// than on the screen. The sheet is dismissed afterwards so the assertions
+  /// read the banner and the list rather than the sheet covering them.
   Future<void> search(WidgetTester tester, String q) async {
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, q);
+    await tester.pumpAndSettle();
+    // Dismiss by the system back gesture — tapping the scrim is position-
+    // dependent and would break on a different screen size.
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
     await tester.pumpAndSettle();
   }
 
@@ -77,6 +86,7 @@ void main() {
 
     await search(tester, 'tired');
 
+    // The banner: "Showing 2 of 2 — filtered by search".
     expect(find.textContaining('2 of 2'), findsOneWidget,
         reason: 'both the legacy record and the revised one must match — the '
             'revision changed what is OFFERED, not what is FINDABLE');
@@ -94,7 +104,10 @@ void main() {
 
     // findsWidgets, not findsOneWidget: the phrase appears twice — the count
     // line and the empty-state body. Two is the correct answer here.
+    // "No events match" is the empty-state body; the banner reads
+    // "Showing 0 of 1". Both are correct and both are asserted.
     expect(find.textContaining('No events match'), findsWidgets);
+    expect(find.textContaining('0 of 1'), findsOneWidget);
   });
 
   testWidgets(
