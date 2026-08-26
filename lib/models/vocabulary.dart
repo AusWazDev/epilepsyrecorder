@@ -375,15 +375,24 @@ List<VocabularySeed> mangledLegacyObservations() {
   return out;
 }
 
-/// Creates and seeds both vocabularies.
+/// Applies every seed list. Idempotent on `value`, and MUST RUN ON EVERY OPEN.
 ///
-/// Legacy observations are seeded at a HIGH sort base so that if one is ever
-/// re-activated it appears after the revised set rather than in the middle of
-/// it.
-Future<void> createAndSeedVocabularies(DatabaseExecutor db) async {
-  for (final t in kVocabularyTables) {
-    await db.execute(createVocabularySql(t));
-  }
+/// ⚠️ **THIS IS SEPARATE FROM CREATION FOR A REASON THAT COST A BUILD.** The
+/// first version put the seeds inside the v2 -> v3 upgrade branch and noted in
+/// a comment that they were "safe to re-run when a later version adds a seed".
+/// They were safe to re-run and NOTHING RE-RAN THEM. The mis-decoded twins were
+/// added a build later, the tablet's database was already at v3, so `from < 3`
+/// was false and the new seeds never reached the device — the records they
+/// exist to resolve still rendered as mojibake, and it took a device check to
+/// notice, because every test opened a FRESH database where onCreate seeded
+/// everything.
+///
+/// A seed list that grows needs a seed pass that runs. Two SELECTs on open.
+///
+/// Legacy observations sort at a HIGH base so that if one is ever re-activated
+/// it appears after the revised set rather than in the middle of it; the
+/// mis-decoded twins sort higher still.
+Future<void> ensureSeeded(DatabaseExecutor db) async {
   await seedVocabulary(db, kEventTypeTable, kSeedEventTypes);
   await seedVocabulary(db, kObservationTable, kSeedObservations);
   await seedVocabulary(db, kObservationTable, kLegacyObservations,
@@ -392,6 +401,14 @@ Future<void> createAndSeedVocabularies(DatabaseExecutor db) async {
   // like the originals — see [latin1Mangled].
   await seedVocabulary(db, kObservationTable, mangledLegacyObservations(),
       sortBase: 2000);
+}
+
+/// Creates both tables and seeds them.
+Future<void> createAndSeedVocabularies(DatabaseExecutor db) async {
+  for (final t in kVocabularyTables) {
+    await db.execute(createVocabularySql(t));
+  }
+  await ensureSeeded(db);
 }
 
 // ── QUERIES AND MUTATIONS ────────────────────────────────────────────────────

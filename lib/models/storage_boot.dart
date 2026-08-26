@@ -11,6 +11,7 @@ import '../constants.dart';
 import 'event_record.dart';
 import 'event_store_sqlite.dart';
 import 'storage_migration.dart';
+import 'vocabulary.dart';
 import 'vocabulary_store.dart';
 
 /// Selects the store for this launch, and runs the one-shot migration.
@@ -83,6 +84,18 @@ class StorageBoot {
         ),
       );
       _db = db;
+
+      // Seeded on EVERY open, not only on create or upgrade. The seed lists
+      // grow between releases, and a database already at the current schema
+      // version runs no upgrade branch — so seeds added later would never
+      // reach an existing install. Idempotent on `value`; two SELECTs.
+      // See `ensureSeeded` for the build this cost.
+      try {
+        await ensureSeeded(db);
+      } catch (_) {
+        // A seed that fails must not stop the app booting. The vocabulary
+        // falls back to the shipped lists below.
+      }
 
       // Loaded BEFORE the migration and before any render. Failure leaves
       // the shipped seeds in place, so a launch that cannot read the

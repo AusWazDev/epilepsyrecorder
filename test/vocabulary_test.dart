@@ -575,6 +575,117 @@ void main() {
     });
   });
 
+  group('SEEDS REACH A DATABASE THAT IS ALREADY CURRENT', () {
+    // THE DEFECT THIS EXISTS FOR, and it shipped to the device before it was
+    // caught. The seeds first lived inside the v2 -> v3 upgrade branch. A
+    // database ALREADY at v3 runs no upgrade branch, so a seed added in a later
+    // build never reached it — and every test passed, because every test opened
+    // a FRESH database where onCreate seeded everything.
+    //
+    // The fixture therefore has to be a database at the CURRENT version that
+    // is MISSING a seed. Anything else cannot fail.
+
+    test('30. a v3 database missing a seed gains it on the next open',
+        () async {
+      final path = nextPath();
+
+      // Open at the current version, then DELETE a seeded row to simulate a
+      // database created before that seed existed.
+      final first = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: kSqliteSchemaVersion,
+          onCreate: (db, _) => createSchema(db),
+          onUpgrade: upgradeSchema,
+        ),
+      );
+      await first.delete(kObservationTable,
+          where: 'value = ?', whereArgs: <Object?>['\u00F0\u009F\u0098\u00B5 Confused']);
+      // PRECONDITION, asserted rather than assumed.
+      expect(
+          (await loadVocabulary(first, kObservationTable))
+              .map((e) => e.value),
+          isNot(contains('\u00F0\u009F\u0098\u00B5 Confused')));
+      await first.close();
+
+      // Reopen at the SAME version. No onCreate, no onUpgrade.
+      final second = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: kSqliteSchemaVersion,
+          onCreate: (db, _) => createSchema(db),
+          onUpgrade: upgradeSchema,
+        ),
+      );
+      await ensureSeeded(second);
+
+      expect(
+          (await loadVocabulary(second, kObservationTable))
+              .map((e) => e.value),
+          contains('\u00F0\u009F\u0098\u00B5 Confused'),
+          reason: 'a seed list that grows needs a seed pass that RUNS');
+      await second.close();
+    });
+
+    test('31. NEGATIVE CONTROL: the upgrade branch alone would NOT have',
+        () async {
+      // Shows the difference is real and not an artefact of the fixture: run
+      // the upgrade function directly at from == to == current, which is what
+      // sqflite does on a reopen, and the missing seed stays missing.
+      final path = nextPath();
+      final first = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: kSqliteSchemaVersion,
+          onCreate: (db, _) => createSchema(db),
+        ),
+      );
+      await first.delete(kObservationTable,
+          where: 'value = ?', whereArgs: <Object?>['\u00F0\u009F\u0098\u00B5 Confused']);
+
+      await upgradeSchema(first, kSqliteSchemaVersion, kSqliteSchemaVersion);
+
+      expect(
+          (await loadVocabulary(first, kObservationTable))
+              .map((e) => e.value),
+          isNot(contains('\u00F0\u009F\u0098\u00B5 Confused')),
+          reason: 'this is exactly what happened on the tablet');
+      await first.close();
+    });
+
+    test('32. re-seeding twice adds nothing and changes nothing', () async {
+      final db = await openFresh();
+      final before = await loadVocabulary(db, kObservationTable);
+
+      await ensureSeeded(db);
+      await ensureSeeded(db);
+
+      final after = await loadVocabulary(db, kObservationTable);
+      expect(after.length, before.length, reason: 'idempotent on value');
+      expect(after.map((e) => e.value).toList(),
+          before.map((e) => e.value).toList());
+      await db.close();
+    });
+
+    test('33. re-seeding does NOT revive an entry the user hid', () async {
+      // The seed must not undo a decision. `seedVocabulary` skips any value
+      // that is already present, whatever its is_active.
+      final db = await openFresh();
+      final absence = (await loadVocabulary(db, kEventTypeTable))
+          .firstWhere((e) => e.value == kTypeAbsence);
+      await setActive(db, kEventTypeTable, absence, false);
+
+      await ensureSeeded(db);
+
+      final again = (await loadVocabulary(db, kEventTypeTable))
+          .firstWhere((e) => e.value == kTypeAbsence);
+      expect(again.isActive, isFalse,
+          reason: 'a seed pass that revived hidden entries would silently '
+              'reverse the user every launch');
+      await db.close();
+    });
+  });
+
   group('THE CSV', () {
     test('23. a user-defined observation reaches the export', () async {
       // The reason the one-hot columns had to go. Under the old shape this
