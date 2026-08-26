@@ -376,6 +376,45 @@ void main() {
       expect(find.textContaining('Export all 3'), findsOneWidget);
     });
 
+    testWidgets('12a. the NOUN agrees with the total, not the shown count',
+        (tester) async {
+      // "Export 1 of 3 event" - the singular landed beside the plural number,
+      // because the noun was computed from `shown` while both strings place it
+      // after `total`.
+      //
+      // ⚠️ THE DISCRIMINATING CASE, chosen deliberately: shown == 1 while
+      // total > 1 is the ONLY state where the two rules disagree. A test taken
+      // at any other count passes against both and would have shipped the
+      // defect. It is also not a rare state - the "Needs details" queue ENDS at
+      // one as it is worked down, so the last export before it empties is the
+      // broken reading.
+      await pump(tester);
+      await apply(tester, FilterKind.search);
+
+      await tester.tap(find.byTooltip('Export CSV'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Export 1 of 3 events'), findsOneWidget);
+      expect(find.text('Export 1 of 3 event'), findsNothing,
+          reason: 'what agreeing with `shown` produced');
+    });
+
+    testWidgets('12b. POSITIVE CONTROL: the singular is still reachable',
+        (tester) async {
+      // 12a passes just as well against "always plural", which would be a
+      // different defect wearing the same result. One record, unfiltered: the
+      // noun must go back to the singular.
+      await pump(tester, <EventRecord>[
+        rec('solo', now.subtract(const Duration(days: 1)), type: 'seizure'),
+      ]);
+
+      await tester.tap(find.byTooltip('Export CSV'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Export all 1 event'), findsOneWidget);
+      expect(find.textContaining('1 events'), findsNothing);
+    });
+
     testWidgets('13. and the FILENAME agrees with it', (tester) async {
       // Tests 11 and 12 pin what the sheet SAYS. Nobody reads the sheet again
       // afterwards — the file outlives it, and once it is attached to an email

@@ -277,10 +277,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   /// Sheet header. States what is actually being exported, and distinguishes a
   /// narrowed export from the whole set.
+  ///
+  /// ⚠️ THE NOUN AGREES WITH `total`, NOT `shown`. Both strings place it
+  /// immediately after `total`, so it is the head of the "of N" phrase and
+  /// agrees with that number: "Export 1 of 71 events". Agreeing with `shown`
+  /// put a singular noun next to a plural number — "Export 1 of 71 event" —
+  /// which is why this reads as a one-word change rather than a restructure.
+  ///
+  /// Reachable whenever exactly one record shows out of many, which the "Needs
+  /// details" queue makes ordinary rather than rare: working the queue down
+  /// ENDS at one, so the last export before it empties is the broken reading.
   String _exportSheetTitle() {
     final shown = _filteredRecords.length;
     final total = _records.length;
-    final noun  = shown == 1 ? 'event' : 'events';
+    final noun  = total == 1 ? 'event' : 'events';
     return _isNarrowed
         ? 'Export $shown of $total $noun'
         : 'Export all $total $noun';
