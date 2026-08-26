@@ -80,6 +80,20 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// The badge's text, or null when there is no badge.
+  ///
+  /// Scoped to the AppBar: a bare `find.text('1')` would also match a row's
+  /// content. The badge is a SIBLING of the IconButton inside a Stack, not a
+  /// descendant of it, so the tooltip cannot be the anchor.
+  String? badge() {
+    final f = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.textContaining(RegExp(r'^\d+$')),
+    );
+    if (f.evaluate().isEmpty) return null;
+    return (f.evaluate().first.widget as Text).data;
+  }
+
   /// Scoped to the sheet. "Seizure / fit" also appears as a BADGE on every
   /// matching row behind it, so an unscoped `find.text` matches three widgets
   /// and taps the wrong one. Scoping to the BottomSheet is what makes the tap
@@ -122,6 +136,20 @@ void main() {
         expect(find.textContaining(kind.lineLabel), findsWidgets,
             reason: 'and the banner must NAME it, so the user knows what to '
                 'clear rather than only that something is set');
+
+        // ⚠️ AND THE BADGE, for the SAME kind, in the same test.
+        //
+        // Two consumers of `activeFilters`, and the badge is the one a user
+        // looks at FIRST — it is beside the export button they are about to
+        // press. A filter counted by the banner but not the badge would leave
+        // the AppBar reading "nothing is filtered" at the exact moment someone
+        // exports a partial file.
+        //
+        // SEARCH is the case that makes this necessary rather than tidy: it is
+        // the filter most easily left on by accident, and the one whose
+        // inclusion in a "filter count" is most arguable. It is included.
+        expect(badge(), '1',
+            reason: 'the badge must count ${kind.name} too — one filter is on');
       });
     }
 
@@ -151,8 +179,26 @@ void main() {
       expect(find.text('1'), findsOneWidget);
 
       await apply(tester, FilterKind.dateRange);
-      expect(find.text('2'), findsOneWidget,
+      expect(badge(), '2',
           reason: 'two filters, whatever the record count');
+
+      // Three, INCLUDING SEARCH. The badge is what a user reads beside the
+      // export button, so search being absent from it would be a hole at the
+      // place they look first.
+      await apply(tester, FilterKind.search);
+      expect(badge(), '3');
+    });
+
+    testWidgets('4a. SEARCH ALONE raises the badge, not just the banner',
+        (tester) async {
+      await pump(tester);
+      expect(badge(), isNull, reason: 'precondition');
+
+      await apply(tester, FilterKind.search);
+
+      expect(badge(), '1',
+          reason: 'a leftover word in a search box narrows the EXPORT, so the '
+              'AppBar must not read as unfiltered');
     });
   });
 
@@ -244,6 +290,41 @@ void main() {
       expect(FilterKind.values.length, 4,
           reason: 'adding a fifth must fail the loop in group 1 until it is '
               'wired, rather than shipping a silent filter');
+    });
+
+    testWidgets(
+        '10a. THE SAME OMISSION AT THE BADGE — the place a user looks FIRST',
+        (tester) async {
+      // The line's control asks what a calculation missing a filter would
+      // CONCLUDE. This one asks what it would COUNT, because the badge is a
+      // different consumer with a different failure: the banner going quiet
+      // hides the reason, the badge going quiet hides that there is one at all
+      // — and the badge sits beside the export button.
+      //
+      // SEARCH is the subject deliberately. It is the filter most easily left
+      // on by accident and the one whose membership in a "filter count" is
+      // most arguable, so it is the one an implementer would be most tempted
+      // to leave out.
+      await pump(tester);
+      await apply(tester, FilterKind.search);
+
+      expect(badge(), '1', reason: 'the real count includes search');
+      expect(find.textContaining('Showing 1 of 3'), findsOneWidget,
+          reason: 'and the list IS narrowed — one of three records');
+
+      final state = tester.state(find.byType(HistoryScreen)) as dynamic;
+      final active = state.activeFilters as Set<FilterKind>;
+
+      // The counterfactual: the count a version that excluded search would
+      // render. Zero is not "no badge with a zero in it" — the badge is hidden
+      // when the count is zero, so the AppBar would read exactly as it does
+      // with nothing filtered.
+      final omitted = active.difference(<FilterKind>{FilterKind.search}).length;
+      expect(omitted, 0,
+          reason: 'a badge computed without search would show NOTHING beside '
+              'the export button while a filtered set is what gets exported. '
+              'That is the hazard §2 exists to prevent, at the place a user '
+              'looks first');
     });
   });
 

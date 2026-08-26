@@ -312,12 +312,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// worse than one that never moved — the user would return to a number they
   /// did not watch arrive.
   ///
-  /// ## Windows
+  /// ## Windows — A KNOWN COSMETIC COMPROMISE, CHOSEN RATHER THAN OVERLOOKED
   ///
-  /// The same sheet, no special case. It renders at 560px because the
-  /// constraint is a FRACTION of the height, not a fixed size, and the app's
-  /// existing sheets already work there. Fine beats optimal when optimal costs
-  /// a fork.
+  /// The same sheet, no special case, and it is **visually odd on a desktop**:
+  /// a 560px-wide bottom sheet inside a 1550px window is a phone idiom in the
+  /// wrong place. It is FUNCTIONALLY FINE — measured at 560x700, the sheet
+  /// occupies 537px, every section is present, referral is reachable by
+  /// scroll, and nothing overflows.
+  ///
+  /// ⚠️ **DO NOT "FIX" THIS WITH A DIALOG VARIANT WITHOUT REOPENING THE
+  /// DECISION.** A desktop variant is the second code path that "no fork"
+  /// exists to avoid: its own layout, its own tests, and its own behaviour to
+  /// keep in step with this one every time a filter is added. The cost is
+  /// permanent and recurring; the benefit is that a sheet looks less strange
+  /// on a platform with no notification path, where History is already the
+  /// larger part of what the app does.
+  ///
+  /// Fine beats optimal when optimal costs a fork. The oddity is the price and
+  /// it was paid deliberately.
   void _openFilterSheet() {
     showModalBottomSheet<void>(
       context: context,
