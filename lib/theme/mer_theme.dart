@@ -137,10 +137,27 @@ class MERTheme {
 chipTheme: ChipThemeData(
       backgroundColor: MERColours.surface,
       selectedColor:   MERColours.primary,
-      labelStyle: const TextStyle(
+      // ⚠️ THE COLOUR RESOLVES PER STATE, and it has to.
+      //
+      // `secondaryLabelStyle` is used by ChoiceChip and InputChip when
+      // selected — but NOT by FilterChip, which uses `labelStyle` in every
+      // state. So a selected FilterChip took `textPrimary` (dark) on
+      // `selectedColor` (dark navy) and its label was INVISIBLE: the chip
+      // rendered as a blank navy pill with a tick.
+      //
+      // Found on the tablet the moment a multi-select chip was first selected
+      // in the wizard, which is the first time this app ever selected a
+      // FilterChip. Every earlier selected chip was a ChoiceChip, which the
+      // secondary style covers, so the defect had never been reachable.
+      labelStyle: TextStyle(
         fontSize: 13,
-        color:    MERColours.textPrimary,
+        color: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.white
+              : MERColours.textPrimary,
+        ),
       ),
+      // Kept for ChoiceChip and InputChip, which do use it.
       secondaryLabelStyle: const TextStyle(
         fontSize:   13,
         fontWeight: FontWeight.w600,
