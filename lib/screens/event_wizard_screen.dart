@@ -229,7 +229,37 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   }
 
   /// Every exit path returns the draft, so abandoning saves what exists.
+  /// Whether anything at all has been supplied on this visit.
+  ///
+  /// Only consulted for a NEW record. For an existing one `_draft` is non-null
+  /// from `initState`, so there is always something to update.
+  bool get _hasAnyInput =>
+      _enteredSeconds != null ||
+      _eventType != null ||
+      _severity != null ||
+      _feelings.isNotEmpty ||
+      _triggers.isNotEmpty ||
+      _referral ||
+      _notesController.text.trim().isNotEmpty;
+
   Future<bool> _onWillPop() async {
+    // ⚠️ CAPTURE THE CURRENT STEP BEFORE LEAVING.
+    //
+    // `_draft` was materialised only by Next and by Skip, so anything chosen
+    // on the step being left — after the last Next — was DISCARDED. Found on
+    // the tablet: select a type and a severity, back out, reopen, and both are
+    // gone.
+    //
+    // Pre-existing, and the "needs details" queue makes it the PRIMARY path
+    // rather than an edge: a user opens an incomplete record, answers the one
+    // thing missing, and backs out. Losing it defeats the queue. It also made
+    // Help's "whatever you have entered is kept if you back out" false.
+    //
+    // ⚠️ The condition is what keeps test 14 honest: opening the wizard on a
+    // NEW event and closing it without touching anything must still create
+    // NOTHING. `_draft` is null there and nothing has been entered, so nothing
+    // is materialised.
+    if (_draft != null || _hasAnyInput) _capture();
     Navigator.pop(context, _draft);
     return false;
   }

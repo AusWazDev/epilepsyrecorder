@@ -193,6 +193,89 @@ void main() {
     });
   });
 
+  group('BACKING OUT KEEPS THE CURRENT STEP', () {
+    // ⚠️ THE DEFECT THE WORK QUEUE MADE PRIMARY. `_draft` was materialised only
+    // by Next and by Skip, so anything chosen on the step being LEFT was
+    // discarded. Found on the tablet, not in a test: pick a type and a
+    // severity, back out, reopen, both gone.
+    //
+    // The queue makes that the main path — open an incomplete record, answer
+    // the one missing thing, back out — so losing it defeats the feature. It
+    // also made Help's "whatever you have entered is kept if you back out"
+    // false.
+
+    Future<EventRecord?> walk(
+      WidgetTester tester,
+      EventRecord? existing,
+      Future<void> Function(WidgetTester) act,
+    ) async {
+      EventRecord? out;
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  out = await Navigator.of(context).push<EventRecord>(
+                    MaterialPageRoute(
+                      builder: (_) => EventWizardScreen(existing: existing),
+                    ),
+                  );
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await act(tester);
+      tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
+      await tester.pumpAndSettle();
+      return out;
+    }
+
+    testWidgets('17. a choice on the CURRENT step survives backing out',
+        (tester) async {
+      final existing = rec('a', secs: 90); // opens on step 1: type + severity
+      final out = await walk(tester, existing, (t) async {
+        await t.tap(find.text('Seizure / fit'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('Mild'));
+        await t.pumpAndSettle();
+      });
+
+      expect(out, isNotNull);
+      expect(out!.eventType, 'seizure',
+          reason: 'chosen on the step being left, with no Next in between');
+      expect(out.severity, EventSeverity.mild);
+      expect(isIncomplete(out), isFalse,
+          reason: 'and the record leaves the queue, which is the point');
+    });
+
+    testWidgets(
+        '18. NEGATIVE CONTROL: an UNTOUCHED new event still creates NOTHING',
+        (tester) async {
+      // The condition that keeps the fix honest. Capturing unconditionally on
+      // exit would make opening and closing the wizard create a record.
+      final out = await walk(tester, null, (t) async {});
+      expect(out, isNull,
+          reason: 'opening and closing the wizard must not create a record');
+    });
+
+    testWidgets('19. and one touch IS enough to keep it', (tester) async {
+      // Shows test 18 passes because nothing was entered, not because the
+      // capture is dead.
+      final out = await walk(tester, null, (t) async {
+        await t.enterText(find.byType(TextField).first, '3');
+        await t.pumpAndSettle();
+      });
+      expect(out, isNotNull);
+      expect(out!.durationSeconds, 180);
+    });
+  });
+
   group('THE ROW NAMES WHAT IS MISSING', () {
     Future<void> pump(WidgetTester tester, List<EventRecord> records) async {
       tester.view.physicalSize = const Size(800, 1280);
