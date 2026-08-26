@@ -1,6 +1,68 @@
 # Medical Event Recorder — Target Data Model
 
-**Design only, 22 August 2026. No code written against this yet.**
+⚠️ **"Design only, no code written against this yet" — TRUE WHEN WRITTEN ON
+22 AUGUST 2026, FALSE SINCE. THREE SCHEMA VERSIONS HAVE NOW BEEN BUILT AGAINST
+IT.** The original line is preserved above because it explains why the document
+reads as it does; §0 below states what actually exists. Read this document as a
+TARGET, and §0 as the code.
+
+This is the stale-authoritative-label class: a claim that was correct the day it
+was written, that nothing re-derives, and that reads as authoritative precisely
+because someone once wrote it down deliberately. It was cited as current on
+26 August 2026 — four days and three schema versions later — in a brief that
+concluded `condition_id` did not exist. It does.
+
+---
+
+## 0. What is BUILT, as at schema v3 — 26 August 2026
+
+**Derived from the DDL in `lib/models/`, not from memory.** Regenerate this
+section at every schema bump; a divergence table that is not maintained is worse
+than none.
+
+### Tables that exist
+
+| Table | Notes |
+|-------|-------|
+| `schema_meta` | key/value. Carries the schema version and the migration markers. |
+| `event` | 14 columns — see below. |
+| `event_type` | The vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order`. |
+| `observation` | Identical shape. Shared across conditions by §1 principle 4, so its `condition_id` will never be populated. |
+
+### `event` columns that exist
+
+`ordinal`, `id`, `logged_at`, `occurred_at`, `duration_bucket`,
+`duration_seconds`, `event_type`, `severity`, `feelings_json`, `triggers_json`,
+`notes`, `referral_required`, `details_completed`, `condition_id`
+
+⚠️ **`condition_id` EXISTS, on `event` and on both vocabulary tables.** Added in
+v3, nullable, and **never populated** — NULL means NOT YET SAID. It was built
+deliberately, on instruction, so that the column is in place before there is
+anything to put in it. Do not read the absence of a `condition` table as the
+absence of the column.
+
+### Tables in this document that do NOT exist
+
+`condition`, `condition_observation`, `condition_trigger`, `condition_field`,
+`event_field_value`, `medication_note`, `daily_entry` (§9).
+
+### `event` columns in this document that do NOT exist
+
+`event_type_id` (the FK — `event.event_type` still holds the vocabulary `value`
+directly, because a join buys nothing while `condition` does not exist),
+`awareness_changed`, `aura`, `injury`, `rescue_med_given`, `rescue_med_helped`,
+`rescue_med_second_dose`, `recovery_seconds`, `witnessed_by`.
+
+### Behaviour that diverges from this document
+
+| This document says | The code does |
+|---|---|
+| §5: quick record writes `condition_id` = the primary condition | Writes NULL. There is no condition to name. |
+| §5: `event_type_id` NULL until the wizard confirms it | `event_type` defaults to `'seizure'` at construction and `fromMap` coerces an absent key to it. **This is a live defect**, not a design choice — the same class as the `lt1` duration default that stage 1a retired, unfixed in `eventType` and `severity`. |
+| §6: observations and triggers both become delimited columns | Observations did, in v3. **Triggers are still one-hot** — they are not user-defined yet, so the fixed columns still represent them exactly. |
+| §7: `eventType` medication maps to a `medication_note` | Not built. `medication` is still an event type, and is marked `is_protected` so it cannot be renamed, deleted or hidden before the split. |
+
+---
 
 The target model for multi-condition support: what SQLite gets built against,
 and what the migration reads toward. Written before any schema exists, because
