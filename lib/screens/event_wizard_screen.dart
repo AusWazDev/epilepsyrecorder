@@ -347,12 +347,25 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   Widget _afterwardsStep() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // NOT "How are you feeling?" — present tense. Someone logging live
-          // read it as RIGHT NOW and someone logging days later read it as
-          // THEN, so the same field meant two things and nothing in the record
-          // said which. It is the postictal state, so the label says so.
-          _heading('How did you feel afterwards?',
-              'In the minutes and hours after it ended.'),
+          // "Afterwards", with the temporal meaning in the HINT rather than
+          // in the heading.
+          //
+          // Two decisions stacked here, and they pull in opposite directions:
+          //
+          //  1. NOT "How are you feeling?" — present tense. Someone logging
+          //     live read it as RIGHT NOW and someone logging days later read
+          //     it as THEN, so one field meant two things and nothing in the
+          //     record said which. It is the postictal state.
+          //  2. NOT "How did you feel afterwards?" either. This is a step
+          //     heading, not a field label under one, so a question here is
+          //     the whole screen's title — and the sentence beneath it would
+          //     then restate the same thing in different words. A noun heading
+          //     plus one hint says it once.
+          //
+          // Word for word the single page's section label, so the field does
+          // not depend on which screen a record opened in.
+          _heading('Afterwards',
+              'How you felt in the minutes and hours after it ended.'),
           _vocabMultiChips(
             table: kObservationTable,
             entries: Vocabularies.offerableObservations,

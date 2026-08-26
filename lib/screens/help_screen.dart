@@ -118,7 +118,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   title: 'Record with details',
                   // Named in the order the fields appear on the details screen,
                   // using its own section labels: "What happened?", Duration,
-                  // Severity, "How did you feel afterwards?", "What was happening
+                  // Severity, "Afterwards", "What was happening
                   // beforehand?", "Medical referral required?", "Notes
                   // (optional)". The previous wording listed four of the seven and
                   // omitted event type and feelings — the nine-field model

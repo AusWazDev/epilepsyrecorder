@@ -195,7 +195,11 @@ class _LogEventScreenState extends State<LogEventScreen> {
       );
     }
     if (!_sameSet(_selectedFeelings, _origFeelings)) {
-      changes.add('Feelings updated');
+      // "Afterwards", matching the section label and the wizard's summary
+      // line. This was the FOURTH wording of one field and it survived the
+      // trigger alignment because that pass looked for causal words, not for
+      // every place the field is named.
+      changes.add('Afterwards updated');
     }
     if (!_sameSet(_selectedTriggers, _origTriggers)) {
       changes.add('Beforehand updated');
@@ -415,16 +419,24 @@ appBar: AppBar(
                         const SizedBox(height: 20),
 
                         // ── AFTERWARDS ──
-                        // NOT "How are you feeling?" — present tense. Someone logging
-                        // live read it as RIGHT NOW and someone logging days later read
-                        // it as THEN, so one field meant two things and nothing in the
-                        // record said which. It is the postictal state, so it says so.
+                        // NOT "How are you feeling?" — present tense. Someone
+                        // logging live read it as RIGHT NOW and someone logging
+                        // days later read it as THEN, so one field meant two
+                        // things and nothing in the record said which. It is the
+                        // postictal state.
                         //
-                        // Word for word the wizard's step 4 heading, for the same reason
-                        // the type label above matches its step 2.
-                        _SectionLabel('How did you feel afterwards?'),
+                        // A NOUN, not a question. This section sits in a column
+                        // of other section labels — EVENT TYPE, DURATION,
+                        // SEVERITY — and a question among them reads as a
+                        // different kind of thing. The hint carries the meaning
+                        // the noun cannot.
+                        //
+                        // Word for word the wizard's step 4 heading, for the same
+                        // reason the type label above matches its step 2.
+                        _SectionLabel('Afterwards'),
                         const SizedBox(height: 4),
-                        _SectionHint('In the minutes and hours after it ended.'),
+                        _SectionHint(
+                            'How you felt in the minutes and hours after it ended.'),
                         const SizedBox(height: 8),
                         _SelectionWrap(
                           // Offerable entries PLUS anything this record already carries

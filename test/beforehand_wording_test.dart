@@ -114,11 +114,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SEVERITY'), findsOneWidget);
-    // The observations label moved with the vocabulary work: "How are you
-    // feeling?" was PRESENT TENSE and did not say the field means AFTER the
-    // event. Same defect as "Possible triggers", same fix, and the control
-    // moves with it.
-    expect(find.text('HOW DID YOU FEEL AFTERWARDS?'), findsOneWidget);
+    // The observations label has moved TWICE, and this control moved with it
+    // both times — which is the control working, not the control being
+    // brittle. "How are you feeling?" was present tense; "How did you feel
+    // afterwards?" was a question among a column of nouns. It is now
+    // "Afterwards", with the meaning in a hint. See afterwards_wording_test.
+    expect(find.text('AFTERWARDS'), findsOneWidget);
   });
 
   test('5. the CSV never labels the field at all', () {
