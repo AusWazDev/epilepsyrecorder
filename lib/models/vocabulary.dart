@@ -306,6 +306,75 @@ Future<void> seedVocabulary(
   }
 }
 
+/// The same string as it appears when its UTF-8 bytes were decoded as Latin-1.
+///
+/// ⚠️ **FOUND ON THE TABLET, 26-Aug-26, and NOT CAUSED BY THIS WORK.** Three
+/// records store `Ã°ÂŸÂ˜Âµ Confused` rather than `😵 Confused` — the UTF-8 bytes
+/// of the emoji (F0 9F 98 B5) read back as four Latin-1 characters. They have
+/// rendered that way in History for as long as the records have existed; the
+/// vocabulary work only made it visible, because an unmatched value now gets
+/// its own chip instead of blending into a row.
+///
+/// **The cause is UNKNOWN and is deliberately not guessed at.** Nothing in the
+/// current write path does this — `jsonEncode`/`jsonDecode` are UTF-16 safe and
+/// `writeAsString` defaults to UTF-8. Whatever produced it is upstream and
+/// historical. Recording it as unexplained is better than supplying the next
+/// plausible cause.
+///
+/// **What this does about it, and what it deliberately does NOT do.** It seeds
+/// the mangled twin of each legacy value as a further RETIRED entry, so those
+/// records resolve to a readable label. It does not rewrite a single stored
+/// value: that is the same rule the whole revision follows, and it applies with
+/// more force here, not less — a repair that edits records is unreviewable
+/// afterwards, whereas a vocabulary row can be read, counted and removed.
+///
+/// The transform is EXACT and reversible, not a guess: `s.codeUnits` re-read as
+/// UTF-8. Applied only to the eleven strings MER itself shipped, so it cannot
+/// touch anything a user typed.
+String? latin1Mangled(String s) {
+  try {
+    final bytes = <int>[];
+    for (final r in s.runes) {
+      if (r > 0xFFFF) {
+        // Non-BMP: encode manually, since String.codeUnits would give
+        // surrogates rather than the UTF-8 bytes that were mis-decoded.
+        bytes.addAll(<int>[
+          0xF0 | (r >> 18),
+          0x80 | ((r >> 12) & 0x3F),
+          0x80 | ((r >> 6) & 0x3F),
+          0x80 | (r & 0x3F),
+        ]);
+      } else if (r > 0x7FF) {
+        bytes.addAll(<int>[
+          0xE0 | (r >> 12),
+          0x80 | ((r >> 6) & 0x3F),
+          0x80 | (r & 0x3F),
+        ]);
+      } else if (r > 0x7F) {
+        bytes.addAll(<int>[0xC0 | (r >> 6), 0x80 | (r & 0x3F)]);
+      } else {
+        bytes.add(r);
+      }
+    }
+    final mangled = String.fromCharCodes(bytes);
+    // Only interesting when it actually differs — an ASCII-only string maps to
+    // itself and would collide with the real entry's UNIQUE value.
+    return mangled == s ? null : mangled;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// The mangled twins, as seeds. Same labels as the originals.
+List<VocabularySeed> mangledLegacyObservations() {
+  final out = <VocabularySeed>[];
+  for (final s in kLegacyObservations) {
+    final m = latin1Mangled(s.value);
+    if (m != null) out.add(VocabularySeed(m, s.label, isActive: false));
+  }
+  return out;
+}
+
 /// Creates and seeds both vocabularies.
 ///
 /// Legacy observations are seeded at a HIGH sort base so that if one is ever
@@ -319,6 +388,10 @@ Future<void> createAndSeedVocabularies(DatabaseExecutor db) async {
   await seedVocabulary(db, kObservationTable, kSeedObservations);
   await seedVocabulary(db, kObservationTable, kLegacyObservations,
       sortBase: 1000);
+  // The mis-decoded twins, so records carrying them read correctly. Retired,
+  // like the originals — see [latin1Mangled].
+  await seedVocabulary(db, kObservationTable, mangledLegacyObservations(),
+      sortBase: 2000);
 }
 
 // ── QUERIES AND MUTATIONS ────────────────────────────────────────────────────

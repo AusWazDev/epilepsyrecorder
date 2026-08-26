@@ -504,6 +504,77 @@ void main() {
     });
   });
 
+  group('THE MIS-DECODED LEGACY STRINGS', () {
+    // Found on the tablet, not in code review: three records store the UTF-8
+    // bytes of an emoji read back as Latin-1. Pre-existing, cause unknown, and
+    // deliberately repaired by ADDING VOCABULARY rather than editing records.
+    //
+    // Written as escapes, not as literal characters, so this file cannot itself
+    // be the thing that mangles the string it is asserting about.
+    const mangledConfused = '\u00F0\u009F\u0098\u00B5 Confused';
+
+    test('25. the transform is exact, and reverses', () {
+      expect(latin1Mangled('\u{1F635} Confused'), mangledConfused);
+      // POSITIVE CONTROL that this is the real corruption and not a lookalike:
+      // reading those characters back as bytes gives the original UTF-8.
+      expect(mangledConfused.codeUnits.take(4).toList(),
+          <int>[0xF0, 0x9F, 0x98, 0xB5]);
+    });
+
+    test('26. an ASCII-only string produces NO twin', () {
+      // Otherwise it would collide with the real entry's UNIQUE value and the
+      // seed would fail.
+      expect(latin1Mangled('Poor sleep'), isNull);
+      expect(latin1Mangled('Tired'), isNull);
+    });
+
+    test('27. the mangled value RESOLVES to a readable label', () async {
+      final db = await openFresh();
+      await Vocabularies.load(db);
+
+      expect(Vocabularies.labelFor(kObservationTable, mangledConfused),
+          'Confused',
+          reason: 'the records on the tablet become readable without a single '
+              'stored value being edited');
+      await db.close();
+    });
+
+    test('28. and the twins are RETIRED, never offered', () async {
+      final db = await openFresh();
+      final offered = offerable(await loadVocabulary(db, kObservationTable));
+      expect(offered.map((e) => e.value), isNot(contains(mangledConfused)));
+      // POSITIVE CONTROL: the picker is not simply empty.
+      expect(offered.map((e) => e.value), contains('Confused'));
+      await db.close();
+    });
+
+    test('29. NEGATIVE CONTROL: the record itself is NOT rewritten', () async {
+      // The rule the whole revision follows, and it applies with MORE force to
+      // a corruption than to a wording change: a repair that edits records is
+      // unreviewable afterwards; a vocabulary row can be read and removed.
+      final db = await openFresh();
+      final store = SqliteEventStore(db);
+      await store.save(<EventRecord>[
+        EventRecord(
+          id: 'm',
+          timestamp: DateTime(2026, 8, 22, 20, 38),
+          duration: null,
+          feelings: const <String>[mangledConfused],
+          referralRequired: false,
+          notes: '',
+        ),
+      ]);
+      await Vocabularies.load(db);
+
+      final back = (await store.load()).single;
+      expect(back.feelings.single, mangledConfused,
+          reason: 'byte for byte what was stored');
+      expect(back.feelings.single, isNot('\u{1F635} Confused'),
+          reason: 'nothing silently "corrected" it into the clean string');
+      await db.close();
+    });
+  });
+
   group('THE CSV', () {
     test('23. a user-defined observation reaches the export', () async {
       // The reason the one-hot columns had to go. Under the old shape this

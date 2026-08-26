@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/event_record.dart';
+import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
 import '../screens/event_wizard_screen.dart';
 import '../screens/log_event_screen.dart';
@@ -150,7 +151,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
         // nobody asked for.
         if (r.duration != null) durationLabel(r.duration!),
         severityLabel(r.severity),
+        // BOTH the stored values and their labels. Searching "confused"
+        // must find a record whether it carries the legacy emoji string or
+        // the revised plain one — the user typed a word, not a data format.
         r.feelings.join(' '),
+        r.feelings
+            .map((v) => Vocabularies.labelFor(kObservationTable, v))
+            .join(' '),
         r.triggers.join(' '),
         'referral: ${r.referralRequired ? "yes" : "no"}',
         r.notes,
@@ -619,7 +626,15 @@ class _EventListTile extends StatelessWidget {
       if (durationDisplay(r.duration, r.durationSeconds) != null)
         durationDisplay(r.duration, r.durationSeconds)!,
       severityLabel(r.severity),
-      if (r.feelings.isNotEmpty)  r.feelings.join(', '),
+      // LABELS, not stored values. Found on the tablet: three records carry
+      // the legacy `😵 Confused`, and the row rendered its emoji as MOJIBAKE
+      // — the chips have an emoji-capable font and this text style does not.
+      // Resolving through the vocabulary fixes it for free, because a legacy
+      // entry's label is its value without the emoji. Same rule as the CSV.
+      if (r.feelings.isNotEmpty)
+        r.feelings
+            .map((v) => Vocabularies.labelFor(kObservationTable, v))
+            .join(', '),
       // "Beforehand", matching the form label and the wizard summary line.
       // The row is where a record is READ, so a causal word here asserts the
       // same thing the input label was changed to stop asserting.
