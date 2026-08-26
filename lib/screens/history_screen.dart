@@ -535,11 +535,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // ── EDIT ──
   Future<void> _editRecord(EventRecord r) async {
-    // The SAME three-way routing as the Last Event card, so a record does not
-    // open one way from Home and another from History:
-    //   false  a partial          -> the guided wizard
-    //   true   already completed  -> the single page
-    //   null   predates it        -> the single page
+    // ⚠️ THIS IS THE COMPLETION ROUTE — the second entry point to the wizard,
+    // and the reason the "needs details" filter is worth having. A queue that
+    // surfaces records and offers nothing to do about them is a list of
+    // complaints.
+    //
+    // ONE rule, `wantsWizard`, shared with the Last Event card and the
+    // notification tap. That is the answer to "how do the two coexist without
+    // a third rule appearing": there is no second rule to coexist with. A
+    // path-specific key is exactly how a third appears.
+    //
+    //   detailsCompleted == false   a partial          -> the wizard
+    //   isIncomplete                a gap in the three -> the wizard
+    //   neither                     nothing to add     -> the single page
+    //
+    // The stale version of this comment described the three-way read on
+    // `detailsCompleted` ALONE, which stopped being the rule when the filter
+    // landed — a legacy record with a missing duration routed to the form
+    // under that reading and routes to the wizard under this one.
     final result = await Navigator.of(context).push<EventRecord>(
       MaterialPageRoute(
         builder: (_) => wantsWizard(r)

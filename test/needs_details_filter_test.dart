@@ -276,6 +276,108 @@ void main() {
     });
   });
 
+  group('THE COMPLETION ROUTE — filtered list to wizard and back', () {
+    // ⚠️ THE REASON THE FILTER IS WORTH HAVING. A queue that surfaces records
+    // and offers nothing to do about them is a list of complaints. The route
+    // is: filter, tap a row, answer what is missing, and the record LEAVES the
+    // queue.
+    //
+    // Tested end to end rather than in parts, because every part already
+    // passed individually while the route as a whole was unverified: the
+    // predicate, the chip, `wantsWizard` and `_editRecord` each had tests, and
+    // none of them proved a completed record is PERSISTED and drops out.
+
+    testWidgets(
+        '17. tap an incomplete row, answer the gap, and it leaves the queue',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1280);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      // The screen owns its list, so the harness holds the records and feeds
+      // them back — which is also what proves the change was PERSISTED rather
+      // than only rendered.
+      var records = <EventRecord>[
+        full('complete'),
+        rec('gap', type: 'seizure', severity: EventSeverity.mild), // no duration
+      ];
+      List<EventRecord>? saved;
+
+      Future<void> build() async {
+        await tester.pumpWidget(MaterialApp(
+          home: HistoryScreen(
+            records: records,
+            onRecordsChanged: (updated) async {
+              saved = updated;
+              records = updated;
+            },
+            onEdit: (_, {required confirmOnSave}) async {},
+          ),
+        ));
+        await tester.pumpAndSettle();
+      }
+
+      await build();
+
+      // Narrow to the queue.
+      await tester.tap(find.byTooltip('Filters'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(
+          of: find.byType(BottomSheet), matching: find.text('Needs details')));
+      await tester.pumpAndSettle();
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Showing 1 of 2'), findsOneWidget);
+      expect(find.textContaining('Needs: duration'), findsOneWidget);
+
+      // Tap the row. The route is the wizard, and it opens on the step that
+      // asks the missing question.
+      await tester.tap(find.textContaining('Needs: duration'));
+      await tester.pumpAndSettle();
+      expect(find.text('How long did it last?'), findsOneWidget,
+          reason: 'the completion route lands on the gap, not on step one');
+
+      // Answer it and leave. No Next: backing out must keep it.
+      await tester.enterText(find.byType(TextField).first, '2');
+      await tester.pumpAndSettle();
+      tester.state<NavigatorState>(find.byType(Navigator).first).maybePop();
+      await tester.pumpAndSettle();
+
+      expect(saved, isNotNull, reason: 'onRecordsChanged must have fired');
+      final updated = saved!.firstWhere((r) => r.id == 'gap');
+      expect(updated.durationSeconds, 120);
+      expect(isIncomplete(updated), isFalse,
+          reason: 'and it has left the queue');
+    });
+
+    testWidgets('18. NEGATIVE CONTROL: a COMPLETE row routes to the form',
+        (tester) async {
+      // Without this, test 17 passes just as well against a row that always
+      // opens the wizard — which would send someone with nothing to add to a
+      // four-step flow.
+      tester.view.physicalSize = const Size(800, 1280);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(MaterialApp(
+        home: HistoryScreen(
+          records: <EventRecord>[full('complete')],
+          onRecordsChanged: (_) async {},
+          onEdit: (_, {required confirmOnSave}) async {},
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('Mild'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('How long did it last?'), findsNothing);
+      expect(find.text('WHAT HAPPENED?'), findsOneWidget,
+          reason: 'the single page, which uses uppercase section labels');
+    });
+  });
+
   group('THE ROW NAMES WHAT IS MISSING', () {
     Future<void> pump(WidgetTester tester, List<EventRecord> records) async {
       tester.view.physicalSize = const Size(800, 1280);
