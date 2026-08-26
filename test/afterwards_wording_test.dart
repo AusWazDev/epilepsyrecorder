@@ -11,59 +11,49 @@ import 'package:medical_event_recorder/screens/log_event_screen.dart';
 /// Sibling of `beforehand_wording_test.dart`, and it exists because the trigger
 /// alignment MISSED one. That pass hunted causal words — "Possible triggers",
 /// "what caused this" — and `'Feelings updated'` in the Confirm-changes list is
-/// not a causal word, so it survived as a FOURTH wording of a field that was
-/// being unified at the time.
+/// not a causal word, so it survived as a fourth wording of a field that was
+/// being unified at the time. An alignment pass that searches for the SYMPTOM
+/// finds only the instances that share it. Enumerate every place the field is
+/// NAMED instead, which is what this file pins.
 ///
-/// The lesson that shape teaches: an alignment pass that searches for the
-/// SYMPTOM finds only the instances that share it. Enumerate every place the
-/// field is NAMED instead, which is what this file pins.
+/// ## Four wordings, and why the last two were wrong
 ///
-/// ## Why a noun and not a question
+///   1. "How are you feeling?"         PRESENT TENSE. Someone logging live read
+///                                     it as right now, someone logging days
+///                                     later as then. One field, two meanings,
+///                                     and nothing in the record said which.
+///   2. "How did you feel afterwards?" CURRENT, on both surfaces.
+///   3. "Afterwards"                   A noun, justified as fitting "a column of
+///                                     nouns" on the single page. THE COLUMN IS
+///                                     NOT NOUNS — see test 7, which enumerates
+///                                     it. The reason was wrong, so the change
+///                                     it justified was wrong.
+///   4. Nothing at all                 Removed from the wizard entirely, on two
+///                                     premises that did not hold: a per-step
+///                                     title in the AppBar (there is none) and a
+///                                     RadioGroup label being duplicated (there
+///                                     is neither). Nothing was duplicated, so
+///                                     what was removed was the ONLY label the
+///                                     field had. Reversed the same day.
 ///
-/// Three wordings have now been tried and each was wrong for a different
-/// reason, which is worth recording so a fourth is not reached for:
-///
-///   "How are you feeling?"        PRESENT TENSE. Someone logging live read it
-///                                 as right now, someone logging days later as
-///                                 then. One field, two meanings, and nothing
-///                                 in the record said which.
-///   "How did you feel afterwards?" Correct in meaning, wrong in FORM. On the
-///                                 single page it is a question sitting in a
-///                                 column of nouns (EVENT TYPE, DURATION,
-///                                 SEVERITY); in the wizard it is a step
-///                                 heading, so the sentence under it restated
-///                                 the heading in different words.
-///   "Afterwards" + a hint         The noun names the field; the hint carries
-///                                 the temporal meaning the noun cannot. Still
-///                                 the SINGLE PAGE's wording.
-///   nothing at all                 OPTION A, 26-Aug-26, WIZARD ONLY. A step
-///                                 that opens with chips and no label, because
-///                                 a heading plus a field label saying the same
-///                                 thing had appeared on three of the last four
-///                                 screens.
-///
-/// ⚠️ **THE WIZARD AND THE SINGLE PAGE NOW DIFFER ON PURPOSE**, which reverses
-/// the rule the sibling file pins for triggers. It is a deliberate exception,
-/// not drift, and the reason is that the two screens are not the same kind of
-/// thing: the single page is a flat form with no surrounding context, so its
-/// section needs a name; the wizard step is one screen with one subject.
-///
-/// ⚠️ **AND THE TEMPORAL MEANING IS NOW ABSENT FROM THE WIZARD.** "After the
-/// event" was the whole point of the label work. The single page still says it,
-/// and most records open there — legacy and completed both — but a partial
-/// walked through the wizard is never told.
+/// ⚠️ **What the last two share is not about wording.** Both were justified by
+/// a claim about the surrounding UI; both claims were false; neither was checked
+/// before acting. Tests 7 and 9 exist so those claims are checkABLE — they are
+/// the only assertions here that are about the argument rather than the result.
 
-/// The one wording. Changing it here should be the only edit a rename needs.
-const String kAfterwardsHeading = 'Afterwards';
-const String kAfterwardsHint =
-    'How you felt in the minutes and hours after it ended.';
+/// The one wording. Changing it here should be the only edit a rename needs —
+/// and this file then proves every surface followed.
+const String kAfterwardsHeading = 'How did you feel afterwards?';
+const String kAfterwardsHint = 'In the minutes and hours after it ended.';
 
-/// Every wording this field has worn. None may appear in the UI.
+/// The noun used where a question does not fit: a bulleted summary line and a
+/// change-log entry. Deliberately different in FORM, identical in meaning.
+const String kAfterwardsNoun = 'Afterwards';
+
+/// Every wording this field has worn and shed. None may appear as a LABEL.
 const List<String> kRetiredWordings = <String>[
   'How are you feeling?',
   'HOW ARE YOU FEELING?',
-  'How did you feel afterwards?',
-  'HOW DID YOU FEEL AFTERWARDS?',
   'Feelings updated',
 ];
 
@@ -78,12 +68,21 @@ EventRecord legacyRecord() => EventRecord(
       detailsCompleted: null,
     );
 
+/// Walks the wizard to step 4.
+Future<void> toAfterwardsStep(WidgetTester tester) async {
+  await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
+  await tester.pumpAndSettle();
+  for (var i = 0; i < 3; i++) {
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+  }
+}
+
 void main() {
   setUp(Vocabularies.debugReset);
   tearDown(Vocabularies.debugReset);
 
-  testWidgets('1. the SINGLE PAGE names it with the noun plus a hint',
-      (tester) async {
+  testWidgets('1. the SINGLE PAGE names it, with the hint', (tester) async {
     await tester.pumpWidget(
         MaterialApp(home: LogEventScreen(existing: legacyRecord())));
     await tester.pumpAndSettle();
@@ -91,75 +90,25 @@ void main() {
     // _SectionLabel uppercases, so the rendered string is the uppercase form.
     expect(find.text(kAfterwardsHeading.toUpperCase()), findsOneWidget);
     expect(find.text(kAfterwardsHint), findsOneWidget,
-        reason: 'the noun alone does not say the field means AFTER the event');
+        reason: 'the heading says AFTERWARDS; the hint says how long after');
   });
 
-  testWidgets(
-      '2. the WIZARD step renders NOTHING above the chips — Option A',
-      (tester) async {
-    // The opposite assertion to the one this test made a build ago, and the
-    // reversal is the decision rather than a regression: a heading plus a
-    // field label saying the same thing had appeared on three of the last four
-    // screens, so the fourth answer was to stop labelling it in the wizard.
-    //
-    // The single page still carries it — see test 1. Most records open there.
-    await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
-    await tester.pumpAndSettle();
+  testWidgets('2. the WIZARD step names it identically', (tester) async {
+    await toAfterwardsStep(tester);
 
-    // Step 0 duration, 1 what happened, 2 beforehand, 3 afterwards.
-    for (var i = 0; i < 3; i++) {
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-    }
-
-    // POSITIVE CONTROL FIRST. Without it, "nothing rendered" passes just as
-    // well against a step that failed to build at all — which is the one way
-    // this assertion could be satisfied for the wrong reason.
-    expect(find.text('Tired'), findsOneWidget,
-        reason: 'the observation chips must actually be on screen');
-    expect(find.text('Medical referral required?'), findsOneWidget,
-        reason: 'and the rest of the step with them');
-
-    expect(find.text(kAfterwardsHeading), findsNothing,
-        reason: 'Option A: nothing above the chips');
-    expect(find.text(kAfterwardsHint), findsNothing);
+    expect(find.text(kAfterwardsHeading), findsOneWidget);
+    expect(find.text(kAfterwardsHint), findsOneWidget);
   });
 
-  testWidgets(
-      '3a. NEGATIVE CONTROL: the OTHER steps still have their headings',
-      (tester) async {
-    // Step 4 is now the only step without one. Asserted so that a future change
-    // stripping every heading — or restoring this one by accident — is visible
-    // rather than silent.
-    await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
-    await tester.pumpAndSettle();
-    expect(find.text('How long did it last?'), findsOneWidget);
-
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    expect(find.text('What happened?'), findsOneWidget);
-
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    expect(find.text('What was happening beforehand?'), findsOneWidget);
-  });
-
-  testWidgets('3. and the wizard SUMMARY uses the same noun', (tester) async {
-    // The third surface, and the one most easily forgotten because it renders
-    // only when something was selected.
-    await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
-    await tester.pumpAndSettle();
-
-    for (var i = 0; i < 3; i++) {
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-    }
+  testWidgets('3. the wizard SUMMARY uses the noun', (tester) async {
+    // The one place a question does not fit — a bulleted list of values.
+    await toAfterwardsStep(tester);
     await tester.tap(find.text('Tired'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Review'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('$kAfterwardsHeading:'), findsOneWidget);
+    expect(find.textContaining('$kAfterwardsNoun:'), findsOneWidget);
   });
 
   testWidgets('4. NEGATIVE CONTROL: no retired wording survives anywhere',
@@ -176,17 +125,10 @@ void main() {
           reason: '"$retired" is a superseded wording of this field');
     }
 
-    await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
-    await tester.pumpAndSettle();
-    for (var i = 0; i < 3; i++) {
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-    }
+    await toAfterwardsStep(tester);
     for (final retired in kRetiredWordings) {
       expect(find.text(retired), findsNothing);
     }
-    // And in the wizard, the CURRENT wording is absent too — Option A.
-    expect(find.text(kAfterwardsHeading), findsNothing);
   });
 
   testWidgets('5. POSITIVE CONTROL: the matcher can see labels here',
@@ -203,8 +145,6 @@ void main() {
   testWidgets(
       '6. the CONFIRM-CHANGES line names the field the same way — the one the '
       'trigger pass missed', (tester) async {
-    // Reached by editing an existing record and changing an observation, which
-    // is the only path that renders this string.
     final existing = EventRecord(
       id: 'e',
       timestamp: DateTime(2026, 8, 20, 9, 0),
@@ -226,8 +166,100 @@ void main() {
     await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('$kAfterwardsHeading updated'), findsOneWidget);
+    expect(find.textContaining('$kAfterwardsNoun updated'), findsOneWidget);
     expect(find.text('Feelings updated'), findsNothing,
-        reason: 'the fourth wording, retired');
+        reason: 'the wording the trigger pass missed, retired');
+  });
+
+  testWidgets(
+      '7. THE CLAIM THAT JUSTIFIED WORDING 3: the single page is NOT a column '
+      'of nouns', (tester) async {
+    // Makes the argument checkable instead of assertable. It was asserted, it
+    // was wrong, and the change it justified had to be reversed.
+    await tester.pumpWidget(
+        MaterialApp(home: LogEventScreen(existing: legacyRecord())));
+    await tester.pumpAndSettle();
+
+    for (final q in <String>[
+      'WHAT HAPPENED?',
+      'WHAT WAS HAPPENING BEFOREHAND?',
+      'MEDICAL REFERRAL REQUIRED?',
+    ]) {
+      expect(find.text(q), findsOneWidget,
+          reason: 'the column already contains this question');
+    }
+
+    // And the section directly BELOW this field is one of them, so a question
+    // here is not the odd one out.
+    final afterwards =
+        tester.getTopLeft(find.text(kAfterwardsHeading.toUpperCase()));
+    final beforehand =
+        tester.getTopLeft(find.text('WHAT WAS HAPPENING BEFOREHAND?'));
+    expect(beforehand.dy, greaterThan(afterwards.dy),
+        reason: 'the next section down is a question');
+  });
+
+  group('EVERY WIZARD STEP HAS A HEADING', () {
+    // Step 4 was briefly the only one without. Pinned for all four so that
+    // stripping any of them — or stripping them all — is visible rather than
+    // silent.
+
+    const headings = <String>[
+      'How long did it last?',
+      'What happened?',
+      'What was happening beforehand?',
+      kAfterwardsHeading,
+    ];
+
+    testWidgets('8. all four steps, in order', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < headings.length; i++) {
+        expect(find.text(headings[i]), findsOneWidget,
+            reason: 'step ${i + 1} must open with its heading');
+        if (i < headings.length - 1) {
+          await tester.tap(find.text('Next'));
+          await tester.pumpAndSettle();
+        }
+      }
+    });
+
+    testWidgets(
+        '9. THE CLAIM THAT JUSTIFIED WORDING 4: the AppBar carries NO per-step '
+        'title', (tester) async {
+      // The removal was justified by "the step heading already says
+      // Afterwards", meaning the AppBar. It does not. The body heading is the
+      // ONLY thing naming the step, which is why removing it took the field
+      // label with it.
+      await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < headings.length; i++) {
+        expect(find.text('Add details'), findsOneWidget,
+            reason: 'same AppBar on every step, including step ${i + 1}');
+        if (i < headings.length - 1) {
+          await tester.tap(find.text('Next'));
+          await tester.pumpAndSettle();
+        }
+      }
+    });
+
+    testWidgets('10. step 4 labels BOTH its fields, not one of two',
+        (tester) async {
+      // The asymmetry that made the removal visible on the device: the chips
+      // had nothing above them while "Medical referral required?" two rows
+      // below kept its label, which read as an omission rather than a choice.
+      await toAfterwardsStep(tester);
+
+      expect(find.text(kAfterwardsHeading), findsOneWidget);
+      expect(find.text('Medical referral required?'), findsOneWidget);
+
+      final obs = tester.getTopLeft(find.text(kAfterwardsHeading));
+      final referral =
+          tester.getTopLeft(find.text('Medical referral required?'));
+      expect(referral.dy, greaterThan(obs.dy),
+          reason: 'both labelled, in order, on the same step');
+    });
   });
 }

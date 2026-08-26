@@ -347,30 +347,34 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   Widget _afterwardsStep() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ⚠️ NOTHING IS RENDERED ABOVE THE CHIPS. Option A, decided
-          // 26-Aug-26 after three wordings were tried and each was wrong for a
-          // different reason. The fourth answer was to stop labelling it here
-          // at all.
+          // A QUESTION, like every other step, and the same words the single
+          // page uses.
           //
-          // The reasoning: a heading and a field label saying the same thing is
-          // the adjacent redundancy corrected three times in Help, and it had
-          // appeared on three of the last four screens. "Select any that apply"
-          // describes the widget rather than telling anyone anything.
+          // ## The four wordings this has worn, so a fifth is not reached for
           //
-          // ⚠️ TWO CONSEQUENCES, recorded so they are a decision rather than a
-          // discovery:
+          //  1. "How are you feeling?"  PRESENT TENSE. Someone logging live
+          //     read it as RIGHT NOW and someone logging days later as THEN.
+          //     One field, two meanings, nothing in the record saying which.
+          //  2. "How did you feel afterwards?"  Correct, and what is here now.
+          //  3. "Afterwards"  A noun, justified as fitting "a column of nouns"
+          //     on the single page. THE COLUMN IS NOT NOUNS — it runs
+          //     "What happened?", "Duration", "Severity", "Afterwards",
+          //     "What was happening beforehand?", "Medical referral required?",
+          //     "Notes (optional)". Three questions among seven, and the label
+          //     directly below this one is a question. The reason was wrong, so
+          //     the change it justified was wrong.
+          //  4. Nothing at all (Option A).  Reversed the same day. It rested on
+          //     two premises that did not hold: a per-step title in the AppBar
+          //     (there is none — it reads "Add details" on every step) and a
+          //     RadioGroup or Semantics label being duplicated (there is
+          //     neither). Nothing was being duplicated, so what was removed was
+          //     the only label the field had.
           //
-          //  1. This is now the ONLY step with no heading. Steps 1-3 each open
-          //     with one, and the AppBar reads "Add details" on every step —
-          //     there is no other place a step title lives.
-          //  2. The temporal meaning is no longer stated anywhere in the
-          //     wizard. "After the event" was the whole point of the label
-          //     work: someone logging live read the old present-tense label as
-          //     RIGHT NOW and someone logging days later read it as THEN. The
-          //     SINGLE PAGE still says it, and most records open there.
-          //
-          // Restoring it is one line — see the single page's section label for
-          // the exact wording.
+          // The heading carries the temporal meaning rather than leaving it to
+          // the hint, because Option A showed what happens when the hint is the
+          // only thing saying it: remove one line and the meaning is gone.
+          _heading('How did you feel afterwards?',
+              'In the minutes and hours after it ended.'),
           _vocabMultiChips(
             table: kObservationTable,
             entries: Vocabularies.offerableObservations,

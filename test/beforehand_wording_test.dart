@@ -114,12 +114,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SEVERITY'), findsOneWidget);
-    // The observations label has moved TWICE, and this control moved with it
-    // both times — which is the control working, not the control being
-    // brittle. "How are you feeling?" was present tense; "How did you feel
-    // afterwards?" was a question among a column of nouns. It is now
-    // "Afterwards", with the meaning in a hint. See afterwards_wording_test.
-    expect(find.text('AFTERWARDS'), findsOneWidget);
+    // ⚠️ THIS CONTROL HAS MOVED THREE TIMES, and it is worth reading as a
+    // record rather than as churn: it tracked the observation label through
+    // "How are you feeling?" -> "How did you feel afterwards?" ->
+    // "Afterwards" -> and back. Two of those changes were justified by claims
+    // about the surrounding UI that turned out to be false, and both were
+    // reversed. The control caught every move. See afterwards_wording_test,
+    // which now pins the CLAIMS as well as the wording.
+    //
+    // A positive control that never moves is a positive control nothing is
+    // testing.
+    expect(find.text('HOW DID YOU FEEL AFTERWARDS?'), findsOneWidget);
   });
 
   test('5. the CSV never labels the field at all', () {

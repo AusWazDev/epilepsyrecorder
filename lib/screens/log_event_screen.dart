@@ -425,18 +425,27 @@ appBar: AppBar(
                         // things and nothing in the record said which. It is the
                         // postictal state.
                         //
-                        // A NOUN, not a question. This section sits in a column
-                        // of other section labels — EVENT TYPE, DURATION,
-                        // SEVERITY — and a question among them reads as a
-                        // different kind of thing. The hint carries the meaning
-                        // the noun cannot.
+                        // ⚠️ THE "COLUMN OF NOUNS" ARGUMENT WAS FALSE, and it
+                        // is the reason this label was briefly a noun. Enumerate
+                        // the column and it reads: "What happened?", "Duration",
+                        // "Severity", THIS, "What was happening beforehand?",
+                        // "Medical referral required?", "Notes (optional)".
+                        // Three of the seven are questions, and the one directly
+                        // BELOW this is a question. A question here is not the
+                        // odd one out.
                         //
                         // Word for word the wizard's step 4 heading, for the same
                         // reason the type label above matches its step 2.
-                        _SectionLabel('Afterwards'),
+                        _SectionLabel('How did you feel afterwards?'),
                         const SizedBox(height: 4),
-                        _SectionHint(
-                            'How you felt in the minutes and hours after it ended.'),
+                        // "In the minutes and hours…", NOT "How you felt in
+                        // the minutes and hours…". The longer form belonged to
+                        // the noun heading, which had to carry "how you felt"
+                        // in the hint because the noun could not. With the
+                        // question restored above, that half is said twice —
+                        // and THIS is a real instance of the redundancy the
+                        // last two changes were reaching for and missing.
+                        _SectionHint('In the minutes and hours after it ended.'),
                         const SizedBox(height: 8),
                         _SelectionWrap(
                           // Offerable entries PLUS anything this record already carries
