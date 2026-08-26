@@ -155,11 +155,39 @@ Kept deliberately thin — History and the export are both due to change. Revise
 land.
 
 > Verified against `history_screen.dart`: search covers event type, duration, severity,
-> feelings, triggers, referral, notes and the formatted date; filters are four type chips
-> and a referral toggle; and the History share button exports **only the filtered set**,
-> with the sheet header stating the count. One caveat for whoever writes the final copy:
-> a digits-only search is intercepted by a duration comparison rather than searching text,
-> so "searchable" is true but has a sharp edge.
+> feelings, triggers, referral, notes and the formatted date; ~~filters are four type chips
+> and a referral toggle~~ **SUPERSEDED — see below**; and the History share button exports
+> **only the filtered set**, with the sheet header stating the count. One caveat for
+> whoever writes the final copy: a digits-only search is intercepted by a duration
+> comparison rather than searching text, so "searchable" is true but has a sharp edge.
+
+⚠️ **ADDITION — THE FILTER ICON MUST BE INTRODUCED HERE. Added 26 August 2026, recorded
+not built.**
+
+The filter chips and the referral toggle are gone from the History screen. Search, event
+type, date range and referral now live in a **sheet behind an icon in the AppBar**, with a
+badge showing how many filters are on.
+
+**Why this changes the walkthrough's job rather than only its wording.** Discoverability
+moved from the UI into the documentation. A user used to find the filters by looking at
+them; now nothing on the screen says filtering exists. Help gained a row for it the same
+day, but **Help is where someone goes with a question they already have** — the walkthrough
+is the only place a first-time user meets a control they do not yet know to ask about.
+
+**What step 3 must now say**, at minimum:
+
+- filtering exists, and it is behind the icon at the top of History;
+- the badge on that icon is how you know a filter is still on;
+- a filtered list means a **filtered export** — which is the point of the step, since it is
+  the step about what to bring to an appointment.
+
+⚠️ **The last of those is the one to get right.** The hazard the redesign introduced is a
+user who forgets a filter is on, exports a partial history, and sends an incomplete record
+to a specialist. The red banner and the badge are the app's defences; this step is where a
+new user learns to read them. **Do not reduce this to "you can filter your history".**
+
+*Sequencing note updated: step 3 was already marked "revise when History and the export
+land". History has now landed. The export's multi-stream change has not.*
 
 ### 4. It is on this device, and only here
 

@@ -153,7 +153,37 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 _HelpRow(
                   icon:  Icons.history,
                   title: 'View history',
-                  body:  'Tap ⋮ (top right) → History to see all past events with edit and delete options.',
+                  // Names BOTH routes. The ⋮ path was the only one documented,
+                  // and "All history" on the Last Event card is the more
+                  // prominent of the two on the running screen.
+                  body:  'Tap "All history" on the last event, or ⋮ (top right) → History, to see '
+                         'all past events with edit and delete options.',
+                ),
+                _HelpRow(
+                  icon:   Icons.filter_list,
+                  title:  'Narrowing what you see',
+                  // ⚠️ THIS ROW EXISTS BECAUSE DISCOVERABILITY MOVED OFF THE
+                  // SCREEN. The filters used to be chips and a toggle sitting
+                  // in the list, so a user found them by looking. They are now
+                  // behind an AppBar icon, and Help is where someone learns
+                  // they exist at all.
+                  //
+                  // Help NEVER described the filter controls — verified, not
+                  // assumed: the only mention of the word in this file was
+                  // inside the export row below, which says "your current
+                  // search and filters" without ever saying where they are.
+                  // That was survivable when they were self-evident on screen.
+                  // It is not now.
+                  //
+                  // The badge and the banner are named deliberately: they are
+                  // the two things that tell a user a filter is still on, and
+                  // a forgotten filter is what makes an exported history
+                  // incomplete.
+                  body:   'Tap the filter icon at the top of the History screen to search, or to '
+                          'narrow by event type, date range, or whether a referral was needed. '
+                          'A number on the icon shows how many filters are on, and a red bar above '
+                          'the list says what they are and how many events you are seeing. Tap '
+                          '"Clear" on that bar to see everything again.',
                 ),
                 _HelpRow(
                   icon:   Icons.download_outlined,
@@ -165,9 +195,15 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 _HelpRow(
                   icon:   Icons.filter_alt_outlined,
                   title:  'Exporting only what you are looking at',
+                  // "your current search and filters" was accurate and gave a
+                  // user nowhere to look. It now points at the icon and at the
+                  // bar, because this row is where someone realises their
+                  // export was narrowed and needs to know what to undo.
                   body:   'The share button at the top of the History screen exports just the '
-                          'events your current search and filters are showing, not all of them. '
-                          'The sheet that opens says how many.',
+                          'events your filters are showing, not all of them — including a word '
+                          'left in the search box. The sheet that opens says how many, and it '
+                          'says "Export all" only when nothing is filtered. If the red bar is '
+                          'above your list, your export will be narrowed too.',
                 ),
                 _HelpRow(
                   icon:   Icons.backup_outlined,
