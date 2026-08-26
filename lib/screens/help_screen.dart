@@ -118,11 +118,15 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   title: 'Record with details',
                   // Named in the order the fields appear on the details screen,
                   // using its own section labels: Event type, Duration, Severity,
-                  // "How are you feeling?", Possible triggers, "Medical referral
-                  // required?", "Notes (optional)". The previous wording listed
-                  // four of the seven and omitted event type and feelings — the
-                  // nine-field model UNDER-described.
-                  body:  'Use the blue Record with details button to set the event type, duration and severity, how you are feeling, possible triggers, whether a medical referral is needed, and notes — before saving.',
+                  // "How are you feeling?", "What was happening beforehand?",
+                  // "Medical referral required?", "Notes (optional)". The previous
+                  // wording listed four of the seven and omitted event type and
+                  // feelings — the nine-field model UNDER-described.
+                  //
+                  // The trigger field was renamed away from a causal noun (see
+                  // log_event_screen's BEFOREHAND section); this row mirrors the
+                  // form's labels by its own rule, so it moved with it.
+                  body:  'Use the blue Record with details button to set the event type, duration and severity, how you are feeling, what was happening beforehand, whether a medical referral is needed, and notes — before saving.',
                 ),
                 _HelpRow(
                   icon:   Icons.edit_outlined,
@@ -320,7 +324,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   const _HelpRow(
                     icon:  Icons.open_in_new,
                     title: 'Reviewing the event',
-                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
+                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, what was happening beforehand, and severity while the details are still fresh.',
                   ),
                 ] else ...[
                   const _HelpRow(
@@ -331,7 +335,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   const _HelpRow(
                     icon:  Icons.open_in_new,
                     title: 'Reviewing the event',
-                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, triggers, and severity while the details are still fresh.',
+                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, what was happening beforehand, and severity while the details are still fresh.',
                   ),
                 ],
                 const _HelpRow(

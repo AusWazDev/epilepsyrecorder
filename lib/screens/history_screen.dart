@@ -610,7 +610,10 @@ class _EventListTile extends StatelessWidget {
         durationDisplay(r.duration, r.durationSeconds)!,
       severityLabel(r.severity),
       if (r.feelings.isNotEmpty)  r.feelings.join(', '),
-      if (r.triggers.isNotEmpty)  'Triggers: ${r.triggers.join(', ')}',
+      // "Beforehand", matching the form label and the wizard summary line.
+      // The row is where a record is READ, so a causal word here asserts the
+      // same thing the input label was changed to stop asserting.
+      if (r.triggers.isNotEmpty)  'Beforehand: ${r.triggers.join(', ')}',
       if (r.referralRequired)     'Referral: Yes',
       if (notesShort.isNotEmpty)  'Notes: $notesShort',
     ];

@@ -129,7 +129,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
       changes.add('Feelings updated');
     }
     if (!_sameSet(_selectedTriggers, _origTriggers)) {
-      changes.add('Triggers updated');
+      changes.add('Beforehand updated');
     }
     if (_notesController.text.trim() != _origNotes) {
       changes.add('Notes updated');
@@ -351,8 +351,20 @@ appBar: AppBar(
                         ),
                         const SizedBox(height: 20),
 
-                        // ── TRIGGERS ──
-                        _SectionLabel('Possible triggers'),
+                        // ── BEFOREHAND ──
+                        // Deliberately NOT "Possible triggers". Several sources warn
+                        // that a recorded trigger is often the event already starting
+                        // — food cravings, thirst, light sensitivity — and MER must
+                        // not imply causation. See DATA-MODEL.md §10.
+                        //
+                        // The rule is about the FIELD, not the screen, so this is
+                        // word-for-word the wizard's step heading: a record that opens
+                        // here and one that opens there must not describe the same
+                        // field differently. The hint is the wizard's, trimmed to its
+                        // causation half — this is a dense form, not a guided step.
+                        _SectionLabel('What was happening beforehand?'),
+                        const SizedBox(height: 4),
+                        _SectionHint('Not a cause — just what was going on.'),
                         const SizedBox(height: 8),
                         _SelectionWrap(
                           options:  kTriggerOptions,
@@ -428,6 +440,21 @@ appBar: AppBar(
 /* ===========================
    SECTION LABEL
    =========================== */
+
+/// Mirrors [_SectionLabel] so the muted style lives in one place rather than
+/// as an inline literal that drifts from the wizard's equivalent.
+class _SectionHint extends StatelessWidget {
+  final String text;
+  const _SectionHint(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 13, color: MERColours.textMuted),
+    );
+  }
+}
 
 class _SectionLabel extends StatelessWidget {
   final String text;
