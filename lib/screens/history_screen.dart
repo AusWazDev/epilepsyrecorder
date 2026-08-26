@@ -27,6 +27,28 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
+/// The filename prefix for an export, given whether the list is narrowed.
+///
+/// ## Why this is a named function and not two inline strings
+///
+/// The sheet header states the scope, and it is the last defence against
+/// exporting a filtered set believing it to be complete. But **nobody reads the
+/// sheet again afterwards.** The file outlives it: once it is attached to an
+/// email, the filename is the only surviving statement of scope a clinician
+/// ever sees.
+///
+/// So the two must not be able to disagree. A file called `_all_` holding a
+/// filtered set is worse than no statement at all - it is a positive assertion
+/// of completeness over an incomplete export, which is the exact failure the
+/// header exists to prevent, displaced one artefact downstream.
+///
+/// Named so a test can call the REAL mapping rather than restate it. A test
+/// that rewrites these two strings agrees with the source by construction and
+/// would go on passing through precisely the change it is meant to catch.
+String exportFilenamePrefix({required bool narrowed}) => narrowed
+    ? 'medical_event_recorder_filtered'
+    : 'medical_event_recorder_all';
+
 /// The date windows offered by the range filter.
 ///
 /// Presets rather than a picker: the clinical case this exists for is "the last
@@ -660,9 +682,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () => showExportOptions(
               context,
               shown,
-              filenamePrefix: _isNarrowed
-                  ? 'medical_event_recorder_filtered'
-                  : 'medical_event_recorder_all',
+              filenamePrefix: exportFilenamePrefix(narrowed: _isNarrowed),
               sheetTitle: _exportSheetTitle(),
             ),
           ),

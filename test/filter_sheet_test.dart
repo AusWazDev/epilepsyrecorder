@@ -375,5 +375,59 @@ void main() {
 
       expect(find.textContaining('Export all 3'), findsOneWidget);
     });
+
+    testWidgets('13. and the FILENAME agrees with it', (tester) async {
+      // Tests 11 and 12 pin what the sheet SAYS. Nobody reads the sheet again
+      // afterwards — the file outlives it, and once it is attached to an email
+      // the filename is the only surviving statement of scope.
+      //
+      // So the two must not be able to disagree. A file called `_all_` holding
+      // a filtered set is worse than no statement at all: it is a positive
+      // assertion of completeness over an incomplete export, and it is the
+      // exact failure the sheet header was added to prevent, displaced one
+      // artefact downstream.
+      //
+      // ⚠️ NEWLY WORTH PINNING because the filename now carries the shape
+      // marker too. Both halves are built by `csvFilename` from a prefix this
+      // screen chooses, and the scope half had no test.
+      //
+      // The narrowed-ness is READ FROM THE LIVE SCREEN and fed to the SHIPPED
+      // mapping. Restating the two strings here would agree with the source by
+      // construction and pass through the very change this is meant to catch.
+      await pump(tester);
+      final unfiltered = exportFilenamePrefix(narrowed: narrowedNow(tester));
+      expect(find.textContaining('Export all 3'), findsNothing,
+          reason: 'precondition: the sheet is not open, so the screen state is '
+              'what is being read');
+
+      await apply(tester, FilterKind.search);
+      final filtered = exportFilenamePrefix(narrowed: narrowedNow(tester));
+
+      expect(find.textContaining('Showing 1 of 3'), findsOneWidget,
+          reason: 'positive control: the list really is narrowed, so the two '
+              'prefixes were taken from genuinely different states');
+
+      expect(unfiltered, endsWith('_all'));
+      expect(filtered, endsWith('_filtered'));
+      expect(unfiltered, isNot(filtered),
+          reason: 'the counterfactual: one prefix for both cases would name '
+              'every file `_all_`, and the claim would be false exactly when '
+              'it mattered');
+
+      // And the name a user actually receives, end to end — scope and shape in
+      // one string, from the two functions that build it.
+      expect(
+          csvFilename(prefix: filtered, when: DateTime(2026, 8, 26, 23, 9, 17)),
+          'medical_event_recorder_filtered_20260826_230917.v2.csv');
+    });
   });
+}
+
+/// Whether the live History screen considers itself narrowed.
+///
+/// Reads `activeFilters` — the same set the screen's own `_isNarrowed` reads —
+/// so the test observes the screen's state rather than deciding it.
+bool narrowedNow(WidgetTester tester) {
+  final state = tester.state(find.byType(HistoryScreen)) as dynamic;
+  return (state.activeFilters as Set<FilterKind>).isNotEmpty;
 }
