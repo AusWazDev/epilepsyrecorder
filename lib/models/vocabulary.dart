@@ -60,6 +60,7 @@ class VocabularyEntry {
     required this.isProtected,
     required this.sortOrder,
     this.conditionId,
+    this.emoji,
   });
 
   final int id;
@@ -88,6 +89,31 @@ class VocabularyEntry {
   /// NULLABLE and unpopulated this stage. See the file header.
   final int? conditionId;
 
+  /// PRESENTATION ONLY. Never part of `value`, never exported, never searched.
+  ///
+  /// ⚠️ **THIS COLUMN EXISTS BECAUSE PUTTING THE EMOJI IN THE VALUE CAUSED A
+  /// REAL DEFECT.** The original vocabulary stored `😵 Confused` as the value,
+  /// so the glyph was inside the record, inside every backup file, and inside
+  /// every CSV. Three consequences followed, all of them observed rather than
+  /// predicted:
+  ///
+  ///   * History rows rendered it as MOJIBAKE on the tablet — that text style
+  ///     has no emoji coverage, and `ð..µ Confused` is what a clinician saw;
+  ///   * three records on the device carry a mis-decoded form of it whose cause
+  ///     is still unknown, and the corruption was invisible because the glyph
+  ///     was data;
+  ///   * `DATA-MODEL.md` §6 requires emoji stripped from values as well as
+  ///     headers, which a value containing one cannot satisfy.
+  ///
+  /// Separating it fixes all three at once. The chips show the glyph, the
+  /// record stores the word, and the two can never disagree because only one of
+  /// them is stored.
+  final String? emoji;
+
+  /// What a picker shows. What a RECORD shows is [label] — deliberately
+  /// different, so an emoji-less text style can never mangle a stored value.
+  String get display => emoji == null ? label : '$emoji $label';
+
   VocabularyEntry copyWith({String? label, bool? isActive, int? sortOrder}) =>
       VocabularyEntry(
         id: id,
@@ -98,6 +124,7 @@ class VocabularyEntry {
         isProtected: isProtected,
         sortOrder: sortOrder ?? this.sortOrder,
         conditionId: conditionId,
+        emoji: emoji,
       );
 
   Map<String, Object?> toRow() => <String, Object?>{
@@ -109,6 +136,7 @@ class VocabularyEntry {
         'is_protected': isProtected ? 1 : 0,
         'sort_order': sortOrder,
         'condition_id': conditionId,
+        'emoji': emoji,
       };
 
   static VocabularyEntry fromRow(Map<String, Object?> row) => VocabularyEntry(
@@ -120,6 +148,7 @@ class VocabularyEntry {
         isProtected: row['is_protected'] == 1,
         sortOrder: row['sort_order'] as int? ?? 0,
         conditionId: row['condition_id'] as int?,
+        emoji: row['emoji'] as String?,
       );
 }
 
@@ -150,7 +179,9 @@ String createVocabularySql(String table) => 'CREATE TABLE $table ('
     'is_seeded INTEGER NOT NULL, '
     'is_active INTEGER NOT NULL, '
     'is_protected INTEGER NOT NULL, '
-    'sort_order INTEGER NOT NULL)';
+    'sort_order INTEGER NOT NULL, '
+    // Presentation only. See [VocabularyEntry.emoji].
+    'emoji TEXT)';
 
 // ── SEEDS ────────────────────────────────────────────────────────────────────
 
@@ -168,11 +199,16 @@ class VocabularySeed {
     this.label, {
     this.isActive = true,
     this.isProtected = false,
+    this.emoji,
   });
   final String value;
   final String label;
   final bool isActive;
   final bool isProtected;
+
+  /// Presentation only, never written into a record. See
+  /// [VocabularyEntry.emoji] for why this is a separate field.
+  final String? emoji;
 }
 
 /// Event types, reproducing today's four EXACTLY.
@@ -208,19 +244,24 @@ const List<VocabularySeed> kSeedEventTypes = <VocabularySeed>[
 ///
 /// The emoji are part of the stored string, not decoration — that is why they
 /// cannot simply be dropped.
+/// ⚠️ **Each carries its ORIGINAL glyph in `emoji` as well as inside `value`.**
+/// The value keeps it because the value is stored data and must not change; the
+/// `emoji` field is what a chip renders. So a record holding
+/// `😴 Tired and weary` shows exactly the chip it has always shown, while the
+/// CSV and the History row get the plain label.
 const List<VocabularySeed> kLegacyObservations = <VocabularySeed>[
-  VocabularySeed('😴 Tired and weary', 'Tired and weary', isActive: false),
-  VocabularySeed('😪 Just tired', 'Just tired', isActive: false),
-  VocabularySeed('😩 Just weary', 'Just weary', isActive: false),
+  VocabularySeed('😴 Tired and weary', 'Tired and weary', isActive: false, emoji: '😴'),
+  VocabularySeed('😪 Just tired', 'Just tired', isActive: false, emoji: '😪'),
+  VocabularySeed('😩 Just weary', 'Just weary', isActive: false, emoji: '😩'),
   VocabularySeed('🤕 Experiencing a headache', 'Experiencing a headache',
-      isActive: false),
-  VocabularySeed('😢 Sad', 'Sad', isActive: false),
-  VocabularySeed('😵 Confused', 'Confused', isActive: false),
-  VocabularySeed('😠 Annoyed', 'Annoyed', isActive: false),
-  VocabularySeed('😡 Angry', 'Angry', isActive: false),
-  VocabularySeed('😰 Anxious', 'Anxious', isActive: false),
-  VocabularySeed('🤢 Nauseous', 'Nauseous', isActive: false),
-  VocabularySeed('😣 In pain', 'In pain', isActive: false),
+      isActive: false, emoji: '🤕'),
+  VocabularySeed('😢 Sad', 'Sad', isActive: false, emoji: '😢'),
+  VocabularySeed('😵 Confused', 'Confused', isActive: false, emoji: '😵'),
+  VocabularySeed('😠 Annoyed', 'Annoyed', isActive: false, emoji: '😠'),
+  VocabularySeed('😡 Angry', 'Angry', isActive: false, emoji: '😡'),
+  VocabularySeed('😰 Anxious', 'Anxious', isActive: false, emoji: '😰'),
+  VocabularySeed('🤢 Nauseous', 'Nauseous', isActive: false, emoji: '🤢'),
+  VocabularySeed('😣 In pain', 'In pain', isActive: false, emoji: '😣'),
 ];
 
 /// The revised observation set.
@@ -253,20 +294,43 @@ const List<VocabularySeed> kLegacyObservations = <VocabularySeed>[
 /// because they are stored data.
 ///
 /// "Other" is LAST here too, for the same reason as event types.
+/// ⚠️ **NINE OF THESE GLYPHS ARE CARRIED OVER, FOUR ARE PROPOSALS.** The
+/// distinction matters: a carried-over glyph is the one this app has shown for
+/// that concept since launch, and changing it would change what a user
+/// recognises. A proposed glyph is my choice and is one line to change.
+///
+///   CARRIED OVER, concept unchanged — not a judgement call:
+///     Tired 😴 (was "Tired and weary")   Confused 😵
+///     Headache 🤕 (was "Experiencing a headache")
+///     Nauseous 🤢   Sad 😢   Anxious 😰   Angry 😡
+///     Irritable 😠 (was "Annoyed", which collapsed into it)
+///     Sore or aching 😣 (was "In pain"; the wince fits the narrower word
+///                        better than it fit the broad one)
+///
+///   PROPOSED — MY CHOICE, and each is a guess about legibility at chip size:
+///     Weak 🪫              a low battery, not a body part. Postictal weakness
+///                          is sometimes one-sided and any limb glyph would
+///                          assert which side.
+///     Memory gap 🕳️        a hole. 🌫️ fog is the commoner patient metaphor
+///                          and was rejected for overlapping "Confused".
+///     Speech difficulty 🗣️ marks the FIELD, as 🤕 marks "headache" rather
+///                          than the absence of pain. 🤐 reads as refusal.
+///     Other ✏️             matches the pencil the form's "Other / custom"
+///                          tile already uses.
 const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
-  VocabularySeed('Tired', 'Tired'),
-  VocabularySeed('Weak', 'Weak'),
-  VocabularySeed('Memory gap', 'Memory gap'),
-  VocabularySeed('Speech difficulty', 'Speech difficulty'),
-  VocabularySeed('Confused', 'Confused'),
-  VocabularySeed('Headache', 'Headache'),
-  VocabularySeed('Sore or aching', 'Sore or aching'),
-  VocabularySeed('Nauseous', 'Nauseous'),
-  VocabularySeed('Sad', 'Sad'),
-  VocabularySeed('Anxious', 'Anxious'),
-  VocabularySeed('Angry', 'Angry'),
-  VocabularySeed('Irritable', 'Irritable'),
-  VocabularySeed(kOtherObservationValue, 'Other'),
+  VocabularySeed('Tired', 'Tired', emoji: '😴'),
+  VocabularySeed('Weak', 'Weak', emoji: '🪫'),
+  VocabularySeed('Memory gap', 'Memory gap', emoji: '🕳️'),
+  VocabularySeed('Speech difficulty', 'Speech difficulty', emoji: '🗣️'),
+  VocabularySeed('Confused', 'Confused', emoji: '😵'),
+  VocabularySeed('Headache', 'Headache', emoji: '🤕'),
+  VocabularySeed('Sore or aching', 'Sore or aching', emoji: '😣'),
+  VocabularySeed('Nauseous', 'Nauseous', emoji: '🤢'),
+  VocabularySeed('Sad', 'Sad', emoji: '😢'),
+  VocabularySeed('Anxious', 'Anxious', emoji: '😰'),
+  VocabularySeed('Angry', 'Angry', emoji: '😡'),
+  VocabularySeed('Irritable', 'Irritable', emoji: '😠'),
+  VocabularySeed(kOtherObservationValue, 'Other', emoji: '✏️'),
 ];
 
 /// Inserts seeds that are not already present, matched on `value`.
@@ -302,6 +366,7 @@ Future<void> seedVocabulary(
       'is_active': s.isActive ? 1 : 0,
       'is_protected': s.isProtected ? 1 : 0,
       'sort_order': order,
+      'emoji': s.emoji,
     });
   }
 }
@@ -370,9 +435,43 @@ List<VocabularySeed> mangledLegacyObservations() {
   final out = <VocabularySeed>[];
   for (final s in kLegacyObservations) {
     final m = latin1Mangled(s.value);
-    if (m != null) out.add(VocabularySeed(m, s.label, isActive: false));
+    if (m != null) {
+      // The glyph comes from the CLEAN value, not the mangled one — the point
+      // is that a corrupted record renders correctly, and rendering its own
+      // corruption back at it would defeat that.
+      out.add(VocabularySeed(m, s.label, isActive: false, emoji: s.emoji));
+    }
   }
   return out;
+}
+
+/// Brings SEEDED rows' presentation fields up to date with the seed list.
+///
+/// ⚠️ **`seedVocabulary` SKIPS ANY VALUE ALREADY PRESENT, so a field added to an
+/// existing seed never reaches a database that already has the row.** That is
+/// not hypothetical — it is exactly how the mis-decoded twins failed to reach
+/// the tablet one build ago, and the fix then was to run the seed on every open.
+/// Running it changes nothing here, because the row already exists.
+///
+/// So presentation fields need their own pass. This one updates `emoji` and
+/// `label` on rows MER owns, matched by `value`.
+///
+/// **`is_seeded = 1` ONLY.** A user's entry is theirs: MER does not relabel it
+/// and does not decorate it. And `value` is never touched, by anything, ever —
+/// that is what keeps records attached to their entry.
+Future<void> syncSeededPresentation(
+  DatabaseExecutor db,
+  String table,
+  List<VocabularySeed> seeds,
+) async {
+  for (final s in seeds) {
+    await db.update(
+      table,
+      <String, Object?>{'emoji': s.emoji, 'label': s.label},
+      where: 'value = ? AND is_seeded = 1',
+      whereArgs: <Object?>[s.value],
+    );
+  }
 }
 
 /// Applies every seed list. Idempotent on `value`, and MUST RUN ON EVERY OPEN.
@@ -401,6 +500,14 @@ Future<void> ensureSeeded(DatabaseExecutor db) async {
   // like the originals — see [latin1Mangled].
   await seedVocabulary(db, kObservationTable, mangledLegacyObservations(),
       sortBase: 2000);
+
+  // AFTER the inserts, so a row that already existed gets the presentation
+  // fields the insert above skipped. See `syncSeededPresentation`.
+  await syncSeededPresentation(db, kEventTypeTable, kSeedEventTypes);
+  await syncSeededPresentation(db, kObservationTable, kSeedObservations);
+  await syncSeededPresentation(db, kObservationTable, kLegacyObservations);
+  await syncSeededPresentation(
+      db, kObservationTable, mangledLegacyObservations());
 }
 
 /// Creates both tables and seeds them.

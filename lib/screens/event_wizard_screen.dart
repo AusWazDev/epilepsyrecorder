@@ -542,7 +542,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           children: [
             for (final e in entries)
               FilterChip(
-                label: Text(e.label),
+                // display, not label — the glyph belongs on a chip and nowhere
+                // a record is rendered. See Vocabularies.displayFor.
+                label: Text(e.display),
                 selected: selected.contains(e.value),
                 onSelected: (_) => setState(() => selected.contains(e.value)
                     ? selected.remove(e.value)
@@ -550,7 +552,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               ),
             for (final v in orphans)
               FilterChip(
-                label: Text(Vocabularies.labelFor(table, v)),
+                label: Text(Vocabularies.displayFor(table, v)),
                 selected: true,
                 onSelected: (_) => setState(() => selected.remove(v)),
               ),

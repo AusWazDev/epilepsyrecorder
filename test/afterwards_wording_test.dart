@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:medical_event_recorder/models/event_record.dart';
+import 'package:medical_event_recorder/models/vocabulary.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
 import 'package:medical_event_recorder/screens/log_event_screen.dart';
@@ -68,6 +69,15 @@ EventRecord legacyRecord() => EventRecord(
       detailsCompleted: null,
     );
 
+/// The chip text for a seeded observation, built FROM THE SEED rather than
+/// hardcoded — a chip now shows `<glyph> <label>`, and hardcoding the glyph
+/// would make these tests break every time one is reconsidered. The glyphs are
+/// a proposal; the label is the contract.
+String chipFor(String value) {
+  final seed = kSeedObservations.firstWhere((s) => s.value == value);
+  return seed.emoji == null ? seed.label : '${seed.emoji} ${seed.label}';
+}
+
 /// Walks the wizard to step 4.
 Future<void> toAfterwardsStep(WidgetTester tester) async {
   await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
@@ -103,7 +113,7 @@ void main() {
   testWidgets('3. the wizard SUMMARY uses the noun', (tester) async {
     // The one place a question does not fit — a bulleted list of values.
     await toAfterwardsStep(tester);
-    await tester.tap(find.text('Tired'));
+    await tester.tap(find.text(chipFor('Tired')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Review'));
     await tester.pumpAndSettle();
@@ -160,7 +170,7 @@ void main() {
         home: LogEventScreen(existing: existing, confirmOnSave: true)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Tired'));
+    await tester.tap(find.text(chipFor('Tired')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Save changes'));
     await tester.tap(find.text('Save changes'));

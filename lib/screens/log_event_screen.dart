@@ -453,7 +453,10 @@ appBar: AppBar(
                           // chip, selected, rather than vanishing from the record.
                           options: _observationOptions(),
                           selected: _selectedFeelings,
-                          labelFor: (v) => Vocabularies.labelFor(kObservationTable, v),
+                          // displayFor, not labelFor: the glyph belongs on a chip and
+                          // nowhere a record is rendered.
+                          labelFor: (v) =>
+                              Vocabularies.displayFor(kObservationTable, v),
                           addLabel: 'Add how you felt',
                           onToggle: (f) => setState(() {
                             _selectedFeelings.contains(f)

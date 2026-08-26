@@ -23,12 +23,14 @@ import 'vocabulary.dart';
 /// 2 since the wizard: `event.details_completed` was added.
 /// 3 since user-defined vocabularies: `event_type` and `observation` tables,
 ///   seeded, plus a NULLABLE `event.condition_id` that stays unpopulated.
+/// 4 since the observation revision: `emoji` on both vocabulary tables —
+///   PRESENTATION ONLY, so a glyph is never inside a stored value again.
 ///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 3;
+const int kSqliteSchemaVersion = 4;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -112,6 +114,27 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     // Creates AND seeds. The seed is idempotent on `value`, so it is safe here
     // and in onCreate, and safe to re-run when a later version adds a seed.
     await createAndSeedVocabularies(db);
+  }
+  // ⚠️ TWO-SIDED BOUND, and the lower half is the load-bearing one.
+  //
+  // `createVocabularySql` always emits the CURRENT column list, so the v3 step
+  // above creates these tables ALREADY CARRYING `emoji`. A one-sided
+  // `from < 4` therefore threw `duplicate column name: emoji` for any database
+  // walking 1 -> 4 or 2 -> 4 in a single open — which is every device upgrading
+  // from a release before v3, i.e. every real user rather than this one tablet.
+  //
+  // Found by the v1 -> current fixture in `sqlite_upgrade_v2_test`, which
+  // exists precisely because a fixture built at the current version cannot
+  // fail. The same class as the seed that never reached the device: a step
+  // written for one starting point, reached from another.
+  if (from >= 3 && from < 4 && to >= 4) {
+    // Presentation only. The glyph moves OUT of the stored value and into its
+    // own column — see [VocabularyEntry.emoji] for the three defects that
+    // caused. `ensureSeeded` backfills the values on the next open, and runs
+    // from `storage_boot` on every open precisely so it can.
+    for (final t in kVocabularyTables) {
+      await db.execute('ALTER TABLE $t ADD COLUMN emoji TEXT');
+    }
   }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }

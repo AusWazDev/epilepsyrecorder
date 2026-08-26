@@ -29,6 +29,7 @@ class Vocabularies {
   static List<VocabularyEntry> _observations = <VocabularyEntry>[
     ..._fromSeeds(kSeedObservations),
     ..._fromSeeds(kLegacyObservations, idBase: 1000, sortBase: 1000),
+    ..._fromSeeds(mangledLegacyObservations(), idBase: 2000, sortBase: 2000),
   ];
 
   static Database? _db;
@@ -63,6 +64,10 @@ class Vocabularies {
         isActive: s.isActive,
         isProtected: s.isProtected,
         sortOrder: sortBase + n,
+        // Carried, or the no-database fallback renders a glyph-less picker while
+        // the database path renders glyphs — two different apps depending on
+        // whether SQLite opened.
+        emoji: s.emoji,
       );
     }).toList();
   }
@@ -106,6 +111,10 @@ class Vocabularies {
     _observations = <VocabularyEntry>[
       ..._fromSeeds(kSeedObservations),
       ..._fromSeeds(kLegacyObservations, idBase: 1000, sortBase: 1000),
+      // The mangled twins too, so a test that renders a corrupted legacy value
+      // without a database resolves it the same way the app does.
+      ..._fromSeeds(mangledLegacyObservations(),
+          idBase: 2000, sortBase: 2000),
     ];
     _db = null;
   }
@@ -148,6 +157,28 @@ class Vocabularies {
   }
 
   /// The label for a stored value, in whichever vocabulary [table] names.
+  ///
+  /// NO GLYPH. This is what a RECORD shows — History rows, the CSV, the search
+  /// haystack, the wizard summary. Use [displayFor] for a picker.
   static String labelFor(String table, String value) => labelForValue(
       table == kEventTypeTable ? _eventTypes : _observations, value);
+
+  /// What a PICKER shows: the glyph and the label.
+  ///
+  /// Two functions rather than one, because the difference is the whole point.
+  /// A chip can afford a glyph — it is rendered by a widget with emoji
+  /// coverage, and the glyph helps someone scanning a grid just after an event.
+  /// A History row cannot: that text style mangled the emoji into `ð..µ` on the
+  /// tablet, and a CSV must not carry one at all per DATA-MODEL.md §6.
+  ///
+  /// Falls back to the raw value when nothing matches, exactly as [labelFor]
+  /// does — a record from another device's vocabulary shows its own string
+  /// rather than a wrong one.
+  static String displayFor(String table, String value) {
+    final list = table == kEventTypeTable ? _eventTypes : _observations;
+    for (final e in list) {
+      if (e.value == value) return e.display;
+    }
+    return value;
+  }
 }
