@@ -87,6 +87,50 @@ const String kTypeAbsence = 'absence';
 const String kTypeMedication = kMedicationValue;
 const String kTypeOther = kOtherEventTypeValue;
 
+/// Whether anything a user could have supplied is still unset.
+///
+/// ⚠️ **FIELD INSPECTION, NOT `detailsCompleted`, and they answer different
+/// questions.** `detailsCompleted` records whether someone WALKED the guided
+/// flow; this records whether the record HAS anything. A record can be
+/// `detailsCompleted == true` with every field null — three taps: open the
+/// wizard, Skip to end, Save — and that record is exactly the one a user
+/// hunting for gaps is looking for. Driving this off the flag would hide it.
+///
+/// ## Where the line falls, and the rule that draws it
+///
+/// **A field is in scope if and only if it is NULLABLE.** Nullability already
+/// means "NULL means not asked" throughout this model — `occurredAt`,
+/// `detailsCompleted`, duration, and now type and severity. Nothing else has
+/// an absent state to detect:
+///
+///   duration      IN. Null in both halves — no bucket and no seconds.
+///   eventType     IN.
+///   severity      IN.
+///   feelings      OUT. An empty list is an ANSWER: "nothing afterwards" is
+///                 data, not a gap.
+///   triggers      OUT. Same.
+///   notes         OUT. Absence of notes is not incompleteness.
+///   referral      OUT. A non-nullable bool has no absent state at all.
+///
+/// ## Catch-all
+///
+/// ANY unset field qualifies, not all of them. A record missing only its
+/// severity is still incomplete, and "incomplete" is what is being asked.
+bool isIncomplete(EventRecord r) =>
+    (r.duration == null && r.durationSeconds == null) ||
+    r.eventType == null ||
+    r.severity == null;
+
+/// Which fields are missing, for a reader.
+///
+/// Returned in the order the guided flow asks them, so the list doubles as the
+/// route through. Empty for a complete record.
+List<String> missingFields(EventRecord r) => <String>[
+      if (r.duration == null && r.durationSeconds == null) 'duration',
+      if (r.eventType == null) 'type',
+      if (r.severity == null) 'severity',
+    ];
+
 /// The label for a stored type value.
 ///
 /// Resolves through the loaded vocabulary, so a user-defined type reads as its

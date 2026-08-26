@@ -19,7 +19,10 @@ EventRecord rec({
   bool? completed,
   String notes = '',
   String type = kTypeSeizure,
-  EventSeverity severity = EventSeverity.mild,
+  // NULLABLE, defaulting to NULL — matching the model since severity stopped
+  // fabricating. A fixture that quietly supplied `mild` would make every
+  // record in this file complete on that axis and hide the routing case.
+  EventSeverity? severity,
 }) =>
     EventRecord(
       id: id,
@@ -84,36 +87,66 @@ void main() {
     });
   });
 
-  group('ROUTING: only an explicit false goes to the wizard', () {
-    test('6. false routes to the wizard', () {
+  group('ROUTING: a partial OR anything incomplete goes to the wizard', () {
+    // ⚠️ THE CONTRACT WIDENED with the "Needs details" filter. It was
+    // `detailsCompleted == false` alone; it is now that OR `isIncomplete`.
+    //
+    // These tests changed with it, and the change is the decision rather than
+    // a regression: the filtered list is what a user works through to COMPLETE
+    // their history, and routing them from it into the dense single page sends
+    // them to the screen the guided flow was built to replace.
+    //
+    // A record is COMPLETE here only if it has a duration, a type AND a
+    // severity — so the fixtures below have to say so explicitly.
+    EventRecord full({bool? completed}) =>
+        rec(secs: 90, completed: completed, severity: EventSeverity.mild);
+
+    test('6. a partial routes to the wizard', () {
       expect(wantsWizard(rec(completed: false)), isTrue);
     });
 
-    test('7. true routes to the single page', () {
-      expect(wantsWizard(rec(completed: true)), isFalse);
+    test('7. COMPLETE and finished routes to the single page', () {
+      expect(wantsWizard(full(completed: true)), isFalse);
     });
 
-    test('8. NULL routes to the single page - the existing records', () {
-      // The state every record on the device carries today. It must not be
-      // read as "incomplete": nothing back-fills it, and sending records that
-      // predate the concept into a wizard that does not describe them is the
-      // failure this three-state field exists to prevent.
-      expect(rec().detailsCompleted, isNull, reason: 'the default');
-      expect(wantsWizard(rec()), isFalse);
+    test('8. COMPLETE and NULL routes to the single page', () {
+      // A legacy record with nothing missing. It predates the concept and has
+      // nothing to fill in, so it keeps the screen it has always opened in.
+      final r = full();
+      expect(r.detailsCompleted, isNull, reason: 'the default');
+      expect(isIncomplete(r), isFalse, reason: 'and nothing is missing');
+      expect(wantsWizard(r), isFalse);
     });
 
-    test('9. NEGATIVE CONTROL: a two-state read would send NULL to the wizard',
+    test('9. NEGATIVE CONTROL: a two-state read would send COMPLETE NULLs in',
         () {
-      // If the field were a bool defaulting to false, or the check were
-      // `!= true`, every legacy record would route into the wizard.
+      // If the check were `!= true`, a legacy record with every field filled
+      // would route into the wizard — the failure the three-state field exists
+      // to prevent, and still prevented after the widening.
       bool twoState(EventRecord r) => r.detailsCompleted != true; // the defect
+      final r = full();
 
-      expect(twoState(rec()), isTrue, reason: 'the defect routes NULL in');
-      expect(wantsWizard(rec()), isFalse, reason: 'the real check does not');
-      // And the two agree on the case that SHOULD route in, so the difference
-      // is confined to null.
-      expect(twoState(rec(completed: false)), isTrue);
-      expect(wantsWizard(rec(completed: false)), isTrue);
+      expect(twoState(r), isTrue, reason: 'the defect routes it in');
+      expect(wantsWizard(r), isFalse, reason: 'the real check does not');
+    });
+
+    test('10. INCOMPLETE routes to the wizard WHATEVER the flag says', () {
+      // The gap the flag alone could not close. Three taps reach this state:
+      // open the wizard, Skip to end, Save — `detailsCompleted` is true and
+      // every field is null. That record appears in the "needs details" list,
+      // so it must open where the details are supplied.
+      final skipped = rec(completed: true);
+      expect(skipped.detailsCompleted, isTrue);
+      expect(isIncomplete(skipped), isTrue);
+      expect(wantsWizard(skipped), isTrue,
+          reason: 'completed-but-empty is exactly the record being hunted for');
+    });
+
+    test('11. and a legacy record MISSING one field routes there too', () {
+      // Catch-all: any unset field qualifies. Severity alone is enough.
+      final r = rec(secs: 90);
+      expect(r.severity, isNull);
+      expect(wantsWizard(r), isTrue);
     });
   });
 

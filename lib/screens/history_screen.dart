@@ -53,6 +53,13 @@ enum FilterKind {
   eventType,
   referral,
   dateRange,
+
+  /// Records with a duration, type or severity still unset. See [isIncomplete]
+  /// for where the line falls, and why it is FIELD INSPECTION rather than
+  /// `detailsCompleted` — the two answer different questions, and a
+  /// wizard-completed record with fields skipped is exactly the one being
+  /// hunted for.
+  incomplete,
 }
 
 /// What each reads as on the applied-filters line. Short, because several
@@ -64,6 +71,7 @@ extension FilterKindLabel on FilterKind {
       case FilterKind.eventType: return 'type';
       case FilterKind.referral:  return 'referral';
       case FilterKind.dateRange: return 'date';
+      case FilterKind.incomplete: return 'needs details';
     }
   }
 }
@@ -109,6 +117,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _searchText      = '';
   bool   _referralOnly    = false;
+  bool   _incompleteOnly  = false;
   _DateRange _dateRange   = _DateRange.all;
   final Set<String> _selectedTypes = {};
 
@@ -135,6 +144,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return _records.where((r) {
       // Referral filter
       if (_referralOnly && !r.referralRequired) return false;
+
+      // Needs-details filter. Catch-all: ANY unset field qualifies, because a
+      // record missing only its severity is still incomplete.
+      if (_incompleteOnly && !isIncomplete(r)) return false;
 
       // Event type filter — if none selected show all
       if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(r.eventType)) {
@@ -231,6 +244,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         FilterKind.eventType => _selectedTypes.isNotEmpty,
         FilterKind.referral => _referralOnly,
         FilterKind.dateRange => _dateRange != _DateRange.all,
+        FilterKind.incomplete => _incompleteOnly,
       };
       if (active) out.add(k);
     }
@@ -369,6 +383,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             _searchText = '';
                             _searchController.clear();
                             _referralOnly = false;
+                            _incompleteOnly = false;
                             _selectedTypes.clear();
                             _dateRange = _DateRange.all;
                           }),
@@ -406,6 +421,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   // short controls so that a long vocabulary pushes only ITSELF
                   // down — the sheet scrolls, and referral and date stay
                   // reachable by scrolling rather than being unreachable.
+                  // ── SHOW ONLY ──
+                  // A CHIP, not a toggle, per the decision: filter VALUES are
+                  // chips, filter MODES are toggles, and this is being treated
+                  // as a value.
+                  //
+                  // ⚠️ It sits FIRST, above the type chips, because the type
+                  // list is unbounded — a short control placed after it would
+                  // be pushed further down the sheet with every type a user
+                  // adds. The two short controls that could not scroll away
+                  // are placed where they cannot.
+                  //
+                  // "Referral required only" is still a toggle below. That is
+                  // not an inconsistency to tidy: referral is a MODE by the
+                  // same rule. If it ever moves, it moves into this section.
+                  const _SheetSectionLabel('Show only'),
+                  const SizedBox(height: 8),
+                  _NeedsDetailsChip(
+                    selected: _incompleteOnly,
+                    onToggle: () =>
+                        update(() => _incompleteOnly = !_incompleteOnly),
+                  ),
+                  const SizedBox(height: 20),
+
                   const _SheetSectionLabel('Event type'),
                   const SizedBox(height: 8),
                   _EventTypeFilterChips(
@@ -447,6 +485,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       _searchText = '';
       _searchController.clear();
       _referralOnly = false;
+      _incompleteOnly = false;
       _selectedTypes.clear();
       _dateRange = _DateRange.all;
     });
@@ -749,6 +788,55 @@ class _SheetSectionLabel extends StatelessWidget {
         text.toUpperCase(),
         style: Theme.of(context).textTheme.labelLarge,
       );
+}
+
+/// The "Needs details" chip.
+///
+/// Styled from `_DateRangeFilterChips` deliberately rather than freshly: the
+/// old filter row had four controls with no two sharing an implementation, and
+/// that is what the redesign set out to stop. A new control that invents a
+/// fifth look would undo it.
+class _NeedsDetailsChip extends StatelessWidget {
+  const _NeedsDetailsChip({required this.selected, required this.onToggle});
+
+  final bool selected;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? MERColours.primary : MERColours.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? MERColours.primary : MERColours.border,
+            width: selected ? 1.5 : 0.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              const Icon(Icons.check, size: 15, color: Colors.white),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              'Needs details',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? Colors.white : MERColours.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _AppliedFiltersBanner extends StatelessWidget {

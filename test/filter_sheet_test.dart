@@ -22,17 +22,25 @@ import 'package:medical_event_recorder/screens/history_screen.dart';
 /// Test 10 is the control for exactly that, and it is the reason `FilterKind`
 /// is an enum rather than four `||`s: an enum can be WALKED.
 
+/// [complete] controls whether the record satisfies [isIncomplete].
+///
+/// The corpus needs a MIX, or the "needs details" filter cannot be shown to
+/// narrow anything — and a filter test where the filter excludes nothing
+/// proves nothing.
 EventRecord rec(
   String id,
   DateTime ts, {
   String? type,
   bool referral = false,
   String notes = '',
+  bool complete = true,
 }) =>
     EventRecord(
       id: id,
       timestamp: ts,
       duration: null,
+      durationSeconds: complete ? 90 : null,
+      severity: complete ? EventSeverity.mild : null,
       feelings: const <String>[],
       triggers: const <String>[],
       referralRequired: referral,
@@ -48,8 +56,9 @@ void main() {
         rec('a', now.subtract(const Duration(days: 1)), type: 'seizure'),
         rec('b', now.subtract(const Duration(days: 2)),
             type: 'absence', referral: true),
+        // The only INCOMPLETE one: no duration, no severity.
         rec('c', now.subtract(const Duration(days: 200)),
-            type: 'seizure', notes: 'kangaroo'),
+            type: 'seizure', notes: 'kangaroo', complete: false),
       ];
 
   setUp(Vocabularies.debugReset);
@@ -113,6 +122,8 @@ void main() {
         await tester.tap(inSheet(find.byType(Switch)).first);
       case FilterKind.dateRange:
         await tester.tap(inSheet(find.text('Last 30 days')).first);
+      case FilterKind.incomplete:
+        await tester.tap(inSheet(find.text('Needs details')).first);
     }
     await tester.pumpAndSettle();
     await closeSheet(tester);
@@ -216,6 +227,13 @@ void main() {
           reason: 'the 200-day-old record falls outside 30 days');
     });
 
+    testWidgets('6a. NEEDS DETAILS alone', (tester) async {
+      await pump(tester);
+      await apply(tester, FilterKind.incomplete);
+      expect(find.textContaining('Showing 1 of 3'), findsOneWidget,
+          reason: 'only c has a duration and a severity unset');
+    });
+
     testWidgets('7. type alone', (tester) async {
       await pump(tester);
       await apply(tester, FilterKind.eventType);
@@ -287,8 +305,16 @@ void main() {
       // And the structural guard: the calculation is a switch over the enum
       // with no default, so a new FilterKind cannot compile without being
       // handled. Asserted as a fact about the ENUM being the source.
-      expect(FilterKind.values.length, 4,
-          reason: 'adding a fifth must fail the loop in group 1 until it is '
+      // ⚠️ THIS NUMBER MOVED, and that is the assertion doing its job rather
+      // than being brittle. A fifth kind — `incomplete` — was added, the
+      // generated loop in group 1 grew a case, the `apply` switch below
+      // stopped compiling until it was handled, and this line failed until it
+      // was updated. Four separate places refused to stay silent.
+      //
+      // Update it when a kind is added. Do NOT relax it to `greaterThan`: the
+      // point is that adding one is a deliberate act with a visible cost.
+      expect(FilterKind.values.length, 5,
+          reason: 'adding a sixth must fail the loop in group 1 until it is '
               'wired, rather than shipping a silent filter');
     });
 

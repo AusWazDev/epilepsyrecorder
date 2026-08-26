@@ -63,11 +63,29 @@ enum DurationAnswer {
 /// row, and the notification tap — because three copies of `== false` scattered
 /// across two files is exactly the drift a test cannot see.
 ///
-/// Only an explicit FALSE routes here. `true` is already finished and stepping
-/// it through four screens to change one field would be worse than the form;
-/// `null` predates the wizard and is neither complete nor incomplete, so it
-/// keeps the screen it has always opened in.
-bool wantsWizard(EventRecord r) => r.detailsCompleted == false;
+/// TWO reasons to route here, and the second was added with the "Needs
+/// details" filter:
+///
+///   1. `detailsCompleted == false` — a PARTIAL. Someone started and stopped.
+///   2. [isIncomplete] — a duration, type or severity is still unset,
+///      WHATEVER the flag says.
+///
+/// ⚠️ **THE SECOND EXISTS BECAUSE OF THE FILTERED LIST.** That list is what a
+/// user works through to COMPLETE their history, and sending them from it into
+/// the dense single page is sending them to the screen the guided flow was
+/// built to replace, for the population it was built for.
+///
+/// It also fixes a gap the flag alone could not: a record can be
+/// `detailsCompleted == true` with every field null — open the wizard, Skip to
+/// end, Save — and that record would have routed to the form while appearing
+/// in a list of incomplete ones.
+///
+/// `true` AND complete still opens the single page: stepping a finished record
+/// through four screens to change one field would be worse than the form.
+/// `null` and complete does too — it predates the concept and has nothing
+/// missing.
+bool wantsWizard(EventRecord r) =>
+    r.detailsCompleted == false || isIncomplete(r);
 
 DurationAnswer durationAnswerOf(EventRecord? r) {
   if (r?.durationSeconds != null) return DurationAnswer.measured;
