@@ -2,6 +2,72 @@
 
 ---
 
+## Session: 26 August 2026 — Windows (Claude Code CLI)
+
+⚠️ **PARTIAL. This section records the CSV delimited change only.** 23 commits landed
+today — the duration quantity, the wizard, user-defined vocabularies, the observation
+revision, the History filter redesign, the "Needs details" queue and Help corrections among
+them. Those 22 are in the Change Register and in `git log`, and are not yet summarised here.
+Written this way rather than left blank so the gap is visible instead of implied.
+
+### The CSV delimited change
+
+**The one-hot export is gone in both halves. 26 → 17 → 11 columns.** Eleven observation
+columns collapsed earlier today when observations became user-extensible; the seven trigger
+columns collapsed here.
+
+- **Delimiter `; `.** A value containing it is **quoted with its own quotes doubled** —
+  `"Dizzy; unsteady"; Stress` — the convention CSV already uses, one level down. The words
+  someone chose are never altered; only punctuation is added around the entry that needed it.
+- **Empty set is blank**, never `none`. Two states, not three — and `none` would be a value
+  indistinguishable from a user-defined observation called "None".
+- **Shape marker is a filename suffix**, `..._20260826_230917.v2.csv`. Nothing reads it. Both
+  export paths now build the name through one `csvFilename`, where they previously assembled
+  it independently.
+- **The emoji stripper was replaced, not reused.** The retired one was POSITIONAL and would
+  have eaten the first WORD of any user-defined entry — `Dizzy spell` as `spell`. The
+  replacement writes each entry's LABEL, so the guess is gone rather than improved. Test 10
+  is the negative control and asserts the positional output explicitly.
+
+### ⚠️ The column is `beforehand`, not `triggers`, and a test caught it
+
+The first implementation named it `triggers`. `beforehand_wording_test` failed on the same
+run. **The seven one-hot columns were the OPTION NAMES with no group heading, so the export
+had nowhere for a causal label to live** — which is why three briefs of causal-wording work
+never reached it. Collapsing to one column forces a heading, and the structural protection
+vanished in the same edit that created the need for it.
+
+⭐ **A property that holds because of how something is SHAPED stops holding when the shape
+changes, and nothing announces that.** The check has to outlive the structure it was written
+against; this one did. Its own positive control had to move from the header to the row in the
+same edit, because the option names stopped being columns.
+
+### Verified
+
+`flutter analyze` 44 issues, 0 errors, 0 warnings. `flutter test` **364 pass**, 2 known
+pre-existing failures (was 344/2). `ios/` subtree `63d3251` unchanged, working tree clean.
+Device: Teclast P30, versionCode 31, `adb install -r`.
+
+**Device diff, 17-column export pulled before installing against 11-column after:**
+710 shared cells over 71 rows, **CELLS THAT DIFFER: NONE**; the re-encoded field read back
+from both encodings, **SETS THAT DIFFER: NONE**. ⚠️ That last denominator is thin — 1
+non-empty row of 71 — so multi-value and ordering were shown on a throwaway record, deleted
+afterwards, device confirmed back to 71. Its row: `Confused; Tired,Stress; Illness` with
+`Illness` tapped FIRST, so the reordering to picker order is demonstrated rather than argued.
+
+**Not demonstrated on hardware:** the quoting of a delimiter-bearing value. It would need a
+user-defined observation containing `;`, and the vocabulary has no delete — only hide — so it
+would leave permanent junk. Covered by tests 4–7 including the negative control.
+
+**Backup shares no code with the export**, verified by enumeration: `backup.dart` takes only
+`EventRecord`, `fromMap` and `toMap`, and every diff hunk falls after the CSV banner.
+`backup_service.dart` has its own filename builder, so `.v2` cannot reach it.
+
+Also corrected: **`DATA-MODEL.md` §0 said "as at schema v3" while the code is at v4** — the
+one section whose whole claim is that it was derived from the DDL rather than remembered.
+
+---
+
 ## Session: 25 August 2026 (evening) — Windows (Claude Code CLI)
 
 **SQLite phase one shipped and verified on two platforms; notification and

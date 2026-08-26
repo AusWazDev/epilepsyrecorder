@@ -14,7 +14,7 @@ concluded `condition_id` did not exist. It does.
 
 ---
 
-## 0. What is BUILT, as at schema v3 — 26 August 2026
+## 0. What is BUILT, as at schema v4 — 26 August 2026
 
 **Derived from the DDL in `lib/models/`, not from memory.** Regenerate this
 section at every schema bump; a divergence table that is not maintained is worse
@@ -26,8 +26,13 @@ than none.
 |-------|-------|
 | `schema_meta` | key/value. Carries the schema version and the migration markers. |
 | `event` | 14 columns — see below. |
-| `event_type` | The vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order`. |
+| `event_type` | The vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order, emoji`. |
 | `observation` | Identical shape. Shared across conditions by §1 principle 4, so its `condition_id` will never be populated. |
+
+⚠️ **`emoji` was added in v4**, on both vocabulary tables, and this heading
+read `v3` until 26 August. It is presentation only: pickers render it, records
+and the CSV never do. Corrected here because §0 is the one section whose whole
+claim is that it was derived from the DDL rather than remembered.
 
 ### `event` columns that exist
 
@@ -337,8 +342,36 @@ addition.
 Observations and triggers become **delimited columns**. Emoji stripped from
 **values** as well as headers.
 
-This breaks the current 26-column one-hot format, as already accepted. One-hot
-columns cannot survive user-defined options.
+✅ **BOTH HALVES ARE BUILT, 26 August 2026.** Eleven observation columns
+collapsed when observations became user-extensible; the seven trigger columns
+collapsed in the same shape a stage later. **26 → 17 → 11 columns.** Order is
+unchanged: the delimited column sits where its one-hot block sat.
+
+| | |
+|---|---|
+| Delimiter | `; ` — `kCsvListDelimiter` |
+| A value containing it | Quoted, with its own quotes doubled: `"Dizzy; unsteady"; Stress`. The same convention CSV uses, one level down. **The value is never altered** |
+| Empty set | **Blank.** Not `none`, which would be a value indistinguishable from a user-defined observation called "None" |
+| Emoji | Stripped by LOOKUP, never by position. `Vocabularies.labelFor` |
+| Shape marker | A **filename suffix**, `..._20260826_230917.v2.csv`. Not a column |
+| Ordering | Beforehand in picker order, preserving what the one-hot columns did. Observations in storage order, unchanged from before |
+
+⚠️ **THE COLUMN IS `beforehand`, NOT `triggers`.** The seven one-hot columns
+were the OPTION NAMES with no group heading over them, so the export never had
+to name this field — and that is the only reason the causal-wording work never
+reached it. Collapsing to one column forces a heading, and `triggers` asserts
+that what is listed CAUSED the event. `beforehand_wording_test` caught it on the
+run that introduced it.
+
+**Read as a standing example:** a property that holds because of how something
+is SHAPED stops holding when the shape changes, and nothing announces that. The
+check has to outlive the structure it was written against.
+
+**NO compatibility mode, NO second export option, NO version negotiation** —
+the standing decision of 26 August 2026. One user, known to the developer;
+amending the spreadsheet by hand once is acceptable. Nothing reads the `v2`
+marker. **That decision is void the day there is a second user, and no test can
+catch it turning false.**
 
 **MER does not correlate the streams.** Both go in the file on the same
 timeline; the specialist does the reading. Charting missed doses against events

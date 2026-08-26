@@ -230,12 +230,16 @@ void main() {
     });
   });
 
-  // 27 since duration became a quantity. The column was ADDED deliberately,
-  // ahead of the multi-stream rewrite, because one column cannot serve both
-  // readers: a clinician wants the readable value and anyone computing a mean
-  // needs the number, which cannot be recovered from "1-5 minutes". Nothing
-  // else moved — `duration_seconds` sits immediately after `duration`.
-  group('the CSV columns are unchanged apart from duration_seconds', () {
+  // ELEVEN COLUMNS, down from 27. The one-hot block is gone in both halves:
+  // eleven observation columns collapsed when observations became
+  // user-extensible, and seven trigger columns collapse here, completing
+  // DATA-MODEL.md section 6.
+  //
+  // This test is the shape's only fixed point. Nothing in the app reads a CSV
+  // back, so a column that moved, doubled or vanished would not fail anywhere
+  // else - the file would simply be wrong, in the one artefact that leaves the
+  // app and goes to a clinician.
+  group('the CSV columns', () {
     test('header row, in order', () {
       final header = buildCsv(<EventRecord>[
         record('a', DateTime(2026, 8, 22, 18, 0)),
@@ -256,15 +260,10 @@ void main() {
         // clinician reads. DATA-MODEL.md §6 always required this; user-defined
         // vocabularies made it required NOW rather than at the final stage.
         'observations',
-        // Triggers are UNCHANGED. Not user-defined this stage, so the fixed
-        // columns still represent them exactly.
-        'Stress',
-        'Poor sleep',
-        'Missed medication',
-        'Alcohol',
-        'Flashing lights',
-        'Illness',
-        'Unknown',
+        // And triggers, in the same place the seven columns occupied, so the
+        // reading order of the file is unchanged: when, what, how long, how
+        // bad, what after, what before, referral, notes.
+        'beforehand',
         'referral_required',
         'notes',
       ]);
@@ -296,10 +295,10 @@ void main() {
       // above is a naming fact and not a dropped field.
       expect(csv, contains('Confused'));
 
-      // Triggers carry no emoji and pass through untouched.
-      for (final trigger in kTriggerOptions) {
-        expect(csv, contains(trigger));
-      }
+      // Triggers carry no emoji and pass through untouched. Only the ones
+      // this record HOLDS now - the seven names no longer appear as headers.
+      expect(csv, isNot(contains('Poor sleep')),
+          reason: 'a trigger this record does not hold has no column any more');
     });
   });
 }

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:medical_event_recorder/constants.dart';
+
 import 'package:medical_event_recorder/models/backup.dart';
 import 'package:medical_event_recorder/models/capture_inbox.dart';
 import 'package:medical_event_recorder/models/capture_instruction.dart';
@@ -283,17 +283,19 @@ void main() {
     });
 
     test('15. the CSV column count, and what changed it', () {
-      // Was "keeps its 26 columns". It does not any more, and the change was
-      // FORCED: eleven one-hot feelings columns could only ever hold values MER
-      // shipped, so a user-defined observation had no column and would have
-      // vanished from the export. They collapsed to ONE delimited column.
+      // Was "keeps its 26 columns", then 17, now 11. Both one-hot blocks are
+      // gone and the reason was the same both times: a fixed column per option
+      // can only ever hold values MER shipped, so anything user-defined - or
+      // restored from another install - has no column and vanishes from the
+      // file. Eleven observation columns collapsed first, because observations
+      // became extensible first; the seven beforehand columns followed.
       //
       // Counted from the parts rather than asserted as a bare number, so the
       // next change has to say what it changed instead of editing a literal.
-      const fixed = 8; // iso, date, time, event_type, duration,
-                       // duration_seconds, severity, observations
+      const fixed = 9; // iso, date, time, event_type, duration,
+                       // duration_seconds, severity, observations, beforehand
       const tail = 2; // referral_required, notes
-      final expected = fixed + kTriggerOptions.length + tail;
+      final expected = fixed + tail;
 
       final csv = buildCsv([rec('a', t0)]);
       final header = const LineSplitter().convert(csv).first;

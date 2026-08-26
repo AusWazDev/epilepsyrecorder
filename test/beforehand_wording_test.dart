@@ -129,10 +129,20 @@ void main() {
 
   test('5. the CSV never labels the field at all', () {
     // A clinician reads the export, so a causal column heading there would be
-    // the most consequential place to get this wrong. It cannot happen: the
-    // columns are the OPTION NAMES themselves, one Yes/blank each, with no
-    // group heading over them. Pinned so a future multi-stream rewrite does
-    // not quietly introduce one.
+    // the most consequential place to get this wrong.
+    //
+    // ⚠️ IT ONCE COULD NOT HAPPEN, AND THEN IT DID. The seven one-hot columns
+    // were the OPTION NAMES themselves with no group heading over them, so the
+    // export had no place to name the field. The delimited change removed that
+    // structural protection - one column must have one heading - and the first
+    // implementation of it named the column `triggers`. THIS TEST IS WHAT
+    // CAUGHT IT, on the run that introduced it. The heading is now
+    // `beforehand`, the word already on both screens.
+    //
+    // Read as a standing example: a property that holds because of how
+    // something is SHAPED stops holding when the shape changes, and nothing
+    // announces that. The check has to outlive the structure it was written
+    // against.
     final header = buildCsv(const <EventRecord>[]).split('\n').first;
     final columns = header.split(',');
 
@@ -143,8 +153,28 @@ void main() {
 
     // POSITIVE CONTROL: the field's VALUES are exported, so the absence above
     // is a naming fact and not a missing field.
-    expect(columns, containsAll(kTriggerOptionsForTest),
-        reason: 'the options are the columns');
+    //
+    // It reads the ROW now, not the header. The options stopped being columns
+    // when they became one delimited cell - and a control that had been left
+    // pointing at the header would have gone on passing while measuring
+    // nothing, because `containsAll` over a list that no longer holds them
+    // fails loudly, but the version of this that checked only the header for
+    // ABSENCE would not have.
+    final row = buildCsv(<EventRecord>[
+      EventRecord(
+        id: 'r',
+        timestamp: DateTime(2026, 8, 26, 9, 0),
+        duration: null,
+        feelings: const <String>[],
+        triggers: kTriggerOptionsForTest,
+        notes: '',
+        referralRequired: false,
+      )
+    ]).trim().split('\n').last;
+
+    for (final option in kTriggerOptionsForTest) {
+      expect(row, contains(option), reason: 'the options are the values');
+    }
   });
 }
 

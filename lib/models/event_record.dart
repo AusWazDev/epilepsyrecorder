@@ -613,6 +613,74 @@ String _csvEscape(String v) {
 // observation's LABEL, and a legacy entry's label is its value without the
 // emoji. A regex that guessed at "leading non-space run" is no longer between
 // the stored string and the export.
+//
+// The replacement is not a better regex, it is a DIFFERENT KIND OF THING. The
+// old stripper was POSITIONAL: it removed the leading non-space run, whatever
+// that run happened to be. Against the shipped values that looked correct,
+// because every one of them started with an emoji. Against a user-defined
+// entry it would have eaten the first WORD - "Dizzy spell" exported as "spell"
+// - and a positional rule cannot tell the two cases apart, because it never
+// looks at what it is removing. Looking the value up removes the guess: an
+// entry's label is a stored fact about that entry, and an entry with no emoji
+// has a label identical to its value.
+
+/// What separates two entries inside one cell.
+///
+/// Semicolon-space, not a comma: a comma inside an already-quoted CSV field is
+/// legal but reads as a column break to anyone eyeballing the raw file, and
+/// "; " renders cleanly in a spreadsheet cell.
+const String kCsvListDelimiter = '; ';
+
+/// Joins entries into one cell, quoting any entry that contains the delimiter.
+///
+/// ## The problem, and why it is not theoretical
+///
+/// A user-defined entry is free text. Someone can type "Dizzy; unsteady", and
+/// then one entry is indistinguishable from two - in the one artefact a
+/// clinician actually reads, with nothing on screen to reveal it.
+///
+/// ## Why quoting rather than the alternatives
+///
+/// - **Substituting** the delimiter inside the value (";" becomes ",") would
+///   silently alter the words someone chose. This project does not rewrite a
+///   user's wording anywhere else and will not start in the export.
+/// - **A backslash escape** puts an escape character in a clinical spreadsheet
+///   cell. It is recoverable, but it is noise in a document a specialist reads.
+/// - **Refusing the character at entry** would make the file format a
+///   constraint on what someone may call their own symptom. The word wins.
+///
+/// So: the same convention CSV already uses, applied one level down. An entry
+/// containing the delimiter or a quote is wrapped in quotes with its own
+/// quotes doubled. A reader sees the original words with quotation marks
+/// around the one that needed them, and a splitter can recover the set exactly.
+///
+/// The outer [_csvEscape] then quotes the whole cell and doubles these quotes
+/// again, which is correct: a spreadsheet unwraps exactly one layer.
+String csvJoinList(Iterable<String> values) => values
+    .map((v) => (v.contains(';') || v.contains('"'))
+        ? '"${v.replaceAll('"', '""')}"'
+        : v)
+    .join(kCsvListDelimiter);
+
+/// Triggers in the order the picker offers them, with anything unrecognised
+/// appended.
+///
+/// ## Both halves are load-bearing
+///
+/// **Canonical order first** preserves what the seven one-hot columns did. A
+/// column is comparable down the page only if the same set always renders the
+/// same way; storage order is tap order, so "Stress; Illness" and
+/// "Illness; Stress" would be the same record read two ways.
+///
+/// **The remainder is the whole point of the change.** A one-hot export had no
+/// column for a value it did not ship, so such a value vanished from the file.
+/// Filtering [kTriggerOptions] alone would reproduce that exactly. Anything
+/// stored and unrecognised - from a restored backup, or from triggers becoming
+/// user-defined later - lands at the end of the cell instead of nowhere.
+List<String> csvOrderedTriggers(List<String> stored) => <String>[
+      ...kTriggerOptions.where(stored.contains),
+      ...stored.where((t) => !kTriggerOptions.contains(t)),
+    ];
 
 String buildCsv(List<EventRecord> items) {
   final fmtDate = DateFormat('yyyy-MM-dd');
@@ -643,12 +711,27 @@ String buildCsv(List<EventRecord> items) {
     // change NOW rather than at the final stage.
     //
     // Semicolon, not comma: a comma would need quoting inside an already
-    // quoted field, and "; " reads cleanly in a spreadsheet cell.
+    // quoted field, and "; " reads cleanly in a spreadsheet cell. See
+    // [csvJoinList] for what happens when a value contains one.
     'observations',
-    // Triggers stay ONE-HOT this stage. They are not user-defined yet, so the
-    // fixed columns still represent them exactly, and the brief holds triggers
-    // unchanged. When they become user-defined they move the same way.
-    ...kTriggerOptions,
+    // AND NOW THE BEFOREHAND FIELD TOO, which completes DATA-MODEL.md
+    // section 6. It moved a stage later than observations only because
+    // observations were forced first - a user-defined observation had nowhere
+    // to go. These are still seeded-only, so nothing was being LOST today;
+    // what the seven columns cost was width. Seven columns of "Yes" and blank,
+    // read left to right to reconstruct one short list, in a file whose reader
+    // is a person.
+    //
+    // ⚠️ `beforehand`, NOT `triggers`. The seven one-hot columns were the
+    // OPTION NAMES with no group heading over them, so the export never had to
+    // name this field. Collapsing them to one column forces a name, and
+    // "triggers" asserts that what is listed CAUSED the event - the claim the
+    // single-page form, the wizard and Help were all changed to avoid. The
+    // export is the most consequential place to make it, because a clinician
+    // reads it and the app is not there to qualify it. `beforehand` is the
+    // word already on both screens. See beforehand_wording_test, which failed
+    // on `triggers` and is why this reads as it does.
+    'beforehand',
     'referral_required',
     'notes',
   ].map(_csvEscape).join(','));
@@ -669,10 +752,22 @@ String buildCsv(List<EventRecord> items) {
       // legacy entry's label is its value without one. DATA-MODEL.md §6 requires
       // emoji stripped from values as well as headers, and the raw strings
       // already render as mojibake in History rows on the tablet.
-      r.feelings
-          .map((v) => Vocabularies.labelFor(kObservationTable, v))
-          .join('; '),
-      ...kTriggerOptions.map((t) => r.triggers.contains(t) ? 'Yes' : ''),
+      csvJoinList(
+          r.feelings.map((v) => Vocabularies.labelFor(kObservationTable, v))),
+      // BLANK when nothing was recorded, not the word "none".
+      //
+      // Deliberate, and the opposite of the duration and severity rule three
+      // lines up - because the question is different. Duration has three
+      // states and a blank could not distinguish "not asked" from "asked and
+      // not answered", so those columns spell it out. Observations have two:
+      // recorded, or not. And a seven-column one-hot has ALWAYS written blank
+      // for "not noted", so a blank here says exactly what the file has always
+      // said.
+      //
+      // "none" would also be a VALUE, indistinguishable from a user-defined
+      // observation literally called "None" - which is a thing someone may
+      // reasonably add.
+      csvJoinList(csvOrderedTriggers(r.triggers)),
       r.referralRequired ? 'Yes' : 'No',
       r.notes,
     ].map(_csvEscape).join(','));
@@ -684,17 +779,42 @@ String buildCsv(List<EventRecord> items) {
    EXPORT OPTIONS
    =========================== */
 
+/// The shape marker. `..._20260826_223000.v2.csv`.
+///
+/// ## Why the filename and not a column
+///
+/// A column would repeat the same value on all 71 rows, and it would sit
+/// INSIDE the data a clinician reads - a field about the file, filed among
+/// fields about the patient. The filename is metadata about the file, which is
+/// what this is. It is also readable BEFORE the file is opened, which is when
+/// someone deciding whether a spreadsheet will line up actually wants it.
+///
+/// ## What v2 means, and what it does not
+///
+/// It marks the shape, and nothing reads it. There is no compatibility mode,
+/// no second export option and no version negotiation, per the standing
+/// decision of 26 August 2026: MER has one user, known to the developer, and
+/// amending their spreadsheet by hand once is acceptable. The marker exists so
+/// a file's shape is identifiable, not so code can branch on it.
+///
+/// ⚠️ ONE FUNCTION, called by BOTH export paths. They previously built the
+/// same name from the same three parts independently, which is how a marker
+/// ends up on the shared file and not the saved one.
+String csvFilename({String? prefix, DateTime? when}) {
+  final p = (prefix == null || prefix.isEmpty)
+      ? 'medical_event_recorder'
+      : prefix;
+  final ts = DateFormat('yyyyMMdd_HHmmss').format(when ?? DateTime.now());
+  return '${p}_$ts.v2.csv';
+}
+
 Future<File> _buildCsvTempFile(
   List<EventRecord> items, {
   String? filenamePrefix,
 }) async {
   final csv = buildCsv(items);
   final dir = await getTemporaryDirectory();
-  final ts  = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-  final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
-      ? 'medical_event_recorder'
-      : filenamePrefix;
-  final file = File('${dir.path}/${prefix}_$ts.csv');
+  final file = File('${dir.path}/${csvFilename(prefix: filenamePrefix)}');
   await file.writeAsString(csv, flush: true);
   return file;
 }
@@ -753,11 +873,7 @@ Future<void> exportCsvSaveAs(
   }
 
   final csv = buildCsv(items);
-  final ts  = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-  final prefix = (filenamePrefix == null || filenamePrefix.isEmpty)
-      ? 'medical_event_recorder'
-      : filenamePrefix;
-  final filename = '${prefix}_$ts.csv';
+  final filename = csvFilename(prefix: filenamePrefix);
 
   // ── ANDROID — save to Downloads ──
   if (Platform.isAndroid) {
