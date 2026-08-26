@@ -193,6 +193,13 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           actions: [
             if (!onSummary)
               TextButton(
+                // EXPLICIT white. A bare TextButton takes its foreground from
+                // colorScheme.primary — which is 0xFF0D4F82, the same colour as
+                // the AppBar behind it. On the tablet this rendered navy on
+                // navy: present, tappable, and completely invisible. AppBar's
+                // `foregroundColor` does not reach it; buttons carry their own
+                // ButtonStyle.
+                style: TextButton.styleFrom(foregroundColor: Colors.white),
                 onPressed: () => setState(() {
                   _capture();
                   _step = _lastStep + 1;
@@ -205,6 +212,14 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         ),
         body: SafeArea(
           child: Column(
+            // STRETCH, not the default centre. Under centre alignment a Column
+            // hands its children LOOSE width constraints, so the scroll view
+            // shrink-wraps to its widest line and floats in the middle — which
+            // is what the summary did on the tablet, indented 200px while the
+            // footer beneath it ran full width. Steps carrying a full-width
+            // child (the duration Row, the chip Wraps) hid the defect by
+            // filling the width for their own reasons.
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!onSummary)
                 LinearProgressIndicator(
