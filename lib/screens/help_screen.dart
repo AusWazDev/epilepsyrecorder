@@ -111,25 +111,37 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   icon:      Icons.circle,
                   iconColor: Color(0xFFD32F2F),
                   title:     'Quick record',
-                  body:      'Tap the red Record Event button to instantly log an event with the current timestamp.',
+                  // Accurate before and after the nullable work — a quick record now
+                  // genuinely carries a timestamp and nothing else. What it lacked was
+                  // the NEXT step: it read as though that is all one can ever be.
+                  body:      'Tap the red Record Event button to instantly log an event with the '
+                             'current timestamp — nothing else is recorded and nothing is guessed. '
+                             'Add the details whenever you are ready, from the last event on the '
+                             'home screen or from History.',
                 ),
                 _HelpRow(
                   icon:  Icons.tune,
                   title: 'Record with details',
-                  // Named in the order the fields appear on the details screen,
-                  // using its own section labels: "What happened?", Duration,
-                  // Severity, "Afterwards", "What was happening
-                  // beforehand?", "Medical referral required?", "Notes
-                  // (optional)". The previous wording listed four of the seven and
-                  // omitted event type and feelings — the nine-field model
-                  // UNDER-described.
+                  // ⚠️ REWRITTEN 26-Aug-26. This row described a SINGLE FORM. The
+                  // blue button opens the WIZARD — four guided steps with a summary —
+                  // and the row listed the fields in the single page's order, which is
+                  // not even the order the wizard asks them in: duration is first
+                  // there.
                   //
-                  // THREE labels have now moved by this row's own rule: the trigger
-                  // field away from a causal noun, the type field to match the
-                  // wizard's step 2, and the observation field away from "How are
-                  // you feeling?" — present tense, which did not say the field
-                  // means AFTER the event.
-                  body:  'Use the blue Record with details button to set what happened, duration and severity, how you felt afterwards, what was happening beforehand, whether a medical referral is needed, and notes — before saving. Anything you add to a list is offered next time.',
+                  // Found by checking the BUTTON against the running app rather than by
+                  // reading this file. The copy was internally coherent and pointed at
+                  // a screen that button no longer opens.
+                  //
+                  // It now describes the SHAPE of the flow rather than enumerating
+                  // fields in an order that will move again. The old rule — "named in
+                  // the order the fields appear on the details screen" — retires with
+                  // it: there are two screens now and they order things differently on
+                  // purpose.
+                  body:  'Use the blue Record with details button for a guided version: one question '
+                         'at a time — how long it lasted, what happened, what was going on beforehand, '
+                         'and how you felt afterwards — with a summary before you save. You can skip '
+                         'any step, and whatever you have entered is kept if you back out. Anything '
+                         'you add to a list is offered next time.',
                 ),
                 _HelpRow(
                   icon:   Icons.edit_outlined,
@@ -140,7 +152,12 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // What a History row actually offers, verified in
                   // history_screen.dart: onTap opens the editor, and a trailing
                   // delete IconButton whose handler confirms first.
-                  body:   'Tap any event in the list to open it and make changes. In History, each row also has a delete button, and deleting asks you to confirm first.',
+                  // The routing is invisible and a user WILL notice the screens differ,
+                  // so the row says why rather than leaving it as apparent inconsistency.
+                  body:   'Tap any event in the list to open it and make changes. An event you '
+                          'started adding details to reopens in the guided steps so you can '
+                          'carry on; everything else opens as a single form. In History, each '
+                          'row also has a delete button, and deleting asks you to confirm first.',
                   isLast: true,
                 ),
               ],
@@ -179,11 +196,13 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // the two things that tell a user a filter is still on, and
                   // a forgotten filter is what makes an exported history
                   // incomplete.
-                  body:   'Tap the filter icon at the top of the History screen to search, or to '
-                          'narrow by event type, date range, or whether a referral was needed. '
-                          'A number on the icon shows how many filters are on, and a red bar above '
-                          'the list says what they are and how many events you are seeing. Tap '
-                          '"Clear" on that bar to see everything again.',
+                  body:   'Your history can be narrowed — by a word you search for, by event '
+                          'type, by date range, or to just the events that needed a referral. '
+                          'The controls are not on the screen: they are behind the filter icon '
+                          'at the top of History, so tap that to open them. A number on the icon '
+                          'shows how many filters are on, and a red bar above the list says what '
+                          'they are and how many events you are seeing. Tap "Clear" on that bar '
+                          'to see everything again.',
                 ),
                 _HelpRow(
                   icon:   Icons.download_outlined,
