@@ -170,6 +170,9 @@ Map<String, Object?>? rawMapToRow(
         rawTriggers is List ? jsonEncode(rawTriggers.map((e) => e.toString()).toList()) : null,
     'notes': rawNotes is String ? rawNotes : null,
     'referral_required': rawReferral is bool ? (rawReferral ? 1 : 0) : null,
+    // NULL, always, for a legacy payload: these records predate the wizard
+    // and are neither complete nor incomplete. Nothing back-fills it.
+    'details_completed': null,
   };
 }
 

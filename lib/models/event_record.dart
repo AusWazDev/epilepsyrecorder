@@ -100,11 +100,6 @@ String severityLabel(EventSeverity s) {
 class EventRecord {
   final String id;
   final DateTime timestamp;
-  /// NULL means UNKNOWN — not zero, and not short.
-  ///
-  /// Only the abandonment timeout produces one today; the wizard makes it
-  /// reachable by a user in a later stage. Every migrated record has a
-  /// bucket, so nothing existing is null.
   /// The BUCKET. Never derived from [durationSeconds], and never derived FROM.
   ///
   /// Records captured before duration became a quantity hold a range and will
@@ -124,6 +119,24 @@ class EventRecord {
   ///   seconds == null, bucket != null  a legacy range, no number
   ///   both null                        unknown
   final int? durationSeconds;
+
+  /// Whether the guided wizard was walked to its end for this record.
+  ///
+  /// THREE STATES, and the third is the point:
+  ///   true   the wizard was completed
+  ///   false  a partial — created by the wizard and abandoned, or a capture
+  ///          that has not been through it
+  ///   NULL   PREDATES THE CONCEPT. The 71 records captured before the wizard
+  ///          existed are neither complete nor incomplete; asserting either
+  ///          would be a claim about work nobody did.
+  ///
+  /// ROUTES ONLY, never gates. Null and true open the single-page editor —
+  /// null because those records were captured under a design the wizard does
+  /// not describe, and walking them through it would ask about a shape they
+  /// never had.
+  ///
+  /// Nothing back-fills it. Only the wizard's summary step sets it true.
+  final bool? detailsCompleted;
   final List<String> feelings;
   final bool referralRequired;
   final String notes;
@@ -138,6 +151,7 @@ class EventRecord {
     required this.timestamp,
     required this.duration,
     this.durationSeconds,
+    this.detailsCompleted,
     required this.feelings,
     required this.referralRequired,
     required this.notes,
@@ -183,6 +197,7 @@ class EventRecord {
         'timestamp':        timestamp.toIso8601String(),
         'duration':         duration?.name,
         'durationSeconds':  durationSeconds,
+        'detailsCompleted': detailsCompleted,
         'feelings':         feelings,
         'referralRequired': referralRequired,
         'notes':            notes,
@@ -212,6 +227,10 @@ class EventRecord {
       duration: durationFromName(map['duration']),
       durationSeconds:
           (map['durationSeconds'] is int) ? map['durationSeconds'] as int : null,
+      // Absent means NULL, not false. A backup written before the wizard
+      // existed must not come back asserting its records were incomplete.
+      detailsCompleted:
+          (map['detailsCompleted'] is bool) ? map['detailsCompleted'] as bool : null,
       feelings: (feelingsRaw is List)
           ? feelingsRaw.map((e) => e.toString()).toList()
           : <String>[],

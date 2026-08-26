@@ -79,6 +79,7 @@ class StorageBoot {
         options: OpenDatabaseOptions(
           version: kSqliteSchemaVersion,
           onCreate: (db, _) => createSchema(db),
+          onUpgrade: upgradeSchema,
         ),
       );
       _db = db;

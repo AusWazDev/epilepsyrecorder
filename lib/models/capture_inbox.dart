@@ -161,6 +161,11 @@ InboxDrainResult applyInbox(
       feelings: const [],
       referralRequired: false,
       notes: '',
+      // FALSE, not null. A quick-recorded event is a PARTIAL — created after
+      // the wizard exists, carrying a timestamp and nothing anyone chose. Null
+      // is reserved for the records that predate the concept, and writing it
+      // here would deny every new event the guided path it exists for.
+      detailsCompleted: false,
     );
     order.add(instruction.id);
     changed = true;
@@ -215,6 +220,10 @@ InboxDrainResult applyInbox(
       eventType: record.eventType,
       severity: record.severity,
       triggers: record.triggers,
+      // Carried, never re-defaulted. An end can drain AFTER the user has walked
+      // the wizard, and rebuilding without this would silently reopen a record
+      // they had finished.
+      detailsCompleted: record.detailsCompleted,
     );
     changed = true;
   }

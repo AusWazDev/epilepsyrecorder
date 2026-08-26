@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/event_record.dart';
+import '../screens/event_wizard_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../theme/mer_theme.dart';
 
@@ -263,12 +264,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // ── EDIT ──
   Future<void> _editRecord(EventRecord r) async {
+    // The SAME three-way routing as the Last Event card, so a record does not
+    // open one way from Home and another from History:
+    //   false  a partial          -> the guided wizard
+    //   true   already completed  -> the single page
+    //   null   predates it        -> the single page
     final result = await Navigator.of(context).push<EventRecord>(
       MaterialPageRoute(
-        builder: (_) => LogEventScreen(
-          existing:      r,
-          confirmOnSave: true,
-        ),
+        builder: (_) => wantsWizard(r)
+            ? EventWizardScreen(existing: r)
+            : LogEventScreen(
+                existing:      r,
+                confirmOnSave: true,
+              ),
       ),
     );
 

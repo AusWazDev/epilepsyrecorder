@@ -19,7 +19,13 @@ import 'event_record.dart';
 
 /// Bumped only when the shape changes. The old store had no version field at
 /// all, and that gap has cost repeatedly.
-const int kSqliteSchemaVersion = 1;
+/// 2 since the wizard: `event.details_completed` was added.
+///
+/// The FIRST bump since phase one. Additive only — an ADD COLUMN on a populated
+/// table, which is non-destructive and leaves every existing value untouched.
+/// The new column is NULL on every existing row, which is exactly right: those
+/// records predate the concept.
+const int kSqliteSchemaVersion = 2;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -68,11 +74,25 @@ const String createEventSql = 'CREATE TABLE event ('
     'feelings_json TEXT, '
     'triggers_json TEXT, '
     'notes TEXT, '
-    'referral_required INTEGER)';
+    'referral_required INTEGER, '
+    // Nullable THREE ways: 1 complete, 0 partial, NULL predates the wizard.
+    'details_completed INTEGER)';
 
 const String createEventIdIndexSql = 'CREATE INDEX idx_event_id ON event(id)';
 const String createEventLoggedAtIndexSql =
     'CREATE INDEX idx_event_logged_at ON event(logged_at)';
+
+/// Adds `details_completed` to a phase-one database.
+///
+/// Additive and non-destructive: no row is rewritten and no value is derived.
+/// Every existing row gets NULL, which is the honest answer for a record
+/// captured before the wizard existed.
+Future<void> upgradeSchema(Database db, int from, int to) async {
+  if (from < 2 && to >= 2) {
+    await db.execute('ALTER TABLE event ADD COLUMN details_completed INTEGER');
+    await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
+  }
+}
 
 Future<void> createSchema(Database db) async {
   await db.execute(createSchemaMetaSql);
@@ -145,6 +165,9 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'triggers_json': jsonEncode(r.triggers),
       'notes': r.notes,
       'referral_required': r.referralRequired ? 1 : 0,
+      'details_completed': r.detailsCompleted == null
+          ? null
+          : (r.detailsCompleted! ? 1 : 0),
     };
 
 List<String> decodeStringList(Object? raw) {
@@ -185,6 +208,11 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     ),
     severity: severityFromInt(row['severity']) ?? EventSeverity.mild,
     triggers: decodeStringList(row['triggers_json']),
+    // NULL stays null. `== 1` alone would turn NULL into false and
+    // route 71 records into a wizard that does not describe them.
+    detailsCompleted: row['details_completed'] == null
+        ? null
+        : row['details_completed'] == 1,
   );
 }
 

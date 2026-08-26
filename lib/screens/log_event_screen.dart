@@ -209,6 +209,12 @@ class _LogEventScreenState extends State<LogEventScreen> {
       triggers:         _selectedTriggers.toList(),
       referralRequired: _referralRequired,
       notes:            _notesController.text.trim(),
+      // TRUE. Reaching Save here means the whole form was filled and
+      // confirmed, so the record is no longer a partial and must not keep
+      // routing back into the guided path. The field means "detail entry was
+      // completed", not "the wizard specifically was used" — which is also
+      // why the wizard sets it at _finish only, never on a Skip.
+      detailsCompleted: true,
     );
 
     if (mounted) Navigator.pop(context, record);

@@ -17,6 +17,7 @@ import '../services/ios_capture_bridge.dart';
 import '../services/notification_service.dart';
 import '../models/capture_inbox.dart';
 import '../models/event_record.dart';
+import 'event_wizard_screen.dart';
 import '../models/storage_boot.dart';
 import '../screens/about_screen.dart';
 import '../screens/disclaimer_screen.dart';
@@ -129,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (prefs.getBool('mer_open_latest_event') ?? false) {
             await prefs.remove('mer_open_latest_event');
             _openedFromNotification = true;
-            if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+            if (mounted && _records.isNotEmpty) _openDetails(_records.first);
             break;
           }
           await Future.delayed(const Duration(milliseconds: 250));
@@ -151,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (reload) await _loadRecords();
       if (!mounted || _records.isEmpty) return;
       _openedFromNotification = true;
-      await _openLogScreen(existing: _records.first);
+      await _openDetails(_records.first);
     } finally {
       _openingLatest = false;
     }
@@ -215,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await prefs.reload();
         if (prefs.getBool('mer_open_latest_event') ?? false) {
           await prefs.remove('mer_open_latest_event');
-          if (mounted && _records.isNotEmpty) _openLogScreen(existing: _records.first);
+          if (mounted && _records.isNotEmpty) _openDetails(_records.first);
           return;
         }
         await Future.delayed(const Duration(milliseconds: 250));
@@ -462,6 +463,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       triggers:         const [],
       referralRequired: false,
       notes:            '',
+      // A PARTIAL, like every other quick capture — see capture_inbox. Not
+      // null: null means the record predates the wizard, and this one does
+      // not.
+      detailsCompleted: false,
     );
 
     setState(() {
@@ -487,7 +492,47 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // ── RECORD WITH DETAILS ──
   Future<void> _recordWithDetails() async {
-    await _openLogScreen(existing: null);
+    await _openWizard(existing: null);
+  }
+
+  /// Guided entry. Reached ONLY by an explicit tap — never from the capture
+  /// path. `_quickRecord` and the notification build a record and return; this
+  /// runs afterwards, on a record already in memory.
+  ///
+  /// ROUTING, and the three-way `detailsCompleted` is the whole point:
+  ///   null   predates the wizard  -> single page
+  ///   true   already completed    -> single page
+  ///   false  a partial            -> wizard
+  ///
+  /// Stepping a completed record through screens to change severity would be
+  /// worse than the form.
+  Future<void> _openDetails(EventRecord record) =>
+      wantsWizard(record)
+          ? _openWizard(existing: record)
+          : _openLogScreen(existing: record, confirmOnSave: true);
+
+  Future<void> _openWizard({EventRecord? existing}) async {
+    // Returns the draft on EVERY exit path, including Back and the system
+    // gesture, so abandoning keeps what exists. Null means nothing was
+    // answered — the wizard was opened and closed without a single Next.
+    final result = await Navigator.of(context).push<EventRecord>(
+      MaterialPageRoute(builder: (_) => EventWizardScreen(existing: existing)),
+    );
+
+    if (result == null) return;
+    if (!mounted) return;
+
+    setState(() {
+      _loggedThisSession = true;
+      final i = _records.indexWhere((r) => r.id == result.id);
+      if (i >= 0) {
+        _records[i] = result;
+      } else {
+        _records.insert(0, result);
+      }
+      _records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    });
+    await persistEvents(_store, _records);
   }
 
   // ── OPEN LOG SCREEN ──
@@ -874,10 +919,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         if (_loaded && _records.isNotEmpty)
                           _LastEventCard(
                             record:    _records.first,
-                            onEdit:    () => _openLogScreen(
-                              existing:      _records.first,
-                              confirmOnSave: true,
-                            ),
+                            onEdit:    () => _openDetails(_records.first),
                             onHistory: _openHistory,
                           ),
 

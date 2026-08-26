@@ -244,6 +244,11 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
         id:               existing.id,
         timestamp:        existing.timestamp,
         duration:         m.duration,
+        // Both carried. This branch rebuilds an EXISTING record to recover a
+        // duration, so every field it does not set is a field it destroys —
+        // seconds the user measured, and a wizard they had completed.
+        durationSeconds:  existing.durationSeconds,
+        detailsCompleted: existing.detailsCompleted,
         feelings:         existing.feelings,
         referralRequired: existing.referralRequired,
         notes:            existing.notes,
