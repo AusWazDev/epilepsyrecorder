@@ -145,12 +145,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
 
       final haystack = [
-        eventTypeLabel(r.eventType),
+        // Contribute NOTHING when unknown, the same rule duration already
+        // follows below — otherwise typing "seizure" surfaces every record
+        // nobody classified, which is the opposite of a search.
+        eventTypeDisplay(r.eventType) ?? '',
         // Contributes NOTHING when unknown, rather than the word "Unknown" —
         // otherwise typing "unknown" surfaces these rows, a search feature
         // nobody asked for.
         if (r.duration != null) durationLabel(r.duration!),
-        severityLabel(r.severity),
+        severityDisplay(r.severity) ?? '',
         // BOTH the stored values and their labels. Searching "confused"
         // must find a record whether it carries the legacy emoji string or
         // the revised plain one — the user typed a word, not a data format.
@@ -625,7 +628,10 @@ class _EventListTile extends StatelessWidget {
       // reads as absence — the element is simply omitted.
       if (durationDisplay(r.duration, r.durationSeconds) != null)
         durationDisplay(r.duration, r.durationSeconds)!,
-      severityLabel(r.severity),
+      // Omitted when not assessed, exactly as duration is above. A row that
+      // said "Severity: unknown" would spend its one line on an absence.
+      if (severityDisplay(r.severity) != null)
+        severityDisplay(r.severity)!,
       // LABELS, not stored values. Found on the tablet: three records carry
       // the legacy `😵 Confused`, and the row rendered its emoji as MOJIBAKE
       // — the chips have an emoji-capable font and this text style does not.
@@ -650,7 +656,10 @@ class _EventListTile extends StatelessWidget {
           Expanded(
             child: Text(timeFmt.format(r.timestamp)),
           ),
-          _EventTypeBadge(type: r.eventType),
+          // No badge at all when the type is unknown. A badge is a
+          // CLASSIFICATION, and there is nothing to classify — a grey chip
+          // reading "unknown" would assert that someone had considered it.
+          if (r.eventType != null) _EventTypeBadge(type: r.eventType!),
         ],
       ),
       subtitle: Text(

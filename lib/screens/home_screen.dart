@@ -459,6 +459,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // "< 1 minute" because lt1 is the first enum value, not because anything
       // observed it — and a clinician reading the export had no way to tell.
       duration:         null,
+      // Same as the notification path: eventType and severity are left unset,
+      // which is now NULL. A one-tap capture chooses nothing and compares
+      // nothing.
       feelings:         const [],
       triggers:         const [],
       referralRequired: false,

@@ -206,7 +206,9 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'duration_bucket': r.duration?.name,
       'duration_seconds': r.durationSeconds,
       'event_type': r.eventType,
-      'severity': severityToInt(r.severity),
+      // NULL stays NULL through the column, which has always been nullable —
+      // the schema was written for this and only the model was coercing.
+      'severity': r.severity == null ? null : severityToInt(r.severity!),
       'feelings_json': jsonEncode(r.feelings),
       'triggers_json': jsonEncode(r.triggers),
       'notes': r.notes,
@@ -253,8 +255,11 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     eventType: (row['event_type'] is String &&
             (row['event_type'] as String).isNotEmpty)
         ? row['event_type'] as String
-        : kTypeSeizure,
-    severity: severityFromInt(row['severity']) ?? EventSeverity.mild,
+        : null,
+    // The `?? mild` that was here is the same defect as fromMap's orElse: it
+    // turned a NULL column — which the schema has always allowed — into a
+    // confident clinical claim on the way out.
+    severity: severityFromInt(row['severity']),
     triggers: decodeStringList(row['triggers_json']),
     // NULL stays null. `== 1` alone would turn NULL into false and
     // route 71 records into a wizard that does not describe them.

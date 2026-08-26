@@ -26,7 +26,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
   final _uuid = const Uuid();
   final _notesController = TextEditingController();
 
-  late String _eventType;
+  late String? _eventType;
   /// NULL = unknown. An unanswered duration now LOOKS unanswered — before
   /// this, every field carried a default and the user could not tell a default
   /// from an answer.
@@ -39,13 +39,13 @@ class _LogEventScreenState extends State<LogEventScreen> {
   final _minsController = TextEditingController();
   final _secsController = TextEditingController();
   int? _origSeconds;
-  late EventSeverity _severity;
+  late EventSeverity? _severity;
   late Set<String> _selectedFeelings;
   late Set<String> _selectedTriggers;
   late bool _referralRequired;
 
   // Originals for change detection
-  late String _origEventType;
+  late String? _origEventType;
 
   /// Which vocabulary an inline "add your own" field is open for, or null.
   ///
@@ -114,7 +114,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     });
   }
   DurationCategory? _origDuration;
-  late EventSeverity _origSeverity;
+  late EventSeverity? _origSeverity;
   late Set<String> _origFeelings;
   late Set<String> _origTriggers;
   late bool _origReferral;
@@ -126,14 +126,16 @@ class _LogEventScreenState extends State<LogEventScreen> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _eventType         = e?.eventType        ?? kTypeSeizure;
+    // Carried as-is, INCLUDING null. `?? seizure` here would re-default at the
+    // surface after the model stopped fabricating — see the wizard.
+    _eventType         = e?.eventType;
     // No `?? lt1`. A record with no duration opens with nothing selected.
     _duration          = e?.duration;
     if (e?.durationSeconds != null) {
       _minsController.text = '${e!.durationSeconds! ~/ 60}';
       _secsController.text = '${e.durationSeconds! % 60}';
     }
-    _severity          = e?.severity         ?? EventSeverity.mild;
+    _severity          = e?.severity;
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
     _referralRequired  = e?.referralRequired ?? false;
@@ -176,7 +178,8 @@ class _LogEventScreenState extends State<LogEventScreen> {
     final changes = <String>[];
     if (_eventType != _origEventType) {
       changes.add(
-        'Event type: ${eventTypeLabel(_origEventType)} → ${eventTypeLabel(_eventType)}',
+        'Event type: ${eventTypeDisplay(_origEventType) ?? 'not recorded'} '
+        '→ ${eventTypeDisplay(_eventType) ?? 'not recorded'}',
       );
     }
     if (_enteredSeconds != _origSeconds) {
@@ -186,7 +189,10 @@ class _LogEventScreenState extends State<LogEventScreen> {
     }
     if (_severity != _origSeverity) {
       changes.add(
-        'Severity: ${severityLabel(_origSeverity)} → ${severityLabel(_severity)}',
+        // "not recorded" rather than "unknown": this is a CHANGE LOG, and it
+        // is describing what the field held, not asserting a clinical value.
+        'Severity: ${severityDisplay(_origSeverity) ?? 'not recorded'} '
+        '→ ${severityDisplay(_severity) ?? 'not recorded'}',
       );
     }
     if (_referralRequired != _origReferral) {
@@ -595,7 +601,10 @@ class _SectionLabel extends StatelessWidget {
    =========================== */
 
 class _EventTypeGrid extends StatelessWidget {
-  final String selected;
+  /// NULL means NOT ASKED, and NO TILE IS SELECTED. That is the visible half of
+  /// the fix: an unanswered type looks unanswered rather than looking like
+  /// someone chose "Seizure / fit".
+  final String? selected;
   final ValueChanged<String> onSelected;
 
   /// Opens the inline "add a type" field. Null hides the add tile — which is
@@ -615,8 +624,10 @@ class _EventTypeGrid extends StatelessWidget {
     // A type this device's vocabulary has never seen — from a backup made
     // elsewhere — still gets a tile, selected, rather than silently reading as
     // whichever tile happens to match.
-    final orphan =
-        entries.any((e) => e.value == selected) ? null : selected;
+    // Null is not an orphan — there is nothing to render a tile for.
+    final orphan = (selected == null || entries.any((e) => e.value == selected))
+        ? null
+        : selected;
 
     return GridView.count(
       crossAxisCount: 2,

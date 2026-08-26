@@ -158,6 +158,14 @@ InboxDrainResult applyInbox(
       // default to this drain — so fixing it here fixes Android and iOS at
       // once, and the abandonment timeout needs no involvement at all.
       duration: null,
+      // eventType and severity are LEFT UNSET, which now means NULL. The
+      // constructor used to default them to `seizure` and `mild`, so this one
+      // line produced a type and a comparison nobody made — 71 records in the
+      // export read "Seizure / fit · Mild" on that basis.
+      //
+      // Left unset rather than written as `null` on purpose: the defaults are
+      // gone from the constructor, so naming them here would only invite
+      // someone to put a value back.
       feelings: const [],
       referralRequired: false,
       notes: '',

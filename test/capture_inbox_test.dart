@@ -35,7 +35,8 @@ class _LegacyQuickLog {
         : jsonDecode(raw) as List<dynamic>;
   }
 
-  Future<void> writeInserting(List<dynamic> staleList, EventRecord added) async {
+  Future<void> writeInserting(
+      List<dynamic> staleList, EventRecord added) async {
     final prefs = await SharedPreferences.getInstance();
     staleList.insert(0, added.toMap());
     await writeEventPayload(prefs, jsonEncode(staleList));
@@ -117,7 +118,8 @@ void main() {
 
   // ── 1 ──────────────────────────────────────────────────────────────────────
   group('1. the loss this exists to close', () {
-    test('NEGATIVE CONTROL: the shipped quick-log write loses a record '
+    test(
+        'NEGATIVE CONTROL: the shipped quick-log write loses a record '
         '(backlog item 13)', () async {
       final store = EventStore();
       await store.save(<EventRecord>[record('a', 1)]);
@@ -151,7 +153,8 @@ void main() {
 
       // The background isolate posts a fact. It reads no record, so there is
       // no stale snapshot to write back.
-      await writeStartInstruction(prefs, id: 'c', at: t0.add(const Duration(minutes: 3)));
+      await writeStartInstruction(prefs,
+          id: 'c', at: t0.add(const Duration(minutes: 3)));
 
       await store.save(<EventRecord>[record('a', 1), record('b', 2)]);
 
@@ -228,12 +231,22 @@ void main() {
       final made = first.merged.single;
       expect(made.id, 'x');
       expect(made.timestamp, t0);
-      // Facts in, defaults here. The duration default CHANGED in stage 1a:
-      // a start knows only that an event began, so lt1 was an invention that
-      // every abandoned event inherited. Only the matching end measures.
+      // ⚠️ "applies the defaults" NO LONGER DESCRIBES THIS. There are no
+      // defaults left to apply — a start carries an id and a time, and every
+      // other field is NULL because nothing about it was supplied.
+      //
+      // The duration default went in stage 1a: a start knows only that an event
+      // began, so `lt1` was an invention every abandoned event inherited. The
+      // type and severity defaults went the same way for the same reason, and
+      // they were the last two fields still fabricating.
       expect(made.duration, isNull);
-      expect(made.eventType, kTypeSeizure);
-      expect(made.severity, EventSeverity.mild);
+      expect(made.eventType, isNull,
+          reason: 'a one-tap capture classifies nothing');
+      expect(made.severity, isNull,
+          reason: 'severity is a COMPARISON with other events by the '
+              'same person, and a default is a comparison nobody made');
+      expect(made.severity, isNot(EventSeverity.mild),
+          reason: 'mild was the fabricated value, not a real one');
       expect(made.feelings, isEmpty);
       expect(made.triggers, isEmpty);
       expect(made.notes, '');
@@ -295,7 +308,8 @@ void main() {
   });
 
   // ── 7 ──────────────────────────────────────────────────────────────────────
-  test('7. an orphan end is dropped and reported, never fabricated into a '
+  test(
+      '7. an orphan end is dropped and reported, never fabricated into a '
       'record', () {
     final entries = <InboxEntry>[
       parseInboxEntry('mer_inbox_1', endPayload('ghost', t0, 120)),
@@ -337,9 +351,12 @@ void main() {
       expect(result.orphanEndIds, isEmpty,
           reason: 'its start is present and readable, just not yet legible to '
               'this build — that is not an orphan');
-      expect(result.deferredKeys,
-          containsAll(<String>['${kInboxKeyPrefix}deferred_start',
-              '${kInboxKeyPrefix}readable_end']));
+      expect(
+          result.deferredKeys,
+          containsAll(<String>[
+            '${kInboxKeyPrefix}deferred_start',
+            '${kInboxKeyPrefix}readable_end'
+          ]));
       expect(result.deferReasons, contains(InboxDefer.awaitingDeferredStart),
           reason: 'reported as a deferral, distinctly from a drop, so the two '
               'stay separable in telemetry');
@@ -375,13 +392,14 @@ void main() {
       expect(await storedIds(), isEmpty);
     });
 
-    test('a later build that understands the kind applies both and gets the '
+    test(
+        'a later build that understands the kind applies both and gets the '
         'right duration', () {
       // The same two instructions, now both legible — which is what the newer
       // build sees. The end must land on the record its start creates.
       final understood = <InboxEntry>[
-        parseInboxEntry('${kInboxKeyPrefix}deferred_start',
-            startPayload('x', t0)),
+        parseInboxEntry(
+            '${kInboxKeyPrefix}deferred_start', startPayload('x', t0)),
         parseInboxEntry('${kInboxKeyPrefix}readable_end',
             endPayload('x', t0.add(const Duration(seconds: 400)), 400)),
       ];
@@ -399,16 +417,20 @@ void main() {
               'one that finally gets stored');
     });
 
-    test('UNCHANGED PATH: an end matching nothing at all is still dropped and '
+    test(
+        'UNCHANGED PATH: an end matching nothing at all is still dropped and '
         'reported', () {
       // No record, and no deferred entry either. This is the deletion case the
       // orphan rule was written for, and it must behave exactly as before.
-      final result = applyInbox(<EventRecord>[record('a', 1)], <InboxEntry>[
+      final result = applyInbox(<EventRecord>[
+        record('a', 1)
+      ], <InboxEntry>[
         parseInboxEntry('${kInboxKeyPrefix}1', endPayload('ghost', t0, 120)),
       ]);
 
       expect(result.orphanEndIds, <String>['ghost']);
-      expect(result.deferReasons, isNot(contains(InboxDefer.awaitingDeferredStart)));
+      expect(result.deferReasons,
+          isNot(contains(InboxDefer.awaitingDeferredStart)));
       expect(result.deferredKeys, isEmpty);
       expect(result.drainableKeys, hasLength(1),
           reason: 'a genuine orphan is consumed, not retried forever');
@@ -425,7 +447,8 @@ void main() {
 
       expect(result.deferReasons, contains(InboxDefer.malformed));
       expect(result.orphanEndIds, <String>['x'],
-          reason: 'an unmatched end is an orphan; a deferred entry only rescues '
+          reason:
+              'an unmatched end is an orphan; a deferred entry only rescues '
               'one when it carries the same id');
     });
   });
@@ -463,28 +486,36 @@ void main() {
     expect(await storedIds(), <String>['x']);
   });
 
-    // RETIRED with `bucketFromSeconds`, which this pinned at every boundary
-    // against a verbatim transcription of the shipped `_durationFromDiff` —
-    // a silent shift there would have rewritten the meaning of every stored
-    // duration.
-    //
-    // The drain no longer computes a bucket: it stores the measured seconds,
-    // so there is no mapping left to preserve. The function was DELETED rather
-    // than left unused, because a well-commented dead function that looks
-    // load-bearing is what a future author reintroduces a call to.
-    //
-    // `legacyDurationFromDiff` above is KEPT: it is the transcription of what
-    // shipped, and it is what proves the buckets on the 69 existing records
-    // mean what this codebase thinks they mean.
+  // RETIRED with `bucketFromSeconds`, which this pinned at every boundary
+  // against a verbatim transcription of the shipped `_durationFromDiff` —
+  // a silent shift there would have rewritten the meaning of every stored
+  // duration.
+  //
+  // The drain no longer computes a bucket: it stores the measured seconds,
+  // so there is no mapping left to preserve. The function was DELETED rather
+  // than left unused, because a well-commented dead function that looks
+  // load-bearing is what a future author reintroduces a call to.
+  //
+  // `legacyDurationFromDiff` above is KEPT: it is the transcription of what
+  // shipped, and it is what proves the buckets on the 69 existing records
+  // mean what this codebase thinks they mean.
 
   // ── 10 ─────────────────────────────────────────────────────────────────────
   test('10. an unreadable version or kind is left in place, not applied',
       () async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('${kInboxKeyPrefix}newer',
-        jsonEncode({'v': 2, 'kind': 'start', 'id': 'x', 'at': t0.toIso8601String()}));
-    await prefs.setString('${kInboxKeyPrefix}sideways',
-        jsonEncode({'v': 1, 'kind': 'sideways', 'id': 'y', 'at': t0.toIso8601String()}));
+    await prefs.setString(
+        '${kInboxKeyPrefix}newer',
+        jsonEncode(
+            {'v': 2, 'kind': 'start', 'id': 'x', 'at': t0.toIso8601String()}));
+    await prefs.setString(
+        '${kInboxKeyPrefix}sideways',
+        jsonEncode({
+          'v': 1,
+          'kind': 'sideways',
+          'id': 'y',
+          'at': t0.toIso8601String()
+        }));
 
     final result = applyInbox(const <EventRecord>[], readInboxEntries(prefs));
 

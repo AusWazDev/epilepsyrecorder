@@ -98,6 +98,28 @@ const String kTypeOther = kOtherEventTypeValue;
 String eventTypeLabel(String value) =>
     Vocabularies.labelFor(kEventTypeTable, value);
 
+/// What a SCREEN shows, or null to show nothing.
+///
+/// Null-returning on purpose, exactly like [durationDisplay]: a caller that
+/// gets null omits the element rather than rendering a word for absence. The
+/// History row already does this for duration, and absence reading as absence
+/// is the established rule.
+String? eventTypeDisplay(String? value) =>
+    value == null ? null : eventTypeLabel(value);
+
+/// What the CSV writes. EXPLICIT, never blank — the duration decision, applied.
+///
+/// A clinician reading a blank cell cannot tell "not asked" from "not recorded"
+/// from a broken export. `duration` writes `unknown` for exactly this reason
+/// and these two columns are the same kind of text column.
+String eventTypeCsv(String? value) => eventTypeDisplay(value) ?? 'unknown';
+
+/// See [eventTypeDisplay].
+String? severityDisplay(EventSeverity? s) => s == null ? null : severityLabel(s);
+
+/// See [eventTypeCsv].
+String severityCsv(EventSeverity? s) => severityDisplay(s) ?? 'unknown';
+
 enum EventSeverity { mild, moderate, severe }
 
 String severityLabel(EventSeverity s) {
@@ -160,8 +182,22 @@ class EventRecord {
   final String notes;
 
   // New fields — all have safe defaults for old saved records
-  final String eventType;
-  final EventSeverity severity;
+  /// NULL means NOT ASKED. Third field to take this rule, after `duration` and
+  /// `detailsCompleted`, and the last of the three that still fabricated.
+  ///
+  /// A one-tap capture measures nothing and chooses nothing, so it asserts
+  /// nothing. This read `seizure` because that is the first enum value, and
+  /// `severityLabel(mild)` because that is the first of those — 71 records in
+  /// the export today read "Seizure / fit · Mild" with nobody having been
+  /// asked, and a clinician could not tell an answer from a default.
+  final String? eventType;
+
+  /// NULL means NOT ASSESSED. See [eventType].
+  ///
+  /// Severity is a RELATIVE self-assessment — how this event felt compared with
+  /// the person's other events. A default is worse here than in most fields:
+  /// it is a comparison nobody made.
+  final EventSeverity? severity;
   final List<String> triggers;
 
   EventRecord({
@@ -173,8 +209,8 @@ class EventRecord {
     required this.feelings,
     required this.referralRequired,
     required this.notes,
-    this.eventType = kTypeSeizure,
-    this.severity  = EventSeverity.mild,
+    this.eventType,
+    this.severity,
     this.triggers  = const [],
   });
 
@@ -220,7 +256,9 @@ class EventRecord {
         'referralRequired': referralRequired,
         'notes':            notes,
         'eventType':        eventType,
-        'severity':         severity.name,
+        // Null stays null. The key is still WRITTEN so a reader can tell
+        // "asked and unanswered" from a payload that predates the field.
+        'severity':         severity?.name,
         'triggers':         triggers,
       };
 
@@ -260,13 +298,20 @@ class EventRecord {
       // "Seizure / fit" by a round trip through a backup file. An absent key
       // still reads as `seizure`, unchanged, because that is what every record
       // written before this already stores and §9 forbids changing them.
-      eventType: (map['eventType'] is String && (map['eventType'] as String).isNotEmpty)
-          ? map['eventType'] as String
-          : kTypeSeizure,
-      severity: EventSeverity.values.firstWhere(
-        (e) => e.name == map['severity'],
-        orElse: () => EventSeverity.mild,
-      ),
+      // ABSENT MEANS NULL, not the first enum value. The `orElse` that produced
+      // `seizure` and `mild` here is the defect: it turned "the key is not in
+      // this map" into a confident clinical claim, permanently, on the way in.
+      //
+      // A record written before this change still carries its key explicitly —
+      // `toMap` has always written both — so nothing existing becomes null by
+      // reading it back. Only a payload that genuinely lacks the key does.
+      eventType:
+          (map['eventType'] is String && (map['eventType'] as String).isNotEmpty)
+              ? map['eventType'] as String
+              : null,
+      severity: EventSeverity.values
+          .where((e) => e.name == map['severity'])
+          .firstOrNull,
       triggers: (triggersRaw is List)
           ? triggersRaw.map((e) => e.toString()).toList()
           : <String>[],
@@ -569,13 +614,13 @@ String buildCsv(List<EventRecord> items) {
       r.timestamp.toIso8601String(),
       fmtDate.format(r.timestamp),
       fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
-      eventTypeLabel(r.eventType),
+      eventTypeCsv(r.eventType),
       durationCsv(r.duration, r.durationSeconds),
       // EMPTY, not `unknown`, when there is no number. A word in a numeric
       // column breaks every formula that touches it; a blank there is
       // unambiguous in a way a blank in a text column is not.
       r.durationSeconds?.toString() ?? '',
-      severityLabel(r.severity),
+      severityCsv(r.severity),
       // LABELS, not stored values - which strips the emoji for free, because a
       // legacy entry's label is its value without one. DATA-MODEL.md §6 requires
       // emoji stripped from values as well as headers, and the raw strings

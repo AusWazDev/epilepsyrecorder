@@ -92,8 +92,13 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
 
   late DateTime _timestamp;
   DurationCategory? _bucket;
-  String _eventType = kTypeSeizure;
-  EventSeverity _severity = EventSeverity.mild;
+  /// NULL until the user picks. ⚠️ **The pre-selection was the trap**, and it
+  /// is the same shape as the legacy duration bucket: a highlighted chip LOOKS
+  /// answered, so the one step that could get a real answer never asks
+  /// insistently, and the record ships a value nobody chose. Starting at null
+  /// means an unanswered step is visibly unanswered.
+  String? _eventType;
+  EventSeverity? _severity;
   final Set<String> _feelings = {};
   final Set<String> _triggers = {};
   bool _referral = false;
@@ -110,8 +115,11 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       _minsController.text = '${e!.durationSeconds! ~/ 60}';
       _secsController.text = '${e.durationSeconds! % 60}';
     }
-    _eventType = e?.eventType ?? kTypeSeizure;
-    _severity = e?.severity ?? EventSeverity.mild;
+    // Carried as-is, INCLUDING null. The `?? seizure` / `?? mild` here was the
+    // defect at the surface the fix is for: it re-defaulted on the way in, so
+    // even after the model stopped fabricating, the wizard started again.
+    _eventType = e?.eventType;
+    _severity = e?.severity;
     _feelings.addAll(e?.feelings ?? const []);
     _triggers.addAll(e?.triggers ?? const []);
     _referral = e?.referralRequired ?? false;
@@ -311,12 +319,13 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           _vocabChips(
             table: kEventTypeTable,
             entries: Vocabularies.offerableEventTypes,
-            isSel: (e) => _eventType == e.value,
+            isSel: (e) => _eventType != null && _eventType == e.value,
             onTap: (e) => setState(() => _eventType = e.value),
             addPrompt: 'Add an event type',
             // A type the vocabulary has never seen — restored from a backup
             // made on another device — must still show as selected rather than
             // silently reading as whatever chip happens to match.
+            // Null contributes no orphan chip — there is nothing to show.
             orphanValue: _eventType,
           ),
           const SizedBox(height: 24),
@@ -326,7 +335,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           _chips<EventSeverity>(
             EventSeverity.values,
             severityLabel,
-            (s) => _severity == s,
+            (s) => _severity != null && _severity == s,
             (s) => setState(() => _severity = s),
           ),
         ],
@@ -601,8 +610,12 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     final lines = <String>[];
     final d = durationDisplay(_bucket, _enteredSeconds);
     lines.add('Duration: ${d ?? 'not recorded'}');
-    lines.add('Event type: ${eventTypeLabel(_eventType)}');
-    lines.add('Severity: ${severityLabel(_severity)}');
+    // Omitted when unanswered, like duration two lines up. A summary that said
+    // "Event type: unknown" would read as a finding.
+    final t = eventTypeDisplay(_eventType);
+    if (t != null) lines.add('Event type: $t');
+    final sev = severityDisplay(_severity);
+    if (sev != null) lines.add('Severity: $sev');
     if (_triggers.isNotEmpty) lines.add('Beforehand: ${_triggers.join(', ')}');
     if (_feelings.isNotEmpty) lines.add('Afterwards: ${_feelings.join(', ')}');
     if (_referral) lines.add('Medical referral required');

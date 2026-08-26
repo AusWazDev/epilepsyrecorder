@@ -358,7 +358,7 @@ void main() {
       final back = (await store.load()).single;
       expect(back.eventType, 'Cluster headache',
           reason: 'the old enum could not represent this at all');
-      expect(eventTypeLabel(back.eventType), 'Cluster headache');
+      expect(eventTypeDisplay(back.eventType), 'Cluster headache');
       await db.close();
     });
   });
