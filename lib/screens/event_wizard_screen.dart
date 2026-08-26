@@ -347,25 +347,30 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   Widget _afterwardsStep() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // "Afterwards", with the temporal meaning in the HINT rather than
-          // in the heading.
+          // ⚠️ NOTHING IS RENDERED ABOVE THE CHIPS. Option A, decided
+          // 26-Aug-26 after three wordings were tried and each was wrong for a
+          // different reason. The fourth answer was to stop labelling it here
+          // at all.
           //
-          // Two decisions stacked here, and they pull in opposite directions:
+          // The reasoning: a heading and a field label saying the same thing is
+          // the adjacent redundancy corrected three times in Help, and it had
+          // appeared on three of the last four screens. "Select any that apply"
+          // describes the widget rather than telling anyone anything.
           //
-          //  1. NOT "How are you feeling?" — present tense. Someone logging
-          //     live read it as RIGHT NOW and someone logging days later read
-          //     it as THEN, so one field meant two things and nothing in the
-          //     record said which. It is the postictal state.
-          //  2. NOT "How did you feel afterwards?" either. This is a step
-          //     heading, not a field label under one, so a question here is
-          //     the whole screen's title — and the sentence beneath it would
-          //     then restate the same thing in different words. A noun heading
-          //     plus one hint says it once.
+          // ⚠️ TWO CONSEQUENCES, recorded so they are a decision rather than a
+          // discovery:
           //
-          // Word for word the single page's section label, so the field does
-          // not depend on which screen a record opened in.
-          _heading('Afterwards',
-              'How you felt in the minutes and hours after it ended.'),
+          //  1. This is now the ONLY step with no heading. Steps 1-3 each open
+          //     with one, and the AppBar reads "Add details" on every step —
+          //     there is no other place a step title lives.
+          //  2. The temporal meaning is no longer stated anywhere in the
+          //     wizard. "After the event" was the whole point of the label
+          //     work: someone logging live read the old present-tense label as
+          //     RIGHT NOW and someone logging days later read it as THEN. The
+          //     SINGLE PAGE still says it, and most records open there.
+          //
+          // Restoring it is one line — see the single page's section label for
+          // the exact wording.
           _vocabMultiChips(
             table: kObservationTable,
             entries: Vocabularies.offerableObservations,

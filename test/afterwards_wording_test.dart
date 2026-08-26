@@ -34,7 +34,24 @@ import 'package:medical_event_recorder/screens/log_event_screen.dart';
 ///                                 heading, so the sentence under it restated
 ///                                 the heading in different words.
 ///   "Afterwards" + a hint         The noun names the field; the hint carries
-///                                 the temporal meaning the noun cannot.
+///                                 the temporal meaning the noun cannot. Still
+///                                 the SINGLE PAGE's wording.
+///   nothing at all                 OPTION A, 26-Aug-26, WIZARD ONLY. A step
+///                                 that opens with chips and no label, because
+///                                 a heading plus a field label saying the same
+///                                 thing had appeared on three of the last four
+///                                 screens.
+///
+/// ⚠️ **THE WIZARD AND THE SINGLE PAGE NOW DIFFER ON PURPOSE**, which reverses
+/// the rule the sibling file pins for triggers. It is a deliberate exception,
+/// not drift, and the reason is that the two screens are not the same kind of
+/// thing: the single page is a flat form with no surrounding context, so its
+/// section needs a name; the wizard step is one screen with one subject.
+///
+/// ⚠️ **AND THE TEMPORAL MEANING IS NOW ABSENT FROM THE WIZARD.** "After the
+/// event" was the whole point of the label work. The single page still says it,
+/// and most records open there — legacy and completed both — but a partial
+/// walked through the wizard is never told.
 
 /// The one wording. Changing it here should be the only edit a rename needs.
 const String kAfterwardsHeading = 'Afterwards';
@@ -77,7 +94,15 @@ void main() {
         reason: 'the noun alone does not say the field means AFTER the event');
   });
 
-  testWidgets('2. the WIZARD step names it identically', (tester) async {
+  testWidgets(
+      '2. the WIZARD step renders NOTHING above the chips — Option A',
+      (tester) async {
+    // The opposite assertion to the one this test made a build ago, and the
+    // reversal is the decision rather than a regression: a heading plus a
+    // field label saying the same thing had appeared on three of the last four
+    // screens, so the fourth answer was to stop labelling it in the wizard.
+    //
+    // The single page still carries it — see test 1. Most records open there.
     await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
     await tester.pumpAndSettle();
 
@@ -87,8 +112,36 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    expect(find.text(kAfterwardsHeading), findsOneWidget);
-    expect(find.text(kAfterwardsHint), findsOneWidget);
+    // POSITIVE CONTROL FIRST. Without it, "nothing rendered" passes just as
+    // well against a step that failed to build at all — which is the one way
+    // this assertion could be satisfied for the wrong reason.
+    expect(find.text('Tired'), findsOneWidget,
+        reason: 'the observation chips must actually be on screen');
+    expect(find.text('Medical referral required?'), findsOneWidget,
+        reason: 'and the rest of the step with them');
+
+    expect(find.text(kAfterwardsHeading), findsNothing,
+        reason: 'Option A: nothing above the chips');
+    expect(find.text(kAfterwardsHint), findsNothing);
+  });
+
+  testWidgets(
+      '3a. NEGATIVE CONTROL: the OTHER steps still have their headings',
+      (tester) async {
+    // Step 4 is now the only step without one. Asserted so that a future change
+    // stripping every heading — or restoring this one by accident — is visible
+    // rather than silent.
+    await tester.pumpWidget(const MaterialApp(home: EventWizardScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('How long did it last?'), findsOneWidget);
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('What happened?'), findsOneWidget);
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('What was happening beforehand?'), findsOneWidget);
   });
 
   testWidgets('3. and the wizard SUMMARY uses the same noun', (tester) async {
@@ -132,6 +185,8 @@ void main() {
     for (final retired in kRetiredWordings) {
       expect(find.text(retired), findsNothing);
     }
+    // And in the wizard, the CURRENT wording is absent too — Option A.
+    expect(find.text(kAfterwardsHeading), findsNothing);
   });
 
   testWidgets('5. POSITIVE CONTROL: the matcher can see labels here',
