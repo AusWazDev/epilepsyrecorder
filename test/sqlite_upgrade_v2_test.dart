@@ -179,7 +179,10 @@ void main() {
 
   test('4. the recorded schema version advances to 2', () async {
     final db = await openV1ThenUpgrade(nextPath());
-    expect(await getMeta(db, kMetaSchemaVersion), '2');
+    // Reads the CONSTANT, not a literal. The database now walks 1 -> 2 -> 3
+    // in one open, and a literal here would have to be edited at every bump —
+    // which is how a version assertion quietly stops asserting anything.
+    expect(await getMeta(db, kMetaSchemaVersion), '$kSqliteSchemaVersion');
     // The phase-one migration marker is untouched: this is a schema change,
     // not a re-migration, and clearing it would re-run the JSON conversion.
     expect(await getMeta(db, kMetaMigrationState), 'migrated');

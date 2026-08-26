@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import 'event_record.dart';
+import 'vocabulary.dart';
 
 /// The SQLite backing for [EventStore].
 ///
@@ -20,12 +21,14 @@ import 'event_record.dart';
 /// Bumped only when the shape changes. The old store had no version field at
 /// all, and that gap has cost repeatedly.
 /// 2 since the wizard: `event.details_completed` was added.
+/// 3 since user-defined vocabularies: `event_type` and `observation` tables,
+///   seeded, plus a NULLABLE `event.condition_id` that stays unpopulated.
 ///
-/// The FIRST bump since phase one. Additive only — an ADD COLUMN on a populated
-/// table, which is non-destructive and leaves every existing value untouched.
-/// The new column is NULL on every existing row, which is exactly right: those
+/// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
+/// populated table. Non-destructive, every existing value untouched, and the
+/// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 2;
+const int kSqliteSchemaVersion = 3;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -76,22 +79,41 @@ const String createEventSql = 'CREATE TABLE event ('
     'notes TEXT, '
     'referral_required INTEGER, '
     // Nullable THREE ways: 1 complete, 0 partial, NULL predates the wizard.
-    'details_completed INTEGER)';
+    'details_completed INTEGER, '
+    // NULLABLE and NEVER POPULATED this stage. There is no `condition` table
+    // and no screen on which someone could say what they track, so any value
+    // written here would be an assertion about their health invented by a
+    // migration. NULL means NOT YET SAID.
+    //
+    // DATA-MODEL.md leaves this cell blank rather than requiring NOT NULL —
+    // verified, `grep -c "NOT NULL" docs/DATA-MODEL.md` returns 0. The doc now
+    // says nullable explicitly instead of saying nothing.
+    'condition_id INTEGER)';
 
 const String createEventIdIndexSql = 'CREATE INDEX idx_event_id ON event(id)';
 const String createEventLoggedAtIndexSql =
     'CREATE INDEX idx_event_logged_at ON event(logged_at)';
 
-/// Adds `details_completed` to a phase-one database.
+/// Walks a database forward one version at a time.
 ///
-/// Additive and non-destructive: no row is rewritten and no value is derived.
-/// Every existing row gets NULL, which is the honest answer for a record
-/// captured before the wizard existed.
+/// Each step is additive and non-destructive: no row is rewritten and no value
+/// is derived. Every existing row gets NULL in every new column, which is the
+/// honest answer for a record captured before the concept existed.
+///
+/// Steps are `if`, not `else if`, and each guards on its own version — so a
+/// v1 database installed after a long gap walks 1 -> 2 -> 3 in one open, and a
+/// v2 database runs only the second step.
 Future<void> upgradeSchema(Database db, int from, int to) async {
   if (from < 2 && to >= 2) {
     await db.execute('ALTER TABLE event ADD COLUMN details_completed INTEGER');
-    await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
   }
+  if (from < 3 && to >= 3) {
+    await db.execute('ALTER TABLE event ADD COLUMN condition_id INTEGER');
+    // Creates AND seeds. The seed is idempotent on `value`, so it is safe here
+    // and in onCreate, and safe to re-run when a later version adds a seed.
+    await createAndSeedVocabularies(db);
+  }
+  await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
 
 Future<void> createSchema(Database db) async {
@@ -99,6 +121,7 @@ Future<void> createSchema(Database db) async {
   await db.execute(createEventSql);
   await db.execute(createEventIdIndexSql);
   await db.execute(createEventLoggedAtIndexSql);
+  await createAndSeedVocabularies(db);
   await db.insert('schema_meta', {
     'key': kMetaSchemaVersion,
     'value': '$kSqliteSchemaVersion',
@@ -159,7 +182,7 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'occurred_at': null,
       'duration_bucket': r.duration?.name,
       'duration_seconds': r.durationSeconds,
-      'event_type': r.eventType.name,
+      'event_type': r.eventType,
       'severity': severityToInt(r.severity),
       'feelings_json': jsonEncode(r.feelings),
       'triggers_json': jsonEncode(r.triggers),
@@ -202,10 +225,12 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     feelings: decodeStringList(row['feelings_json']),
     referralRequired: row['referral_required'] == 1,
     notes: row['notes'] is String ? row['notes'] as String : '',
-    eventType: EventType.values.firstWhere(
-      (e) => e.name == row['event_type'],
-      orElse: () => EventType.seizure,
-    ),
+    // Verbatim, like fromMap. A user-defined type is a string this code has
+    // never seen, and narrowing it to a known one would rewrite the record.
+    eventType: (row['event_type'] is String &&
+            (row['event_type'] as String).isNotEmpty)
+        ? row['event_type'] as String
+        : kTypeSeizure,
     severity: severityFromInt(row['severity']) ?? EventSeverity.mild,
     triggers: decodeStringList(row['triggers_json']),
     // NULL stays null. `== 1` alone would turn NULL into false and

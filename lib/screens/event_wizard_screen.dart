@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../constants.dart';
 import '../models/event_record.dart';
+import '../models/vocabulary.dart';
+import '../models/vocabulary_store.dart';
 import '../theme/mer_theme.dart';
 
 /// Guided detail entry: one section per screen, a summary before saving.
@@ -90,7 +92,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
 
   late DateTime _timestamp;
   DurationCategory? _bucket;
-  EventType _eventType = EventType.seizure;
+  String _eventType = kTypeSeizure;
   EventSeverity _severity = EventSeverity.mild;
   final Set<String> _feelings = {};
   final Set<String> _triggers = {};
@@ -108,7 +110,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       _minsController.text = '${e!.durationSeconds! ~/ 60}';
       _secsController.text = '${e.durationSeconds! % 60}';
     }
-    _eventType = e?.eventType ?? EventType.seizure;
+    _eventType = e?.eventType ?? kTypeSeizure;
     _severity = e?.severity ?? EventSeverity.mild;
     _feelings.addAll(e?.feelings ?? const []);
     _triggers.addAll(e?.triggers ?? const []);
@@ -123,6 +125,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
 
   @override
   void dispose() {
+    _addController.dispose();
     _minsController.dispose();
     _secsController.dispose();
     _notesController.dispose();
@@ -305,11 +308,16 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _heading('What happened?', 'Pick what best describes it.'),
-          _chips<EventType>(
-            EventType.values,
-            eventTypeLabel,
-            (t) => _eventType == t,
-            (t) => setState(() => _eventType = t),
+          _vocabChips(
+            table: kEventTypeTable,
+            entries: Vocabularies.offerableEventTypes,
+            isSel: (e) => _eventType == e.value,
+            onTap: (e) => setState(() => _eventType = e.value),
+            addPrompt: 'Add an event type',
+            // A type the vocabulary has never seen — restored from a backup
+            // made on another device — must still show as selected rather than
+            // silently reading as whatever chip happens to match.
+            orphanValue: _eventType,
           ),
           const SizedBox(height: 24),
           const Text('Compared with your other events',
@@ -339,8 +347,18 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   Widget _afterwardsStep() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _heading('Afterwards', 'How you felt, and anything worth noting.'),
-          _multiChips(kFeelingsOptions, _feelings),
+          // NOT "How are you feeling?" — present tense. Someone logging live
+          // read it as RIGHT NOW and someone logging days later read it as
+          // THEN, so the same field meant two things and nothing in the record
+          // said which. It is the postictal state, so the label says so.
+          _heading('How did you feel afterwards?',
+              'In the minutes and hours after it ended.'),
+          _vocabMultiChips(
+            table: kObservationTable,
+            entries: Vocabularies.offerableObservations,
+            selected: _feelings,
+            addPrompt: 'Add how you felt',
+          ),
           const SizedBox(height: 24),
           const Text('Medical referral required?',
               style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
@@ -363,6 +381,166 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           ),
         ],
       );
+
+  /// The table an inline "add your own" field is currently open for, or null.
+  ///
+  /// ONE field for the whole screen: two steps can each offer adding, and two
+  /// simultaneously-open editors on a guided flow is exactly the derailment
+  /// this shape exists to avoid.
+  String? _addingIn;
+  final _addController = TextEditingController();
+
+  /// Adding is INLINE, not a dialog, and that is the whole design.
+  ///
+  /// A modal inside a guided flow is a second decision stacked on the one the
+  /// user came to make — it traps focus, hides the step behind it, and turns
+  /// Back into an ambiguous gesture. An inline field appears under the chips,
+  /// leaves the question visible above it, and leaves Back, Skip and the
+  /// system gesture meaning exactly what they meant a moment earlier.
+  ///
+  /// It is also the SEIZURE TRACKER pattern: type it once, and it is offered
+  /// next time. No settings screen, no setup — which suits an app whose
+  /// strength is having none.
+  Widget _addRow(String table, String prompt, void Function(VocabularyEntry) onAdded) {
+    if (_addingIn != table) {
+      return ActionChip(
+        avatar: const Icon(Icons.add, size: 18),
+        label: Text(prompt),
+        onPressed: () => setState(() {
+          _addingIn = table;
+          _addController.clear();
+        }),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _addController,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: prompt,
+                // Says what happens next, because "it is offered next time" is
+                // the whole point and is not obvious from a text field.
+                helperText: 'Saved for next time.',
+              ),
+              onSubmitted: (_) => _commitAdd(table, onAdded),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () => setState(() => _addingIn = null),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => _commitAdd(table, onAdded),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _commitAdd(
+      String table, void Function(VocabularyEntry) onAdded) async {
+    final entry = await Vocabularies.add(table, _addController.text);
+    if (!mounted) return;
+    setState(() {
+      _addingIn = null;
+      // Empty input closes the field and adds nothing, rather than creating a
+      // blank vocabulary entry that can never be deleted.
+      if (entry != null) onAdded(entry);
+    });
+  }
+
+  /// Single-select chips over a vocabulary, plus the add affordance.
+  ///
+  /// [orphanValue] is rendered as its own selected chip when it matches no
+  /// entry. That happens for real: a backup restored from another device can
+  /// carry a type this device's vocabulary has never seen. Dropping it would
+  /// silently reassign the record to whatever chip happened to be selected.
+  Widget _vocabChips({
+    required String table,
+    required List<VocabularyEntry> entries,
+    required bool Function(VocabularyEntry) isSel,
+    required void Function(VocabularyEntry) onTap,
+    required String addPrompt,
+    String? orphanValue,
+  }) {
+    final known = entries.any((e) => e.value == orphanValue);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final e in entries)
+              ChoiceChip(
+                label: Text(e.label),
+                selected: isSel(e),
+                onSelected: (_) => onTap(e),
+              ),
+            if (orphanValue != null && !known)
+              ChoiceChip(
+                label: Text(eventTypeLabel(orphanValue)),
+                selected: true,
+                onSelected: (_) {},
+              ),
+            if (_addingIn != table)
+              _addRow(table, addPrompt, (e) => onTap(e)),
+          ],
+        ),
+        if (_addingIn == table) _addRow(table, addPrompt, (e) => onTap(e)),
+      ],
+    );
+  }
+
+  /// Multi-select chips over a vocabulary, plus the add affordance.
+  ///
+  /// Values already on the record that match no entry get their own selected
+  /// chip, same rule as above.
+  Widget _vocabMultiChips({
+    required String table,
+    required List<VocabularyEntry> entries,
+    required Set<String> selected,
+    required String addPrompt,
+  }) {
+    final known = entries.map((e) => e.value).toSet();
+    final orphans = selected.where((v) => !known.contains(v)).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final e in entries)
+              FilterChip(
+                label: Text(e.label),
+                selected: selected.contains(e.value),
+                onSelected: (_) => setState(() => selected.contains(e.value)
+                    ? selected.remove(e.value)
+                    : selected.add(e.value)),
+              ),
+            for (final v in orphans)
+              FilterChip(
+                label: Text(Vocabularies.labelFor(table, v)),
+                selected: true,
+                onSelected: (_) => setState(() => selected.remove(v)),
+              ),
+            if (_addingIn != table)
+              _addRow(table, addPrompt, (e) => selected.add(e.value)),
+          ],
+        ),
+        if (_addingIn == table)
+          _addRow(table, addPrompt, (e) => selected.add(e.value)),
+      ],
+    );
+  }
 
   Widget _chips<T>(List<T> options, String Function(T) label,
           bool Function(T) isSel, void Function(T) onTap) =>

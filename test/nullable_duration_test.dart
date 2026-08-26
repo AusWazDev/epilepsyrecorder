@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:medical_event_recorder/constants.dart';
 import 'package:medical_event_recorder/models/backup.dart';
 import 'package:medical_event_recorder/models/capture_inbox.dart';
 import 'package:medical_event_recorder/models/capture_instruction.dart';
@@ -24,7 +25,7 @@ EventRecord rec(String id, DateTime ts, {DurationCategory? duration}) =>
       feelings: const <String>[],
       referralRequired: false,
       notes: '',
-      eventType: EventType.seizure,
+      eventType: kTypeSeizure,
       severity: EventSeverity.mild,
       triggers: const <String>[],
     );
@@ -281,14 +282,27 @@ void main() {
           reason: 'seconds win where both exist; the bucket is never derived from');
     });
 
-    test('15. the CSV keeps its 26 columns and its ordering', () {
-      // Stage 5 makes this file multi-stream. Nothing here may anticipate that.
+    test('15. the CSV column count, and what changed it', () {
+      // Was "keeps its 26 columns". It does not any more, and the change was
+      // FORCED: eleven one-hot feelings columns could only ever hold values MER
+      // shipped, so a user-defined observation had no column and would have
+      // vanished from the export. They collapsed to ONE delimited column.
+      //
+      // Counted from the parts rather than asserted as a bare number, so the
+      // next change has to say what it changed instead of editing a literal.
+      const fixed = 8; // iso, date, time, event_type, duration,
+                       // duration_seconds, severity, observations
+      const tail = 2; // referral_required, notes
+      final expected = fixed + kTriggerOptions.length + tail;
+
       final csv = buildCsv([rec('a', t0)]);
       final header = const LineSplitter().convert(csv).first;
 
       expect(header, contains('duration'));
-      expect(header.split(',').length, 27,
-          reason: 'duration_seconds was added deliberately; stage 5 makes this multi-stream and nothing here anticipates that');
+      expect(header, contains('observations'));
+      expect(header.split(',').length, expected,
+          reason: 'stage 5 makes this file multi-stream; nothing here '
+              'anticipates that');
     });
   });
 }

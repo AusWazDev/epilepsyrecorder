@@ -11,6 +11,7 @@ import '../constants.dart';
 import 'event_record.dart';
 import 'event_store_sqlite.dart';
 import 'storage_migration.dart';
+import 'vocabulary_store.dart';
 
 /// Selects the store for this launch, and runs the one-shot migration.
 ///
@@ -52,7 +53,6 @@ class StorageBoot {
   static void debugSet({EventStore? store, Database? db, MigrationOutcome? result}) {
     _store = store;
     _db = db;
-    outcome = result;
   }
 
   static void configureDatabaseFactory() {
@@ -83,6 +83,11 @@ class StorageBoot {
         ),
       );
       _db = db;
+
+      // Loaded BEFORE the migration and before any render. Failure leaves
+      // the shipped seeds in place, so a launch that cannot read the
+      // vocabulary tables is still an app with chips on it.
+      await Vocabularies.load(db);
 
       final prefs = await SharedPreferences.getInstance();
       final rawJson = prefs.getString(kEventStorageKey);

@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../constants.dart';
 import '../models/event_record.dart';
+import '../models/vocabulary.dart';
+import '../models/vocabulary_store.dart';
 import '../theme/mer_theme.dart';
 
 class LogEventScreen extends StatefulWidget {
@@ -24,7 +26,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
   final _uuid = const Uuid();
   final _notesController = TextEditingController();
 
-  late EventType _eventType;
+  late String _eventType;
   /// NULL = unknown. An unanswered duration now LOOKS unanswered — before
   /// this, every field carried a default and the user could not tell a default
   /// from an answer.
@@ -43,7 +45,74 @@ class _LogEventScreenState extends State<LogEventScreen> {
   late bool _referralRequired;
 
   // Originals for change detection
-  late EventType _origEventType;
+  late String _origEventType;
+
+  /// Which vocabulary an inline "add your own" field is open for, or null.
+  ///
+  /// One field for the whole form, for the same reason the wizard has one: two
+  /// open editors on one screen is two half-finished decisions.
+  String? _addingIn;
+  final _addController = TextEditingController();
+
+  /// Values the observation chips offer for THIS record.
+  ///
+  /// Offerable entries, plus anything the record already carries that is no
+  /// longer offered. A record holding the retired `😵 Confused` keeps its chip,
+  /// selected — the alternative is a value silently dropped from a medical
+  /// record because MER revised its own vocabulary afterwards.
+  List<String> _observationOptions() {
+    final offered =
+        Vocabularies.offerableObservations.map((e) => e.value).toList();
+    final extra =
+        _selectedFeelings.where((v) => !offered.contains(v)).toList()..sort();
+    return <String>[...offered, ...extra];
+  }
+
+  /// The inline add field. NOT a dialog — see the wizard's `_addRow` for why.
+  Widget _inlineAdd(
+      String table, String prompt, void Function(VocabularyEntry) onAdded) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _addController,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: prompt,
+                helperText: 'Saved for next time.',
+              ),
+              onSubmitted: (_) => _commitAdd(table, onAdded),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () => setState(() => _addingIn = null),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => _commitAdd(table, onAdded),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _commitAdd(
+      String table, void Function(VocabularyEntry) onAdded) async {
+    final entry = await Vocabularies.add(table, _addController.text);
+    if (!mounted) return;
+    setState(() {
+      _addingIn = null;
+      _addController.clear();
+      // Empty input closes the field and adds nothing, rather than creating a
+      // blank entry that can never be deleted.
+      if (entry != null) onAdded(entry);
+    });
+  }
   DurationCategory? _origDuration;
   late EventSeverity _origSeverity;
   late Set<String> _origFeelings;
@@ -57,7 +126,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _eventType         = e?.eventType        ?? EventType.seizure;
+    _eventType         = e?.eventType        ?? kTypeSeizure;
     // No `?? lt1`. A record with no duration opens with nothing selected.
     _duration          = e?.duration;
     if (e?.durationSeconds != null) {
@@ -270,12 +339,20 @@ appBar: AppBar(
                       children: [
 
 // ── EVENT TYPE ──
-                        _SectionLabel('Event type'),
+                        // SAME words as the wizard's step heading. One field, one wording,
+                        // on whichever screen a record happens to open in.
+                        _SectionLabel('What happened?'),
                         const SizedBox(height: 8),
                         _EventTypeGrid(
                           selected:   _eventType,
                           onSelected: (t) => setState(() => _eventType = t),
+                          onAdd: Vocabularies.canPersist
+                              ? () => setState(() => _addingIn = kEventTypeTable)
+                              : null,
                         ),
+                        if (_addingIn == kEventTypeTable)
+                          _inlineAdd(kEventTypeTable, 'Add an event type',
+                              (e) => _eventType = e.value),
                         const SizedBox(height: 20),
 
                         // ── DURATION ──
@@ -337,18 +414,38 @@ appBar: AppBar(
                         ),
                         const SizedBox(height: 20),
 
-                        // ── FEELINGS ──
-                        _SectionLabel('How are you feeling?'),
+                        // ── AFTERWARDS ──
+                        // NOT "How are you feeling?" — present tense. Someone logging
+                        // live read it as RIGHT NOW and someone logging days later read
+                        // it as THEN, so one field meant two things and nothing in the
+                        // record said which. It is the postictal state, so it says so.
+                        //
+                        // Word for word the wizard's step 4 heading, for the same reason
+                        // the type label above matches its step 2.
+                        _SectionLabel('How did you feel afterwards?'),
+                        const SizedBox(height: 4),
+                        _SectionHint('In the minutes and hours after it ended.'),
                         const SizedBox(height: 8),
                         _SelectionWrap(
-                          options:  kFeelingsOptions,
+                          // Offerable entries PLUS anything this record already carries
+                          // that is no longer offered — a retired legacy value keeps its
+                          // chip, selected, rather than vanishing from the record.
+                          options: _observationOptions(),
                           selected: _selectedFeelings,
+                          labelFor: (v) => Vocabularies.labelFor(kObservationTable, v),
+                          addLabel: 'Add how you felt',
                           onToggle: (f) => setState(() {
                             _selectedFeelings.contains(f)
                                 ? _selectedFeelings.remove(f)
                                 : _selectedFeelings.add(f);
                           }),
+                          onAdd: Vocabularies.canPersist
+                              ? () => setState(() => _addingIn = kObservationTable)
+                              : null,
                         ),
+                        if (_addingIn == kObservationTable)
+                          _inlineAdd(kObservationTable, 'Add how you felt',
+                              (e) => _selectedFeelings.add(e.value)),
                         const SizedBox(height: 20),
 
                         // ── BEFOREHAND ──
@@ -474,16 +571,29 @@ class _SectionLabel extends StatelessWidget {
    =========================== */
 
 class _EventTypeGrid extends StatelessWidget {
-  final EventType selected;
-  final ValueChanged<EventType> onSelected;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  /// Opens the inline "add a type" field. Null hides the add tile — which is
+  /// what happens on a launch with no database, where an entry could not
+  /// survive a restart.
+  final VoidCallback? onAdd;
 
   const _EventTypeGrid({
     required this.selected,
     required this.onSelected,
+    this.onAdd,
   });
 
   @override
   Widget build(BuildContext context) {
+    final entries = Vocabularies.offerableEventTypes;
+    // A type this device's vocabulary has never seen — from a backup made
+    // elsewhere — still gets a tile, selected, rather than silently reading as
+    // whichever tile happens to match.
+    final orphan =
+        entries.any((e) => e.value == selected) ? null : selected;
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -491,51 +601,75 @@ class _EventTypeGrid extends StatelessWidget {
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
       childAspectRatio: 3.2,
-      children: EventType.values.map((type) {
-        final isSelected = selected == type;
-        return _EventTypeButton(
-          type: type,
-          isSelected: isSelected,
-          onTap: () => onSelected(type),
-        );
-      }).toList(),
+      children: <Widget>[
+        for (final e in entries)
+          _EventTypeButton(
+            type: e.value,
+            label: e.label,
+            isSelected: selected == e.value,
+            onTap: () => onSelected(e.value),
+          ),
+        if (orphan != null)
+          _EventTypeButton(
+            type: orphan,
+            label: eventTypeLabel(orphan),
+            isSelected: true,
+            onTap: () {},
+          ),
+        if (onAdd != null)
+          _EventTypeButton(
+            type: '',
+            label: 'Add your own',
+            isSelected: false,
+            onTap: onAdd!,
+            icon: Icons.add,
+          ),
+      ],
     );
   }
 }
 
 class _EventTypeButton extends StatelessWidget {
-  final EventType type;
+  final String type;
+  final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   const _EventTypeButton({
     required this.type,
+    required this.label,
     required this.isSelected,
     required this.onTap,
+    this.icon,
   });
 
+  /// An icon per SEEDED type, and one neutral icon for everything else. A
+  /// user-defined type gets no bespoke icon for the same reason it gets no
+  /// bespoke colour — see `_EventTypeFilterChips._activeColor` in History.
   IconData get _icon {
+    if (icon != null) return icon!;
     switch (type) {
-      case EventType.seizure:
+      case kTypeSeizure:
         return Icons.monitor_heart_outlined;
-      case EventType.absence:
+      case kTypeAbsence:
         return Icons.access_time_outlined;
-      case EventType.medication:
+      case kTypeMedication:
         return Icons.medication_outlined;
-      case EventType.other:
+      default:
         return Icons.edit_note_outlined;
     }
   }
 
   Color get _selectedColor {
     switch (type) {
-      case EventType.seizure:
+      case kTypeSeizure:
         return MERColours.alert;
-      case EventType.absence:
+      case kTypeAbsence:
         return MERColours.action;
-      case EventType.medication:
+      case kTypeMedication:
         return MERColours.success;
-      case EventType.other:
+      default:
         return MERColours.textMuted;
     }
   }
@@ -567,7 +701,7 @@ class _EventTypeButton extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                eventTypeLabel(type),
+                label,
                 style: TextStyle(
                   fontSize:   12,
                   fontWeight: isSelected
@@ -662,14 +796,29 @@ class _SelectionRow<T> extends StatelessWidget {
    =========================== */
 
 class _SelectionWrap extends StatelessWidget {
+  /// The STORED VALUES, not the labels. For triggers the two are still the same
+  /// string; for observations they differ, because a legacy value carries an
+  /// emoji its label does not.
   final List<String> options;
   final Set<String> selected;
   final ValueChanged<String> onToggle;
+
+  /// Resolves a value to what a person reads. Null means the value IS the
+  /// label, which is how triggers still work.
+  final String Function(String)? labelFor;
+
+  /// Opens the inline "add your own" field. Null hides the pill — which is what
+  /// happens with no database, where the entry could not survive a restart.
+  final VoidCallback? onAdd;
+  final String addLabel;
 
   const _SelectionWrap({
     required this.options,
     required this.selected,
     required this.onToggle,
+    this.labelFor,
+    this.onAdd,
+    this.addLabel = 'Add your own',
   });
 
   @override
@@ -677,7 +826,8 @@ class _SelectionWrap extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: options.map((option) {
+      children: <Widget>[
+        ...options.map((option) {
         final isSelected = selected.contains(option);
         return GestureDetector(
           onTap: () => onToggle(option),
@@ -700,7 +850,7 @@ class _SelectionWrap extends StatelessWidget {
               ),
             ),
             child: Text(
-              option,
+              labelFor?.call(option) ?? option,
               style: TextStyle(
                 fontSize:   13,
                 fontWeight: isSelected
@@ -713,7 +863,31 @@ class _SelectionWrap extends StatelessWidget {
             ),
           ),
         );
-      }).toList(),
+        }),
+        if (onAdd != null)
+          GestureDetector(
+            onTap: onAdd,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: MERColours.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: MERColours.border, width: 0.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, size: 16, color: MERColours.primary),
+                  const SizedBox(width: 6),
+                  Text(addLabel,
+                      style: const TextStyle(
+                          fontSize: 13, color: MERColours.primary)),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

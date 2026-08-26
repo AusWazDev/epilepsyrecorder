@@ -114,7 +114,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SEVERITY'), findsOneWidget);
-    expect(find.text('HOW ARE YOU FEELING?'), findsOneWidget);
+    // The observations label moved with the vocabulary work: "How are you
+    // feeling?" was PRESENT TENSE and did not say the field means AFTER the
+    // event. Same defect as "Possible triggers", same fix, and the control
+    // moves with it.
+    expect(find.text('HOW DID YOU FEEL AFTERWARDS?'), findsOneWidget);
   });
 
   test('5. the CSV never labels the field at all', () {

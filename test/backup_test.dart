@@ -14,7 +14,7 @@ EventRecord rec(String id, String iso) => EventRecord(
       feelings: const ['Just tired'],
       referralRequired: true,
       notes: 'note $id',
-      eventType: EventType.absence,
+      eventType: kTypeAbsence,
       severity: EventSeverity.moderate,
       triggers: const ['Stress'],
     );
@@ -40,7 +40,7 @@ void main() {
       final a = parsed.records.firstWhere((r) => r.id == 'a');
       expect(a.timestamp, DateTime.parse('2026-01-03T08:00:00.000'));
       expect(a.duration, DurationCategory.oneToFive);
-      expect(a.eventType, EventType.absence);
+      expect(a.eventType, kTypeAbsence);
       expect(a.severity, EventSeverity.moderate);
       expect(a.feelings, ['Just tired']);
       expect(a.triggers, ['Stress']);

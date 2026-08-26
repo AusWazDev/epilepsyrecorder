@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/event_record.dart';
+import '../models/vocabulary_store.dart';
 import '../screens/event_wizard_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../theme/mer_theme.dart';
@@ -72,7 +73,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _searchText      = '';
   bool   _referralOnly    = false;
   _DateRange _dateRange   = _DateRange.all;
-  final Set<EventType> _selectedTypes = {};
+  final Set<String> _selectedTypes = {};
 
   @override
   void initState() {
@@ -508,23 +509,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
    =========================== */
 
 class _EventTypeFilterChips extends StatelessWidget {
-  final Set<EventType> selected;
-  final ValueChanged<EventType> onToggle;
+  final Set<String> selected;
+  final ValueChanged<String> onToggle;
 
   const _EventTypeFilterChips({
     required this.selected,
     required this.onToggle,
   });
 
-  Color _activeColor(EventType t) {
-    switch (t) {
-      case EventType.seizure:
+  /// A colour per SEEDED type, and one neutral colour for everything else.
+  ///
+  /// User-defined types are not given a colour. Inventing a palette entry per
+  /// new type would either repeat colours — making two types look like the same
+  /// one — or drift away from the four the app's identity is built on. Neutral
+  /// is the honest rendering of "MER has no opinion about this one".
+  Color _activeColor(String value) {
+    switch (value) {
+      case kTypeSeizure:
         return MERColours.alert;
-      case EventType.absence:
+      case kTypeAbsence:
         return MERColours.action;
-      case EventType.medication:
+      case kTypeMedication:
         return MERColours.success;
-      case EventType.other:
+      default:
         return MERColours.textMuted;
     }
   }
@@ -534,7 +541,10 @@ class _EventTypeFilterChips extends StatelessWidget {
     return Wrap(
       spacing:    6,
       runSpacing: 6,
-      children: EventType.values.map((type) {
+      // OFFERABLE, not every row: a retired type must not keep appearing as a
+      // filter. `offerable` also forces "Other" last.
+      children: Vocabularies.offerableEventTypes.map((entry) {
+        final type       = entry.value;
         final isSelected = selected.contains(type);
         final colour     = _activeColor(type);
         return GestureDetector(
@@ -646,31 +656,33 @@ class _EventListTile extends StatelessWidget {
    =========================== */
 
 class _EventTypeBadge extends StatelessWidget {
-  final EventType type;
+  final String type;
   const _EventTypeBadge({required this.type});
 
+  /// Seeded types keep their colours; everything else takes the neutral pair
+  /// "Other" already used. See `_activeColor` for why no colour is invented.
   Color get _bg {
     switch (type) {
-      case EventType.seizure:
+      case kTypeSeizure:
         return const Color(0xFFFAECE7);
-      case EventType.absence:
+      case kTypeAbsence:
         return const Color(0xFFEAF4FB);
-      case EventType.medication:
+      case kTypeMedication:
         return const Color(0xFFEAF3DE);
-      case EventType.other:
+      default:
         return const Color(0xFFF1EFE8);
     }
   }
 
   Color get _fg {
     switch (type) {
-      case EventType.seizure:
+      case kTypeSeizure:
         return const Color(0xFF993C1D);
-      case EventType.absence:
+      case kTypeAbsence:
         return const Color(0xFF185FA5);
-      case EventType.medication:
+      case kTypeMedication:
         return const Color(0xFF3B6D11);
-      case EventType.other:
+      default:
         return const Color(0xFF5F5E5A);
     }
   }

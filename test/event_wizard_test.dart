@@ -18,7 +18,7 @@ EventRecord rec({
   int? secs,
   bool? completed,
   String notes = '',
-  EventType type = EventType.seizure,
+  String type = kTypeSeizure,
   EventSeverity severity = EventSeverity.mild,
 }) =>
     EventRecord(
@@ -168,12 +168,12 @@ void main() {
     });
 
     testWidgets('13. an existing record PRE-FILLS what it has', (tester) async {
-      await open(tester, rec(secs: 187, type: EventType.absence),
+      await open(tester, rec(secs: 187, type: kTypeAbsence),
           onDone: (_) {});
       // Duration was skipped, so what is on screen is step 1 - and the type
       // it carries must already be selected.
       final chip = tester.widget<ChoiceChip>(find.ancestor(
-        of: find.text(eventTypeLabel(EventType.absence)),
+        of: find.text(eventTypeLabel(kTypeAbsence)),
         matching: find.byType(ChoiceChip),
       ));
       expect(chip.selected, isTrue);

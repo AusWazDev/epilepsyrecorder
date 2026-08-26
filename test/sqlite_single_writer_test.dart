@@ -20,13 +20,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// The only files permitted to reach SQLite.
 ///
-/// Three, each doing one job: the store implements the interface, the migration
-/// performs the one-shot conversion, and the boot layer opens the database and
-/// chooses which store this launch runs on.
+/// Five, each doing one job: the store implements the interface, the migration
+/// performs the one-shot conversion, the boot layer opens the database and
+/// chooses which store this launch runs on, and the two vocabulary files own
+/// the `event_type` and `observation` tables.
+///
+/// The vocabulary pair was ADDED deliberately rather than by relaxing the rule.
+/// `vocabulary.dart` holds the DDL and the mutations; `vocabulary_store.dart`
+/// caches the result. Nothing outside this set may hold a `Database`, which is
+/// what stops a screen writing rows behind the store's back.
 const Set<String> kStorageLayer = <String>{
   'lib/models/event_store_sqlite.dart',
   'lib/models/storage_migration.dart',
   'lib/models/storage_boot.dart',
+  'lib/models/vocabulary.dart',
+  'lib/models/vocabulary_store.dart',
 };
 
 const String kSqliteImportMarker = 'package:sqflite';

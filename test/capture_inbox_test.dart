@@ -232,7 +232,7 @@ void main() {
       // a start knows only that an event began, so lt1 was an invention that
       // every abandoned event inherited. Only the matching end measures.
       expect(made.duration, isNull);
-      expect(made.eventType, EventType.seizure);
+      expect(made.eventType, kTypeSeizure);
       expect(made.severity, EventSeverity.mild);
       expect(made.feelings, isEmpty);
       expect(made.triggers, isEmpty);

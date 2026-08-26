@@ -249,17 +249,15 @@ void main() {
         'duration',
         'duration_seconds',
         'severity',
-        'Tired and weary',
-        'Just tired',
-        'Just weary',
-        'Experiencing a headache',
-        'Sad',
-        'Confused',
-        'Annoyed',
-        'Angry',
-        'Anxious',
-        'Nauseous',
-        'In pain',
+        // The eleven one-hot feelings columns COLLAPSED to one delimited column,
+        // and the change was FORCED rather than chosen: a one-hot export has no
+        // column for a user-defined observation, so the moment someone adds
+        // "Dizzy" the value vanishes from the file. Silent loss in the artefact a
+        // clinician reads. DATA-MODEL.md §6 always required this; user-defined
+        // vocabularies made it required NOW rather than at the final stage.
+        'observations',
+        // Triggers are UNCHANGED. Not user-defined this stage, so the fixed
+        // columns still represent them exactly.
         'Stress',
         'Poor sleep',
         'Missed medication',
@@ -272,18 +270,35 @@ void main() {
       ]);
     });
 
-    test('emoji are stripped from the feelings headers only', () {
-      final header = buildCsv(<EventRecord>[
-        record('a', DateTime(2026, 8, 22, 18, 0)),
-      ]).split('\n').first;
+    test('no emoji reaches the header OR the values', () {
+      // Was "stripped from the feelings headers only". There are no feelings
+      // headers any more, and the rule moved to where it always belonged: the
+      // VALUES. DATA-MODEL.md §6 requires emoji stripped from both, and the
+      // legacy strings already render as mojibake in History rows on the tablet.
+      //
+      // The mechanism is no longer a regex. The CSV writes each observation's
+      // LABEL, and a legacy entry's label is its value without the emoji.
+      final legacy = EventRecord(
+        id: 'e',
+        timestamp: DateTime(2026, 8, 22, 18, 0),
+          duration: null,
+        feelings: const <String>['😵 Confused'],
+        referralRequired: false,
+        notes: '',
+      );
+      final csv = buildCsv(<EventRecord>[legacy]);
 
       for (final option in kFeelingsOptions) {
-        expect(header, isNot(contains(option)),
-            reason: 'the raw emoji-bearing label must not reach the header');
+        expect(csv, isNot(contains(option)),
+            reason: 'no raw emoji-bearing string may reach the file');
       }
-      // Triggers carry no emoji and are passed through untouched.
+      // POSITIVE CONTROL: the value IS exported, stripped - so the absence
+      // above is a naming fact and not a dropped field.
+      expect(csv, contains('Confused'));
+
+      // Triggers carry no emoji and pass through untouched.
       for (final trigger in kTriggerOptions) {
-        expect(header, contains(trigger));
+        expect(csv, contains(trigger));
       }
     });
   });

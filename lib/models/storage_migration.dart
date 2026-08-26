@@ -123,11 +123,11 @@ Map<String, Object?>? rawMapToRow(
       .firstOrNull;
   countAbsent('duration', durationName != null);
 
+  // ANY non-empty string is a type now, not just the four MER shipped. The
+  // old code counted an unrecognised value as ABSENT and wrote NULL, which
+  // for a user-defined type would have been silent data loss at migration.
   final rawType = map['eventType'];
-  final typeName = EventType.values
-      .where((e) => e.name == rawType)
-      .map((e) => e.name)
-      .firstOrNull;
+  final typeName = (rawType is String && rawType.isNotEmpty) ? rawType : null;
   countAbsent('eventType', typeName != null);
 
   final rawSeverity = map['severity'];

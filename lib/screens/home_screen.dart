@@ -1664,7 +1664,7 @@ class _GettingStartedCard extends StatelessWidget {
             _HowToRow(
               icon:  Icons.tune,
               title: 'Record with details',
-              body:  'Add notes, duration, what was happening beforehand, and severity using the blue button.',
+              body:  'Add notes, duration, what was happening beforehand, and severity using the blue button. You can add your own options to any list.',
             ),
             const SizedBox(height: 12),
             _HowToRow(

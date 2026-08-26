@@ -11,6 +11,8 @@ import 'package:share_plus/share_plus.dart';
 
 import '../constants.dart';
 import 'duration_format.dart';
+import 'vocabulary.dart';
+import 'vocabulary_store.dart';
 
 /* ===========================
    ENUMS
@@ -65,20 +67,36 @@ String? durationDisplay(DurationCategory? bucket, int? seconds) {
 String durationCsv(DurationCategory? bucket, int? seconds) =>
     durationDisplay(bucket, seconds) ?? 'unknown';
 
-enum EventType { seizure, absence, medication, other }
+/// The event type is a **STRING**, not an enum, and that is the whole change.
+///
+/// An enum can only ever hold values MER shipped. A user who tracks cluster
+/// headaches needs a type MER has never heard of, and the record has to carry
+/// it — so the field holds a vocabulary `value` and the vocabulary decides what
+/// exists.
+///
+/// **The wire format did not change.** It has always been a string:
+/// `toMap` wrote `eventType.name`, so every record already stores `seizure`,
+/// `absence`, `medication` or `other`, and every backup file ever written is
+/// still readable. What changed is that the model stops narrowing that string
+/// to four cases on the way in.
+///
+/// These constants exist so code that means a SPECIFIC seeded type says so,
+/// rather than repeating a bare literal.
+const String kTypeSeizure = 'seizure';
+const String kTypeAbsence = 'absence';
+const String kTypeMedication = kMedicationValue;
+const String kTypeOther = kOtherEventTypeValue;
 
-String eventTypeLabel(EventType t) {
-  switch (t) {
-    case EventType.seizure:
-      return 'Seizure / fit';
-    case EventType.absence:
-      return 'Absence episode';
-    case EventType.medication:
-      return 'Medication taken';
-    case EventType.other:
-      return 'Other / custom';
-  }
-}
+/// The label for a stored type value.
+///
+/// Resolves through the loaded vocabulary, so a user-defined type reads as its
+/// own name. An unrecognised value renders AS ITSELF rather than as a fallback:
+/// a record restored from a backup made on another device may carry a type this
+/// device has never seen, and showing the raw string beats showing the wrong
+/// one. That is the same rule the duration work established — never substitute a
+/// confident value for an unknown one.
+String eventTypeLabel(String value) =>
+    Vocabularies.labelFor(kEventTypeTable, value);
 
 enum EventSeverity { mild, moderate, severe }
 
@@ -142,7 +160,7 @@ class EventRecord {
   final String notes;
 
   // New fields — all have safe defaults for old saved records
-  final EventType eventType;
+  final String eventType;
   final EventSeverity severity;
   final List<String> triggers;
 
@@ -155,7 +173,7 @@ class EventRecord {
     required this.feelings,
     required this.referralRequired,
     required this.notes,
-    this.eventType = EventType.seizure,
+    this.eventType = kTypeSeizure,
     this.severity  = EventSeverity.mild,
     this.triggers  = const [],
   });
@@ -201,7 +219,7 @@ class EventRecord {
         'feelings':         feelings,
         'referralRequired': referralRequired,
         'notes':            notes,
-        'eventType':        eventType.name,
+        'eventType':        eventType,
         'severity':         severity.name,
         'triggers':         triggers,
       };
@@ -237,10 +255,14 @@ class EventRecord {
       referralRequired: (referralRaw is bool) ? referralRaw : false,
       notes:            (notesRaw is String) ? notesRaw : '',
       // New fields — safe fallbacks for old records
-      eventType: EventType.values.firstWhere(
-        (e) => e.name == map['eventType'],
-        orElse: () => EventType.seizure,
-      ),
+      // Kept VERBATIM. The old code narrowed anything unrecognised to
+      // `seizure`; a user-defined type would have been silently rewritten to
+      // "Seizure / fit" by a round trip through a backup file. An absent key
+      // still reads as `seizure`, unchanged, because that is what every record
+      // written before this already stores and §9 forbids changing them.
+      eventType: (map['eventType'] is String && (map['eventType'] as String).isNotEmpty)
+          ? map['eventType'] as String
+          : kTypeSeizure,
       severity: EventSeverity.values.firstWhere(
         (e) => e.name == map['severity'],
         orElse: () => EventSeverity.mild,
@@ -497,10 +519,11 @@ String _csvEscape(String v) {
   return '"${v.replaceAll('"', '""')}"';
 }
 
-// Strip leading emoji + space from a feelings option label for use as a column header.
-// e.g. '😪 Just tired' → 'Just tired'
-String _feelingHeader(String option) =>
-    option.replaceFirst(RegExp(r'^\S+\s+'), '');
+// GONE, with the eleven one-hot columns it existed to name. Emoji are now
+// stripped by a different and better mechanism: the CSV writes each
+// observation's LABEL, and a legacy entry's label is its value without the
+// emoji. A regex that guessed at "leading non-space run" is no longer between
+// the stored string and the export.
 
 String buildCsv(List<EventRecord> items) {
   final fmtDate = DateFormat('yyyy-MM-dd');
@@ -521,7 +544,21 @@ String buildCsv(List<EventRecord> items) {
     // from "1-5 minutes". Neither column ever contains a fabrication.
     'duration_seconds',
     'severity',
-    ...kFeelingsOptions.map(_feelingHeader),
+    // ONE DELIMITED COLUMN, forced early and not by preference.
+    //
+    // The eleven one-hot columns could only ever hold values MER shipped. The
+    // moment someone adds "Dizzy", a one-hot export has NO COLUMN FOR IT and
+    // the value disappears from the file - silent loss in the one artefact a
+    // clinician actually reads, with nothing on screen to reveal it. So
+    // user-defined observations force DATA-MODEL.md §6's delimited-column
+    // change NOW rather than at the final stage.
+    //
+    // Semicolon, not comma: a comma would need quoting inside an already
+    // quoted field, and "; " reads cleanly in a spreadsheet cell.
+    'observations',
+    // Triggers stay ONE-HOT this stage. They are not user-defined yet, so the
+    // fixed columns still represent them exactly, and the brief holds triggers
+    // unchanged. When they become user-defined they move the same way.
     ...kTriggerOptions,
     'referral_required',
     'notes',
@@ -539,7 +576,13 @@ String buildCsv(List<EventRecord> items) {
       // unambiguous in a way a blank in a text column is not.
       r.durationSeconds?.toString() ?? '',
       severityLabel(r.severity),
-      ...kFeelingsOptions.map((f) => r.feelings.contains(f) ? 'Yes' : ''),
+      // LABELS, not stored values - which strips the emoji for free, because a
+      // legacy entry's label is its value without one. DATA-MODEL.md §6 requires
+      // emoji stripped from values as well as headers, and the raw strings
+      // already render as mojibake in History rows on the tablet.
+      r.feelings
+          .map((v) => Vocabularies.labelFor(kObservationTable, v))
+          .join('; '),
       ...kTriggerOptions.map((t) => r.triggers.contains(t) ? 'Yes' : ''),
       r.referralRequired ? 'Yes' : 'No',
       r.notes,

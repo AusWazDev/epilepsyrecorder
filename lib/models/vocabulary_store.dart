@@ -1,0 +1,153 @@
+import 'package:sqflite_common/sqlite_api.dart';
+
+import 'vocabulary.dart';
+
+/// The loaded vocabularies for this launch.
+///
+/// ## Why an in-memory holder rather than a query per render
+///
+/// Two vocabularies of a dozen rows each are read on every History row, every
+/// chip and every CSV line. They change only when someone adds or hides an
+/// entry, which is rare and always goes through this class — so the cache
+/// cannot go stale without this file knowing.
+///
+/// ## Why it works with NO DATABASE AT ALL
+///
+/// `StorageBoot` falls back to shared_preferences when SQLite cannot be opened,
+/// and widget tests construct screens without booting anything. In both cases
+/// there is no `Database` — and the app must still render its chips. So the
+/// seeded lists are the default state, and [load] only ever REPLACES them with
+/// what the database holds.
+///
+/// That is why [eventTypes] and [observations] are never empty and never null:
+/// a screen built in a test, on a fallback launch, or before boot completes,
+/// gets exactly the vocabulary MER ships with.
+class Vocabularies {
+  Vocabularies._();
+
+  static List<VocabularyEntry> _eventTypes = _fromSeeds(kSeedEventTypes);
+  static List<VocabularyEntry> _observations = <VocabularyEntry>[
+    ..._fromSeeds(kSeedObservations),
+    ..._fromSeeds(kLegacyObservations, idBase: 1000, sortBase: 1000),
+  ];
+
+  static Database? _db;
+
+  /// Every entry, active and retired, in sort order.
+  static List<VocabularyEntry> get eventTypes => _eventTypes;
+  static List<VocabularyEntry> get observations => _observations;
+
+  /// What a picker offers: active only, "Other" last.
+  static List<VocabularyEntry> get offerableEventTypes => offerable(_eventTypes);
+  static List<VocabularyEntry> get offerableObservations =>
+      offerable(_observations);
+
+  /// True when mutations will persist. False on a fallback launch and in
+  /// widget tests — the UI uses this to hide "add your own" rather than offer
+  /// something that silently would not survive a restart.
+  static bool get canPersist => _db != null;
+
+  static List<VocabularyEntry> _fromSeeds(
+    List<VocabularySeed> seeds, {
+    int idBase = 0,
+    int sortBase = 0,
+  }) {
+    var i = 0;
+    return seeds.map((s) {
+      final n = i++;
+      return VocabularyEntry(
+        id: idBase + n + 1,
+        value: s.value,
+        label: s.label,
+        isSeeded: true,
+        isActive: s.isActive,
+        isProtected: s.isProtected,
+        sortOrder: sortBase + n,
+      );
+    }).toList();
+  }
+
+  /// Reads both vocabularies from [db].
+  ///
+  /// NEVER throws and never leaves the lists empty: a database that cannot be
+  /// read leaves the seeded defaults in place, which is a working app with the
+  /// shipped vocabulary rather than a screen of blank chips.
+  static Future<void> load(Database? db) async {
+    _db = db;
+    if (db == null) return;
+    try {
+      final types = await loadVocabulary(db, kEventTypeTable);
+      final obs = await loadVocabulary(db, kObservationTable);
+      // Only replace on a NON-EMPTY read. An empty table means the seed did not
+      // run — a bug — and rendering nothing would turn that bug into an app with
+      // no chips at all.
+      if (types.isNotEmpty) _eventTypes = types;
+      if (obs.isNotEmpty) _observations = obs;
+    } catch (_) {
+      // Defaults stand.
+    }
+  }
+
+  /// Test seam.
+  static void debugSet({
+    List<VocabularyEntry>? eventTypes,
+    List<VocabularyEntry>? observations,
+    Database? db,
+  }) {
+    if (eventTypes != null) _eventTypes = eventTypes;
+    if (observations != null) _observations = observations;
+    _db = db;
+  }
+
+  /// Restores the shipped state. Used by tests so one test's additions cannot
+  /// leak into the next.
+  static void debugReset() {
+    _eventTypes = _fromSeeds(kSeedEventTypes);
+    _observations = <VocabularyEntry>[
+      ..._fromSeeds(kSeedObservations),
+      ..._fromSeeds(kLegacyObservations, idBase: 1000, sortBase: 1000),
+    ];
+    _db = null;
+  }
+
+  /// Adds a user entry to [table] and refreshes the cache.
+  ///
+  /// Works with no database: the entry is added in memory so the flow the user
+  /// is in completes normally. It will not survive a restart, which is why
+  /// [canPersist] gates the UI that offers it.
+  static Future<VocabularyEntry?> add(String table, String typed) async {
+    final text = typed.trim();
+    if (text.isEmpty) return null;
+
+    final db = _db;
+    if (db == null) {
+      final list = table == kEventTypeTable ? _eventTypes : _observations;
+      for (final e in list) {
+        if (e.label.toLowerCase() == text.toLowerCase()) return e;
+      }
+      final entry = VocabularyEntry(
+        id: -DateTime.now().microsecondsSinceEpoch,
+        value: text,
+        label: text,
+        isSeeded: false,
+        isActive: true,
+        isProtected: false,
+        sortOrder: 500,
+      );
+      if (table == kEventTypeTable) {
+        _eventTypes = <VocabularyEntry>[..._eventTypes, entry];
+      } else {
+        _observations = <VocabularyEntry>[..._observations, entry];
+      }
+      return entry;
+    }
+
+    final entry = await addUserEntry(db, table, text);
+    await load(db);
+    return entry;
+  }
+
+  /// The label for a stored value, in whichever vocabulary [table] names.
+  static String labelFor(String table, String value) => labelForValue(
+      table == kEventTypeTable ? _eventTypes : _observations, value);
+}

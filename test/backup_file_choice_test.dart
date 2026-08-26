@@ -28,7 +28,7 @@ EventRecord rec(String id, DateTime ts) => EventRecord(
       feelings: const <String>[],
       referralRequired: false,
       notes: '',
-      eventType: EventType.seizure,
+      eventType: kTypeSeizure,
       severity: EventSeverity.mild,
       triggers: const <String>[],
     );

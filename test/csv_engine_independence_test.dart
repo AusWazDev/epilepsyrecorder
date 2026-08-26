@@ -32,7 +32,7 @@ EventRecord rec(String id, DateTime ts, DurationCategory? d) => EventRecord(
       feelings: const ['😪 Just tired', '😵 Confused'],
       referralRequired: true,
       notes: 'a note, with a comma and "quotes"',
-      eventType: EventType.absence,
+      eventType: kTypeAbsence,
       severity: EventSeverity.moderate,
       triggers: const ['Poor sleep'],
     );

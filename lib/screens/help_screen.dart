@@ -117,16 +117,19 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   icon:  Icons.tune,
                   title: 'Record with details',
                   // Named in the order the fields appear on the details screen,
-                  // using its own section labels: Event type, Duration, Severity,
-                  // "How are you feeling?", "What was happening beforehand?",
-                  // "Medical referral required?", "Notes (optional)". The previous
-                  // wording listed four of the seven and omitted event type and
-                  // feelings — the nine-field model UNDER-described.
+                  // using its own section labels: "What happened?", Duration,
+                  // Severity, "How did you feel afterwards?", "What was happening
+                  // beforehand?", "Medical referral required?", "Notes
+                  // (optional)". The previous wording listed four of the seven and
+                  // omitted event type and feelings — the nine-field model
+                  // UNDER-described.
                   //
-                  // The trigger field was renamed away from a causal noun (see
-                  // log_event_screen's BEFOREHAND section); this row mirrors the
-                  // form's labels by its own rule, so it moved with it.
-                  body:  'Use the blue Record with details button to set the event type, duration and severity, how you are feeling, what was happening beforehand, whether a medical referral is needed, and notes — before saving.',
+                  // THREE labels have now moved by this row's own rule: the trigger
+                  // field away from a causal noun, the type field to match the
+                  // wizard's step 2, and the observation field away from "How are
+                  // you feeling?" — present tense, which did not say the field
+                  // means AFTER the event.
+                  body:  'Use the blue Record with details button to set what happened, duration and severity, how you felt afterwards, what was happening beforehand, whether a medical referral is needed, and notes — before saving. Anything you add to a list is offered next time.',
                 ),
                 _HelpRow(
                   icon:   Icons.edit_outlined,

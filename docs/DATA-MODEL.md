@@ -55,22 +55,37 @@ go in.
 
 ### event_type
 
+⚠️ **CORRECTED 26-Aug-26, when this table was built.** Two things this spec left
+unstated turned out to decide the implementation, and a blank cell had been read
+as a requirement it never expressed. See the `condition_id` note below and
+**§2a**.
+
 | Column | Notes |
 |--------|-------|
 | `id` | |
-| `condition_id` | |
-| `name` | |
-| `is_seeded` | |
-| `is_primary` | |
+| `condition_id` | **NULLABLE, and unpopulated as at v3.** There is no `condition` table yet — deferred until a screen exists where someone says what they track. NULL means NOT YET SAID. |
+| `value` | **ADDED.** The immutable string a record stores. Never changes, for any reason. |
+| `name` | Renamed `label` in code: what a person reads. May change; `value` may not. See §2a. |
+| `is_seeded` | Seeded entries refuse rename and delete. |
+| `is_active` | **ADDED.** Retire, never delete — the entry stays so records referencing it still render. |
+| `is_protected` | **ADDED.** May not be hidden. Exactly one entry: `medication`. |
+| `is_primary` | Not built. No consumer yet. |
 | `sort_order` | |
+
+### observation
+
+**ADDED 26-Aug-26.** The same shape, minus `condition_id`'s eventual meaning:
+observation vocabularies are SHARED across conditions by §1 principle 4, so this
+table is never per-condition. Built alongside `event_type` so the
+seeded-and-extensible mechanism was designed once rather than twice.
 
 ### event
 
 | Column | Notes |
 |--------|-------|
 | `id` | Preserved across migration — see §7. |
-| `condition_id` | |
-| `event_type_id` | **NULLABLE** until the wizard confirms it. |
+| `condition_id` | **NULLABLE, and unpopulated as at v3.** ⚠️ This cell was BLANK, and the blank was repeatedly read as NOT NULL — which blocked this work for two design reads. The string "NOT NULL" has never appeared anywhere in this document (`grep -c` returns 0), so the requirement was inherited from nowhere. It is stated explicitly now. NULL means NOT YET SAID, the same rule as `occurred_at`, `details_completed`, duration at creation and the legacy buckets. |
+| `event_type_id` | **NULLABLE** until the wizard confirms it. Not built as at v3 — `event.event_type` still holds the vocabulary `value` directly, because a join buys nothing while `condition` does not exist. |
 | `occurred_at` | Nullable. When it happened. |
 | `logged_at` | **Never null, never editable.** When it was recorded. |
 | `duration_seconds` | Nullable. A **REAL QUANTITY**, not a bucket. |
@@ -176,6 +191,36 @@ peak flow. `key`, `label`, `value_type`, `unit`, `sort_order`.
 **Only MER creates `condition_field` rows.** Store and display only: no ranges,
 no thresholds, no colour coding. Recording "glucose 3.2" is a record; flagging
 it as low is monitoring.
+
+---
+
+## 2a. Vocabulary entries: `value` versus `label`
+
+**ADDED 26-Aug-26. The property every safety rule here follows from.**
+
+A vocabulary entry has a `value` and a `label` and they are NOT the same thing.
+`value` is what gets written into a record and is **immutable**. `label` is what
+a person reads and **may change**. From that split:
+
+- **renaming** touches `label` only, so no record is ever orphaned;
+- **retiring** sets `is_active = 0`, so the entry leaves pickers while records
+  referencing it still render;
+- **nothing is deleted**, so no record can point at a row that is gone.
+
+This is what makes a vocabulary REVISION possible without a data migration.
+Collapsing "Just tired" into "Tired" retires the old entry and seeds the new one;
+a record carrying `😴 Tired and weary` keeps that exact string forever and keeps
+rendering.
+
+**The alternative was considered and rejected**: rewriting stored values would
+have changed what a person recorded, in a medical record, to suit a later
+editorial decision. Legacy duration buckets were handled the same way and it
+worked.
+
+⚠️ **Emoji are part of the stored value, not decoration.** `😵 Confused` is the
+string in the record. That is why the legacy entries cannot simply be dropped,
+and why §6's "emoji stripped from values" is implemented by exporting the
+**label** rather than by a regex over the value.
 
 ---
 
