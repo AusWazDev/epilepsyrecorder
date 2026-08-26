@@ -93,6 +93,38 @@ DurationAnswer durationAnswerOf(EventRecord? r) {
   return DurationAnswer.none;
 }
 
+/// The first step carrying a question this record has not answered.
+///
+/// ## Why it exists
+///
+/// The "needs details" filter turns History into a WORK QUEUE, and a queue
+/// that re-asks what is already recorded is the fastest way to make it feel
+/// like a chore. A legacy record typically has feelings and triggers but no
+/// type and no severity; walking it through all four steps would ask three
+/// questions it already knows the answer to.
+///
+/// ## Only steps 0 and 1 are skippable, and the reason is not symmetry
+///
+/// Duration, type and severity have an ABSENT state — null means not asked.
+/// Feelings and triggers do not: an empty list is an ANSWER, "nothing
+/// beforehand" is data, and there is no way to tell it from "not asked". So
+/// steps 2 and 3 can never be skipped, and a record with everything answerable
+/// already answered opens on step 2 rather than jumping to the summary.
+///
+/// ⚠️ **THE LEGACY-DURATION TRAP, AND WHY IT HAS NO TWIN.** A record with a
+/// bucket and no seconds LOOKS answered and is not answerable in a
+/// minutes-and-seconds control — "1-5 minutes" contains no number — so only
+/// [DurationAnswer.measured] skips. Type and severity have NO equivalent: both
+/// are two-state, null or a value, and neither has a superseded representation
+/// that the current control cannot express. A retired vocabulary entry is still
+/// a real answer and still renders, so it does not re-ask. **Duration is the
+/// only field where "has a value" and "has an answerable value" differ.**
+int firstUnansweredStep(EventRecord? r) {
+  if (durationAnswerOf(r) != DurationAnswer.measured) return 0;
+  if (r?.eventType == null || r?.severity == null) return 1;
+  return 2;
+}
+
 class _EventWizardScreenState extends State<EventWizardScreen> {
   static const _uuid = Uuid();
 
@@ -144,9 +176,8 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     _notesController.text = e?.notes ?? '';
     _draft = e;
 
-    // A record that ALREADY has a measured duration must not be asked again.
-    // Only `measured` skips — see [DurationAnswer].
-    if (durationAnswerOf(e) == DurationAnswer.measured) _step = 1;
+    // Open on the FIRST step with something still unanswered.
+    _step = firstUnansweredStep(e);
   }
 
   @override

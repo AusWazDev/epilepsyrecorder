@@ -1052,6 +1052,21 @@ class _EventListTile extends StatelessWidget {
       // same thing the input label was changed to stop asserting.
       if (r.triggers.isNotEmpty)  'Beforehand: ${r.triggers.join(', ')}',
       if (r.referralRequired)     'Referral: Yes',
+      // WHAT IS MISSING, NAMED. A quick-record shows a timestamp and almost
+      // nothing else; in a mixed list that reads as variation, but in a
+      // FILTERED list of them every row differs only by time and the screen
+      // reads as broken rather than as a work queue.
+      //
+      // Naming the gaps turns the list into something a user can ACT on:
+      // which row to open, and what it will ask. It is PRESENTATION — the
+      // fields are already null and the row already omits them — not
+      // interpretation.
+      //
+      // Shown in a mixed list too, deliberately. A row that only explained
+      // itself while a filter was on would make the filter the only way to
+      // understand the list.
+      if (isIncomplete(r))
+        'Needs: ${missingFields(r).join(", ")}',
       if (notesShort.isNotEmpty)  'Notes: $notesShort',
     ];
 
