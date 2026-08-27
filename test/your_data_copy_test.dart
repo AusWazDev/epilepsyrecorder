@@ -249,6 +249,8 @@ void main() {
         'timestamp_iso',
         'date',
         'time',
+        // Multi-stream: two record kinds on one timeline.
+        'record_kind',
         'event_type',
         'duration',
         'duration_seconds',
@@ -270,6 +272,7 @@ void main() {
         'rescue_med_helped',
         'rescue_med_second_dose',
         'referral_required',
+        'medication_kind',
         'notes',
       ]);
     });

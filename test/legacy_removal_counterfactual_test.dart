@@ -32,8 +32,10 @@ EventRecord legacyRecord() => EventRecord(
     );
 
 /// The observations cell of the single data row.
+/// ⚠️ INDEX 8, not 7 — `record_kind` landed at index 3 when the export went
+/// multi-stream, shifting everything after it by one.
 String observationsCell(String csv) =>
-    csv.trim().split('\n').last.split(',')[7];
+    csv.trim().split('\n').last.split(',')[8];
 
 void main() {
   setUp(Vocabularies.debugReset);

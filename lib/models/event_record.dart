@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../constants.dart';
 import 'duration_format.dart';
+import 'medication_note.dart';
 import 'vocabulary.dart';
 import 'vocabulary_store.dart';
 
@@ -840,7 +841,26 @@ List<String> csvOrderedTriggers(List<String> stored) => <String>[
       ...stored.where((t) => !kTriggerOptions.contains(t)),
     ];
 
-String buildCsv(List<EventRecord> items) {
+/// The two values `record_kind` may hold.
+///
+/// ⚠️ **A THIRD IS EXPECTED**, and the column is written to accommodate
+/// one from the outset: DATA-MODEL.md §9's `daily_entry`. Writing this as a
+/// two-valued flag would make that a breaking change to the export rather than
+/// an addition.
+const String kRecordKindEvent = 'event';
+const String kRecordKindMedication = 'medication_note';
+
+/// Builds the export.
+///
+/// ⚠️ **[notes] defaults to empty, so every existing caller is unchanged
+/// and single-stream.** The multi-stream file is opt-in at the call site rather
+/// than something every caller inherits - which matters because one of those
+/// callers is the FILTERED export, and a filter that narrows events must not
+/// silently start emitting every medication note.
+String buildCsv(
+  List<EventRecord> items, {
+  List<MedicationNote> notes = const <MedicationNote>[],
+}) {
   final fmtDate = DateFormat('yyyy-MM-dd');
   final fmtTime = DateFormat.jm();
   final sb      = StringBuffer();
@@ -851,6 +871,21 @@ String buildCsv(List<EventRecord> items) {
     'timestamp_iso',
     'date',
     'time',
+    // ⛔ MULTI-STREAM. The file now carries two record kinds on ONE
+    // timeline, sorted together, which is what lets a specialist see a missed
+    // dose sitting three days before a cluster.
+    //
+    // It sits after the time columns rather than first, so a row still reads
+    // WHEN, then WHAT KIND, then the detail. And it resolves a collision the
+    // delimited change created: a blank cell means "not noted", but on a
+    // medication row `duration` and `severity` are NOT APPLICABLE. Different
+    // facts, and `record_kind` is what tells them apart.
+    //
+    // ⚠️ MER DOES NOT CORRELATE THE STREAMS. Both are in the file on
+    // the same timeline; the specialist does the reading. Charting the
+    // connection would be interpretation - the boundary the analysis tier was
+    // rejected over.
+    'record_kind',
     'event_type',
     'duration',
     // NEW COLUMN, deliberately, despite the multi-stream rewrite coming. One
@@ -903,14 +938,31 @@ String buildCsv(List<EventRecord> items) {
     'rescue_med_helped',
     'rescue_med_second_dose',
     'referral_required',
+    // A COLUMN OF ITS OWN, not `event_type` reused. missed/late/changed is a
+    // different question from what kind of event happened, and one column
+    // holding two meanings is the defect `record_kind` exists to prevent.
+    'medication_kind',
     'notes',
   ].map(_csvEscape).join(','));
 
+  // ⛔ ONE TIMELINE, SORTED TOGETHER. The whole point of `record_kind` is
+  // that a reader can see the two streams interleaved; emitting events then
+  // notes would put every deviation at the bottom and lose the adjacency that
+  // makes the file worth reading.
+  //
+  // Events are OLDEST FIRST (`items.reversed`), which the export has always
+  // been, so notes sort into the same order on `occurredAt`.
+  final rows = <({DateTime at, List<String> cells})>[
+    for (final n in notes)
+      (at: n.occurredAt, cells: _medicationCells(n, fmtDate, fmtTime)),
+  ];
+
   for (final r in items.reversed) {
-    sb.writeln([
+    rows.add((at: r.timestamp, cells: [
       r.timestamp.toIso8601String(),
       fmtDate.format(r.timestamp),
       fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
+      kRecordKindEvent,
       eventTypeCsv(r.eventType),
       durationCsv(r.duration, r.durationSeconds),
       // EMPTY, not `unknown`, when there is no number. A word in a numeric
@@ -947,11 +999,49 @@ String buildCsv(List<EventRecord> items) {
       rescueResponseCsv(r.rescueMedHelped),
       yesNoCsv(r.rescueMedSecondDose),
       r.referralRequired ? 'Yes' : 'No',
+      // Blank on an event row. Not applicable, and `record_kind` says which.
+      '',
       r.notes,
-    ].map(_csvEscape).join(','));
+    ]));
+  }
+
+  rows.sort((a, b) => a.at.compareTo(b.at));
+  for (final row in rows) {
+    sb.writeln(row.cells.map(_csvEscape).join(','));
   }
   return sb.toString();
 }
+
+/// One medication row, in the same column order as an event row.
+///
+/// Every event-only column is BLANK. That is not laziness: `record_kind` tells
+/// the reader which columns apply, so a blank here means NOT APPLICABLE rather
+/// than the "not noted" a blank means on an event row. Without `record_kind`
+/// those two would be indistinguishable, which is the collision that column
+/// was added to resolve.
+List<String> _medicationCells(
+  MedicationNote n,
+  DateFormat fmtDate,
+  DateFormat fmtTime,
+) =>
+    <String>[
+      n.occurredAt.toIso8601String(),
+      fmtDate.format(n.occurredAt),
+      fmtTime.format(n.occurredAt).replaceAll(String.fromCharCode(0x202F), ' '),
+      kRecordKindMedication,
+      '', // event_type
+      '', // duration
+      '', // duration_seconds
+      '', // severity
+      '', // observations
+      '', // beforehand
+      '', // rescue_med_given
+      '', // rescue_med_helped
+      '', // rescue_med_second_dose
+      '', // referral_required
+      medicationDeviationLabel(n.kind),
+      n.notes,
+    ];
 
 /* ===========================
    EXPORT OPTIONS
@@ -982,7 +1072,8 @@ String buildCsv(List<EventRecord> items) {
 ///     v1   the original one-hot export        26 columns
 ///     v2   observations and beforehand became delimited columns   11
 ///     v3   rescue medication added three columns                  14
-const String kCsvShapeVersion = 'v3';
+///     v4   multi-stream: record_kind and medication_kind           16
+const String kCsvShapeVersion = 'v4';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.
 ///
@@ -1016,8 +1107,9 @@ String csvFilename({String? prefix, DateTime? when}) {
 Future<File> _buildCsvTempFile(
   List<EventRecord> items, {
   String? filenamePrefix,
+  List<MedicationNote> notes = const <MedicationNote>[],
 }) async {
-  final csv = buildCsv(items);
+  final csv = buildCsv(items, notes: notes);
   final dir = await getTemporaryDirectory();
   final file = File('${dir.path}/${csvFilename(prefix: filenamePrefix)}');
   await file.writeAsString(csv, flush: true);
@@ -1028,6 +1120,7 @@ Future<void> exportCsvShare(
   BuildContext context,
   List<EventRecord> items, {
   String? filenamePrefix,
+  List<MedicationNote> notes = const <MedicationNote>[],
 }) async {
   if (items.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1040,7 +1133,8 @@ Future<void> exportCsvShare(
 
   try {
     final file =
-        await _buildCsvTempFile(items, filenamePrefix: filenamePrefix);
+        await _buildCsvTempFile(items,
+            filenamePrefix: filenamePrefix, notes: notes);
     if (!context.mounted) return;
     // No `text` alongside `files`. iOS treats a text parameter as a second
     // shared item, so "Save to Files" wrote a stray companion file containing
@@ -1069,6 +1163,7 @@ Future<void> exportCsvSaveAs(
   BuildContext context,
   List<EventRecord> items, {
   String? filenamePrefix,
+  List<MedicationNote> notes = const <MedicationNote>[],
 }) async {
   if (items.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1077,7 +1172,7 @@ Future<void> exportCsvSaveAs(
     return;
   }
 
-  final csv = buildCsv(items);
+  final csv = buildCsv(items, notes: notes);
   final filename = csvFilename(prefix: filenamePrefix);
 
   // ── ANDROID — save to Downloads ──
@@ -1179,6 +1274,7 @@ Future<void> showExportOptions(
   BuildContext context,
   List<EventRecord> items, {
   String? filenamePrefix,
+  List<MedicationNote> notes = const <MedicationNote>[],
   String? sheetTitle,
 }) async {
   if (items.isEmpty) {

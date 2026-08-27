@@ -441,65 +441,84 @@ void main() {
     });
   });
 
-  group('MEDICATION IS PROTECTED', () {
-    test('19. medication refuses to be hidden', () async {
+  group('MEDICATION IS RETIRED, AND THE PROTECTION HAS SERVED ITS PURPOSE',
+      () {
+    // ⚠️ REWRITTEN 27 August 2026. These asserted that `medication`
+    // REFUSES to be hidden. It no longer does, and that is the medication split
+    // landing rather than a regression.
+    //
+    // The protection existed for one reason, stated in its own error message:
+    // so the split could still FIND the records filed under that type. When the
+    // split was designed the records were counted - ZERO, across 527
+    // record-instances in sixteen artefacts. The condition it was waiting for
+    // has been met, so `createSchema` and the v6 migration both clear it.
+    //
+    // The guard itself is UNCHANGED and still refuses on any protected entry.
+    // What changed is that no entry is protected any more.
+
+    test('19. medication is neither offered nor protected after the migration',
+        () async {
       final db = await openFresh();
       final med = (await loadVocabulary(db, kEventTypeTable))
           .firstWhere((e) => e.value == kMedicationValue);
 
-      expect(med.isProtected, isTrue);
+      expect(med.isActive, isFalse, reason: 'retired: no longer offered');
+      expect(med.isProtected, isFalse,
+          reason: 'the protection guarded an empty set and is discharged');
+
+      final offered = offerable(await loadVocabulary(db, kEventTypeTable))
+          .map((e) => e.value);
+      expect(offered, isNot(contains(kMedicationValue)));
+      await db.close();
+    });
+
+    test('20. NEGATIVE CONTROL: retiring did NOT delete it, and it still '
+        'resolves', () async {
+      // ⛔ THE DISTINCTION THE WHOLE VOCABULARY DESIGN RESTS ON. Retire,
+      // never delete: the entry stays so any record referencing it keeps
+      // rendering. Had retirement removed the row, `labelForValue` would fall
+      // back to the raw value and a record would read `medication` rather than
+      // `Medication taken`.
+      final db = await openFresh();
+      final all = await loadVocabulary(db, kEventTypeTable);
+
+      expect(all.map((e) => e.value), contains(kMedicationValue),
+          reason: 'the row survives retirement');
+      expect(labelForValue(all, kMedicationValue), 'Medication taken');
+      await db.close();
+    });
+
+    test('21. and the PROTECTION GUARD ITSELF still works', () async {
+      // The rule was not weakened to allow the retirement - the migration
+      // clears the flag in SQL, and `setActive` still refuses on anything
+      // protected.
+      const protectedEntry = VocabularyEntry(
+        id: 1,
+        value: 'x',
+        label: 'X',
+        isSeeded: true,
+        isActive: true,
+        isProtected: true,
+        sortOrder: 0,
+      );
+      final db = await openFresh();
       expect(
-        () => setActive(db, kEventTypeTable, med, false),
+        () => setActive(db, kEventTypeTable, protectedEntry, false),
         throwsA(isA<VocabularyRuleError>()),
       );
       await db.close();
     });
 
-    test('20. the refusal EXPLAINS why', () async {
-      // A user who cannot edit something has to be told the reason, or the app
-      // is just broken from where they are standing.
-      final db = await openFresh();
-      final med = (await loadVocabulary(db, kEventTypeTable))
-          .firstWhere((e) => e.value == kMedicationValue);
-
-      try {
-        await setActive(db, kEventTypeTable, med, false);
-        fail('should have thrown');
-      } on VocabularyRuleError catch (e) {
-        expect(e.message, contains('recorded separately'));
-        expect(e.message.toLowerCase(), contains('future version'));
-      }
-      await db.close();
-    });
-
-    test('21. NEGATIVE CONTROL: an UNPROTECTED seeded entry CAN be hidden',
-        () async {
-      // Without this, test 19 passes just as well against an implementation
-      // that refuses to hide anything — which would be a different bug.
+    test('22. NEGATIVE CONTROL: an unprotected seeded entry can still be '
+        'hidden', () async {
+      // Without this, 21 passes against an implementation that refuses to hide
+      // anything - a different bug wearing the same result.
       final db = await openFresh();
       final absence = (await loadVocabulary(db, kEventTypeTable))
           .firstWhere((e) => e.value == kTypeAbsence);
 
       final hidden = await setActive(db, kEventTypeTable, absence, false);
       expect(hidden.isActive, isFalse);
-
-      final offered =
-          offerable(await loadVocabulary(db, kEventTypeTable)).map((e) => e.value);
-      expect(offered, isNot(contains(kTypeAbsence)));
-      expect(offered, contains(kMedicationValue),
-          reason: 'medication is still there — it cannot be hidden');
-      await db.close();
-    });
-
-    test('22. a hidden type still RENDERS on records that use it', () async {
-      final db = await openFresh();
-      final absence = (await loadVocabulary(db, kEventTypeTable))
-          .firstWhere((e) => e.value == kTypeAbsence);
-      await setActive(db, kEventTypeTable, absence, false);
-      await Vocabularies.load(db);
-
-      expect(eventTypeLabel(kTypeAbsence), 'Absence episode',
-          reason: 'hiding changes what is OFFERED, never what is READABLE');
       await db.close();
     });
   });

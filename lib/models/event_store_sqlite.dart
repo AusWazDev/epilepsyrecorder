@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import 'event_record.dart';
+import 'medication_note.dart';
 import 'vocabulary.dart';
 
 /// The SQLite backing for [EventStore].
@@ -28,12 +29,15 @@ import 'vocabulary.dart';
 /// 5 since rescue medication: three nullable columns on `event`. A FIELD on an
 ///   event, not a record kind — regular medication is a separate stream and is
 ///   NOT part of this bump.
+/// 6 since regular medication: the `medication_note` table, and `medication`
+///   retired as an event type. A SEPARATE RECORD KIND — the stream the bump
+///   above deliberately excluded.
 ///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 5;
+const int kSqliteSchemaVersion = 6;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -164,6 +168,11 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     await db
         .execute('ALTER TABLE event ADD COLUMN rescue_med_second_dose INTEGER');
   }
+  if (from < 6 && to >= 6) {
+    await db.execute(createMedicationNoteSql);
+    await db.execute(createMedicationNoteIndexSql);
+    await retireMedicationEventType(db);
+  }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
 
@@ -173,6 +182,9 @@ Future<void> createSchema(Database db) async {
   await db.execute(createEventIdIndexSql);
   await db.execute(createEventLoggedAtIndexSql);
   await createAndSeedVocabularies(db);
+  await db.execute(createMedicationNoteSql);
+  await db.execute(createMedicationNoteIndexSql);
+  await retireMedicationEventType(db);
   await db.insert('schema_meta', {
     'key': kMetaSchemaVersion,
     'value': '$kSqliteSchemaVersion',

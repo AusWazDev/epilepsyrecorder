@@ -689,6 +689,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
             // filtered count and the total. Tooltips need hover or a long
             // press, so no touch user ever sees one — the sheet header is the
             // only place this gets read.
+            // ⛔ EVENTS ONLY, DELIBERATELY, and `notes` is left at its
+            // default rather than omitted by accident.
+            //
+            // This export is SCOPED - it emits what the filters are showing,
+            // and the sheet header says so. Medication notes are not filtered
+            // by any of them, so including them would mean a file whose
+            // scope statement is false: "Export 1 of 71 events" beside a file
+            // containing every deviation ever recorded.
+            //
+            // The whole-record export lives in Your data and carries both.
             onPressed: () => showExportOptions(
               context,
               shown,

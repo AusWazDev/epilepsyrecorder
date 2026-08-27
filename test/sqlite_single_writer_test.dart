@@ -35,6 +35,17 @@ const Set<String> kStorageLayer = <String>{
   'lib/models/storage_boot.dart',
   'lib/models/vocabulary.dart',
   'lib/models/vocabulary_store.dart',
+  // ADDED 27 August 2026 with the medication split, deliberately rather than by
+  // relaxing the rule — the same way the vocabulary pair was added. This file
+  // owns the `medication_note` table: its DDL, its row mapping, and the
+  // `MedicationStore` a screen is given INSTEAD of a Database.
+  //
+  // ⚠️ `lib/screens/medication_screen.dart` is NOT here, and that is the point.
+  // Its first draft took a `Database` directly and this test caught it. The
+  // rule exists to stop a screen writing rows behind a store's back, and a
+  // medication screen writing medication rows is exactly that shape — so the
+  // screen changed, not the list.
+  'lib/models/medication_note.dart',
 };
 
 const String kSqliteImportMarker = 'package:sqflite';

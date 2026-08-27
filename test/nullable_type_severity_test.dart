@@ -10,6 +10,7 @@ import 'package:medical_event_recorder/models/capture_inbox.dart';
 import 'package:medical_event_recorder/models/capture_instruction.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/event_store_sqlite.dart';
+import 'package:medical_event_recorder/models/vocabulary.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 
 /// `eventType` and `severity` become nullable at construction.
@@ -292,6 +293,15 @@ void main() {
             onCreate: (d, _) async {
               await d.execute(createSchemaMetaSql);
               await d.execute(createEventSqlV4);
+              // ⚠️ THE VOCABULARY TABLES TOO. A real v4 database has them —
+              // they were created at v3 — and this fixture omitted them because
+              // nothing it exercised needed them. The v6 step retires the
+              // `medication` event type, so it does now, and the omission
+              // surfaced as `no such table: event_type` rather than as a wrong
+              // answer. Same lesson as `createEventSqlV4` itself: a fixture
+              // that is not the shape it claims to be tests a database that
+              // exists nowhere.
+              await createAndSeedVocabularies(d);
               await d.insert('schema_meta',
                   <String, Object?>{'key': kMetaSchemaVersion, 'value': '4'});
             },

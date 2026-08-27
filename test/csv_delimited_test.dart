@@ -69,15 +69,18 @@ List<String> cells(String csv) {
   return out;
 }
 
-const int kObservationsCell = 7;
-const int kTriggersCell = 8;
+// ⚠️ SHIFTED BY ONE when `record_kind` landed at index 3. Named constants
+// rather than literals precisely so a column insertion is one edit and not a
+// hunt through twenty assertions.
+const int kObservationsCell = 8;
+const int kTriggersCell = 9;
 
 void main() {
   setUp(Vocabularies.debugReset);
   tearDown(Vocabularies.debugReset);
 
   group('THE SHAPE', () {
-    test('1. fourteen columns, and the two delimited ones sit adjacent', () {
+    test('1. sixteen columns, and the two delimited ones sit adjacent', () {
       final header = buildCsv(<EventRecord>[rec()])
           .split('\n')
           .first
@@ -85,7 +88,7 @@ void main() {
           .trim()
           .split(',');
 
-      expect(header.length, 14);
+      expect(header.length, 16);
       expect(header[kObservationsCell], 'observations');
       expect(header[kTriggersCell], 'beforehand');
     });
@@ -99,7 +102,7 @@ void main() {
         feelings: const <String>['Dizzy, briefly'],
         triggers: const <String>['Stress'],
       );
-      expect(cells(buildCsv(<EventRecord>[r])).length, 14);
+      expect(cells(buildCsv(<EventRecord>[r])).length, 16);
     });
   });
 

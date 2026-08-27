@@ -101,15 +101,15 @@ void main() {
   });
 
   group('THE EXPORT CARRIES WHAT IS STORED, NOT WHAT THE SCREEN SHOWS', () {
-    test('7. fourteen columns, the three sitting before referral', () {
+    test('7. sixteen columns, the three sitting before referral', () {
       final h = header(buildCsv(<EventRecord>[rec()]));
-      expect(h.length, 14);
-      expect(h.sublist(9, 12), <String>[
+      expect(h.length, 16);
+      expect(h.sublist(10, 13), <String>[
         'rescue_med_given',
         'rescue_med_helped',
         'rescue_med_second_dose',
       ]);
-      expect(h[12], 'referral_required');
+      expect(h[13], 'referral_required');
     });
 
     test('8. unanswered exports BLANK, not "unknown"', () {
@@ -117,7 +117,7 @@ void main() {
       // event, so a column of the word "unknown" would be noise standing in for
       // a question that was never applicable.
       final c = cells(buildCsv(<EventRecord>[rec()]));
-      expect(c.sublist(9, 12), <String>['', '', '']);
+      expect(c.sublist(10, 13), <String>['', '', '']);
     });
 
     test('9. an inconsistent record exports its children anyway', () {
@@ -126,7 +126,7 @@ void main() {
       final c = cells(buildCsv(<EventRecord>[
         rec(given: false, helped: RescueResponse.partly, second: true)
       ]));
-      expect(c.sublist(9, 12), <String>['No', 'Partly', 'Yes']);
+      expect(c.sublist(10, 13), <String>['No', 'Partly', 'Yes']);
     });
 
     test('10. and the three response values render as words', () {
@@ -138,19 +138,19 @@ void main() {
   });
 
   group('THE SHAPE MARKER TRACKS THE HEADER ROW', () {
-    test('11. the filename says v3', () {
+    test('11. the filename says the current marker', () {
       expect(csvFilename(when: DateTime(2026, 8, 27, 15, 45, 0)),
-          'medical_event_recorder_20260827_154500.v3.csv');
+          'medical_event_recorder_20260827_154500.$kCsvShapeVersion.csv');
     });
 
     test('12. and the constant matches the columns it describes', () {
       // The rule is mechanical: any change to the column set bumps the marker.
       // This is what makes that checkable rather than remembered - if someone
       // adds a column without bumping, the count here stops matching.
-      expect(kCsvShapeVersion, 'v3');
-      expect(header(buildCsv(<EventRecord>[rec()])).length, 14,
-          reason: 'v3 is defined as this header. Changing one without the '
-              'other is the drift the rule exists to prevent');
+      expect(kCsvShapeVersion, 'v4');
+      expect(header(buildCsv(<EventRecord>[rec()])).length, 16,
+          reason: 'the marker is DEFINED as this header. Changing one without '
+              'the other is the drift the rule exists to prevent');
     });
   });
 

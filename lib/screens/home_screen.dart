@@ -17,6 +17,7 @@ import '../services/ios_capture_bridge.dart';
 import '../services/notification_service.dart';
 import '../models/capture_inbox.dart';
 import '../models/event_record.dart';
+import '../models/medication_note.dart';
 import 'event_wizard_screen.dart';
 import '../models/storage_boot.dart';
 import '../screens/about_screen.dart';
@@ -25,6 +26,7 @@ import '../screens/help_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../screens/your_data_screen.dart';
+import '../screens/medication_screen.dart';
 import '../screens/walkthrough_screen.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
@@ -45,6 +47,7 @@ class HomeScreen extends StatefulWidget {
 /// restore it.
 enum _HomeMenuAction {
   history,
+  medication,
   yourData,
   about,
   help,
@@ -639,11 +642,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => YourDataScreen(
-          onExport: (ctx) => showExportOptions(
+          // ⛔ THE MULTI-STREAM EXPORT, and it is the ONLY one.
+          //
+          // "Export all events" from Your data is the whole-record export, so
+          // it carries both streams. History's export does NOT - see the note
+          // at that call site. Loaded here rather than held in state because
+          // deviations are rare and the read is one indexed query.
+          onExport: (ctx) async => showExportOptions(
             ctx,
             _records,
             filenamePrefix: 'medical_event_recorder_all',
             sheetTitle: 'Export all events',
+            notes: StorageBoot.database == null
+                ? const <MedicationNote>[]
+                : await loadMedicationNotes(StorageBoot.database!),
           ),
           onBackUp: (ctx) async {
             await showBackupOptions(ctx, _records);
@@ -765,6 +777,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 case _HomeMenuAction.history:
                   _openHistory();
                   break;
+                case _HomeMenuAction.medication:
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      // The database, not the store. Medication notes are a
+                      // SEPARATE TABLE and deliberately do not pass through
+                      // EventStore - that interface is the event list, and
+                      // widening it is how the two streams start sharing
+                      // assumptions again.
+                      builder: (_) => MedicationScreen(
+                        store: MedicationStore(StorageBoot.database),
+                      ),
+                    ),
+                  );
+                  break;
                 case _HomeMenuAction.yourData:
                   _openYourData();
                   break;
@@ -790,6 +816,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               PopupMenuItem(
                 value: _HomeMenuAction.history,
                 child: Text('History'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.medication,
+                child: Text('Medication'),
               ),
               PopupMenuItem(
                 value: _HomeMenuAction.yourData,

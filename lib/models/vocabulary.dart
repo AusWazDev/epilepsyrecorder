@@ -672,3 +672,42 @@ Future<VocabularyEntry> setActive(
 const String kWhyNoDelete =
     'Entries are hidden, never deleted, so records that already use them keep '
     'reading correctly.';
+
+/// Retires `medication` as an event type.
+///
+/// ## ⛔ THE PROTECTION WAS GUARDING AN EMPTY SET, AND IT HAS NOW SERVED ITS
+/// PURPOSE
+///
+/// `isProtected` was put on this entry so that the medication/event split could
+/// still FIND the records filed under it. It was carried through every
+/// vocabulary change on that reasoning. When the split was designed, the
+/// records were counted: **zero, across 527 record-instances in sixteen
+/// artefacts spanning 24-27 August.** Not one dose was ever logged as an event.
+///
+/// So there is nothing to migrate, and the protection now only keeps offering a
+/// type whose whole purpose moved to `medication_note`. **Leaving it offered
+/// would invite the defect the split exists to remove**: someone logs a dose as
+/// an event tomorrow, the home screen's month count inflates, and then there IS
+/// something to migrate.
+///
+/// ## Why this is a direct UPDATE rather than `setActive`
+///
+/// `setActive` refuses on a protected entry, by design, and that refusal is
+/// still right for every OTHER caller. This is the one-time lifting of a
+/// protection whose condition has been met, so it says so in SQL rather than
+/// weakening the guard that will still be there tomorrow.
+///
+/// ## What does NOT happen
+///
+/// **No record is touched.** Retiring an entry stops it being OFFERED; it does
+/// not alter anything that references it, and `labelForValue` still resolves it
+/// so any record that ever did would keep rendering. Idempotent, so re-running
+/// the migration changes nothing.
+Future<void> retireMedicationEventType(DatabaseExecutor db) async {
+  await db.update(
+    kEventTypeTable,
+    <String, Object?>{'is_active': 0, 'is_protected': 0},
+    where: 'value = ?',
+    whereArgs: <Object?>[kMedicationValue],
+  );
+}
