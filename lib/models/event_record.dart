@@ -204,6 +204,73 @@ String severityCsv(EventSeverity? s) => severityDisplay(s) ?? 'unknown';
 /// the hazard is the persistence, not the spelling.
 enum EventSeverity { mild, moderate, severe }
 
+/// Did the rescue medication help?
+///
+/// ⛔ **STORED DATA. See [DurationCategory].** `.name` is persisted, so these
+/// three words are permanent the moment one is written.
+///
+/// THREE VALUES, not a bool, because "partly" is the commonest honest answer
+/// and the field is worthless without it. Sources that record rescue response
+/// record degree, not a yes/no - and a user forced to round "it took the edge
+/// off" to yes or no gives a specialist a worse answer than no answer.
+enum RescueResponse { helped, partly, didNotHelp }
+
+String rescueResponseLabel(RescueResponse r) {
+  switch (r) {
+    case RescueResponse.helped:
+      return 'Yes';
+    case RescueResponse.partly:
+      return 'Partly';
+    case RescueResponse.didNotHelp:
+      return 'No';
+  }
+}
+
+/// What a SCREEN shows, or null to show nothing. See [severityDisplay].
+String? rescueResponseDisplay(RescueResponse? r) =>
+    r == null ? null : rescueResponseLabel(r);
+
+/// What the CSV writes. BLANK when unanswered, not "unknown".
+///
+/// Different from [severityCsv] deliberately, and the difference is the whole
+/// rescue-medication design: severity is asked of every event, so a blank there
+/// cannot distinguish "not asked" from "asked and skipped". These three are
+/// asked of almost no event - they are gated behind "was rescue medication
+/// given", which is itself usually no - so a column of the word "unknown" on
+/// every row would be noise standing in for a question that was never
+/// applicable.
+String rescueResponseCsv(RescueResponse? r) => rescueResponseDisplay(r) ?? '';
+
+/// A nullable yes/no, rendered for the CSV. Blank when unanswered.
+String yesNoCsv(bool? v) => v == null ? '' : (v ? 'Yes' : 'No');
+
+/// Whether the two follow-up questions should be RENDERED for this record.
+///
+/// ## The gate, and the exception that is the point
+///
+/// Normally: only when rescue medication was given. Asking "did it help" about
+/// medication that was not given produces a state no reviewer can interpret -
+/// "did it help: yes" beside "given: no" is a contradiction, and neither half
+/// can be identified as the wrong one. **Preventing an impossible state beats
+/// recording it faithfully**, because the export carries the contradiction to a
+/// clinician who cannot ask what was meant.
+///
+/// ⚠️ **BUT a record that ALREADY carries a child value shows it regardless.**
+/// The gate exists to stop the state being created, not to hide it once it
+/// exists. Silently withholding a stored value would be the more serious
+/// failure of the two - a reviewer would see a record that looks answered when
+/// it is not, and the value would still be in the export and the backup with
+/// nothing on screen corresponding to it.
+///
+/// That case cannot arise from this app today. It can arise from a restored
+/// backup written by a future version, or by a hand-edited file. Cheap to
+/// handle, and the alternative is a screen that lies about its own record.
+bool rescueChildrenVisible(EventRecord r) =>
+    r.rescueMedGiven == true ||
+    r.rescueMedHelped != null ||
+    r.rescueMedSecondDose != null;
+
+
 String severityLabel(EventSeverity s) {
   switch (s) {
     case EventSeverity.mild:
@@ -282,6 +349,35 @@ class EventRecord {
   final EventSeverity? severity;
   final List<String> triggers;
 
+  /// ── RESCUE MEDICATION ───────────────────────────────────────────────────
+  ///
+  /// A FIELD ON AN EVENT, not a record of its own. Regular medication is a
+  /// separate stream because its value is the pattern over time; rescue
+  /// medication's value is per-event, and the frequency of it is itself a
+  /// signal. See DATA-MODEL.md section 2.
+  ///
+  /// All three NULL means NOT ASKED, like every other nullable field here.
+  ///
+  /// ⚠️ **[rescueMedHelped] and [rescueMedSecondDose] are meaningless unless
+  /// [rescueMedGiven] is true, and the UI enforces that by construction** - it
+  /// does not render them otherwise, and clears them when the parent goes to
+  /// no. See `rescueChildrenVisible`.
+  ///
+  /// **The model does NOT enforce it.** A record that arrives with children
+  /// populated and a false or null parent keeps them, exports them and shows
+  /// them. Storage records what it was given; only the UI prevents the state
+  /// being CREATED. Dropping a value because it looks inconsistent is the one
+  /// thing this project has refused throughout.
+  final bool? rescueMedGiven;
+
+  /// Did it help? See [RescueResponse] for why this is not a bool.
+  final RescueResponse? rescueMedHelped;
+
+  /// Was a second dose needed? Recorded because sources that track rescue
+  /// response consistently track it - a first dose that failed and a second
+  /// that worked is a different event from one dose that worked.
+  final bool? rescueMedSecondDose;
+
   EventRecord({
     required this.id,
     required this.timestamp,
@@ -294,6 +390,9 @@ class EventRecord {
     this.eventType,
     this.severity,
     this.triggers  = const [],
+    this.rescueMedGiven,
+    this.rescueMedHelped,
+    this.rescueMedSecondDose,
   });
 
   /// Parses a stored timestamp and normalises it to local wall-clock time.
@@ -342,6 +441,11 @@ class EventRecord {
         // "asked and unanswered" from a payload that predates the field.
         'severity':         severity?.name,
         'triggers':         triggers,
+        // Same rule as `severity`: the key is always WRITTEN, so a reader can
+        // tell "asked and unanswered" from a payload that predates the field.
+        'rescueMedGiven':      rescueMedGiven,
+        'rescueMedHelped':     rescueMedHelped?.name,
+        'rescueMedSecondDose': rescueMedSecondDose,
       };
 
   /// Parses a stored record, or returns null if it cannot be trusted.
@@ -397,6 +501,22 @@ class EventRecord {
       triggers: (triggersRaw is List)
           ? triggersRaw.map((e) => e.toString()).toList()
           : <String>[],
+      // ABSENT MEANS NULL. Every record written before this change lacks these
+      // keys entirely and must read as "not asked", never as "no" - a false
+      // negative about rescue medication is a clinical claim.
+      //
+      // Read INDEPENDENTLY of each other and of the parent. A backup carrying
+      // a child without its parent is inconsistent, and this reads it anyway:
+      // see [EventRecord.rescueMedGiven] for why storage does not enforce what
+      // the UI prevents.
+      rescueMedGiven:
+          (map['rescueMedGiven'] is bool) ? map['rescueMedGiven'] as bool : null,
+      rescueMedHelped: RescueResponse.values
+          .where((e) => e.name == map['rescueMedHelped'])
+          .firstOrNull,
+      rescueMedSecondDose: (map['rescueMedSecondDose'] is bool)
+          ? map['rescueMedSecondDose'] as bool
+          : null,
     );
   }
 }
@@ -770,6 +890,18 @@ String buildCsv(List<EventRecord> items) {
     // word already on both screens. See beforehand_wording_test, which failed
     // on `triggers` and is why this reads as it does.
     'beforehand',
+    // RESCUE MEDICATION, three columns, immediately after the beforehand
+    // field and before referral - so the row still reads in the order the
+    // event happened: what, how long, how bad, what after, what before, what
+    // was given, referral, notes.
+    //
+    // Three columns rather than one, because they answer three questions and a
+    // specialist may want to count any of them. Collapsing them into a single
+    // delimited cell would make "how often did a second dose follow" a text
+    // search instead of a column.
+    'rescue_med_given',
+    'rescue_med_helped',
+    'rescue_med_second_dose',
     'referral_required',
     'notes',
   ].map(_csvEscape).join(','));
@@ -806,6 +938,14 @@ String buildCsv(List<EventRecord> items) {
       // observation literally called "None" - which is a thing someone may
       // reasonably add.
       csvJoinList(csvOrderedTriggers(r.triggers)),
+      // WHATEVER IS STORED, never what the UI would have shown. The screen
+      // hides the two children when rescue medication was not given; the
+      // export does not, because a value that exists in the record must appear
+      // in the file. If the two ever disagree, the file is the one a clinician
+      // reads.
+      yesNoCsv(r.rescueMedGiven),
+      rescueResponseCsv(r.rescueMedHelped),
+      yesNoCsv(r.rescueMedSecondDose),
       r.referralRequired ? 'Yes' : 'No',
       r.notes,
     ].map(_csvEscape).join(','));
@@ -817,7 +957,34 @@ String buildCsv(List<EventRecord> items) {
    EXPORT OPTIONS
    =========================== */
 
-/// The shape marker. `..._20260826_223000.v2.csv`.
+/// The current CSV shape. Bump it whenever [buildCsv]'s HEADER ROW changes.
+///
+/// ⛔ **THE RULE, AND IT IS DELIBERATELY MECHANICAL: the marker tracks the
+/// header row. ANY change to the column set bumps it - added, removed,
+/// renamed or reordered. No judgement about whether a change is "real".**
+///
+/// The temptation is to bump only for changes that break something. That
+/// requires someone to predict what a consumer does, and consumers here are
+/// spreadsheets someone built by hand: a template written against eleven
+/// columns breaks on fourteen exactly as surely as on a reshape, because every
+/// formula after the insertion point now points one column left. A rule
+/// requiring judgement gets the easy calls right and the tired ones wrong.
+///
+/// Mechanical also makes the FILENAME A RELIABLE STATEMENT ABOUT THE FILE.
+/// `v2` and `v3` are guaranteed to differ in their header; `v3` files are
+/// guaranteed to match each other. Neither guarantee survives a marker that
+/// moves only sometimes.
+///
+/// **Nothing reads it, and that is unchanged.** No compatibility mode, no
+/// second export option, no negotiation - the standing decision of 26 August
+/// 2026. The marker identifies a shape; it does not enable branching on one.
+///
+///     v1   the original one-hot export        26 columns
+///     v2   observations and beforehand became delimited columns   11
+///     v3   rescue medication added three columns                  14
+const String kCsvShapeVersion = 'v3';
+
+/// The shape marker. `..._20260827_154500.v3.csv`.
 ///
 /// ## Why the filename and not a column
 ///
@@ -843,7 +1010,7 @@ String csvFilename({String? prefix, DateTime? when}) {
       ? 'medical_event_recorder'
       : prefix;
   final ts = DateFormat('yyyyMMdd_HHmmss').format(when ?? DateTime.now());
-  return '${p}_$ts.v2.csv';
+  return '${p}_$ts.$kCsvShapeVersion.csv';
 }
 
 Future<File> _buildCsvTempFile(

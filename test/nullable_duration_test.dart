@@ -294,8 +294,9 @@ void main() {
       // next change has to say what it changed instead of editing a literal.
       const fixed = 9; // iso, date, time, event_type, duration,
                        // duration_seconds, severity, observations, beforehand
+      const rescue = 3; // given, helped, second_dose
       const tail = 2; // referral_required, notes
-      final expected = fixed + tail;
+      final expected = fixed + rescue + tail;
 
       final csv = buildCsv([rec('a', t0)]);
       final header = const LineSplitter().convert(csv).first;

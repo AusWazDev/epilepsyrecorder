@@ -54,6 +54,25 @@ class _LogEventScreenState extends State<LogEventScreen> {
   String? _addingIn;
   final _addController = TextEditingController();
 
+  bool? _rescueGiven;
+  RescueResponse? _rescueHelped;
+  bool? _rescueSecondDose;
+
+  /// The three rescue values as they stand, for [rescueChildrenVisible].
+  /// See the wizard's `_draftForVisibility` — one function, asked by both
+  /// screens, rather than two copies of a three-clause condition.
+  EventRecord _rescueDraft() => EventRecord(
+        id: '',
+        timestamp: DateTime(2000),
+        duration: null,
+        feelings: const <String>[],
+        referralRequired: false,
+        notes: '',
+        rescueMedGiven: _rescueGiven,
+        rescueMedHelped: _rescueHelped,
+        rescueMedSecondDose: _rescueSecondDose,
+      );
+
   /// Values the observation chips offer for THIS record.
   ///
   /// Offerable entries, plus anything the record already carries that is no
@@ -118,6 +137,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
   late Set<String> _origFeelings;
   late Set<String> _origTriggers;
   late bool _origReferral;
+  bool? _origRescueGiven;
+  RescueResponse? _origRescueHelped;
+  bool? _origRescueSecondDose;
   late String _origNotes;
 
   bool get _isNew => widget.existing == null;
@@ -139,6 +161,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
     _referralRequired  = e?.referralRequired ?? false;
+    _rescueGiven       = e?.rescueMedGiven;
+    _rescueHelped      = e?.rescueMedHelped;
+    _rescueSecondDose  = e?.rescueMedSecondDose;
     _notesController.text = e?.notes        ?? '';
 
     // Store originals
@@ -149,6 +174,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
     _origFeelings  = Set.from(_selectedFeelings);
     _origTriggers  = Set.from(_selectedTriggers);
     _origReferral  = _referralRequired;
+    _origRescueGiven      = _rescueGiven;
+    _origRescueHelped     = _rescueHelped;
+    _origRescueSecondDose = _rescueSecondDose;
     _origNotes     = _notesController.text.trim();
   }
 
@@ -166,6 +194,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
         _enteredSeconds      != _origSeconds   ||
         _severity            != _origSeverity  ||
         _referralRequired    != _origReferral  ||
+        _rescueGiven         != _origRescueGiven ||
+        _rescueHelped        != _origRescueHelped ||
+        _rescueSecondDose    != _origRescueSecondDose ||
         _notesController.text.trim() != _origNotes ||
         !_sameSet(_selectedFeelings, _origFeelings) ||
         !_sameSet(_selectedTriggers, _origTriggers);
@@ -287,6 +318,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
       feelings:         _selectedFeelings.toList(),
       triggers:         _selectedTriggers.toList(),
       referralRequired: _referralRequired,
+      rescueMedGiven:      _rescueGiven,
+      rescueMedHelped:     _rescueHelped,
+      rescueMedSecondDose: _rescueSecondDose,
       notes:            _notesController.text.trim(),
       // TRUE. Reaching Save here means the whole form was filled and
       // confirmed, so the record is no longer a partial and must not keep
@@ -502,6 +536,50 @@ appBar: AppBar(
                                 : _selectedTriggers.add(t);
                           }),
                         ),
+                        const SizedBox(height: 20),
+
+                        // ── RESCUE MEDICATION ──
+                        //
+                        // Word for word the wizard's step 4, same gate, same
+                        // clearing rule. The two screens edit the same record
+                        // and a user who learns one must not be surprised by
+                        // the other.
+                        _SectionLabel('Rescue medication given?'),
+                        const SizedBox(height: 8),
+                        _SelectionRow<bool>(
+                          options:    const [false, true],
+                          selected:   _rescueGiven,
+                          labelFor:   (v) => v ? 'Yes' : 'No',
+                          onSelected: (v) => setState(() {
+                            _rescueGiven = v;
+                            if (!v) {
+                              _rescueHelped = null;
+                              _rescueSecondDose = null;
+                            }
+                          }),
+                        ),
+                        if (rescueChildrenVisible(_rescueDraft())) ...[
+                          const SizedBox(height: 20),
+                          _SectionLabel('Did it help?'),
+                          const SizedBox(height: 8),
+                          _SelectionRow<RescueResponse>(
+                            options:    RescueResponse.values,
+                            selected:   _rescueHelped,
+                            labelFor:   rescueResponseLabel,
+                            onSelected: (v) =>
+                                setState(() => _rescueHelped = v),
+                          ),
+                          const SizedBox(height: 20),
+                          _SectionLabel('Was a second dose needed?'),
+                          const SizedBox(height: 8),
+                          _SelectionRow<bool>(
+                            options:    const [false, true],
+                            selected:   _rescueSecondDose,
+                            labelFor:   (v) => v ? 'Yes' : 'No',
+                            onSelected: (v) =>
+                                setState(() => _rescueSecondDose = v),
+                          ),
+                        ],
                         const SizedBox(height: 20),
 
                         // ── REFERRAL ──

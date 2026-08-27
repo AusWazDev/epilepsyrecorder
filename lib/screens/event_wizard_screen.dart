@@ -149,6 +149,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   /// means an unanswered step is visibly unanswered.
   String? _eventType;
   EventSeverity? _severity;
+  bool? _rescueGiven;
+  RescueResponse? _rescueHelped;
+  bool? _rescueSecondDose;
   final Set<String> _feelings = {};
   final Set<String> _triggers = {};
   bool _referral = false;
@@ -170,6 +173,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     // even after the model stopped fabricating, the wizard started again.
     _eventType = e?.eventType;
     _severity = e?.severity;
+    _rescueGiven = e?.rescueMedGiven;
+    _rescueHelped = e?.rescueMedHelped;
+    _rescueSecondDose = e?.rescueMedSecondDose;
     _feelings.addAll(e?.feelings ?? const []);
     _triggers.addAll(e?.triggers ?? const []);
     _referral = e?.referralRequired ?? false;
@@ -207,6 +213,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         notes: _notesController.text.trim(),
         eventType: _eventType,
         severity: _severity,
+        rescueMedGiven: _rescueGiven,
+        rescueMedHelped: _rescueHelped,
+        rescueMedSecondDose: _rescueSecondDose,
         detailsCompleted: completed,
       );
 
@@ -237,6 +246,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       _enteredSeconds != null ||
       _eventType != null ||
       _severity != null ||
+      _rescueGiven != null ||
+      _rescueHelped != null ||
+      _rescueSecondDose != null ||
       _feelings.isNotEmpty ||
       _triggers.isNotEmpty ||
       _referral ||
@@ -470,6 +482,8 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
             addPrompt: 'Add how you felt',
           ),
           const SizedBox(height: 24),
+          ..._rescueSection(),
+          const SizedBox(height: 24),
           const Text('Medical referral required?',
               style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
           const SizedBox(height: 10),
@@ -490,6 +504,89 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
             ),
           ),
         ],
+      );
+
+  /// Rescue medication: one question, and two more only once it is answered
+  /// yes.
+  ///
+  /// ## Why the children are GATED rather than always shown
+  ///
+  /// "Did it help: yes" beside "given: no" is a contradiction a reviewer cannot
+  /// resolve - neither half identifies itself as the wrong one - and the export
+  /// carries it to a clinician who cannot ask what was meant. Preventing the
+  /// impossible state beats recording it faithfully.
+  ///
+  /// ## Why they are CLEARED on no, with no confirmation
+  ///
+  /// A dialog defending fields the user is actively contradicting is friction
+  /// on a form. If they meant to keep them they will set the parent back, and
+  /// nothing is lost that a second tap does not restore.
+  ///
+  /// ⚠️ **The visibility test is [rescueChildrenVisible], NOT `_rescueGiven ==
+  /// true`.** A record that arrives already carrying a child value renders it
+  /// whatever the parent says - see that function for why hiding a stored value
+  /// is the worse of the two failures.
+  List<Widget> _rescueSection() {
+    final showChildren = rescueChildrenVisible(_draftForVisibility());
+    return <Widget>[
+      const Text('Rescue medication given?',
+          style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+      const SizedBox(height: 10),
+      _chips<bool>(
+        const [false, true],
+        (b) => b ? 'Yes' : 'No',
+        (b) => _rescueGiven == b,
+        (b) => setState(() {
+          _rescueGiven = b;
+          if (!b) {
+            // CLEARED, not preserved-and-hidden. A hidden value still exports
+            // and still backs up, so preserving it would put the contradiction
+            // in the file while removing it from the screen - the worst of both.
+            _rescueHelped = null;
+            _rescueSecondDose = null;
+          }
+        }),
+      ),
+      if (showChildren) ...<Widget>[
+        const SizedBox(height: 16),
+        const Text('Did it help?',
+            style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+        const SizedBox(height: 10),
+        _chips<RescueResponse>(
+          RescueResponse.values,
+          rescueResponseLabel,
+          (r) => _rescueHelped == r,
+          (r) => setState(() => _rescueHelped = r),
+        ),
+        const SizedBox(height: 16),
+        const Text('Was a second dose needed?',
+            style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+        const SizedBox(height: 10),
+        _chips<bool>(
+          const [false, true],
+          (b) => b ? 'Yes' : 'No',
+          (b) => _rescueSecondDose == b,
+          (b) => setState(() => _rescueSecondDose = b),
+        ),
+      ],
+    ];
+  }
+
+  /// The three rescue values as they stand right now, for the visibility test.
+  ///
+  /// A throwaway record rather than three inline comparisons, so this screen and
+  /// the single-page form ask the SAME function the same question. Two copies of
+  /// a three-clause condition is how they drift.
+  EventRecord _draftForVisibility() => EventRecord(
+        id: '',
+        timestamp: DateTime(2000),
+        duration: null,
+        feelings: const <String>[],
+        referralRequired: false,
+        notes: '',
+        rescueMedGiven: _rescueGiven,
+        rescueMedHelped: _rescueHelped,
+        rescueMedSecondDose: _rescueSecondDose,
       );
 
   /// The table an inline "add your own" field is currently open for, or null.
@@ -697,6 +794,17 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     if (sev != null) lines.add('Severity: $sev');
     if (_triggers.isNotEmpty) lines.add('Beforehand: ${_triggers.join(', ')}');
     if (_feelings.isNotEmpty) lines.add('Afterwards: ${_feelings.join(', ')}');
+    // Only when ANSWERED, like type and severity above. "Rescue medication:
+    // no" on every summary would crowd out the lines that carry information,
+    // and unanswered is not the same as no.
+    if (_rescueGiven != null) {
+      lines.add('Rescue medication: ${_rescueGiven! ? 'given' : 'not given'}');
+    }
+    final helped = rescueResponseDisplay(_rescueHelped);
+    if (helped != null) lines.add('Did it help: $helped');
+    if (_rescueSecondDose != null) {
+      lines.add('Second dose: ${_rescueSecondDose! ? 'yes' : 'no'}');
+    }
     if (_referral) lines.add('Medical referral required');
     if (_notesController.text.trim().isNotEmpty) lines.add('Notes added');
 

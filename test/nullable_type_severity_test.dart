@@ -39,6 +39,26 @@ EventRecord bare(String id, DateTime ts) => EventRecord(
       notes: '',
     );
 
+/// The `event` table as at v4: today's DDL, less the three columns v5 adds.
+///
+/// Verbatim rather than approximate, for the reason `createEventSqlV1` gives -
+/// an approximation proves the upgrade works on a table that does not exist.
+const String createEventSqlV4 = 'CREATE TABLE event ('
+    'ordinal INTEGER NOT NULL, '
+    'id TEXT NOT NULL, '
+    'logged_at TEXT NOT NULL, '
+    'occurred_at TEXT, '
+    'duration_bucket TEXT, '
+    'duration_seconds INTEGER, '
+    'event_type TEXT, '
+    'severity INTEGER, '
+    'feelings_json TEXT, '
+    'triggers_json TEXT, '
+    'notes TEXT, '
+    'referral_required INTEGER, '
+    'details_completed INTEGER, '
+    'condition_id INTEGER)';
+
 void main() {
   final t0 = DateTime(2026, 8, 26, 9, 0);
 
@@ -242,12 +262,71 @@ void main() {
   });
 
   group('NO MIGRATION RUNS', () {
-    test('15. the schema version did NOT move', () {
-      // §3: existing records are untouched. Both columns have ALWAYS been
-      // nullable in SQLite — only the model coerced — so there is nothing to
-      // alter and no step to add.
-      expect(kSqliteSchemaVersion, 4,
-          reason: 'the emoji change was v4; this one adds no version');
+    test('15. NO MIGRATION HAS EVER ALTERED THESE TWO COLUMNS', () async {
+      // ⚠️ REWRITTEN. This asserted `kSqliteSchemaVersion == 4` to prove a
+      // LOCAL fact - that the nullable change added no step - by pinning a
+      // GLOBAL constant. The fact is still true; the constant moved for an
+      // unrelated reason (v5 added three rescue-medication columns) and the
+      // test failed while nothing it cared about had changed.
+      //
+      // A test that pins a global to prove a local claim breaks on every
+      // future change and says nothing about the one it was written for. This
+      // measures the claim directly instead: a row written at v4 survives the
+      // walk to the current version with both columns byte-identical.
+      // ⚠️ THE v4 TABLE IS RECONSTRUCTED EXPLICITLY, not built by `createSchema`
+      // at `version: 4`. `createEventSql` always emits the CURRENT column list,
+      // so `onCreate` would produce a "v4" database that already carries v5's
+      // columns - and the ALTER would then fail with `duplicate column name`
+      // against a schema that exists nowhere.
+      //
+      // This is the same trap the v4 emoji step fell into for real, and the
+      // first draft of THIS test fell into it too. Same pattern as
+      // `createEventSqlV1` in sqlite_upgrade_v2_test: a fixture built at the
+      // current version cannot fail.
+      final tmp = await Directory.systemTemp.createTemp('mer_ns15_');
+      final path = '${tmp.path}/v4.db';
+
+      final old = await databaseFactoryFfi.openDatabase(path,
+          options: OpenDatabaseOptions(
+            version: 4,
+            onCreate: (d, _) async {
+              await d.execute(createSchemaMetaSql);
+              await d.execute(createEventSqlV4);
+              await d.insert('schema_meta',
+                  <String, Object?>{'key': kMetaSchemaVersion, 'value': '4'});
+            },
+            onUpgrade: upgradeSchema,
+          ));
+      await old.insert('event', <String, Object?>{
+        'ordinal': 0,
+        'id': 'v4row',
+        'logged_at': t0.toIso8601String(),
+        'event_type': 'seizure',
+        'severity': 1,
+        'referral_required': 0,
+      });
+      await old.close();
+
+      final now = await databaseFactoryFfi.openDatabase(path,
+          options: OpenDatabaseOptions(
+            version: kSqliteSchemaVersion,
+            onCreate: (d, _) => createSchema(d),
+            onUpgrade: upgradeSchema,
+          ));
+      final row = (await now.query('event', where: 'id = ?',
+          whereArgs: <Object?>['v4row'])).single;
+
+      expect(row['event_type'], 'seizure');
+      expect(row['severity'], 1);
+      // POSITIVE CONTROL: the upgrade really did run, so the two assertions
+      // above are about a migrated row rather than one nothing touched.
+      expect(row.containsKey('rescue_med_given'), isTrue,
+          reason: 'v5 added this column, so the walk happened');
+      expect(row['rescue_med_given'], isNull,
+          reason: 'and it is NULL on a row that predates the question');
+
+      await now.close();
+      await tmp.delete(recursive: true);
     });
 
     test('16. an EXISTING row still reads as what it holds', () async {

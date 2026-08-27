@@ -14,7 +14,7 @@ concluded `condition_id` did not exist. It does.
 
 ---
 
-## 0. What is BUILT, as at schema v4 — 26 August 2026
+## 0. What is BUILT, as at schema v5 — 27 August 2026
 
 **Derived from the DDL in `lib/models/`, not from memory.** Regenerate this
 section at every schema bump; a divergence table that is not maintained is worse
@@ -38,7 +38,14 @@ claim is that it was derived from the DDL rather than remembered.
 
 `ordinal`, `id`, `logged_at`, `occurred_at`, `duration_bucket`,
 `duration_seconds`, `event_type`, `severity`, `feelings_json`, `triggers_json`,
-`notes`, `referral_required`, `details_completed`, `condition_id`
+`notes`, `referral_required`, `details_completed`, `condition_id`,
+`rescue_med_given`, `rescue_med_helped`, `rescue_med_second_dose`
+
+✅ **The three rescue-medication columns were added in v5, 27 August 2026.**
+All nullable, NULL on every existing row. `rescue_med_helped` is TEXT holding
+`RescueResponse.name` — deliberately not an integer ordinal like `severity`,
+whose integer mapping is load-bearing legacy a new column has no reason to
+inherit.
 
 ⚠️ **`condition_id` EXISTS, on `event` and on both vocabulary tables.** Added in
 v3, nullable, and **never populated** — NULL means NOT YET SAID. It was built
@@ -344,8 +351,27 @@ Observations and triggers become **delimited columns**. Emoji stripped from
 
 ✅ **BOTH HALVES ARE BUILT, 26 August 2026.** Eleven observation columns
 collapsed when observations became user-extensible; the seven trigger columns
-collapsed in the same shape a stage later. **26 → 17 → 11 columns.** Order is
-unchanged: the delimited column sits where its one-hot block sat.
+collapsed in the same shape a stage later. **26 → 17 → 11 → 14 columns.** Order
+is unchanged: the delimited column sits where its one-hot block sat, and the
+three rescue-medication columns added on 27 August sit between `beforehand` and
+`referral_required`.
+
+⛔ **THE MARKER TRACKS THE HEADER ROW. Any change to the column set bumps it
+— added, removed, renamed or reordered. No judgement about whether a change is
+"real".** Recorded at `kCsvShapeVersion` in `event_record.dart`, which is
+authoritative; this is a copy.
+
+The temptation is to bump only for changes that break something, and that
+requires predicting what a consumer does. Consumers here are hand-built
+spreadsheets: a template written against eleven columns breaks on fourteen
+exactly as surely as on a reshape, because every formula after the insertion
+point now points one column left. A mechanical rule also makes the filename a
+reliable statement about the file — `v2` and `v3` are guaranteed to differ,
+and two `v3` files are guaranteed to match.
+
+    v1   the original one-hot export                          26 columns
+    v2   observations and beforehand became delimited          11
+    v3   rescue medication added three columns                 14
 
 | | |
 |---|---|
@@ -353,7 +379,7 @@ unchanged: the delimited column sits where its one-hot block sat.
 | A value containing it | Quoted, with its own quotes doubled: `"Dizzy; unsteady"; Stress`. The same convention CSV uses, one level down. **The value is never altered** |
 | Empty set | **Blank.** Not `none`, which would be a value indistinguishable from a user-defined observation called "None" |
 | Emoji | Stripped by LOOKUP, never by position. `Vocabularies.labelFor` |
-| Shape marker | A **filename suffix**, `..._20260826_230917.v2.csv`. Not a column |
+| Shape marker | A **filename suffix**, `..._20260827_154500.v3.csv`. Not a column |
 | Ordering | Beforehand in picker order, preserving what the one-hot columns did. Observations in storage order, unchanged from before |
 
 ⚠️ **THE COLUMN IS `beforehand`, NOT `triggers`.** The seven one-hot columns

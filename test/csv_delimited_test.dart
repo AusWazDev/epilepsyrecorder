@@ -77,7 +77,7 @@ void main() {
   tearDown(Vocabularies.debugReset);
 
   group('THE SHAPE', () {
-    test('1. eleven columns, and the two delimited ones sit adjacent', () {
+    test('1. fourteen columns, and the two delimited ones sit adjacent', () {
       final header = buildCsv(<EventRecord>[rec()])
           .split('\n')
           .first
@@ -85,7 +85,7 @@ void main() {
           .trim()
           .split(',');
 
-      expect(header.length, 11);
+      expect(header.length, 14);
       expect(header[kObservationsCell], 'observations');
       expect(header[kTriggersCell], 'beforehand');
     });
@@ -99,7 +99,7 @@ void main() {
         feelings: const <String>['Dizzy, briefly'],
         triggers: const <String>['Stress'],
       );
-      expect(cells(buildCsv(<EventRecord>[r])).length, 11);
+      expect(cells(buildCsv(<EventRecord>[r])).length, 14);
     });
   });
 
@@ -282,18 +282,25 @@ void main() {
   });
 
   group('THE FILENAME CARRIES THE SHAPE MARKER', () {
-    test('18. v2 sits before the extension, so .csv still opens it', () {
+    test('18. the marker sits before the extension, so .csv still opens it',
+        () {
+      // Reads the CONSTANT rather than restating "v2". The marker moves
+      // whenever the column set does - it is now v3, for the three
+      // rescue-medication columns - and a test that hardcoded the value would
+      // have to be edited on every such change, which is exactly the edit that
+      // stops being thought about.
       final name = csvFilename(when: DateTime(2026, 8, 26, 22, 30, 0));
-      expect(name, 'medical_event_recorder_20260826_223000.v2.csv');
+      expect(name,
+          'medical_event_recorder_20260826_223000.$kCsvShapeVersion.csv');
       expect(name.endsWith('.csv'), isTrue);
     });
 
     test('19. a prefix is honoured, and an empty one falls back', () {
       final when = DateTime(2026, 8, 26, 22, 30, 0);
       expect(csvFilename(prefix: 'filtered', when: when),
-          'filtered_20260826_223000.v2.csv');
+          'filtered_20260826_223000.$kCsvShapeVersion.csv');
       expect(csvFilename(prefix: '', when: when),
-          'medical_event_recorder_20260826_223000.v2.csv');
+          'medical_event_recorder_20260826_223000.$kCsvShapeVersion.csv');
     });
 
     test('20. it is NOT a column', () {
@@ -302,7 +309,7 @@ void main() {
       final header =
           buildCsv(<EventRecord>[rec()]).split('\n').first.toLowerCase();
       expect(header, isNot(contains('version')));
-      expect(header, isNot(contains('v2')));
+      expect(header, isNot(contains(kCsvShapeVersion)));
     });
   });
 }

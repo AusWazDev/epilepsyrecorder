@@ -264,6 +264,11 @@ void main() {
         // reading order of the file is unchanged: when, what, how long, how
         // bad, what after, what before, referral, notes.
         'beforehand',
+        // Rescue medication: a FIELD on an event, not a record kind. Regular
+        // medication is a separate stream and is deliberately not here.
+        'rescue_med_given',
+        'rescue_med_helped',
+        'rescue_med_second_dose',
         'referral_required',
         'notes',
       ]);

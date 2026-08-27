@@ -25,12 +25,15 @@ import 'vocabulary.dart';
 ///   seeded, plus a NULLABLE `event.condition_id` that stays unpopulated.
 /// 4 since the observation revision: `emoji` on both vocabulary tables —
 ///   PRESENTATION ONLY, so a glyph is never inside a stored value again.
+/// 5 since rescue medication: three nullable columns on `event`. A FIELD on an
+///   event, not a record kind — regular medication is a separate stream and is
+///   NOT part of this bump.
 ///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 4;
+const int kSqliteSchemaVersion = 5;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -90,7 +93,18 @@ const String createEventSql = 'CREATE TABLE event ('
     // DATA-MODEL.md leaves this cell blank rather than requiring NOT NULL —
     // verified, `grep -c "NOT NULL" docs/DATA-MODEL.md` returns 0. The doc now
     // says nullable explicitly instead of saying nothing.
-    'condition_id INTEGER)';
+    'condition_id INTEGER, '
+    // RESCUE MEDICATION. All three nullable, all NULL meaning NOT ASKED, and
+    // NULL on every row that exists today because they predate the question.
+    //
+    // `rescue_med_helped` is TEXT, holding `RescueResponse.name`, not an INTEGER
+    // ordinal like `severity`. Deliberate divergence: severity's integer mapping
+    // is load-bearing legacy, and a new column has no reason to inherit an
+    // encoding whose only virtue is that it already exists. A name is readable
+    // in a raw dump and cannot be silently shifted by reordering the enum.
+    'rescue_med_given INTEGER, '
+    'rescue_med_helped TEXT, '
+    'rescue_med_second_dose INTEGER)';
 
 const String createEventIdIndexSql = 'CREATE INDEX idx_event_id ON event(id)';
 const String createEventLoggedAtIndexSql =
@@ -135,6 +149,20 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     for (final t in kVocabularyTables) {
       await db.execute('ALTER TABLE $t ADD COLUMN emoji TEXT');
     }
+  }
+  // ONE-SIDED BOUND, unlike the v4 step above, and the difference is worth
+  // stating because the v4 comment warns about exactly this.
+  //
+  // v4 needed a two-sided bound because `createVocabularySql` emits the CURRENT
+  // column list, so the v3 step CREATED those tables already carrying `emoji`.
+  // The `event` table has no such problem: it is created only in `onCreate` and
+  // by no upgrade step, so a database being upgraded reaches here with the
+  // column list it was born with and can never already have these three.
+  if (from < 5 && to >= 5) {
+    await db.execute('ALTER TABLE event ADD COLUMN rescue_med_given INTEGER');
+    await db.execute('ALTER TABLE event ADD COLUMN rescue_med_helped TEXT');
+    await db
+        .execute('ALTER TABLE event ADD COLUMN rescue_med_second_dose INTEGER');
   }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
@@ -216,6 +244,16 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'details_completed': r.detailsCompleted == null
           ? null
           : (r.detailsCompleted! ? 1 : 0),
+      // Written INDEPENDENTLY of each other. The store does not re-apply the
+      // UI's gate: if a record carries a child without its parent, that is what
+      // is persisted. See [EventRecord.rescueMedGiven].
+      'rescue_med_given': r.rescueMedGiven == null
+          ? null
+          : (r.rescueMedGiven! ? 1 : 0),
+      'rescue_med_helped': r.rescueMedHelped?.name,
+      'rescue_med_second_dose': r.rescueMedSecondDose == null
+          ? null
+          : (r.rescueMedSecondDose! ? 1 : 0),
     };
 
 List<String> decodeStringList(Object? raw) {
@@ -266,6 +304,18 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     detailsCompleted: row['details_completed'] == null
         ? null
         : row['details_completed'] == 1,
+    // Same NULL discipline. A column that predates the ALTER reads NULL on
+    // every existing row, which is exactly right - those records were never
+    // asked.
+    rescueMedGiven: row['rescue_med_given'] == null
+        ? null
+        : row['rescue_med_given'] == 1,
+    rescueMedHelped: RescueResponse.values
+        .where((e) => e.name == row['rescue_med_helped'])
+        .firstOrNull,
+    rescueMedSecondDose: row['rescue_med_second_dose'] == null
+        ? null
+        : row['rescue_med_second_dose'] == 1,
   );
 }
 

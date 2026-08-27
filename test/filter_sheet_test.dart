@@ -457,7 +457,8 @@ void main() {
       // one string, from the two functions that build it.
       expect(
           csvFilename(prefix: filtered, when: DateTime(2026, 8, 26, 23, 9, 17)),
-          'medical_event_recorder_filtered_20260826_230917.v2.csv');
+          'medical_event_recorder_filtered_20260826_230917.'
+          '$kCsvShapeVersion.csv');
     });
   });
 }
