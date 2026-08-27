@@ -268,12 +268,35 @@ class _RecordSheetState extends State<_RecordSheet> {
   @override
   Widget build(BuildContext context) {
     final fmt = DateFormat('d MMM yyyy · HH:mm');
-    return Padding(
+    // ⚠️ SCROLLABLE, and this was found on the device rather than in review.
+    //
+    // In LANDSCAPE the sheet is taller than the viewport and the Save button
+    // sat behind the navigation bar — unreachable, with nothing on screen
+    // saying so. A bottom sheet whose primary action cannot be tapped is worse
+    // than one that does not open.
+    //
+    // Same class as step 4's density check: the developer's tablet was in the
+    // orientation that hid it.
+    return SingleChildScrollView(
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        // ⚠️ viewPadding TOO, not just viewInsets, and the difference is what
+        // was actually wrong on the device.
+        //
+        // viewInsets is the KEYBOARD. viewPadding is the system navigation
+        // bar, which OVERLAYS the sheet — so with a keyboard closed the Save
+        // button sat about 25px behind the nav bar: reachable-looking,
+        // untappable, with nothing on screen saying so.
+        //
+        // Scrolling did not fix it because the content FITS. It was never a
+        // height problem; it was an inset problem, and treating it as the
+        // former would have shipped a scroll view that never scrolls over a
+        // button still hidden.
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            20,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

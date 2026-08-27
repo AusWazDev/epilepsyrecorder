@@ -1349,6 +1349,13 @@ Future<void> showExportOptions(
                   context,
                   items,
                   filenamePrefix: filenamePrefix,
+                  // ⚠️ FORWARDED. This was DROPPED in the first version: the
+                  // sheet accepted `notes` and never passed it on, so the
+                  // multi-stream export silently emitted events only. No test
+                  // caught it because every export test calls `buildCsv`
+                  // directly and skips this sheet entirely — the device
+                  // export is what found it.
+                  notes: notes,
                 );
               },
             ),
@@ -1384,6 +1391,7 @@ Future<void> showExportOptions(
                     context,
                     items,
                     filenamePrefix: filenamePrefix,
+                    notes: notes,
                   );
                 },
               ),
