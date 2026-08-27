@@ -27,6 +27,7 @@ import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../screens/your_data_screen.dart';
 import '../screens/medication_screen.dart';
+import '../screens/vocabulary_screen.dart';
 import '../screens/walkthrough_screen.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
@@ -48,6 +49,7 @@ class HomeScreen extends StatefulWidget {
 enum _HomeMenuAction {
   history,
   medication,
+  lists,
   yourData,
   about,
   help,
@@ -791,6 +793,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                   );
                   break;
+                // The overflow is where a user goes WITH A REASON, which is
+                // what Medication established. Hiding a list entry is that
+                // shape exactly: rare, deliberate, never part of capture.
+                case _HomeMenuAction.lists:
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const VocabularyScreen(),
+                    ),
+                  );
+                  break;
                 case _HomeMenuAction.yourData:
                   _openYourData();
                   break;
@@ -820,6 +832,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               PopupMenuItem(
                 value: _HomeMenuAction.medication,
                 child: Text('Medication'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.lists,
+                child: Text('Your lists'),
               ),
               PopupMenuItem(
                 value: _HomeMenuAction.yourData,

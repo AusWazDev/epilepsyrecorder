@@ -644,6 +644,47 @@ Future<VocabularyEntry> renameEntry(
   return entry.copyWith(label: text);
 }
 
+/// Values MER itself SHIPPED hidden, which a user must not be able to show.
+///
+/// ## ⛔ `is_active` CONFLATES TWO DIFFERENT DECISIONS, AND ONLY ONE IS THE
+/// USER'S TO REVERSE
+///
+/// Found the moment the management screen first rendered on the device: every
+/// retired observation got a **Show** button. Those are the pre-revision
+/// values, and the glyph is INSIDE the stored value — `😵 Confused`, not
+/// `Confused` with a separate emoji column. Showing one puts it back in the
+/// picker, and the next record written with it puts an emoji back into
+/// `feelings_json`, into every CSV and into every backup.
+///
+/// **That is precisely what the revision existed to prevent** and what
+/// `DATA-MODEL.md` §6 forbids. A one-tap path to it is worse than no hide
+/// feature at all.
+///
+///     retired by MER      a shipped decision   NOT reversible by the user
+///     hidden by the user  the user's choice    reversible, or hide is a delete
+///
+/// The flag cannot tell them apart, so this does. Membership is derived from
+/// the seed constants rather than declared as a list, so a future retirement is
+/// covered by adding the seed and nothing else.
+bool isShippedHidden(String table, String value) {
+  if (table == kEventTypeTable) {
+    // Retired by `retireMedicationEventType`, whose own doc comment says
+    // leaving it offered invites the defect the medication split removed.
+    return value == kMedicationValue;
+  }
+  if (table == kObservationTable) {
+    for (final s in kLegacyObservations) {
+      if (s.value == value) return true;
+    }
+    for (final s in mangledLegacyObservations()) {
+      if (s.value == value) return true;
+    }
+  }
+  // Triggers have never been revised, so nothing shipped hidden. Verified from
+  // the device: every stored trigger is ASCII and every seed is active.
+  return false;
+}
+
 /// Retires an entry so pickers stop offering it. Records keep rendering.
 ///
 /// Refuses on [VocabularyEntry.isProtected] — "Medication taken" only.
@@ -658,6 +699,13 @@ Future<VocabularyEntry> setActive(
       'Medication is recorded separately from events, and a future version of '
       'MER moves it out of this list. Hiding it now would leave records that '
       'move cannot identify.',
+    );
+  }
+  if (active && isShippedHidden(table, entry.value)) {
+    throw const VocabularyRuleError(
+      'This entry was replaced by a newer version of the same wording. It '
+      'still shows on records that already use it, but offering it again '
+      'would store an older format in new records.',
     );
   }
   await db.update(table, <String, Object?>{'is_active': active ? 1 : 0},

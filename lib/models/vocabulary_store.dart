@@ -185,6 +185,75 @@ class Vocabularies {
               ? _triggers
               : _observations;
 
+  /// Hides or shows an entry, and refreshes the cache.
+  ///
+  /// ## THE COLUMN EXISTED FOR THREE SCHEMA VERSIONS AND NOTHING REACHED IT
+  ///
+  /// `is_active` has been on every vocabulary row since v2, `setActive` has
+  /// been written and tested since the vocabulary landed, and no screen has
+  /// ever called it. Every field became user-extensible and none could be
+  /// un-extended, so two entries added while testing are permanent on the
+  /// device. This is the method that closes that.
+  ///
+  /// ## IT IS NOT A DELETE, AND THE DIFFERENCE IS THE WHOLE DESIGN
+  ///
+  /// The row stays. Records that reference it keep resolving through
+  /// [labelFor] and [displayFor], History keeps rendering it, the CSV keeps
+  /// exporting it, and a picker holding it on an existing record keeps showing
+  /// its chip. See [kWhyNoDelete].
+  ///
+  /// Rethrows [VocabularyRuleError] from the model's `setActive` so the caller
+  /// can show the reason a protected entry refused, rather than failing
+  /// silently.
+  static Future<VocabularyEntry?> setVisible(
+    String table,
+    VocabularyEntry entry,
+    bool visible,
+  ) async {
+    final db = _db;
+    if (db == null) {
+      // Mirrors [add]: the flow completes in memory so a fallback launch is not
+      // a broken screen. It will not survive a restart, and `canPersist` gates
+      // the UI that offers it.
+      if (!visible && entry.isProtected) {
+        throw const VocabularyRuleError(
+          'Medication is recorded separately from events, and a future version '
+          'of MER moves it out of this list. Hiding it now would leave records '
+          'that move cannot identify.',
+        );
+      }
+      if (visible && isShippedHidden(table, entry.value)) {
+        throw const VocabularyRuleError(
+          'This entry was replaced by a newer version of the same wording. It '
+          'still shows on records that already use it, but offering it again '
+          'would store an older format in new records.',
+        );
+      }
+      final updated = entry.copyWith(isActive: visible);
+      List<VocabularyEntry> swap(List<VocabularyEntry> list) => list
+          .map((e) => e.id == entry.id ? updated : e)
+          .toList();
+      if (table == kEventTypeTable) {
+        _eventTypes = swap(_eventTypes);
+      } else if (table == kTriggerTable) {
+        _triggers = swap(_triggers);
+      } else {
+        _observations = swap(_observations);
+      }
+      return updated;
+    }
+
+    final updated = await setActive(db, table, entry, visible);
+    await load(db);
+    return updated;
+  }
+
+  /// Every entry in [table], hidden ones included, in picker order.
+  ///
+  /// The management screen needs this and no other caller does: a picker shows
+  /// [offerable], which is exactly the list this one is NOT.
+  static List<VocabularyEntry> allIn(String table) => _listFor(table);
+
   /// What a PICKER shows: the glyph and the label.
   ///
   /// Two functions rather than one, because the difference is the whole point.
