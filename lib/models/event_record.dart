@@ -18,6 +18,37 @@ import 'vocabulary_store.dart';
    ENUMS
    =========================== */
 
+/// ⛔ **THESE NAMES ARE STORED DATA, AND THEY DIVERGE FROM THEIR LABELS ON
+/// PURPOSE. DO NOT TIDY THEM.**
+///
+/// `lt1` is persisted verbatim — `.name` is what reaches `duration` in the
+/// record, in `event.duration_bucket`, and in every backup file ever taken.
+/// `EventSeverity` is the same. Renaming one is not a rename: `fromMap` reads
+/// enums with `firstWhere(orElse:)`, so an unrecognised name falls back
+/// SILENTLY and reclassifies every historical record carrying it.
+///
+/// The divergence is the tell that makes them look untidy, and it is
+/// deliberate:
+///
+///     lt1        -> "< 1 minute"
+///     oneToFive  -> "1-5 minutes"
+///     gt5        -> "More than 5 minutes"
+///
+/// A label is a sentence for a person and a name is an identifier for a
+/// record; making them match would mean either an unreadable label or a
+/// renamed identifier, and the identifier is the half that cannot move.
+///
+/// **There is no user-facing reason to care, which is the other half of why
+/// this note exists.** History search matches LABELS, never these names — so
+/// nobody ever sees `lt1` and no search returns a record because of it.
+/// `search_matches_labels_test` pins that with these two names specifically,
+/// because `lt1` and `oneToFive` are the only identifiers in the app whose
+/// text does not appear inside their own label and can therefore tell a
+/// label-matching search from a key-matching one.
+///
+/// See also DATA-MODEL.md §2a, which draws the same value/label line for
+/// vocabulary entries, and ARCHITECTURE.md §4 on why a rename here is
+/// dangerous where adding a field is not.
 enum DurationCategory { lt1, oneToFive, gt5 }
 
 /// ⚠️ `durationLabel` and `severityLabel` are STRUCTURALLY IDENTICAL — both are
@@ -164,6 +195,13 @@ String? severityDisplay(EventSeverity? s) => s == null ? null : severityLabel(s)
 /// See [eventTypeCsv].
 String severityCsv(EventSeverity? s) => severityDisplay(s) ?? 'unknown';
 
+/// ⛔ **STORED DATA. See [DurationCategory] for why these names must not be
+/// renamed** — the same `.name` persistence and the same silent `orElse`
+/// fallback apply here.
+///
+/// These three happen to match their labels case-insensitively (`mild` ->
+/// "Mild"), which makes them look safer than the duration names. They are not:
+/// the hazard is the persistence, not the spelling.
 enum EventSeverity { mild, moderate, severe }
 
 String severityLabel(EventSeverity s) {
