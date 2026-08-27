@@ -239,14 +239,45 @@ import awesome_notifications
         showPersistentNormalNotification()
       } else {
         if #available(iOS 17.0, *) {
-          // iOS 17+: Live Activity is the end-event UI — restore it if gone
+          // iOS 17+: the Live Activity is AN end-event UI — restore it if gone.
           if Activity<MERActivityAttributes>.activities.isEmpty,
              let eventId = active["id"] as? String {
             startLiveActivity(eventId: eventId, startIso: startIso)
           }
-        } else {
-          showPersistentActiveNotification(startIso: startIso)
         }
+
+        // …but not the ONLY one, and that was the defect.
+        //
+        // This call used to sit in an `else`, so on iOS 17+ NOTHING was posted
+        // while an event was running. The design assumed the Live Activity was
+        // the end surface there and that recovery would bring it back. But the
+        // Live Activity is user-dismissible, _endActiveEvent returns early on
+        // iOS so the home banner has no End button, and MER_ACTIVE is the only
+        // notification carrying an End action. Dismiss the Live Activity and
+        // every route was gone: the event could not be ended at all, and the
+        // 30-minute timeout then wrote a record with a NULL duration. Wrong
+        // data rather than missing data, on the primary platform, shipped.
+        //
+        // Posting unconditionally here gives a second surface that does not
+        // share the first one's fate:
+        //   * cannot double-post — the identifier is fixed
+        //     (kActivePersistentId) and scheduleActiveNotification removes the
+        //     delivered copy before adding, so a re-post replaces;
+        //   * cannot fire spuriously — this branch is inside `if let activeRaw`
+        //     and past the timeout check, so an event is genuinely active and
+        //     younger than kActiveEventTimeoutSeconds;
+        //   * is off the capture path — restorePersistentNotification is called
+        //     from applicationDidBecomeActive and the restoreNotification
+        //     channel case, never from handleQuickLogStart or handleQuickLogEnd.
+        //
+        // ⚠️ WHAT THIS DOES NOT FIX. The End action here is delivered through
+        // didReceive, and didReceive is NOT entered when the app is cold —
+        // established by breadcrumb on 26.6 and by the same signature on
+        // 16.7.15. So this makes a dismissed notification recoverable WHILE THE
+        // APP IS WARM. That is the difference between "no route" and "a route
+        // that works when the app is running". Worth having; not the whole
+        // answer.
+        showPersistentActiveNotification(startIso: startIso)
       }
     } else {
       // No active event in either store, so any Live Activity still on screen is
