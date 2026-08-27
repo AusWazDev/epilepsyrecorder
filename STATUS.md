@@ -864,6 +864,26 @@ Use the same SharedPreferences flag pattern as iOS cold-start (`kPendingOpenLate
 
 ## Backlog — recorded, not fixed
 
+### CLOSED — item 26, the notification-delegate one-liner
+Closed as recorded on a premise that cannot be settled from here, not as fixed.
+
+The reassignment itself is in the tree (`0bb8aa7`): a main-queue block at the end
+of `didFinishLaunchingWithOptions` that takes `UNUserNotificationCenter.delegate`
+back after `awesome_notifications`' constructor-registered observer takes it. It
+is cheap, it is correct hardening regardless, and it carries an `os_log` line
+recording whether the delegate had in fact been stolen. **It has not been read
+back, and it is not claimed as the cause.**
+
+What is settled is the boundary, not the mechanism — see
+`docs/ARCHITECTURE.md` §5, "iOS end-of-event routes, and where the boundary is".
+`didReceive` is not entered for a notification response while the app is cold,
+measured twice with an internal control, cause unattributable without Apple.
+Chasing it further is a Technical Support Incident and does not change what ships.
+
+Stop re-deriving this. Both the sub-17 and the iOS 26 investigations returned to
+it and neither could close it from source.
+
+
 ### v1.3.0 (capture model) — abandoned events get a wrong duration
 `NotificationService._clearIfTimedOut()` discards an active event after 30
 minutes, but the record it leaves behind keeps `duration` at its `lt1`

@@ -136,9 +136,9 @@ before any migration that would want to roll back.
 
 ## 5. Notifications — two solutions, split by platform
 
-They are not layered. The exclusion is deliberate: `awesome_notifications`'
-`initialize()` reassigns `UNUserNotificationCenter.delegate` to itself, which
-would break the native iOS handler. Hence `notification_service.dart:60`:
+They are not layered. The exclusion is deliberate: `awesome_notifications`
+reassigns `UNUserNotificationCenter.delegate` to itself, which would break the
+native iOS handler. Hence `notification_service.dart:60`:
 
 ```dart
 if (Platform.isWindows || Platform.isIOS) return;
@@ -155,9 +155,60 @@ if (Platform.isWindows || Platform.isIOS) return;
 The plugin is registered on Windows but `init()` returns before using it, so
 nothing is ever posted.
 
-**iOS end-of-event has two paths by OS version:** on iOS 17+ the Live Activity
-button ends it and no active notification is posted; below 17 it falls back to a
-notification action.
+⚠️ The Dart guard above is necessary but **not sufficient**, and the note that
+`initialize()` is what reassigns the delegate was imprecise. The reassignment is
+in the plugin's Swift **constructor**, which `GeneratedPluginRegistrant` runs on
+every iOS launch whether or not Dart ever calls `initialize()`:
+
+```
+GeneratedPluginRegistrant.register       AppDelegate.swift:99
+  -> AttachAwesomeNotificationsPlugin
+  -> AwesomeNotifications()              SwiftAwesomeNotificationsPlugin.swift:53
+  -> activateiOSNotifications()          AwesomeNotifications.swift:56
+  -> addObserver(UIApplication.didFinishLaunchingNotification)  :155-158
+  -> didFinishLaunch(_:) -> delegate = self                     :508
+```
+
+UIKit posts that notification **after** `didFinishLaunchingWithOptions` returns,
+so the assignment at `AppDelegate.swift:132` cannot be the last word. There is a
+main-queue reassignment at the end of `didFinishLaunching` and another in
+`applicationDidBecomeActive`. Anything added to iOS notification handling must
+assume the delegate is contested.
+
+### iOS end-of-event routes, and where the boundary is
+
+| | 17+ | 16.2 – 16.x |
+|---|---|---|
+| Live Activity posted at start | Yes | Yes |
+| Live Activity **End button** | Yes — `EndMEREventIntent`, gated `#available(iOS 17.0)` | **No.** `LiveActivityIntent` needs 17; the card is display-only |
+| Active notification posted at start | Yes | Yes |
+| Notification **End action** works warm | Yes | Yes |
+| Notification **End action** works **cold** | **No** | **No** |
+| A cold end route therefore exists | Yes — Live Activity, after Face ID | **No** |
+
+**ESTABLISHED BOUNDARY — `didReceive` is not entered for a notification response
+when the app is cold.**
+
+- Measured on iOS 26.6 and on iOS 16.7.15 — twice, independently.
+- The 26.6 run carried an internal positive control: a `UserDefaults` write made
+  by the *same* cold background process persisted, while the breadcrumb inside
+  `didReceive` never appeared. So the process launches and executes; the
+  **response** does not arrive at our handler.
+- Corroborated from the other direction by the voice-capture probe, which ran
+  cold and locked and whose write persisted. Cold background execution works.
+  This is specific to notification-response delivery, not to launch.
+- **Cause unknown, and not attributable from here.** Delegate contention is one
+  candidate and the reassignment above is in place as hardening — it has not been
+  read back, and it is not recorded as the cause. Establishing the cause would
+  need Apple (a Technical Support Incident). It does not change what ships.
+
+**Consequence, and this is the line to design against:** the notification is
+reliable for **visibility** and unreliable for **ending** while cold. On 17+ the
+Live Activity's App Intent is the working cold end route, after Face ID. Below 17
+there is no cold end route at all — the event runs to the 30-minute timeout,
+which is the abandoned-duration defect recorded in the backlog.
+
+Do not add a capture or end path that depends on `didReceive` reaching us cold.
 
 ### Windows, stated plainly
 
