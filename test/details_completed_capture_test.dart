@@ -17,8 +17,21 @@ import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
 /// **NULL and false are different claims.** NULL means the record predates the
 /// wizard: neither complete nor incomplete, because the concept did not exist
 /// when it was written. False means someone started the flow and abandoned it.
-/// Converting the first into the second is a quiet claim about history, and it
-/// applied to all 69 records on the device that predate the wizard.
+/// Converting the first into the second is a quiet claim about history.
+///
+/// ## ⚠️ How reachable it actually was — measured, after overstating it once
+///
+/// The first write-up said "all 69 records that predate the wizard". That is
+/// wrong: reaching the wizard requires `wantsWizard`, so a NULL-flagged record
+/// is exposed only if it is ALSO incomplete. On the tablet, 27 Aug 2026:
+///
+///     records with detailsCompleted == NULL            70
+///     of those, incomplete (so they reach the wizard)   0
+///
+/// **Zero records on that device could exhibit it** — which is why the fix is
+/// proved here, by reverting it and watching tests 1, 2 and 4 fail, rather
+/// than on hardware. A device with nothing in the affected state cannot
+/// distinguish the two rules.
 ///
 /// ## Why it was worth fixing despite changing nothing visible
 ///

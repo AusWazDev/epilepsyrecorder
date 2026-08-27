@@ -217,8 +217,21 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   /// the wizard - neither complete nor incomplete, because the concept did not
   /// exist when it was written. False means someone started the flow and did
   /// not finish. Converting the first into the second is a quiet claim about
-  /// history, on all 69 records that predate the wizard, triggered by a tap
-  /// that changed nothing else.
+  /// history, triggered by a tap that changed nothing else.
+  ///
+  /// ⚠️ **THE BLAST RADIUS IS NARROWER THAN "every record that predates the
+  /// wizard", and the first write-up of this said otherwise.** Reaching the
+  /// wizard at all requires `wantsWizard`, so a NULL-flagged record is only
+  /// exposed if it is ALSO incomplete - a complete one routes to the single
+  /// page and is never at risk. Measured on the tablet, 27 Aug 2026:
+  ///
+  ///     records with detailsCompleted == NULL            70
+  ///     of those, incomplete (so they reach the wizard)   0
+  ///
+  /// So the defect was real, reachable in principle, and had **no record on
+  /// this device in the affected state** - which is also why it cannot be
+  /// demonstrated there. It is proved instead by reverting the fix and
+  /// watching `details_completed_capture_test` 1, 2 and 4 fail.
   ///
   /// The three cases, and why each is right:
   ///
