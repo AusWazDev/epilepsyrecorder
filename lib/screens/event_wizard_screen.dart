@@ -202,6 +202,40 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     return (m ?? 0) * 60 + (s ?? 0);
   }
 
+  /// What `detailsCompleted` becomes when the wizard CAPTURES rather than
+  /// saves.
+  ///
+  /// ⛔ **PRESERVES WHAT THE RECORD ALREADY HAD. Capturing must not assert
+  /// anything about work nobody did.**
+  ///
+  /// This was `false` unconditionally, and that made merely OPENING a legacy
+  /// record and leaving rewrite it: `_onWillPop` captures whenever there is any
+  /// input, and an existing record always has some, so backing out flipped
+  /// `detailsCompleted` from NULL to false on a record the user only looked at.
+  ///
+  /// **NULL and false are different claims.** NULL means the record predates
+  /// the wizard - neither complete nor incomplete, because the concept did not
+  /// exist when it was written. False means someone started the flow and did
+  /// not finish. Converting the first into the second is a quiet claim about
+  /// history, on all 69 records that predate the wizard, triggered by a tap
+  /// that changed nothing else.
+  ///
+  /// The three cases, and why each is right:
+  ///
+  ///   NEW record (no `existing`)   false  - it genuinely IS a fresh partial,
+  ///                                         and quick-record writes false too
+  ///   EXISTING record              carried through UNCHANGED
+  ///
+  /// Carrying a `true` through unchanged is deliberate rather than an
+  /// oversight. The flag records whether the flow was ever COMPLETED, and it
+  /// was; if the user has since emptied a field, `isIncomplete` catches that on
+  /// its own by reading the fields. Downgrading here would make the flag say
+  /// something the fields already say better.
+  ///
+  /// Only [_finish] sets it true, and that is unchanged.
+  bool? get _capturedCompletion =>
+      widget.existing == null ? false : widget.existing!.detailsCompleted;
+
   EventRecord _build({bool completed = false}) => EventRecord(
         id: _id,
         timestamp: _timestamp,
@@ -216,7 +250,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         rescueMedGiven: _rescueGiven,
         rescueMedHelped: _rescueHelped,
         rescueMedSecondDose: _rescueSecondDose,
-        detailsCompleted: completed,
+        detailsCompleted: completed ? true : _capturedCompletion,
       );
 
   /// Materialises the partial. The timestamp is the one fact that cannot be
