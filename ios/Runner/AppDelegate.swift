@@ -180,6 +180,56 @@ import awesome_notifications
       navChannel = channel
     }
 
+    // ⚠️ THE DELEGATE IS STOLEN AFTER THIS FUNCTION RETURNS. Backlog 26.
+    //
+    // The assignment at line 132 above is not enough, and the reason is not
+    // ordering inside this function — it is that the theft happens out of band,
+    // in the window between this function returning and the notification action
+    // being delivered.
+    //
+    // GeneratedPluginRegistrant.register (first line of this function) reaches
+    // SwiftAwesomeNotificationsPlugin.AttachAwesomeNotificationsPlugin, which
+    // constructs AwesomeNotifications(). Its init calls activateiOSNotifications(),
+    // which registers an observer for UIApplication.didFinishLaunchingNotification
+    // whose handler — AwesomeNotifications.didFinishLaunch — does
+    // `UNUserNotificationCenter.current().delegate = self`.
+    //
+    // UIKit posts that notification AFTER application(_:didFinishLaunchingWithOptions:)
+    // returns. So the sequence on a cold launch is:
+    //
+    //   1. our delegate = self                    (line 132)
+    //   2. this function returns
+    //   3. UIApplication.didFinishLaunchingNotification posted
+    //   4. AwesomeNotifications takes the delegate      ← we are no longer it
+    //   5. didReceive delivered → goes to AwesomeNotifications
+    //
+    // "iOS guarantees didFinishLaunching completes before didReceive" was read as
+    // ruling this out. It does the opposite: step 3 lives inside exactly the
+    // window that guarantee describes.
+    //
+    // And the action is not forwarded on. AwesomeNotifications' own didReceive
+    // hands off to `_originalNotificationCenterDelegate`, which is DECLARED at
+    // AwesomeNotifications.swift:504 and ASSIGNED NOWHERE — it is read in seven
+    // places and is always nil. Every branch therefore ends at
+    // `completionHandler()`. The action is swallowed silently: no crash, no log,
+    // and our didReceive never entered. That is the measured signature.
+    //
+    // Why warm works: applicationDidBecomeActive reassigns the delegate, and it
+    // is the ONLY place that ever restores it. A cold launch serving a
+    // background action never becomes active, so nothing restores it.
+    //
+    // This block runs on the next main-queue turn — after the launch stack
+    // unwinds, therefore after step 4 — and takes the delegate back before the
+    // action is dispatched. The os_log records who held it, so a failed test can
+    // be told apart from a lost race.
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      let stolen = UNUserNotificationCenter.current().delegate !== self
+      os_log("post-launch delegate stolen=%{public}@",
+             log: Self.captureLog, type: .default, stolen ? "YES" : "no")
+      UNUserNotificationCenter.current().delegate = self
+    }
+
     return result
   }
 
