@@ -40,12 +40,15 @@ import 'vocabulary.dart';
 ///   `medication_note.condition_id`. Created EMPTY and assigned to NOTHING —
 ///   `event.condition_id` and `event_type.condition_id` have existed since v3
 ///   and stay NULL on all 72 records.
+/// 9 since triggers became a vocabulary: `trigger_option` and `event_trigger`.
+///   ADDITIVE — `triggers_json` is kept and stays authoritative, exactly as
+///   `feelings_json` was in v7.
 ///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 8;
+const int kSqliteSchemaVersion = 9;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -181,6 +184,27 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     await db.execute(createMedicationNoteIndexSql);
     await retireMedicationEventType(db);
   }
+  if (from < 7 && to >= 7) {
+    await db.execute(createEventObservationSql);
+    await db.execute(createEventObservationIndexSql);
+    // ⛔ SEED FIRST, AND THIS ORDERING IS LOAD-BEARING.
+    //
+    // `ensureSeeded` normally runs from `storage_boot` — which happens AFTER
+    // `openDatabase` returns, so it has NOT run when this step executes. The
+    // migration resolves each stored string by LOOKUP and creates a row only
+    // when nothing matches, so a seed that is not yet present would turn a
+    // seeded observation into a user-defined, retired row. Silently: the value
+    // would survive, the record would still render, and the entry would simply
+    // stop being offered.
+    //
+    // Idempotent, so calling it here costs one no-op pass on a database that is
+    // already current.
+    //
+    // Same class as the v4 emoji defect — a step written for one starting point
+    // and reached from another.
+    await ensureSeeded(db);
+    await migrateObservationsToTable(db);
+  }
   if (from < 8 && to >= 8) {
     await db.execute(createConditionSql);
     await db.execute(createConditionObservationSql);
@@ -211,26 +235,14 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     // an assertion about their health invented by a migration. That was the
     // blocker in all three design reads; nullable is what resolves it.
   }
-  if (from < 7 && to >= 7) {
-    await db.execute(createEventObservationSql);
-    await db.execute(createEventObservationIndexSql);
-    // ⛔ SEED FIRST, AND THIS ORDERING IS LOAD-BEARING.
-    //
-    // `ensureSeeded` normally runs from `storage_boot` — which happens AFTER
-    // `openDatabase` returns, so it has NOT run when this step executes. The
-    // migration resolves each stored string by LOOKUP and creates a row only
-    // when nothing matches, so a seed that is not yet present would turn a
-    // seeded observation into a user-defined, retired row. Silently: the value
-    // would survive, the record would still render, and the entry would simply
-    // stop being offered.
-    //
-    // Idempotent, so calling it here costs one no-op pass on a database that is
-    // already current.
-    //
-    // Same class as the v4 emoji defect — a step written for one starting point
-    // and reached from another.
-    await ensureSeeded(db);
-    await migrateObservationsToTable(db);
+  if (from < 9 && to >= 9) {
+    await createAndSeedTriggers(db);
+    await db.execute(createEventTriggerSql);
+    await db.execute(createEventTriggerIndexSql);
+    // Seeds are guaranteed by `createAndSeedTriggers` one line up, so the
+    // lookup below can only create a row for a genuinely unknown value. Same
+    // ordering hazard the v7 step had to call `ensureSeeded` for.
+    await migrateTriggersToTable(db);
   }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
@@ -248,6 +260,9 @@ Future<void> createSchema(Database db) async {
   await db.execute(createEventObservationIndexSql);
   await db.execute(createConditionSql);
   await db.execute(createConditionObservationSql);
+  await createAndSeedTriggers(db);
+  await db.execute(createEventTriggerSql);
+  await db.execute(createEventTriggerIndexSql);
   await db.insert('schema_meta', {
     'key': kMetaSchemaVersion,
     'value': '$kSqliteSchemaVersion',

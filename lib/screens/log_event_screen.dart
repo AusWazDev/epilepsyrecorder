@@ -73,6 +73,20 @@ class _LogEventScreenState extends State<LogEventScreen> {
         rescueMedSecondDose: _rescueSecondDose,
       );
 
+  /// Values the beforehand chips offer for THIS record.
+  ///
+  /// Offerable entries plus anything the record already carries that is no
+  /// longer offered - the same rule the observation list follows, so a value
+  /// from another device keeps its chip rather than vanishing from a record
+  /// that holds it.
+  List<String> _triggerOptions() {
+    final offered =
+        Vocabularies.offerableTriggers.map((e) => e.value).toList();
+    final extra =
+        _selectedTriggers.where((v) => !offered.contains(v)).toList()..sort();
+    return <String>[...offered, ...extra];
+  }
+
   /// Values the observation chips offer for THIS record.
   ///
   /// Offerable entries, plus anything the record already carries that is no
@@ -527,15 +541,28 @@ appBar: AppBar(
                         const SizedBox(height: 4),
                         _SectionHint('Not a cause — just what was going on.'),
                         const SizedBox(height: 8),
+                        // The form CREATES as well as selects, because most
+                        // records open here rather than in the wizard - a
+                        // vocabulary a user can only extend from one screen is
+                        // one they will not find.
                         _SelectionWrap(
-                          options:  kTriggerOptions,
+                          options:  _triggerOptions(),
                           selected: _selectedTriggers,
+                          labelFor: (v) =>
+                              Vocabularies.displayFor(kTriggerTable, v),
                           onToggle: (t) => setState(() {
                             _selectedTriggers.contains(t)
                                 ? _selectedTriggers.remove(t)
                                 : _selectedTriggers.add(t);
                           }),
+                          addLabel: 'Add something else',
+                          onAdd: Vocabularies.canPersist
+                              ? () => setState(() => _addingIn = kTriggerTable)
+                              : null,
                         ),
+                        if (_addingIn == kTriggerTable)
+                          _inlineAdd(kTriggerTable, 'Add something else',
+                              (e) => _selectedTriggers.add(e.value)),
                         const SizedBox(height: 20),
 
                         // ── RESCUE MEDICATION ──

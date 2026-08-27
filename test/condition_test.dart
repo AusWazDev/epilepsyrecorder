@@ -265,7 +265,7 @@ void main() {
           .toList();
       expect(tables, contains(kConditionObservationTable));
       expect(tables, isNot(contains('condition_trigger')));
-      expect(kConditionTriggerNotBuilt, contains('const list'));
+      expect(kConditionTriggerStatus, contains('buildable'));
       await db.close();
     });
   });

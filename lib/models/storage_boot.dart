@@ -92,6 +92,11 @@ class StorageBoot {
       // See `ensureSeeded` for the build this cost.
       try {
         await ensureSeeded(db);
+        // Separate call, because the trigger table is created by the v9 step
+        // and is NOT in kVocabularyTables - see kTriggerTable for why adding
+        // it there would make the v4 emoji ALTER walk a table that does not
+        // exist yet.
+        await ensureTriggersSeeded(db);
       } catch (_) {
         // A seed that fails must not stop the app booting. The vocabulary
         // falls back to the shipped lists below.

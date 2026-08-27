@@ -79,19 +79,20 @@ const String createConditionObservationSql =
     'observation_id INTEGER NOT NULL, '
     'sort_order INTEGER NOT NULL)';
 
-/// ⛔ **`condition_trigger` IS NOT BUILT, AND IT CANNOT BE.**
+/// ✅ **`condition_trigger` IS NOW BUILDABLE — and still is not built.**
 ///
-/// DATA-MODEL.md names it beside `condition_observation` as though the two were
-/// symmetrical. They are not: observations became a table, but the beforehand
-/// field is still `kTriggerOptions` — a `const List<String>` in
-/// `constants.dart` with no rows and no ids to map to.
+/// It was blocked because the beforehand field was a `const List<String>` with
+/// no rows and no ids to map to. Schema v9 made it a vocabulary table, so the
+/// prerequisite is met.
 ///
-/// **Triggers-as-a-vocabulary is an undocumented prerequisite** for that half
-/// of the model. Recorded here rather than left as an absence someone
-/// rediscovers.
-const String kConditionTriggerNotBuilt =
-    'condition_trigger requires triggers to be a vocabulary table. '
-    'They are still a const list.';
+/// ⛔ **BUILDABLE IS NOT USEFUL.** Relevance mapping is a no-op at one
+/// condition — established last pass and unchanged by this one — so
+/// `condition_trigger` would be a second table nothing reads, mapping a
+/// vocabulary nothing orders. It waits for a second condition, which is a user
+/// event rather than a build decision.
+const String kConditionTriggerStatus =
+    'condition_trigger is buildable since v9 made triggers a vocabulary. '
+    'Not built: relevance mapping is a no-op at one condition.';
 
 Condition? conditionFromRow(Map<String, Object?> row) {
   final id = row['id'];

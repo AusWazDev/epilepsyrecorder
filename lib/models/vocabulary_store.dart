@@ -32,14 +32,18 @@ class Vocabularies {
     ..._fromSeeds(mangledLegacyObservations(), idBase: 2000, sortBase: 2000),
   ];
 
+  static List<VocabularyEntry> _triggers = _fromSeeds(kSeedTriggers);
+
   static Database? _db;
 
   /// Every entry, active and retired, in sort order.
   static List<VocabularyEntry> get eventTypes => _eventTypes;
+  static List<VocabularyEntry> get triggers => _triggers;
   static List<VocabularyEntry> get observations => _observations;
 
   /// What a picker offers: active only, "Other" last.
   static List<VocabularyEntry> get offerableEventTypes => offerable(_eventTypes);
+  static List<VocabularyEntry> get offerableTriggers => offerable(_triggers);
   static List<VocabularyEntry> get offerableObservations =>
       offerable(_observations);
 
@@ -87,6 +91,8 @@ class Vocabularies {
       // run — a bug — and rendering nothing would turn that bug into an app with
       // no chips at all.
       if (types.isNotEmpty) _eventTypes = types;
+      final trg = await loadVocabulary(db, kTriggerTable);
+      if (trg.isNotEmpty) _triggers = trg;
       if (obs.isNotEmpty) _observations = obs;
     } catch (_) {
       // Defaults stand.
@@ -97,9 +103,11 @@ class Vocabularies {
   static void debugSet({
     List<VocabularyEntry>? eventTypes,
     List<VocabularyEntry>? observations,
+    List<VocabularyEntry>? triggers,
     Database? db,
   }) {
     if (eventTypes != null) _eventTypes = eventTypes;
+    if (triggers != null) _triggers = triggers;
     if (observations != null) _observations = observations;
     _db = db;
   }
@@ -108,6 +116,7 @@ class Vocabularies {
   /// leak into the next.
   static void debugReset() {
     _eventTypes = _fromSeeds(kSeedEventTypes);
+    _triggers = _fromSeeds(kSeedTriggers);
     _observations = <VocabularyEntry>[
       ..._fromSeeds(kSeedObservations),
       ..._fromSeeds(kLegacyObservations, idBase: 1000, sortBase: 1000),
@@ -130,7 +139,11 @@ class Vocabularies {
 
     final db = _db;
     if (db == null) {
-      final list = table == kEventTypeTable ? _eventTypes : _observations;
+      final list = table == kEventTypeTable
+          ? _eventTypes
+          : table == kTriggerTable
+              ? _triggers
+              : _observations;
       for (final e in list) {
         if (e.label.toLowerCase() == text.toLowerCase()) return e;
       }
@@ -145,6 +158,8 @@ class Vocabularies {
       );
       if (table == kEventTypeTable) {
         _eventTypes = <VocabularyEntry>[..._eventTypes, entry];
+      } else if (table == kTriggerTable) {
+        _triggers = <VocabularyEntry>[..._triggers, entry];
       } else {
         _observations = <VocabularyEntry>[..._observations, entry];
       }
@@ -161,7 +176,14 @@ class Vocabularies {
   /// NO GLYPH. This is what a RECORD shows — History rows, the CSV, the search
   /// haystack, the wizard summary. Use [displayFor] for a picker.
   static String labelFor(String table, String value) => labelForValue(
-      table == kEventTypeTable ? _eventTypes : _observations, value);
+      _listFor(table), value);
+
+  static List<VocabularyEntry> _listFor(String table) =>
+      table == kEventTypeTable
+          ? _eventTypes
+          : table == kTriggerTable
+              ? _triggers
+              : _observations;
 
   /// What a PICKER shows: the glyph and the label.
   ///
@@ -175,7 +197,7 @@ class Vocabularies {
   /// does — a record from another device's vocabulary shows its own string
   /// rather than a wrong one.
   static String displayFor(String table, String value) {
-    final list = table == kEventTypeTable ? _eventTypes : _observations;
+    final list = _listFor(table);
     for (final e in list) {
       if (e.value == value) return e.display;
     }

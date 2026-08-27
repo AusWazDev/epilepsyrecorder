@@ -487,7 +487,20 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         children: [
           _heading('What was happening beforehand?',
               'Anything you noticed. This is not a cause — just what was going on.'),
-          _multiChips(kTriggerOptions, _triggers),
+          // ⚠️ THE ADD PROMPT MUST NOT REINTRODUCE CAUSATION. The heading
+          // asks what was happening and the hint denies cause explicitly; an
+          // affordance reading "add a trigger" would undo both in three words,
+          // in the one place a user is about to type something they will see
+          // again on every future record.
+          //
+          // "Add something else" matches the heading's grammar - it completes
+          // "what was happening beforehand?" and claims nothing.
+          _vocabMultiChips(
+            table: kTriggerTable,
+            entries: Vocabularies.offerableTriggers,
+            selected: _triggers,
+            addPrompt: 'Add something else',
+          ),
         ],
       );
 

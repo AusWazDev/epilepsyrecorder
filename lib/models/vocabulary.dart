@@ -845,3 +845,134 @@ Future<int> migrateObservationsToTable(DatabaseExecutor db) async {
   }
   return links;
 }
+
+/// The beforehand vocabulary. The LAST field to stop being a const list.
+///
+/// ## ⚠️ NOT ADDED TO [kVocabularyTables], DELIBERATELY
+///
+/// That constant is walked by the v4 step, which ALTERs every table in it to
+/// add `emoji`. A database upgrading from v3 would then ALTER a table that v9
+/// has not created yet — the fixture trap this project has now paid for four
+/// times. This table is created and seeded by its own step and nothing loops
+/// over it.
+const String kTriggerTable = 'trigger_option';
+
+/// ⛔ **THREE SUB-CASES BECOME TWO HERE, AND THAT IS A FACT FROM THE DATA
+/// RATHER THAN AN ASSUMPTION.**
+///
+/// Observations had seeded / legacy-clean / legacy-MIS-DECODED, and the live
+/// case was the third — `ðµ Confused`, a Latin-1 mis-decode of an emoji that
+/// was inside the stored value.
+///
+/// Checked against the device before building rather than reasoned about:
+///
+///     every stored trigger string     'Poor sleep' x1, ASCII only
+///     any byte above U+007F           NONE
+///     the seven shipped options       all ASCII
+///     stored values not in the list   NONE
+///
+/// **No trigger option has ever carried a glyph, so there was never anything to
+/// mis-decode.** There is no retired set either — these seven strings have
+/// never changed, so no legacy-clean case exists. Only seeded, and unknown.
+const List<VocabularySeed> kSeedTriggers = <VocabularySeed>[
+  VocabularySeed('Stress', 'Stress'),
+  VocabularySeed('Poor sleep', 'Poor sleep'),
+  VocabularySeed('Missed medication', 'Missed medication'),
+  VocabularySeed('Alcohol', 'Alcohol'),
+  VocabularySeed('Flashing lights', 'Flashing lights'),
+  VocabularySeed('Illness', 'Illness'),
+  VocabularySeed('Unknown', 'Unknown'),
+];
+
+/// Links an event to trigger rows. The normalised form of `triggers_json`.
+///
+/// ## ⛔ ADDITIVE, EXACTLY LIKE `event_observation`
+///
+/// `triggers_json` is **kept and stays authoritative**. This table is populated
+/// alongside it, never instead of it.
+///
+/// A once-only irreversible migration over a medical history did not need to be
+/// irreversible. This one can be re-run, checked against its source, and
+/// reverted by dropping a table nothing reads yet. When `condition_trigger`
+/// finally reads it, dropping the column becomes a decision with a consumer
+/// behind it rather than a tidy-up.
+const String kEventTriggerTable = 'event_trigger';
+
+const String createEventTriggerSql = 'CREATE TABLE $kEventTriggerTable ('
+    'event_id TEXT NOT NULL, '
+    'trigger_id INTEGER NOT NULL, '
+    'position INTEGER NOT NULL)';
+
+const String createEventTriggerIndexSql =
+    'CREATE INDEX idx_event_trigger_event ON $kEventTriggerTable(event_id)';
+
+/// Creates and seeds the trigger vocabulary. Idempotent.
+Future<void> createAndSeedTriggers(DatabaseExecutor db) async {
+  await db.execute(createVocabularySql(kTriggerTable));
+  await ensureTriggersSeeded(db);
+}
+
+/// Idempotent seed, safe to run on every open once the table exists.
+Future<void> ensureTriggersSeeded(DatabaseExecutor db) async {
+  await seedVocabulary(db, kTriggerTable, kSeedTriggers);
+  await syncSeededPresentation(db, kTriggerTable, kSeedTriggers);
+}
+
+/// Finds the row for a stored trigger string, creating one if unknown.
+///
+/// Only TWO cases, per [kSeedTriggers]: seeded (resolve) and unknown (create).
+/// An unknown value is stored **verbatim**, `is_active: 0` — recorded but not
+/// offered, which is what a value from another device's vocabulary is.
+Future<int> triggerRowFor(DatabaseExecutor db, String value) async {
+  final existing = await db.query(kTriggerTable,
+      columns: <String>['id'],
+      where: 'value = ?',
+      whereArgs: <Object?>[value],
+      limit: 1);
+  if (existing.isNotEmpty) return existing.first['id']! as int;
+
+  return db.insert(kTriggerTable, <String, Object?>{
+    'condition_id': null,
+    'value': value,
+    'label': value,
+    'is_seeded': 0,
+    'is_active': 0,
+    'is_protected': 0,
+    'sort_order': 9000,
+  });
+}
+
+/// Populates [kEventTriggerTable] from every event's `triggers_json`.
+///
+/// ⚠️ Reads the column and writes **nothing** back to `event`. That is what
+/// makes it reversible.
+Future<int> migrateTriggersToTable(DatabaseExecutor db) async {
+  await db.delete(kEventTriggerTable);
+  final rows = await db.query('event', columns: <String>['id', 'triggers_json']);
+  var links = 0;
+  for (final r in rows) {
+    final id = r['id'];
+    if (id is! String || id.isEmpty) continue;
+    final raw = r['triggers_json'];
+    if (raw is! String || raw.isEmpty) continue;
+    List<dynamic> decoded;
+    try {
+      final d = jsonDecode(raw);
+      if (d is! List) continue;
+      decoded = d;
+    } catch (_) {
+      continue;
+    }
+    for (var i = 0; i < decoded.length; i++) {
+      final value = decoded[i].toString();
+      if (value.isEmpty) continue;
+      await db.insert(kEventTriggerTable, <String, Object?>{
+        'event_id': id,
+        'trigger_id': await triggerRowFor(db, value),
+        'position': i,
+      });
+      links++;
+    }
+  }
+  return links;
+}

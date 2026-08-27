@@ -114,6 +114,21 @@ const List<String> kFeelingsOptions = [
   '😣 In pain',
 ];
 
+/// ⚠️ **NO LONGER THE PICKER'S SOURCE. It is the CSV's CANONICAL ORDER, and
+/// nothing else.**
+///
+/// The beforehand field became a vocabulary table in schema v9, so the chips on
+/// both screens now come from `Vocabularies.offerableTriggers`. This list
+/// survives for one job: `csvOrderedTriggers` sorts the seeded seven into a
+/// stable order so the column is comparable down the page, with anything
+/// user-defined appended.
+///
+/// ⛔ **It MUST stay in step with `kSeedTriggers`** — same strings, same order.
+/// Two lists holding the same values is a drift risk, and it is deliberate
+/// rather than an oversight: making the CSV order depend on the live
+/// vocabulary would let a user's additions REORDER the historical column.
+/// `trigger_vocabulary_test` pins the two together so the duplication cannot
+/// rot silently.
 const List<String> kTriggerOptions = [
   'Stress',
   'Poor sleep',
