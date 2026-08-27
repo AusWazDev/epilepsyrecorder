@@ -25,6 +25,7 @@ import '../screens/help_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../screens/your_data_screen.dart';
+import '../screens/walkthrough_screen.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 
@@ -136,7 +137,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           await Future.delayed(const Duration(milliseconds: 250));
         }
       }
+      await _maybeShowWalkthrough();
     });
+  }
+
+  /// Shows the first-run walkthrough, once.
+  ///
+  /// ## ⚠️ ONE DECISION POINT, DELIBERATELY, AND THIS IS WHY IT LIVES HERE
+  ///
+  /// Three separate paths reach the app: `main.dart`'s `home:`, the
+  /// disclaimer's accept handler, and `_SplashRedirect`. All three route to
+  /// THIS screen. Gating in any one of them would leave the other two as
+  /// bypasses, and a fourth path added later would bypass all three.
+  ///
+  /// ## Why it is PUSHED OVER a working home screen rather than replacing it
+  ///
+  /// The rule is "nothing gated - force-quitting mid-walkthrough lands in a
+  /// working app, not back at step one". Pushing over a loaded HomeScreen
+  /// makes that structural rather than a promise: the app is already behind
+  /// it, and dismissing at any point reveals it. The seen-flag is written on
+  /// presentation for the same reason.
+  ///
+  /// After the disclaimer, never before it - this runs from HomeScreen, which
+  /// the disclaimer gate has already admitted the user to.
+  Future<void> _maybeShowWalkthrough() async {
+    if (!await shouldShowWalkthrough()) return;
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const WalkthroughScreen()),
+    );
   }
 
   /// Opens the newest record's edit screen, at most once at a time.
@@ -926,16 +955,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             onHistory: _openHistory,
                           ),
 
-                        if (_loaded && _records.isEmpty)
-                          _GettingStartedCard(
-                            onHelpTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const HelpScreen(),
-                              ),
-                            ),
-                          ),
-
-                        if (_loaded && _records.isNotEmpty)
+                        // ⚠️ THE GETTING STARTED CARD IS GONE, and the
+                        // walkthrough is what replaced it. Removed 27 August
+                        // 2026 with the walkthrough, exactly as the spec
+                        // always said it would be.
+                        //
+                        // It was a live defect, and an invisible one: it
+                        // rendered only when `_records.isEmpty`, so a device
+                        // with any history never showed it and every fault in
+                        // it landed exclusively on a first-time user. Its
+                        // "Quick record" row had decayed into a TRUNCATED
+                        // PREFIX of Help's, dropping "nothing else is recorded
+                        // and nothing is guessed" - the half the nullable work
+                        // added. Its "Record with details" row enumerated four
+                        // fields for a button that opens a four-step wizard.
+                        // Its export path had moved behind Your data.
+                        //
+                        // ONE SOURCE OF TRUTH PER JOB: the walkthrough
+                        // introduces, Help answers questions. Three texts
+                        // describing the same features is what produced all of
+                        // the above.
+                        //
+                        // The Help link card now shows in BOTH states - an
+                        // empty history previously got the Getting Started
+                        // card and would otherwise be left with nothing.
+                        if (_loaded)
                           _HelpLinkCard(
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
@@ -1627,84 +1671,6 @@ class _LastEventCard extends StatelessWidget {
 /* ===========================
    GETTING STARTED CARD
    =========================== */
-
-class _GettingStartedCard extends StatelessWidget {
-  final VoidCallback onHelpTap;
-  const _GettingStartedCard({required this.onHelpTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      decoration: BoxDecoration(
-        color:        MERColours.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.border, width: 0.5),
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-        ),
-        child: ExpansionTile(
-          tilePadding:     const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          title: Text(
-            'GETTING STARTED',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          iconColor:         MERColours.textMuted,
-          collapsedIconColor: MERColours.textMuted,
-          children: [
-            const Divider(height: 1, thickness: 0.5),
-            const SizedBox(height: 14),
-            _HowToRow(
-              icon:  Icons.touch_app_outlined,
-              title: 'Quick record',
-              body:  'Tap the red Record Event button to instantly log an event with the current timestamp.',
-            ),
-            const SizedBox(height: 12),
-            _HowToRow(
-              icon:  Icons.tune,
-              title: 'Record with details',
-              body:  'Add notes, duration, what was happening beforehand, and severity using the blue button. You can add your own options to any list.',
-            ),
-            const SizedBox(height: 12),
-            _HowToRow(
-              icon:  Icons.more_vert,
-              title: 'History & export',
-              body:  'Use the ⋮ menu in the top right to view your event history or export as CSV.',
-            ),
-            const SizedBox(height: 12),
-            Divider(height: 1, thickness: 0.5, color: MERColours.border),
-            InkWell(
-              onTap:        onHelpTap,
-              borderRadius: BorderRadius.circular(6),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  children: [
-                    Icon(Icons.help_outline, size: 16, color: MERColours.textMuted),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'More Help',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: MERColours.textMuted,
-                        ),
-                      ),
-                    ),
-                    Icon(Icons.chevron_right, size: 16, color: MERColours.textMuted),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _HelpLinkCard extends StatelessWidget {
   final VoidCallback onTap;

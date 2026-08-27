@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../constants.dart';
 import '../theme/mer_theme.dart';
+import 'walkthrough_screen.dart';
 
 class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});
@@ -421,7 +422,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
               ),
             if (Platform.isWindows) const SizedBox(height: 12),
 
-            const _Section(
+            _Section(
               title: 'GETTING HELP',
               children: [
                 _HelpRow(
@@ -440,6 +441,28 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // of the same fact drift, and About already carries the
                   // version, the privacy policy and the terms as live links.
                   body:   'The About screen shows which version you are running and links to the privacy policy and terms. Open it from the menu in the top right.',
+                ),
+                // THE WALKTHROUGH'S ONE RE-RUN ENTRY POINT, and one is
+                // deliberate: not About, not Your data. Getting help is where
+                // someone goes when they want to be shown something again.
+                //
+                // Replaying does NOT re-write the seen flag - `markSeen: false`
+                // - because by this point it is already set, and a replay is
+                // not what should decide it.
+                //
+                // On Windows this offers the FOUR-step version, since step 2
+                // describes a notification path Windows does not have. Stated
+                // rather than left to fall out of a platform conditional.
+                _HelpRow(
+                  icon:   Icons.slideshow_outlined,
+                  title:  'Replay the introduction',
+                  body:   'The short introduction shown when you first opened MER — what the red button records, the notification, your history, and where your data lives.',
+                  onTap:  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const WalkthroughScreen(markSeen: false),
+                    ),
+                  ),
                   isLast: true,
                 ),
               ],
@@ -688,20 +711,25 @@ class _HelpRow extends StatelessWidget {
   final String    body;
   final bool      isLast;
 
+  /// Optional. A row with one becomes TAPPABLE and grows a chevron.
+  ///
+  /// Every other row in Help is read-only prose, so the affordance has to be
+  /// visible: without the chevron a tappable row is indistinguishable from the
+  /// thirty around it that do nothing.
+  final VoidCallback? onTap;
+
   const _HelpRow({
     required this.icon,
     this.iconColor,
     required this.title,
     required this.body,
     this.isLast   = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    final row = Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, size: 18,
@@ -727,8 +755,25 @@ class _HelpRow extends StatelessWidget {
                 ],
               ),
             ),
+            if (onTap != null)
+              const Icon(Icons.chevron_right,
+                  size: 18, color: MERColours.textMuted),
           ],
-        ),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (onTap == null)
+          row
+        else
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: row,
+            ),
+          ),
         if (!isLast) ...[
           const SizedBox(height: 10),
           const Divider(height: 1, thickness: 0.5, color: MERColours.border),

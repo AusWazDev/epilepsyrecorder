@@ -10,6 +10,20 @@ const String kCompanyName       = 'Notiva';
 // Any user who accepted an older version will be shown the screen again.
 const String kDisclaimerVersion = '1.1';
 
+/// Whether the first-run walkthrough has been shown.
+///
+/// ⛔ **DELIBERATELY SEPARATE FROM [kDisclaimerVersion], and it must stay
+/// separate.** The disclaimer gate is a VERSION COMPARISON, so bumping that
+/// string sends every existing user back through the disclaimer. If the
+/// walkthrough shared that signal, a disclaimer bump would replay a five-step
+/// introduction for someone with two years of history.
+///
+/// A plain bool: nothing to compare, nothing to bump. The `_v1` is a naming
+/// convention, not a mechanism - if the walkthrough is ever rewritten enough to
+/// be worth re-showing, that is a NEW key, decided deliberately, not a bump of
+/// this one.
+const String kWalkthroughSeenKey = 'mer_walkthrough_seen_v1';
+
 // Storage key for the saved event list. Referenced by EventStore and by the
 // notification service. NEVER change this string — it would orphan every
 // record already on a user's device.
