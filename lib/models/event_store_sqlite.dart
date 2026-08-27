@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import 'event_record.dart';
+import 'condition.dart';
 import 'medication_note.dart';
 import 'vocabulary.dart';
 
@@ -35,12 +36,16 @@ import 'vocabulary.dart';
 /// 7 since the observations table: `event_observation`, populated from every
 ///   event's `feelings_json`. ADDITIVE — the column is kept and stays
 ///   authoritative, so the migration is re-runnable and reversible.
+/// 8 since conditions: the `condition` and `condition_observation` tables, and
+///   `medication_note.condition_id`. Created EMPTY and assigned to NOTHING —
+///   `event.condition_id` and `event_type.condition_id` have existed since v3
+///   and stay NULL on all 72 records.
 ///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 7;
+const int kSqliteSchemaVersion = 8;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -176,6 +181,36 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     await db.execute(createMedicationNoteIndexSql);
     await retireMedicationEventType(db);
   }
+  if (from < 8 && to >= 8) {
+    await db.execute(createConditionSql);
+    await db.execute(createConditionObservationSql);
+    // ⛔ TWO-SIDED BOUND, AND I WALKED INTO THE v4 TRAP TO LEARN IT AGAIN.
+    //
+    // `createMedicationNoteSql` emits the CURRENT column list, so the v6 step
+    // above creates that table ALREADY CARRYING `condition_id`. A one-sided
+    // `from < 8` therefore threw `duplicate column name: condition_id` for
+    // every database below v6 - which is every fixture in the suite and every
+    // real device that has not yet seen v6.
+    //
+    // Only a database that reached v6 or v7 under an OLDER BINARY has the
+    // table without the column. That is the range the ALTER is for.
+    //
+    // The v4 comment forty lines up describes this exact failure. Proximity is
+    // not propagation: reading it while editing beside it did not stop me
+    // repeating it, and the SUITE is what caught it - twenty-one tests, not
+    // one, which is why a fixture that walks from an old version earns its
+    // keep.
+    if (from >= 6 && from < 8) {
+      await db.execute(
+          'ALTER TABLE $kMedicationNoteTable ADD COLUMN condition_id INTEGER');
+    }
+    // ⛔ AND NOTHING ELSE. No condition is created, none is seeded, and no
+    // record is assigned one. `event.condition_id` stays NULL on all 72 rows.
+    //
+    // Naming a condition on someone's behalf and applying it retroactively is
+    // an assertion about their health invented by a migration. That was the
+    // blocker in all three design reads; nullable is what resolves it.
+  }
   if (from < 7 && to >= 7) {
     await db.execute(createEventObservationSql);
     await db.execute(createEventObservationIndexSql);
@@ -211,6 +246,8 @@ Future<void> createSchema(Database db) async {
   await retireMedicationEventType(db);
   await db.execute(createEventObservationSql);
   await db.execute(createEventObservationIndexSql);
+  await db.execute(createConditionSql);
+  await db.execute(createConditionObservationSql);
   await db.insert('schema_meta', {
     'key': kMetaSchemaVersion,
     'value': '$kSqliteSchemaVersion',

@@ -55,6 +55,17 @@ void main() {
             await d.execute(createSchemaMetaSql);
             await d.execute(createEventSql);
             await createAndSeedVocabularies(d);
+            // ⚠️ AND medication_note, which a real v6 database HAS. Omitted at
+            // first because nothing here needed it — and then the v8 step
+            // ALTERed it and hit `no such table`. Third time this lesson has
+            // been paid for: a fixture that is not the shape it claims to be
+            // tests a database that exists nowhere.
+            await d.execute('CREATE TABLE medication_note ('
+                'id TEXT NOT NULL, '
+                'occurred_at TEXT NOT NULL, '
+                'logged_at TEXT NOT NULL, '
+                'kind TEXT NOT NULL, '
+                'notes TEXT)');
           },
         ));
     for (var i = 0; i < feelingsPerEvent.length; i++) {

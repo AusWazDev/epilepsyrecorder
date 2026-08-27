@@ -83,8 +83,12 @@ MedicationDeviation? medicationDeviationFromName(Object? raw) {
 
 const String kMedicationNoteTable = 'medication_note';
 
-/// ⚠️ **NO `condition_id`, deliberately, and this is a departure from
-/// DATA-MODEL.md §2 worth stating rather than leaving to be noticed.**
+/// ✅ **`condition_id` ARRIVED IN v8, one day after this table was created,
+/// and the deferral cost exactly what was predicted: nothing.**
+///
+/// It was left out deliberately when the table was new, on the reasoning that
+/// `ALTER TABLE ADD COLUMN` on an empty table is free where the same change on
+/// a populated one is not. The table had ONE row when the column landed.
 ///
 /// The model lists a nullable `condition_id` here, and `event` carries one for
 /// exactly that reason — built ahead of a purpose so the expansion stays
@@ -103,7 +107,9 @@ const String createMedicationNoteSql = 'CREATE TABLE $kMedicationNoteTable ('
     // TEXT holding MedicationDeviation.name, not an integer ordinal. Readable
     // in a raw dump and immune to the enum being reordered.
     'kind TEXT NOT NULL, '
-    'notes TEXT)';
+    'notes TEXT, '
+    // Added in v8. Nullable, and NULL on the one row that predates it.
+    'condition_id INTEGER)';
 
 const String createMedicationNoteIndexSql =
     'CREATE INDEX idx_medication_note_occurred '

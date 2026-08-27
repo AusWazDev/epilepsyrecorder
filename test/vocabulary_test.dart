@@ -271,17 +271,27 @@ void main() {
       await db.close();
     });
 
-    test('9. and NO condition table is created', () async {
-      // The stage boundary, asserted rather than assumed. Building the table
-      // now would make it inert AND make the seed question live.
+    test('9. ⚠️ the condition table now EXISTS, and is still empty', () async {
+      // REWRITTEN 28 August 2026. This asserted that NO condition table was
+      // created — the v3-era decision to defer the whole concept until a screen
+      // existed where someone could say what they track.
+      //
+      // The table arrived in v8. What has NOT changed is the thing the original
+      // test was really protecting: it is created EMPTY, and no record is
+      // assigned to anything. That is the assertion worth keeping, so it moved
+      // here rather than being deleted with the table's absence.
       final db = await openFresh();
-      final tables = await tablesOf(db);
+      final tables = (await db.rawQuery(
+              "SELECT name FROM sqlite_master WHERE type='table'"))
+          .map((r) => r['name'])
+          .toList();
 
-      expect(tables, contains(kEventTypeTable));
-      expect(tables, contains(kObservationTable));
-      expect(tables, isNot(contains('condition')),
-          reason: 'deferred until a screen exists where someone says what they '
-              'track');
+      expect(tables, contains('condition'));
+      expect(
+          (await db.rawQuery('SELECT COUNT(*) AS n FROM condition'))
+              .single['n'],
+          0,
+          reason: 'seeding one would name a condition nobody chose');
       await db.close();
     });
 

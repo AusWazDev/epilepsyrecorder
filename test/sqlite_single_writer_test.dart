@@ -46,6 +46,10 @@ const Set<String> kStorageLayer = <String>{
   // medication screen writing medication rows is exactly that shape — so the
   // screen changed, not the list.
   'lib/models/medication_note.dart',
+  // ADDED 28 August 2026 with conditions, for the same reason: this file owns
+  // the `condition` and `condition_observation` tables and provides the
+  // ConditionStore a screen would be given instead of a Database.
+  'lib/models/condition.dart',
 };
 
 const String kSqliteImportMarker = 'package:sqflite';
