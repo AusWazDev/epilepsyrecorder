@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:sqflite_common/sqlite_api.dart';
 
 /// User-extensible vocabularies: event types and observations.
@@ -710,4 +711,137 @@ Future<void> retireMedicationEventType(DatabaseExecutor db) async {
     where: 'value = ?',
     whereArgs: <Object?>[kMedicationValue],
   );
+}
+
+/// Links an event to an observation row. The normalised form of
+/// `event.feelings_json`.
+///
+/// ## ⛔ THIS IS A MIGRATION OF STORED DATA, AND IT IS ADDITIVE ON PURPOSE
+///
+/// `feelings_json` is **kept and stays authoritative**. This table is populated
+/// alongside it, not instead of it.
+///
+/// That is not timidity, it is the only version that satisfies the rule this
+/// project has held throughout: **nothing rewrites what a user recorded.** A
+/// migration that dropped the column would have to be right first time, on a
+/// once-only pass, over a medical history, with the previous value gone. An
+/// additive one can be re-run, checked against the source, and reverted by
+/// dropping a table nothing reads yet.
+///
+/// **What it buys:** `condition_observation` in DATA-MODEL.md §2 maps relevance
+/// per condition, and it needs observation ROWS to point at. That mapping is
+/// the next pass. When something finally READS this table, dropping
+/// `feelings_json` becomes a decision with a consumer behind it rather than a
+/// tidy-up.
+const String kEventObservationTable = 'event_observation';
+
+const String createEventObservationSql =
+    'CREATE TABLE $kEventObservationTable ('
+    // The event's `id`, not its `ordinal`. Ordinal is a position in a rewritten
+    // list and moves on every save; id is the record's identity.
+    'event_id TEXT NOT NULL, '
+    'observation_id INTEGER NOT NULL, '
+    // Order within the record, so "Confused; Tired" does not become
+    // "Tired; Confused" if this ever becomes the read path.
+    'position INTEGER NOT NULL)';
+
+const String createEventObservationIndexSql =
+    'CREATE INDEX idx_event_observation_event '
+    'ON $kEventObservationTable(event_id)';
+
+/// Finds the vocabulary row for a stored string, creating one if it is unknown.
+///
+/// ## ⛔ THE THREE SUB-CASES, AND WHY THE THIRD IS THE POINT
+///
+/// A stored observation string is one of four things, and on the tablet the
+/// live one is the third:
+///
+///   1. **SEEDED** — one of the revised twelve. Matches an active row.
+///   2. **LEGACY, CLEAN** — `😵 Confused`. Already a row, `is_active: 0`,
+///      carried by [kLegacyObservations] so records still render.
+///   3. **LEGACY, MIS-DECODED** — `ðµ Confused`, the UTF-8 bytes of the emoji
+///      read back as Latin-1. Already a row, via [mangledLegacyObservations].
+///      **This is 3 of the 72 records on the device and ALL of its observation
+///      data.** A migration handling only 1 and 2 would orphan every
+///      observation the user has, and the failure would look like the mojibake
+///      that was already found and fixed once — the worst kind of regression to
+///      reintroduce.
+///   4. **UNKNOWN** — anything else: a user entry from a device whose
+///      vocabulary this install does not have, or a hand-edited backup.
+///
+/// Cases 1-3 all resolve by lookup, because all three are already rows. Only 4
+/// creates anything.
+///
+/// ## What a created row looks like, and why
+///
+/// `value` is **the stored string, verbatim**. Never normalised, never
+/// re-encoded, never repaired. `is_active: 0` because it was RECORDED but is
+/// not OFFERED — the same state the retired legacy set is in, which is exactly
+/// what it is: a value from a vocabulary this install does not have.
+Future<int> observationRowFor(DatabaseExecutor db, String value) async {
+  final existing = await db.query(
+    kObservationTable,
+    columns: <String>['id'],
+    where: 'value = ?',
+    whereArgs: <Object?>[value],
+    limit: 1,
+  );
+  if (existing.isNotEmpty) return existing.first['id']! as int;
+
+  return db.insert(kObservationTable, <String, Object?>{
+    'condition_id': null,
+    'value': value,
+    // The label is the value. There is nothing else honest to use: this install
+    // has never seen the string, so it has no nicer name for it.
+    'label': value,
+    'is_seeded': 0,
+    'is_active': 0,
+    'is_protected': 0,
+    'sort_order': 9000,
+  });
+}
+
+/// Populates [kEventObservationTable] from every event's `feelings_json`.
+///
+/// **Idempotent** — clears the table first, so a re-run rebuilds rather than
+/// duplicating. Safe to call from both `onCreate` and `onUpgrade`.
+///
+/// ⚠️ **Reads `feelings_json` and writes NOTHING back to `event`.** The column
+/// is untouched, which is what makes this reversible.
+Future<int> migrateObservationsToTable(DatabaseExecutor db) async {
+  await db.delete(kEventObservationTable);
+
+  final rows = await db.query('event', columns: <String>['id', 'feelings_json']);
+  var links = 0;
+  for (final r in rows) {
+    final id = r['id'];
+    if (id is! String || id.isEmpty) continue;
+    final raw = r['feelings_json'];
+    if (raw is! String || raw.isEmpty) continue;
+
+    List<dynamic> decoded;
+    try {
+      final d = jsonDecode(raw);
+      if (d is! List) continue;
+      decoded = d;
+    } catch (_) {
+      // A record whose JSON cannot be read keeps its column and gains no rows.
+      // Skipping is right: the source of truth is unharmed and the gap is
+      // visible as a count mismatch rather than as invented data.
+      continue;
+    }
+
+    for (var i = 0; i < decoded.length; i++) {
+      final value = decoded[i].toString();
+      if (value.isEmpty) continue;
+      final obsId = await observationRowFor(db, value);
+      await db.insert(kEventObservationTable, <String, Object?>{
+        'event_id': id,
+        'observation_id': obsId,
+        'position': i,
+      });
+      links++;
+    }
+  }
+  return links;
 }

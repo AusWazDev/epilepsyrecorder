@@ -32,12 +32,15 @@ import 'vocabulary.dart';
 /// 6 since regular medication: the `medication_note` table, and `medication`
 ///   retired as an event type. A SEPARATE RECORD KIND — the stream the bump
 ///   above deliberately excluded.
+/// 7 since the observations table: `event_observation`, populated from every
+///   event's `feelings_json`. ADDITIVE — the column is kept and stays
+///   authoritative, so the migration is re-runnable and reversible.
 ///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
 /// records predate the concept.
-const int kSqliteSchemaVersion = 6;
+const int kSqliteSchemaVersion = 7;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -173,6 +176,27 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     await db.execute(createMedicationNoteIndexSql);
     await retireMedicationEventType(db);
   }
+  if (from < 7 && to >= 7) {
+    await db.execute(createEventObservationSql);
+    await db.execute(createEventObservationIndexSql);
+    // ⛔ SEED FIRST, AND THIS ORDERING IS LOAD-BEARING.
+    //
+    // `ensureSeeded` normally runs from `storage_boot` — which happens AFTER
+    // `openDatabase` returns, so it has NOT run when this step executes. The
+    // migration resolves each stored string by LOOKUP and creates a row only
+    // when nothing matches, so a seed that is not yet present would turn a
+    // seeded observation into a user-defined, retired row. Silently: the value
+    // would survive, the record would still render, and the entry would simply
+    // stop being offered.
+    //
+    // Idempotent, so calling it here costs one no-op pass on a database that is
+    // already current.
+    //
+    // Same class as the v4 emoji defect — a step written for one starting point
+    // and reached from another.
+    await ensureSeeded(db);
+    await migrateObservationsToTable(db);
+  }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
 
@@ -185,6 +209,8 @@ Future<void> createSchema(Database db) async {
   await db.execute(createMedicationNoteSql);
   await db.execute(createMedicationNoteIndexSql);
   await retireMedicationEventType(db);
+  await db.execute(createEventObservationSql);
+  await db.execute(createEventObservationIndexSql);
   await db.insert('schema_meta', {
     'key': kMetaSchemaVersion,
     'value': '$kSqliteSchemaVersion',
