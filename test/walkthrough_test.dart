@@ -227,7 +227,7 @@ void main() {
   });
 
   group('THE SEEN FLAG', () {
-    testWidgets('9. is written on PRESENTATION, not on completion',
+    testWidgets('9. records the VERSION, on PRESENTATION not completion',
         (tester) async {
       // ⛔ THE UNGATED RULE, MEASURED. Written at the end instead, someone who
       // force-quits on step 3 meets the walkthrough again every launch until
@@ -236,53 +236,97 @@ void main() {
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(kWalkthroughSeenKey), isTrue,
+      expect(prefs.getString(kWalkthroughSeenVersionKey), kWalkthroughVersion,
           reason: 'set on step ONE, before anything was completed');
       expect(await shouldShowWalkthrough(), isFalse);
     });
 
     testWidgets('10. a re-run does NOT write it', (tester) async {
-      // Replaying from Help is not what should decide that it has been seen —
-      // and by then it already has been.
       SharedPreferences.setMockInitialValues(<String, Object>{});
       await pumpWalkthrough(tester, markSeen: false);
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(kWalkthroughSeenKey), isNull);
+      expect(prefs.getString(kWalkthroughSeenVersionKey), isNull);
       expect(await shouldShowWalkthrough(), isTrue,
-          reason: 'still unseen — a replay is not a first run');
+          reason: 'still unseen - a replay is not a first run');
     });
 
-    testWidgets('11. shouldShowWalkthrough is false once set', (tester) async {
+    test('11. a stored version means seen', () async {
       SharedPreferences.setMockInitialValues(
-          <String, Object>{kWalkthroughSeenKey: true});
+          <String, Object>{kWalkthroughSeenVersionKey: kWalkthroughVersion});
       expect(await shouldShowWalkthrough(), isFalse);
     });
 
-    test('12. the key is INDEPENDENT of the disclaimer version', () async {
-      // ⛔ The reason it is its own key. The disclaimer gate is a VERSION
-      // COMPARISON, so bumping kDisclaimerVersion sends every user back through
-      // the disclaimer — and a shared signal would replay a five-step
-      // introduction for someone with two years of history.
+    test('12. ⛔ A DIFFERENT VERSION DOES NOT RE-SHOW IT', () async {
+      // THE DECISION, PINNED. The version is stored so the option exists; the
+      // trigger is "never seen", not "version differs". Someone who has used
+      // MER for a year does not want a five-step tour because a step gained a
+      // sentence.
+      //
+      // Changing this must be a deliberate decision with its own reasoning -
+      // this test is what makes that a decision rather than a drift.
+      SharedPreferences.setMockInitialValues(
+          <String, Object>{kWalkthroughSeenVersionKey: '0-ancient'});
+      expect(await shouldShowWalkthrough(), isFalse,
+          reason: 'an OLD version is still a version that was seen');
+    });
+
+    test('13. NEGATIVE CONTROL: an EMPTY value is not "seen"', () async {
+      // Test 12 passes against a gate that returns false unconditionally.
+      // This is the case that must still show it.
+      SharedPreferences.setMockInitialValues(
+          <String, Object>{kWalkthroughSeenVersionKey: ''});
+      expect(await shouldShowWalkthrough(), isTrue);
+
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      expect(await shouldShowWalkthrough(), isTrue,
+          reason: 'absent, the genuine first run');
+    });
+
+    test('14. the LEGACY bool is honoured, and upgraded in place', () async {
+      // Build 37 wrote a bool. Ignoring it would re-show the walkthrough to
+      // someone who had already seen it - the one thing the flag exists to
+      // prevent, reintroduced by the change that made the flag better.
+      SharedPreferences.setMockInitialValues(
+          <String, Object>{kWalkthroughSeenLegacyBoolKey: true});
+
+      expect(await shouldShowWalkthrough(), isFalse);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(kWalkthroughSeenVersionKey), kWalkthroughVersion,
+          reason: 'upgraded in place, so the legacy read runs at most once');
+    });
+
+    test('15. and a legacy FALSE is not "seen"', () async {
+      SharedPreferences.setMockInitialValues(
+          <String, Object>{kWalkthroughSeenLegacyBoolKey: false});
+      expect(await shouldShowWalkthrough(), isTrue);
+    });
+
+    test('16. INDEPENDENT of the disclaimer version', () async {
+      // ⛔ The disclaimer gate IS a version comparison, so bumping
+      // kDisclaimerVersion sends every user back through the disclaimer. A
+      // shared signal would replay the walkthrough on every disclaimer change.
       SharedPreferences.setMockInitialValues(<String, Object>{
-        kWalkthroughSeenKey: true,
+        kWalkthroughSeenVersionKey: kWalkthroughVersion,
         'disclaimerAcceptedVersion': '0.9-something-old',
       });
       expect(await shouldShowWalkthrough(), isFalse,
           reason: 'a stale disclaimer version must not resurrect it');
-
-      expect(kWalkthroughSeenKey, isNot(contains(kDisclaimerVersion)),
-          reason: 'the key must not embed the version it is independent of');
+      expect(kWalkthroughSeenVersionKey, isNot('disclaimerAcceptedVersion'));
+      expect(kWalkthroughVersion, isNot(kDisclaimerVersion),
+          reason: 'two independent version lines, not one');
     });
 
-    test('13. and it SURVIVES AN UPGRADE, because nothing bumps it', () async {
-      // An upgrade preserves SharedPreferences; what would lose the flag is a
-      // KEY that changes with the app. This pins that the key is a constant
-      // string with no version interpolation in it.
-      expect(kWalkthroughSeenKey, 'mer_walkthrough_seen_v1');
+    test('17. and it SURVIVES AN UPGRADE, because nothing re-shows it',
+        () async {
+      // SharedPreferences persists across app updates. What would lose it is a
+      // KEY that changes with the app, or a trigger that compares versions.
+      // Neither is the case.
+      expect(kWalkthroughSeenVersionKey, 'walkthroughSeenVersion');
       SharedPreferences.setMockInitialValues(
-          <String, Object>{kWalkthroughSeenKey: true});
+          <String, Object>{kWalkthroughSeenVersionKey: kWalkthroughVersion});
       expect(await shouldShowWalkthrough(), isFalse);
     });
   });

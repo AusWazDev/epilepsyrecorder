@@ -10,19 +10,52 @@ const String kCompanyName       = 'Notiva';
 // Any user who accepted an older version will be shown the screen again.
 const String kDisclaimerVersion = '1.1';
 
-/// Whether the first-run walkthrough has been shown.
+/// Which version of the walkthrough content this is.
 ///
-/// ⛔ **DELIBERATELY SEPARATE FROM [kDisclaimerVersion], and it must stay
-/// separate.** The disclaimer gate is a VERSION COMPARISON, so bumping that
-/// string sends every existing user back through the disclaimer. If the
-/// walkthrough shared that signal, a disclaimer bump would replay a five-step
-/// introduction for someone with two years of history.
+/// Bumped when the walkthrough changes enough that re-showing it could be
+/// worth CONSIDERING - a new step, not a reworded sentence.
 ///
-/// A plain bool: nothing to compare, nothing to bump. The `_v1` is a naming
-/// convention, not a mechanism - if the walkthrough is ever rewritten enough to
-/// be worth re-showing, that is a NEW key, decided deliberately, not a bump of
-/// this one.
-const String kWalkthroughSeenKey = 'mer_walkthrough_seen_v1';
+/// ⚠️ **NOTHING CURRENTLY READS THIS TO DECIDE THE TRIGGER, and that is
+/// deliberate.** See [kWalkthroughSeenVersionKey].
+const String kWalkthroughVersion = '1';
+
+/// Which walkthrough version the user has seen, or absent if none.
+///
+/// ## Why a VERSION and not a bool
+///
+/// Mirrors `disclaimerAcceptedVersion`, which earned its version tracking the
+/// hard way: it was a bool until the disclaimer text changed, and retrofitting
+/// a version onto a bool means every existing user is indistinguishable from a
+/// user who saw the old text. A walkthrough that gains a step later has exactly
+/// the same problem. **Cheap to store now, awkward to add retrospectively.**
+///
+/// ## ⛔ BUT THE TRIGGER IS "NEVER SEEN", NOT "VERSION DIFFERS"
+///
+/// Storing the version buys the OPTION; it is not an instruction to use it.
+/// Someone who has used MER for a year does not want a five-step tour because
+/// step 5 gained a sentence.
+///
+/// So [kWalkthroughVersion] is recorded and never compared. Any future change
+/// to that must be a deliberate decision with its own reasoning, not a
+/// consequence of the version being available.
+///
+/// ⚠️ **Independent of `disclaimerAcceptedVersion` and it must stay so.**
+/// The disclaimer gate IS a version comparison, so bumping `kDisclaimerVersion`
+/// sends every user back through the disclaimer. Sharing that signal would
+/// replay the walkthrough on every disclaimer change.
+const String kWalkthroughSeenVersionKey = 'walkthroughSeenVersion';
+
+/// ⚠️ **LEGACY. The bool this replaced, read once and upgraded in place.**
+///
+/// Build 37 wrote `true` here. Dropping the read would show the walkthrough a
+/// second time to anyone who had already seen it - which is the one thing the
+/// flag exists to prevent, reintroduced by the change that made the flag
+/// better.
+///
+/// The affected population is exactly one device: build 37 was a local build
+/// and was never released. Carried anyway, because the cost is four lines and
+/// the alternative is a defect whose only defence is that it is unlikely.
+const String kWalkthroughSeenLegacyBoolKey = 'mer_walkthrough_seen_v1';
 
 // Storage key for the saved event list. Referenced by EventStore and by the
 // notification service. NEVER change this string — it would orphan every

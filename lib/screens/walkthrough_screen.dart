@@ -73,7 +73,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
 
   Future<void> _recordSeen() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kWalkthroughSeenKey, true);
+    await prefs.setString(kWalkthroughSeenVersionKey, kWalkthroughVersion);
   }
 
   @override
@@ -310,16 +310,28 @@ class _Dots extends StatelessWidget {
 
 /// Whether the walkthrough still needs to be shown.
 ///
-/// ⛔ **INDEPENDENT OF `disclaimerAcceptedVersion`, and that is the whole
-/// reason it is its own key.** The disclaimer gate compares against
-/// `kDisclaimerVersion`, so bumping that string sends every existing user back
-/// through the disclaimer — and if the walkthrough shared that signal it would
-/// re-run a five-step introduction for someone with two years of history.
+/// ⛔ **THE TEST IS "HAS ANY VERSION BEEN SEEN", NOT "HAS THIS VERSION BEEN
+/// SEEN".** The stored version is recorded and never compared, deliberately -
+/// see [kWalkthroughSeenVersionKey]. Someone who has used MER for a year does
+/// not want a five-step tour because a step gained a sentence.
 ///
-/// A plain bool, so nothing to compare and nothing to bump.
+/// Changing this to a comparison is a decision with its own reasoning, not a
+/// consequence of the version being available.
 Future<bool> shouldShowWalkthrough() async {
   final prefs = await SharedPreferences.getInstance();
-  return !(prefs.getBool(kWalkthroughSeenKey) ?? false);
+
+  final seen = prefs.getString(kWalkthroughSeenVersionKey);
+  if (seen != null && seen.isNotEmpty) return false;
+
+  // LEGACY, and it upgrades in place so this runs at most once per install.
+  // Build 37 recorded a bool; ignoring it would re-show the walkthrough to
+  // someone who had already seen it.
+  if (prefs.getBool(kWalkthroughSeenLegacyBoolKey) ?? false) {
+    await prefs.setString(kWalkthroughSeenVersionKey, kWalkthroughVersion);
+    return false;
+  }
+
+  return true;
 }
 
 /// Step 2's title and lead, hoisted so a test can name them without
@@ -348,10 +360,6 @@ const String kNotificationStepLead =
 /// runs on ONE host - Windows here - so a direct `Platform.isIOS` read means
 /// the iOS string is never exercised by any test on any developer machine, and
 /// the branch that shipped wrong once would be the branch nobody checks.
-///
-/// The spec's closing finding is that nothing in the walkthrough was testable
-/// and that hand-syncing produced the Getting Started card. This is the part
-/// of that which was cheap to fix.
 String notificationInstruction({required bool isIOS}) => isIOS
     ? 'Pull down from the top of your screen and long-press the MER '
         'notification to reveal the action button, then tap "Log Event Now".'
