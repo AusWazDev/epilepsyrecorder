@@ -666,14 +666,46 @@ import awesome_notifications
     // Live Activity, unconditional at the 16.2 deployment target.
     startLiveActivity(eventId: id, startIso: isoNow)
 
-    if #available(iOS 17.0, *) {
-      // Live Activity button handles end — no active notification needed
-      completion()
-    } else {
-      let fmt = DateFormatter()
-      fmt.dateFormat = "h:mm a"
-      scheduleActiveNotification(startTimeStr: fmt.string(from: now), completion: completion)
-    }
+    // Posted on EVERY version now, including 17+, where this used to be skipped
+    // with the comment "Live Activity button handles end — no active
+    // notification needed".
+    //
+    // An event started from the Lock Screen had exactly ONE surface on 17+ — the
+    // Live Activity — and it is user-dismissible. Dismiss it without opening the
+    // app and there was no way to end the event at all: the 30-minute timeout
+    // closed it with a NULL duration. 0753410 made the notification come back on
+    // foreground, which only helps once you foreground. This gives a second
+    // surface from the moment of capture.
+    //
+    // ── The history, because this looks like a reversal and is not quite one ──
+    //
+    // 368bb34 (26 Apr 2026) suppressed the iOS START FEEDBACK notification
+    // because it "was stacking on top and obscuring the action button" of the
+    // "Event in progress" notification. That was TWO NOTIFICATIONS stacking, in
+    // the awesome_notifications era — it touched only Dart and predates CR-42
+    // moving iOS to native Swift.
+    //
+    // This is not that condition. scheduleActiveNotification removes BOTH
+    // delivered identifiers before adding, so exactly one MER notification is
+    // ever up. What 17+ now gets is a Live Activity PLUS one notification, which
+    // is what 16.2-16.x has shipped since CR-42 with no stacking complaint on
+    // record.
+    //
+    // It is still a trade, not a correction. The judgement that the Live
+    // Activity was sufficient has been weakened three times since: it is
+    // dismissible, it cannot be restored while the app is cold, and its End
+    // button demands Face ID on iOS 26. Two imperfect surfaces beat one that can
+    // vanish.
+    //
+    // ⚠️ On 17+ this notification's End action is the LESS reliable of the two.
+    // It routes through didReceive, which is NOT entered when the app is cold —
+    // measured on 26.6 and on 16.7.15. The Live Activity's button runs in the
+    // widget extension and works cold, after authentication. So this surface is
+    // reliable for VISIBILITY and unreliable for ENDING until cold delivery is
+    // fixed.
+    let fmt = DateFormatter()
+    fmt.dateFormat = "h:mm a"
+    scheduleActiveNotification(startTimeStr: fmt.string(from: now), completion: completion)
   }
 
   /// Ends an event from the notification action, on 16.2-16.x.
