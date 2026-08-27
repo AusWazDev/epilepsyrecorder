@@ -403,8 +403,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               onError: reportCaptureChannelError)
           : PrefsInboxTransport(prefs);
 
+  /// Ends the active event from the in-app banner.
+  ///
+  /// This used to return early on iOS with "iOS: Live Activity owns event end".
+  /// That was true when written and is not any more. The judgement was weakened
+  /// four times: the Live Activity is user-dismissible, it cannot be restored
+  /// while the app is cold, its End button demands Face ID on iOS 26, and on
+  /// 16.2-16.x it has no End button at all — `LiveActivityIntent` needs 17, so
+  /// the card there is display-only.
+  ///
+  /// On that tier, with the notification dismissed and the app cold, the user
+  /// opened MER, saw this banner telling them an event was running, and had no
+  /// way to end it. Backlog item 25.
+  ///
+  /// iOS does NOT go through `NotificationService.endEvent`. Dart builds no
+  /// payload and applies no end here: it invokes one channel case, Swift writes
+  /// the instruction through the same `writeInboxEnd` the notification action
+  /// uses, and `_loadRecords` drains it through the transport that already
+  /// exists. That keeps Dart's main isolate the single writer of the record list
+  /// and adds no fourth writer of the end instruction.
   Future<void> _endActiveEvent() async {
-    if (Platform.isIOS) return; // iOS: Live Activity owns event end
+    if (Platform.isIOS) {
+      try {
+        await _navChannel.invokeMethod<void>('endActiveEvent');
+      } catch (e, st) {
+        // The teardown is idempotent and the instruction, if it was written, is
+        // still in the inbox. Reload regardless: a failure here must not leave
+        // the banner showing an event the drain has already ended.
+        reportCaptureChannelError(e, st);
+      }
+      await _loadRecords();
+      return;
+    }
     await NotificationService.instance.endEvent();
     await _loadRecords();
   }
@@ -853,7 +883,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     _activeEvent!['startIso'] as String)
                                 .toLocal(),
                             onEnd:         _endActiveEvent,
-                            showEndButton: !Platform.isIOS,
+                            showEndButton: true,
                           ),
                           const SizedBox(height: 12),
                         ] else if (_showBackupReminder) ...[
@@ -1083,27 +1113,14 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
                     color:    Color(0xFFD32F2F),
                   ),
                 ),
-                // iOS gets no End button: showEndButton is !Platform.isIOS and
-                // _endActiveEvent returns early there, because the Live Activity
-                // owns ending an event. Without this line the banner shows a
-                // running timer and no way to stop it — and if the notification
-                // has been dismissed and the Live Activity is gone, the event
-                // auto-clears after 30 minutes with duration left at its lt1
-                // default, which is wrong data rather than missing data.
-                // An End button here would route through native code: v1.2.0.
-                if (Platform.isIOS)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 3),
-                    child: Text(
-                      'End this event from the Lock Screen or the '
-                      'notification.',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        height:   1.3,
-                        color:    Color(0xFFD32F2F),
-                      ),
-                    ),
-                  ),
+                // The iOS-only line that used to sit here — "End this event
+                // from the Lock Screen or the notification." — is DELETED, not
+                // hidden. It was the apology for a banner that showed a running
+                // timer and no way to stop it, and it pointed at two surfaces
+                // that could both be gone: the notification is dismissible, and
+                // below iOS 17 the Live Activity has no End button at all.
+                // Backlog item 25 put a real button here on every platform, so
+                // the instruction is now redundant and was never reliable.
               ],
             ),
           ),

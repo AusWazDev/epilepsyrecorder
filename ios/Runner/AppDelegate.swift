@@ -153,6 +153,13 @@ import awesome_notifications
         case "restoreNotification":
           DispatchQueue.main.async { self?.restorePersistentNotification() }
           result(nil)
+        case "endActiveEvent":
+          // The in-app End button. Swift owns the whole teardown so that no
+          // fourth writer of the end instruction exists — see
+          // endActiveEventFromApp.
+          DispatchQueue.main.async {
+            self?.endActiveEventFromApp { result(nil) }
+          }
         case "readCaptureInbox":
           result(self?.readInboxEntries() ?? [:])
         case "deleteCaptureInbox":
@@ -301,12 +308,19 @@ import awesome_notifications
         // This call used to sit in an `else`, so on iOS 17+ NOTHING was posted
         // while an event was running. The design assumed the Live Activity was
         // the end surface there and that recovery would bring it back. But the
-        // Live Activity is user-dismissible, _endActiveEvent returns early on
-        // iOS so the home banner has no End button, and MER_ACTIVE is the only
+        // Live Activity is user-dismissible and MER_ACTIVE was the only other
         // notification carrying an End action. Dismiss the Live Activity and
         // every route was gone: the event could not be ended at all, and the
         // 30-minute timeout then wrote a record with a NULL duration. Wrong
         // data rather than missing data, on the primary platform, shipped.
+        //
+        // ONE LINK OF THAT CHAIN IS NOW GONE. It used to read "…and
+        // _endActiveEvent returns early on iOS so the home banner has no End
+        // button". Backlog item 25 gave the banner a real End button on every
+        // platform, routed through the endActiveEvent channel case, so the app
+        // is no longer a dead end once foregrounded. This call still matters —
+        // it is what puts an end action back on the LOCK SCREEN, which the
+        // in-app button cannot reach.
         //
         // Posting unconditionally here gives a second surface that does not
         // share the first one's fate:
@@ -828,6 +842,98 @@ import awesome_notifications
     // actually gone, or the deadline passes — see endLiveActivity(completion:).
     // Last, because it is the only step whose failure the user can already see.
     endLiveActivity(completion: completion)
+  }
+
+  /// Ends the active event from the in-app banner. Backlog item 25.
+  ///
+  /// ── Why this exists at all ──
+  ///
+  /// Every iOS end surface requires an unlock: the notification's End action
+  /// carries `.authenticationRequired` by our own choice, and the Live Activity's
+  /// intent demands Face ID on iOS 26 by the system's. Once that is true, "in-app
+  /// needs the app open" is a tap count rather than a category difference, and
+  /// the in-app route is the only one that depends on nothing fragile — not
+  /// `didReceive` reaching us cold, not ActivityKit, not a notification surviving
+  /// dismissal, not an OS version gate.
+  ///
+  /// The state it is built for: **16.2-16.x, notification dismissed, app cold.**
+  /// `LiveActivityIntent` needs 17, so the card there is display-only; the
+  /// notification is the only End action and `didReceive` is not entered cold.
+  /// That user opened the app, saw a banner saying an event was running, and was
+  /// offered nothing — the event then ran to `kActiveEventTimeoutSeconds` and
+  /// wrote a record with a wrong duration. Wrong data on a medical record.
+  ///
+  /// ── No fourth writer ──
+  ///
+  /// The end instruction has three implementations already, all deliberate:
+  /// Dart's `writeEndInstruction` (Android), `writeInboxEnd` here, and an inline
+  /// copy in `EndMEREventIntent` (a separate target, so it cannot share code —
+  /// see the comment there). Dart does NOT build a payload for this path and
+  /// does NOT apply the end itself. It invokes the channel, Swift writes through
+  /// the SAME `writeInboxEnd` the notification action uses, and Dart drains it
+  /// through the `readCaptureInbox`/`deleteCaptureInbox` transport that already
+  /// exists. No schema change, no transport change, no new writer.
+  ///
+  /// ── ⚠️ THE ORDER IS DELIBERATELY THE REVERSE OF handleQuickLogEnd'S ──
+  ///
+  /// That function clears the active keys FIRST and dismisses the Live Activity
+  /// LAST, because its process is about to be suspended: get the fact and the
+  /// feedback to their daemons before the window shuts, and let the next
+  /// foreground retry the tidying.
+  ///
+  /// It leaves a hazard this path must not copy. If the process dies between the
+  /// key-clear and the dismissal, NOTHING ever ends that Live Activity:
+  /// `clearStaleActiveStateIfEnded` requires `standardActive != nil &&
+  /// sharedActive == nil`, and `restorePersistentNotification` only enters its
+  /// body inside `if let activeRaw`. With both keys nil neither branch is
+  /// reachable, and `staleDate` corrects the DISPLAY only. The card sits there
+  /// marked stale until the user swipes it.
+  ///
+  /// Here the app is foreground and alive, so there is no window to race and no
+  /// reason to take that risk. Dismiss first, THEN clear.
+  ///
+  /// ── No feedback notification ──
+  ///
+  /// `showFeedbackNotification` is deliberately not called. The user is looking
+  /// at the screen; posting "Event ended · 5m — Open MER to add details" to
+  /// someone already in MER is exactly what 368bb34 removed. The banner
+  /// disappearing and the record appearing is the confirmation.
+  private func endActiveEventFromApp(completion: @escaping () -> Void) {
+    let standard = UserDefaults.standard
+
+    // 1. THE FACT, first, as on every other capture path.
+    if let activeRaw = standard.string(forKey: kActiveEventKey),
+       let data = activeRaw.data(using: .utf8),
+       let active = try? JSONSerialization.jsonObject(with: data) as? NSDictionary,
+       let eventId = active["id"] as? String,
+       let startIso = active["startIso"] as? String,
+       let startTime = ISO8601DateFormatter().date(from: startIso) {
+
+      let endTime = Date()
+      let secs = max(0, Int(endTime.timeIntervalSince(startTime)))
+      writeInboxEnd(id: eventId, at: ISO8601DateFormatter().string(from: endTime),
+                    seconds: secs)
+    }
+    // An unreadable or absent marker still tears down below. The banner is
+    // showing, so something is up on screen; leaving it there because the JSON
+    // did not parse would be the worse failure.
+
+    // 2. DISMISS, and wait for it. See the order note above.
+    endLiveActivity { [weak self] in
+      guard let self = self else { completion(); return }
+
+      // 3. CLEAR BOTH. More than EndMEREventIntent does — it can only reach the
+      //    App Group copy, which is why clearStaleActiveStateIfEnded exists.
+      standard.removeObject(forKey: self.kActiveEventKey)
+      UserDefaults(suiteName: self.kAppGroupId)?.removeObject(forKey: self.kSharedActiveKey)
+
+      // 4. Back to the idle surface. This also removes both delivered
+      //    identifiers, so the "Event in progress" notification cannot outlive
+      //    the event it describes.
+      self.showPersistentNormalNotification()
+
+      completion()
+    }
   }
 
   // ── Notification builders ─────────────────────────────────────────────────
