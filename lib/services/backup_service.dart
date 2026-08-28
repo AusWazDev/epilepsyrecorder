@@ -390,14 +390,38 @@ Future<RestoreOutcome?> restoreFromBackup(
   // is an explicit user cancellation.
   if (!context.mounted) return null;
 
-  if (plan.inBackup == 0) {
-    await _refuse(
-      context,
-      parsed.unreadableRecords > 0
-          ? 'None of the ${parsed.unreadableRecords} records in this backup '
-              'could be read. Nothing has been changed.'
-          : 'This backup contains no events. Nothing has been changed.',
-    );
+  // ⛔ BOTH STREAMS, NOT JUST EVENTS.
+  //
+  // This condition was written when events were the only stream, and it
+  // outlived that. `plan.inBackup == 0` refused a backup holding medication
+  // notes but no events — telling a user who logs only deviations that their
+  // file contains nothing, and losing every note in it. **That is the same
+  // silent loss this change exists to fix, surviving inside the gate meant to
+  // prevent it.**
+  //
+  // A backup is empty when NEITHER stream has anything, not when the events
+  // stream is empty.
+  if (plan.inBackup == 0 && plan.notesInBackup == 0) {
+    final lostRecords = parsed.unreadableRecords;
+    final lostNotes = parsed.unreadableNotes;
+    final String reason;
+    if (lostRecords > 0 && lostNotes == 0) {
+      // The pre-existing wording, unchanged — this is still the only shape it
+      // ever described, and there is no reason to churn it.
+      reason = 'None of the $lostRecords records in this backup could be read.';
+    } else if (lostNotes > 0 && lostRecords == 0) {
+      reason = 'None of the $lostNotes medication '
+          '${lostNotes == 1 ? "note" : "notes"} in this backup could be read.';
+    } else if (lostRecords > 0) {
+      reason = 'None of the entries in this backup could be read: '
+          '$lostRecords ${lostRecords == 1 ? "record" : "records"} and '
+          '$lostNotes medication ${lostNotes == 1 ? "note" : "notes"}.';
+    } else {
+      // "This backup contains no events" became wrong for exactly the reason
+      // the condition did — it names one stream while describing both.
+      reason = 'This backup contains no events or medication notes.';
+    }
+    await _refuse(context, '$reason Nothing has been changed.');
     return null;
   }
 
@@ -460,9 +484,16 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
       ? ' from ${fmt.format(plan.earliest!)} to ${fmt.format(plan.latest!)}'
       : '';
 
+  // ⚠️ The events line is omitted ONLY when there are no events and there ARE
+  // notes — the case the widened empty gate now lets through. Every
+  // events-bearing backup produces exactly the dialog it always did, and a
+  // notes-only one is spared an opening line reading "contains 0 events"
+  // followed by "It ALSO contains 3 medication notes".
+  final eventsFirst = plan.inBackup > 0 || plan.notesInBackup == 0;
   final lines = <String>[
-    'This backup contains ${plan.inBackup} '
-        '${plan.inBackup == 1 ? "event" : "events"}$range.',
+    if (eventsFirst)
+      'This backup contains ${plan.inBackup} '
+          '${plan.inBackup == 1 ? "event" : "events"}$range.',
   ];
 
   // WHEN the backup was taken, which is the signal the picker cannot show and
@@ -485,7 +516,8 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
   // backup — which is every backup taken before this change — produces a
   // dialog byte-identical to the one it produced before.
   if (plan.notesInBackup > 0) {
-    lines.add('It also contains ${plan.notesInBackup} medication '
+    lines.add('${eventsFirst ? "It also contains" : "This backup contains"} '
+        '${plan.notesInBackup} medication '
         '${plan.notesInBackup == 1 ? "note" : "notes"}'
         '${plan.notesAlreadyPresent > 0 ? ', ${plan.notesAlreadyPresent} '
             'already on this device' : ''}.');

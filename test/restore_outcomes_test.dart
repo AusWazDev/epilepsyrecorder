@@ -62,6 +62,38 @@ EventRecord record(String id, int minute) => EventRecord(
       notes: '',
     );
 
+/// A backup holding medication notes and NO events.
+///
+/// The shape the widened empty gate exists for: a user who logs only
+/// deviations. Perfectly valid, and refused outright until now.
+String notesOnlyBackupJson(List<String> noteIds) => jsonEncode({
+      'format': kBackupFormatId,
+      'schemaVersion': kBackupSchemaVersion,
+      'appVersion': '1.1.0+5',
+      'exportedAt': DateTime(2026, 8, 24, 3).toIso8601String(),
+      'records': <Object?>[],
+      'medicationNotes': <Object?>[
+        for (var i = 0; i < noteIds.length; i++)
+          <String, Object?>{
+            'id': noteIds[i],
+            'occurred_at': DateTime(2026, 8, 20 + i, 9, 30).toIso8601String(),
+            'logged_at': DateTime(2026, 8, 20 + i, 21, 5).toIso8601String(),
+            'kind': 'missed',
+            'notes': '',
+          },
+      ],
+    });
+
+/// A backup with nothing in EITHER stream. Still refused, and must be.
+String emptyBackupJson() => jsonEncode({
+      'format': kBackupFormatId,
+      'schemaVersion': kBackupSchemaVersion,
+      'appVersion': '1.1.0+5',
+      'exportedAt': DateTime(2026, 8, 24, 3).toIso8601String(),
+      'records': <Object?>[],
+      'medicationNotes': <Object?>[],
+    });
+
 /// A backup envelope holding [ids], in the shape parseBackup accepts.
 String backupJson(List<String> ids) => jsonEncode({
       'format': kBackupFormatId,
@@ -246,6 +278,88 @@ void main() {
               'original defect is back: a mis-aimed tap becomes '
               'indistinguishable from a deliberate cancellation, and from a '
               'completed restore');
+    });
+  });
+
+  group('⛔ THE EMPTY GATE COUNTS BOTH STREAMS', () {
+    // The condition was `plan.inBackup == 0`, written when events were the only
+    // stream. It refused a backup holding medication notes but no events —
+    // telling a user who logs only deviations that their file contains nothing,
+    // and losing every note in it. **The same silent loss that adding notes to
+    // the envelope was meant to fix, surviving inside the gate meant to prevent
+    // it.**
+    //
+    // These two are a matched pair and neither means much alone: the first
+    // shows the gate opens for a valid notes-only backup, the second shows it
+    // still shuts on a genuinely empty one. A gate that never refuses would
+    // pass the first; the old gate passed the second.
+
+    testWidgets('1. A NOTES-ONLY BACKUP RESTORES — it is a valid backup',
+        (tester) async {
+      final result = await runRestore(
+        tester,
+        payload: notesOnlyBackupJson(<String>['n-1', 'n-2']),
+        act: (t) async => t.tap(
+            find.widgetWithText(FilledButton, 'Restore 2 medication notes')),
+      );
+
+      expect(result, isNotNull,
+          reason: 'REFUSED. A user who logs only deviations was told their '
+              'backup contains nothing');
+      expect(result!.notesToAdd.map((n) => n.id), <String>['n-1', 'n-2'],
+          reason: 'and the notes must actually come through, with their ids');
+      expect(result.merged, isEmpty, reason: 'there were no events to restore');
+
+      // The dialog must not open on "This backup contains 0 events" and then
+      // say "It ALSO contains 2 medication notes".
+      expect(find.textContaining('0 events'), findsNothing);
+    });
+
+    testWidgets('2. and a GENUINELY EMPTY backup still refuses', (tester) async {
+      // The other half. Without this, test 1 is satisfied by simply deleting
+      // the gate.
+      final result = await runRestore(
+        tester,
+        payload: emptyBackupJson(),
+        // ⚠️ Asserted INSIDE act, before OK dismisses the dialog. Checking
+        // afterwards finds nothing and reads as a missing message rather than
+        // a closed one.
+        act: (t) async {
+          expect(
+            find.textContaining('no events or medication notes'),
+            findsOneWidget,
+            reason: '"This backup contains no events" named one stream while '
+                'describing both, and became wrong for the same reason the '
+                'condition did',
+          );
+          await t.tap(find.text('OK'));
+        },
+      );
+
+      expect(result, isNull, reason: 'an empty backup must restore nothing');
+    });
+
+    testWidgets('3. an all-unreadable backup keeps its original wording',
+        (tester) async {
+      // The pre-existing refusal shape, unchanged. Only the branches that did
+      // not exist before were given new words.
+      final result = await runRestore(
+        tester,
+        payload: jsonEncode({
+          'format': kBackupFormatId,
+          'schemaVersion': kBackupSchemaVersion,
+          'appVersion': '1.1.0+5',
+          'exportedAt': DateTime(2026, 8, 24, 3).toIso8601String(),
+          'records': <Object?>['not a record', 'nor this'],
+        }),
+        act: (t) async {
+          expect(find.textContaining('None of the 2 records in this backup'),
+              findsOneWidget);
+          await t.tap(find.text('OK'));
+        },
+      );
+
+      expect(result, isNull);
     });
   });
 }
