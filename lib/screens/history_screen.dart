@@ -232,7 +232,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         r.feelings
             .map((v) => Vocabularies.labelFor(kObservationTable, v))
             .join(' '),
+        // BOTH, same as observations above — a renamed trigger must stay
+        // findable by the word the user now sees AND by what the record holds.
         r.triggers.join(' '),
+        r.triggers
+            .map((v) => Vocabularies.labelFor(kTriggerTable, v))
+            .join(' '),
         'referral: ${r.referralRequired ? "yes" : "no"}',
         r.notes,
         _uiTimeFmt.format(r.timestamp),
@@ -433,7 +438,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search, size: 20),
-                      hintText: 'Search notes, feelings, severity, triggers…',
+                      // The two field names were renamed and this was not. "feelings"
+                      // is the AFTERWARDS step and "triggers" is BEFOREHAND —
+                      // a word deliberately removed from the input because it
+                      // asserts cause, and which must not survive in the one
+                      // place telling the user what they can search.
+                      hintText: 'Search notes, afterwards, beforehand, '
+                          'severity…',
                       suffixIcon: _searchText.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear, size: 18),
@@ -1103,7 +1114,12 @@ class _EventListTile extends StatelessWidget {
       // "Beforehand", matching the form label and the wizard summary line.
       // The row is where a record is READ, so a causal word here asserts the
       // same thing the input label was changed to stop asserting.
-      if (r.triggers.isNotEmpty)  'Beforehand: ${r.triggers.join(', ')}',
+      // Resolved through the vocabulary, exactly like observations two lines
+      // up. Triggers became a vocabulary only last pass and nothing that
+      // RENDERS them was updated, so a renamed entry would show its old stored
+      // string here while the picker showed the new label.
+      if (r.triggers.isNotEmpty)
+        'Beforehand: ${r.triggers.map((v) => Vocabularies.labelFor(kTriggerTable, v)).join(', ')}',
       if (r.referralRequired)     'Referral: Yes',
       // WHAT IS MISSING, NAMED. A quick-record shows a timestamp and almost
       // nothing else; in a mixed list that reads as variation, but in a

@@ -270,9 +270,26 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   /// reconstructed later, so it is kept the moment the user answers anything.
   void _capture() => _draft = _build();
 
+  /// ⛔ THE SAME GUARD `_onWillPop` ALREADY USES, AND IT BELONGED HERE TOO.
+  ///
+  /// `_capture()` ran unconditionally, so pressing Next through an untouched
+  /// wizard MATERIALISED A RECORD. Two exits from the identical state gave
+  /// opposite answers: backing out created nothing (guarded, and pinned by
+  /// test 14), pressing Next created a junk row. Found on the device — the
+  /// export went 72 -> 73 after navigation alone.
+  ///
+  /// ⚠️ THE PARTIAL-SAVE RULE IS UNAFFECTED, and this is the part worth being
+  /// sure of. That rule exists because a moment cannot be reconstructed — but
+  /// `_timestamp` is set in `initState`, not here, and `_build()` reads that
+  /// field. Deferring the capture cannot move a record's timestamp. Someone who
+  /// enters anything at all still gets `_hasAnyInput`, still gets captured, and
+  /// still gets the moment they opened the screen.
+  ///
+  /// What it stops is the case the rule was never decided for: opening the
+  /// wizard to see what is in it and tapping Next twice.
   void _next() {
     setState(() {
-      _capture();
+      if (_draft != null || _hasAnyInput) _capture();
       if (_step < _lastStep) _step++;
       else _step = _lastStep + 1; // summary
     });
@@ -350,7 +367,10 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
                 // ButtonStyle.
                 style: TextButton.styleFrom(foregroundColor: Colors.white),
                 onPressed: () => setState(() {
-                  _capture();
+                  // Same guard as _next. Skip is the FASTEST route through an
+                  // untouched wizard, so leaving it unconditional would keep
+                  // the defect on the shortest path to it.
+                  if (_draft != null || _hasAnyInput) _capture();
                   _step = _lastStep + 1;
                 }),
                 // Jumps to the summary, not to the next step — so the label
@@ -852,8 +872,24 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     if (t != null) lines.add('Event type: $t');
     final sev = severityDisplay(_severity);
     if (sev != null) lines.add('Severity: $sev');
-    if (_triggers.isNotEmpty) lines.add('Beforehand: ${_triggers.join(', ')}');
-    if (_feelings.isNotEmpty) lines.add('Afterwards: ${_feelings.join(', ')}');
+    // ⛔ LABELS, NOT STORED VALUES. These lines joined the raw strings, so a
+    // record holding the retired `😵 Confused` — or its mis-decoded twin, which
+    // is what all three observation records on the device actually hold —
+    // showed the user something different from the chip they had just tapped.
+    //
+    // `labelFor`, not `displayFor`: this is a Text widget in a style with no
+    // emoji coverage, which is the exact combination that rendered mojibake in
+    // History rows. The glyph belongs on a chip and nowhere a record is read.
+    if (_triggers.isNotEmpty) {
+      lines.add('Beforehand: ${_triggers.map(
+            (v) => Vocabularies.labelFor(kTriggerTable, v),
+          ).join(', ')}');
+    }
+    if (_feelings.isNotEmpty) {
+      lines.add('Afterwards: ${_feelings.map(
+            (v) => Vocabularies.labelFor(kObservationTable, v),
+          ).join(', ')}');
+    }
     // Only when ANSWERED, like type and severity above. "Rescue medication:
     // no" on every summary would crowd out the lines that carry information,
     // and unanswered is not the same as no.

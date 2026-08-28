@@ -989,7 +989,18 @@ String buildCsv(
       // "none" would also be a VALUE, indistinguishable from a user-defined
       // observation literally called "None" - which is a thing someone may
       // reasonably add.
-      csvJoinList(csvOrderedTriggers(r.triggers)),
+      // ⛔ THROUGH THE VOCABULARY, like observations eleven lines up. Ordering
+      // happens on the STORED VALUES — `kTriggerOptions` is a list of values
+      // and the canonical column order must not move when a label changes —
+      // and the label resolution happens after.
+      //
+      // Output-identical for every trigger that exists today: `addUserEntry`
+      // sets label = value, and all seven seeds are ASCII with label = value.
+      // The divergence is latent, not live, which is exactly why it would have
+      // been missed — the first rename would have made History and the CSV
+      // disagree about the same record.
+      csvJoinList(csvOrderedTriggers(r.triggers)
+          .map((v) => Vocabularies.labelFor(kTriggerTable, v))),
       // WHATEVER IS STORED, never what the UI would have shown. The screen
       // hides the two children when rescue medication was not given; the
       // export does not, because a value that exists in the record must appear
