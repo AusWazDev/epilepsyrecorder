@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
-import '../constants.dart';
 import '../models/event_record.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';

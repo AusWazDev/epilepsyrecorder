@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
-import '../constants.dart';
 import '../models/event_record.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
@@ -841,19 +840,6 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
                   label: Text(label(o)),
                   selected: isSel(o),
                   onSelected: (_) => onTap(o),
-                ))
-            .toList(),
-      );
-
-  Widget _multiChips(List<String> options, Set<String> selected) => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: options
-            .map((o) => FilterChip(
-                  label: Text(o),
-                  selected: selected.contains(o),
-                  onSelected: (_) => setState(() =>
-                      selected.contains(o) ? selected.remove(o) : selected.add(o)),
                 ))
             .toList(),
       );
