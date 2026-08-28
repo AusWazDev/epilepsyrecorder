@@ -1,16 +1,39 @@
 # Medical Event Recorder — Architecture
 
-**Generated from code at commit `5c2fc73`, 20 August 2026, version 1.1.0+5.**
+**Generated from code at commit `d7760b2`, 28 August 2026, version 1.1.0+49, schema v9, backup schema 2.**
+
+⚠️ **Sections 2, 3, 4, 6, 8 and 9 were regenerated on 28 August 2026 after this document had stood 116 commits and four schema versions behind.** §4 asserted the app did not use SQLite; §9, the section listing what is known to be wrong, was itself wrong in three of its four entries. §1's store claim is marked UNVERIFIED rather than corrected — it needs a console this machine cannot reach.
 
 This document is derived by reading the repository, not written from the
 website, the store listing, or memory. Those three have each been wrong about
 this app at least once.
 
 > **Regenerate at every version bump.** A stale architecture document is worse
-> than none, because it reads as authoritative. If the commit hash above is not
-> an ancestor of your HEAD, treat everything here as a claim to verify rather
-> than a fact. Prefer citing files and symbol names over line numbers — the line
-> numbers below were correct at `5c2fc73` and rot on the next edit.
+> than none, because it reads as authoritative.
+>
+> ⛔ **THE STALENESS CHECK HERE WAS INVERTED, AND IT PASSED FOR 116 COMMITS.**
+> It read: *"If the commit hash above is not an ancestor of your HEAD, treat
+> everything here as a claim to verify."* **An ancestor test can only fail on a
+> diverged branch.** As history grows, an old commit becomes more of an ancestor,
+> not less — so the guard reported FRESH precisely when the document was most
+> stale. Same class as a `grep` that counts lines instead of matches, and a widget
+> test that finds nothing because it never laid the widget out: a check that
+> reports clean by construction.
+>
+> **Use this instead, and it must be equality or a distance, never ancestry:**
+>
+> ```
+> git rev-parse --short HEAD                 # equal to the hash above?
+> git rev-list <hash>..HEAD --count          # if not, how far behind?
+> ```
+>
+> **If the count is not 0, everything below is a claim to verify, not a fact.**
+> At the last regeneration this document had been 116 commits and four schema
+> versions behind, and §4 asserted the app did not use SQLite.
+>
+> Prefer citing files and SYMBOL NAMES over line numbers — the line numbers in an
+> earlier revision rotted three times in one week, and then the very table warning
+> about it cited six of them, three of which were wrong within days.
 
 ---
 
@@ -19,118 +42,178 @@ this app at least once.
 A local-only medical event recorder. No account, no server, no sync. Every
 event lives on the device that recorded it. Notiva never receives event data.
 
-Published on Apple App Store, Google Play and Microsoft Store. **Windows has
-materially reduced functionality — see §5.**
+Published on the Apple App Store and the Microsoft Store.
+
+⚠️ **GOOGLE PLAY STATUS UNVERIFIED FROM THIS MACHINE.** An earlier revision said
+"Apple App Store, Google Play and Microsoft Store". The Change Register's most
+recent statement (26 August 2026) names **two** stores — *"MER is live on the App
+Store and the Microsoft Store"* — and the only Play record found is a listing
+"submitted for review". **Neither claim is settled from here**; it needs the Play
+Console. Recorded as unverified rather than resolved in either direction.
+
+**Windows has materially reduced functionality — see §5.**
 
 ---
 
-## 2. The capture model — nine fields, and nothing else
+## 2. The capture model — two record kinds
 
-`EventRecord` in `lib/models/event_record.dart`. This is the whole model.
+`EventRecord` and `MedicationNote`, both in `lib/models/`. **This was "nine
+fields, and nothing else" and is no longer either half of that**: there are 14
+fields on `EventRecord` and a second record kind beside it.
+
+### `EventRecord` — 14 fields
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `String` | uuid v4. Internal; never shown |
-| `timestamp` | `DateTime` | **Time of logging, not time of the event.** No date or time picker exists anywhere in the app |
-| `eventType` | `EventType` | enum: `seizure, absence, medication, other` |
-| `duration` | `DurationCategory` | enum: `lt1, oneToFive, gt5` (`< 1 min`, `1–5 min`, `> 5 min`) |
-| `severity` | `EventSeverity` | enum: `mild, moderate, severe`. Labels only, no numeric scale |
-| `feelings` | `List<String>` | Multi-select from 11 fixed options in `kFeelingsOptions`. **Present tense only** |
-| `triggers` | `List<String>` | Multi-select from 7 fixed options in `kTriggerOptions` |
+| `timestamp` | `DateTime` | **Time of logging, not time of the event.** The `event` table has an `occurred_at` column; the MODEL does not carry it and nothing populates it |
+| `duration` | `DurationCategory?` | `lt1, oneToFive, gt5`. **NULLABLE** |
+| `durationSeconds` | `int?` | The measured quantity. Wins over the bucket wherever present |
+| `detailsCompleted` | `bool?` | Three-state. NULL means a record that predates the concept, not "incomplete" |
+| `eventType` | `String?` | **A STRING, not an enum.** The `EventType` enum no longer exists. Holds a vocabulary `value`; user-extensible |
+| `severity` | `EventSeverity?` | `mild, moderate, severe`. **NULLABLE** |
+| `feelings` | `List<String>` | The AFTERWARDS list. Vocabulary values from the `observation` table — 13 seeded, user-extensible |
+| `triggers` | `List<String>` | The BEFOREHAND list. Vocabulary values from `trigger_option` — 7 seeded, user-extensible |
+| `rescueMedGiven` | `bool?` | |
+| `rescueMedHelped` | `RescueResponse?` | `helped, partly, didNotHelp`. Gated behind `rescueMedGiven` |
+| `rescueMedSecondDose` | `bool?` | Gated the same way |
 | `referralRequired` | `bool` | A yes/no flag |
 | `notes` | `String` | Free text. No length limit, no validation |
 
-### Claims this model does NOT support
+### `MedicationNote` — the second kind
 
-These have all appeared in published or drafted copy and are false. Check any
-new copy against this list:
+Exceptions only: a dose **missed, late or changed**. Not an event, and
+deliberately not part of `EventStore`.
 
-- **"How you felt before, during and after"** — there is one feelings list with
-  no temporal dimension at all. The prompt is "How are you feeling?".
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `String` | uuid v4 |
+| `occurredAt` | `DateTime` | **When the dose was missed** — a real date and time, entered by the user |
+| `loggedAt` | `DateTime` | When it was written down. Never editable |
+| `kind` | `MedicationDeviation` | `missed, late, changed`. Stored as `.name`, not an ordinal |
+| `notes` | `String` | **No drug-name field**, on burden grounds |
+
+The two streams meet only in the CSV, which carries a `record_kind` column
+(`kRecordKindEvent` / `kRecordKindMedication`) and sorts them onto one timeline.
+**MER does not correlate them** — charting missed doses against events would be
+interpretation.
+
+### ⛔ Claims this model does NOT support
+
+These have appeared in published or drafted copy and are false. Check any new
+copy against this list.
+
+⚠️ **THIS LIST IS THE ONLY PART OF THIS DOCUMENT USED TO APPROVE OR REJECT STORE
+COPY, AND TWO OF ITS FIVE ENTRIES HAD INVERTED — they rejected the TRUE thing.**
+Accurate copy saying "before and after" would have been refused by a list that
+had not noticed the app gained a beforehand field. Re-derive this list at every
+regeneration, and treat an entry that has become true as the more dangerous
+failure: a false negative here blocks correct copy, silently, and reads as
+diligence.
+
+- **"Date and time of the event"** — for an EVENT it is the time of logging.
+  ⚠️ **Now true for a medication note**, which carries a real `occurredAt`.
+  Do not generalise either way.
+- **"Enter it afterwards"** — you can log an event later, but its timestamp is
+  the moment you logged.
 - **"Referral information"** — it is a single bool.
-- **"Date and time of the event"** — it is the time of logging.
-- **"Enter it afterwards"** — you can log later, but the timestamp will be the
-  moment you logged, not when it happened.
-- **"Event type (e.g. seizure type, symptom category)"** — four enum values, no
-  sub-types and no symptom categories. `Other / custom` has no free-text field;
-  the only place to say what it was is `notes`.
+- **"Continuous monitoring", "detects", "alerts you"** — nothing observes,
+  infers or notifies about a user's condition. The only notification is the
+  capture affordance the user started.
+- **"Analyses", "insights", "trends", "predicts"** — there is no analysis of any
+  kind. History counts and lists; the CSV exports. Nothing derives.
+
+**RETIRED FROM THIS LIST, because the app changed and the entry became true:**
+
+| Was listed as false | Now |
+|---|---|
+| *"How you felt before, during and after"* — was *"one feelings list with no temporal dimension at all. The prompt is 'How are you feeling?'"* | **TRUE for before and after.** Two temporally-framed lists: *"What was happening beforehand?"* and *"How did you feel afterwards?"*. There is still nothing DURING — copy claiming that is false |
+| *"Event type (e.g. seizure type, symptom category)"* — was *"four enum values, no sub-types"* | **Partly true.** Types are user-extensible, so a user may name their own. Still no sub-type hierarchy and no symptom categories, and `Other / custom` still has no free-text field — `notes` is the only place to say what it was |
+| *"customisable details"* (live App Store listing) | **TRUE.** Three vocabularies are user-extensible |
 
 ### Validation
 
-There is none. No `Form`, no validator, no `maxLength`. Every field except
+Still none: no `Form`, no validator, no `maxLength`.
+
+⚠️ **But the reason recorded here was retired.** It read *"every field except
 `notes` has a non-null default, so a record can be saved without the user
-touching a control.
+touching a control"*. `duration`, `eventType` and `severity` are now **nullable**,
+and NULL means NOT ASKED. A record saved without touching a control no longer
+FABRICATES values — it records their absence, and `isIncomplete` surfaces it in
+the "Needs details" queue.
 
 ---
 
-## 3. Record creation — five sites across three runtimes
+## 3. Record creation — sites across three runtimes
 
-The Dart code shows three. Two more are native Swift and are invisible from
-Dart. This is the single most common source of wrong assumptions about this
-app.
+The Dart code shows most of them. Two are native Swift and are invisible from
+Dart. This is the single most common source of wrong assumptions about this app.
+
+⚠️ **CITED BY SYMBOL, NOT LINE NUMBER.** An earlier revision cited six line
+numbers in this table and three were wrong within days.
 
 | # | Site | Trigger | Runtime | Writes |
 |---|---|---|---|---|
-| 1 | `home_screen.dart:226` `_quickRecord` | Record Event button | Main isolate | `_persist()` → `EventStore.save` → `writeEventPayload` |
-| 2 | `log_event_screen.dart:164` | Save on the detail form | Main isolate | returns to home, then `_persist()` |
-| 3 | `notification_service.dart:161` `_handleStart` | "Log Event Now" | **Android background isolate** | `writeEventPayload`; sets `mer_active_event` |
-| 4 | `notification_service.dart:219` `_handleEnd` | "Event Ended" | **Android background isolate** | rebuilds record to set `duration` from elapsed time |
-| 5 | `ios/Runner/AppDelegate.swift:250` `handleQuickLogStart` | "Log Event Now" on iOS | **iOS native, no Dart** | writes `flutter.epilepsy_event_records_v1` in `UserDefaults` directly, mirrors to App Group |
-| 5b | `ios/MERWidget/EndMEREventIntent.swift` | Live Activity "Event Ended" | **iOS widget extension process** | mutates `duration` in the App Group copy only |
+| 1 | `home_screen.dart` `_quickRecord` | Record Event button | Main isolate | `_persist()` → `EventStore.save` |
+| 2 | `log_event_screen.dart` save | Save on the single-page form | Main isolate | returns the record, then `_persist()` |
+| 3 | `event_wizard_screen.dart` `_capture` / `_build` | Next, Skip to end, or backing out | Main isolate | returns the record, then `_persist()`. ⚠️ **Guarded by `_hasAnyInput`** — an untouched wizard creates nothing |
+| 4 | `notification_service.dart` `_handleStart` | "Log Event Now" | **Android background isolate** | `writeEventPayload`; sets `mer_active_event` |
+| 5 | `notification_service.dart` `_handleEnd` | "Event Ended" | **Android background isolate** | rebuilds the record to set `duration` from elapsed time |
+| 6 | `AppDelegate.swift` `handleQuickLogStart` | "Log Event Now" on iOS | **iOS native, no Dart** | writes `flutter.epilepsy_event_records_v1` in `UserDefaults` directly, mirrors to App Group |
+| 7 | `MERWidget/EndMEREventIntent.swift` | Live Activity "Event Ended" | **iOS widget extension process** | mutates `duration` in the App Group copy only |
+| 8 | `medication_screen.dart` → `MedicationStore.add` | Record a deviation | Main isolate | `insertMedicationNote` — **a different table and record kind** |
+| 9 | `home_screen.dart` restore handler | Restore from a backup | Main isolate | `insertMedicationNote` per note in `RestoreOutcome.notesToAdd` |
 
-Sites 5 and 5b **do not pass through `writeEventPayload`** and know nothing
-about any Dart-side storage convention. Anything added to the Dart write path
-must be assumed absent on iOS quick-log until proven otherwise.
+Sites 6 and 7 **do not pass through `writeEventPayload`** and know nothing about
+any Dart-side storage convention. Anything added to the Dart write path must be
+assumed absent on iOS quick-log until proven otherwise.
 
 ---
 
 ## 4. Storage
 
-Single JSON array under a single `shared_preferences` key. Not SQLite.
+⛔ **SQLite.** An earlier revision of this section read *"Single JSON array under
+a single `shared_preferences` key. Not SQLite."* That was TRUE when written on
+20 August 2026 — SQLite did not exist in the repo at that commit — and it was
+false for 116 commits afterwards, in the section a reader consults to answer
+"how does MER store data". It is the reason the staleness guard above was
+rewritten.
+
+`StorageBoot` picks the store at launch: `SqliteEventStore` normally, falling
+back to the shared_preferences store only when the database cannot be opened.
+
+### Tables — schema `kSqliteSchemaVersion`, currently **v9**
+
+| Table | Added | Notes |
+|---|---|---|
+| `schema_meta` | v1 | key/value. Schema version and migration markers |
+| `event` | v1 | 17 columns |
+| `event_type` | v2 | Vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order, emoji` |
+| `observation` | v2 | Same shape. Shared across conditions, so `condition_id` is never populated |
+| `event_observation` | v7 | `event_id, observation_id, position`. **Additive — `feelings_json` stays authoritative and nothing reads this yet** |
+| `medication_note` | v7 | The second record kind. `condition_id` added v8 |
+| `condition` | v8 | **Created empty and assigned to nothing.** No UI reaches it |
+| `condition_observation` | v8 | Relevance ORDERING, never membership. No rows |
+| `trigger_option` | v9 | The beforehand vocabulary |
+| `event_trigger` | v9 | `triggers_json` stays authoritative, same rule as observations |
+
+`condition_trigger`, `condition_field`, `event_field_value` and `daily_entry`
+are designed and **not built** — see `docs/DATA-MODEL.md`.
+
+### `shared_preferences` keys that remain
 
 | Key | Purpose |
 |---|---|
-| `epilepsy_event_records_v1` | The event list. **The `_v1` is a naming convention, not a schema mechanism** — the payload is a bare array with no version field |
-| `epilepsy_event_records_v1_rollback` | Copy of the previous payload, written before each save. **Never written on iOS — see below** |
+| `epilepsy_event_records_v1` | ⛔ **THE DRAINED INBOX, AND IT STAYS.** No longer the event store — it is what the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it** |
+| `epilepsy_event_records_v1_rollback` | Copy of the previous payload. **Never written on iOS** — the native path bypasses it, so a stale copy would be a data-loss mechanism |
 | `mer_active_event` | In-progress event `{id, startIso}` |
-| `mer_open_latest_event` | Android cold-start flag from a notification tap |
-| `mer_last_backup_at` | Last backup timestamp, for the reminder banner |
-| `disclaimerAcceptedVersion` | String, not a bool. Compared against `kDisclaimerVersion` |
+| `mer_open_latest_event` | Navigation signal from the Android background isolate |
+| `disclaimerAcceptedVersion` | Version string, not a bool |
+| `walkthroughSeenVersion` | Version string. Written on PRESENTATION, not completion |
 
-### Adding a field is not a migration
-
-`fromMap` reads defensively — `firstWhere(orElse:)` for enums, type guards for
-the rest. Add a field with a default, a line in `toMap`, and a guarded read in
-`fromMap`; old records acquire it on next save. `eventType`, `severity` and
-`triggers` were added exactly this way.
-
-**What IS dangerous:** renaming an enum value (persisted by `.name`, so a rename
-silently reclassifies every historical record to the fallback), or editing a
-string in `kFeelingsOptions` / `kTriggerOptions` (stored verbatim inside records
-and matched by `contains`, so an edit orphans it everywhere).
-
-### Resilience
-
-- `EventRecord.fromMap` returns **nullable**. A record with an absent, wrongly
-  typed or unparseable timestamp yields null and is skipped. It is deliberately
-  not defaulted to `now()` — a silently wrong date in a medical record is worse
-  than an omission.
-- `EventStore.load` skips non-map entries and null-yielding records
-  individually, so one bad record cannot cost the whole history.
-- `jsonDecode` of the whole payload is **deliberately unguarded**. That is total
-  corruption, not one bad record, and swallowing it would present an empty
-  history as though the user had never logged anything.
-
-### iOS has no rollback copy, on purpose
-
-`writeEventPayload` skips the rollback write on iOS and clears any stale key.
-Because sites 5 and 5b write the primary key natively, a rollback copy on iOS
-would freeze at whenever Dart last wrote, and restoring from it would resurrect
-deleted events and lose recent ones. An absent copy is safe; a silently stale
-one is a data-loss mechanism. The guard carries a DO NOT REMOVE comment.
-
-**Long-term fix:** replicate the snapshot in the Swift write paths. Required
-before any migration that would want to roll back.
+The backup envelope is **separately versioned** at `kBackupSchemaVersion`,
+currently **2**. Distinct from the schema version above and bumped on its own
+cadence.
 
 ---
 
@@ -185,6 +268,13 @@ assume the delegate is contested.
 | Notification **End action** works warm | Yes | Yes |
 | Notification **End action** works **cold** | **No** | **No** |
 | A cold end route therefore exists | Yes — Live Activity, after Face ID | **No** |
+| **In-app End button** on the active-event banner | Yes | Yes |
+
+✅ **THE IN-APP END BUTTON CLOSES THE 16.2–16.x GAP** (`eb8196e`, 27 August 2026,
+backlog 25). Every route above depends on a notification or a Live Activity
+surviving, and both are user-dismissible — on 16.2–16.x there was no end route at
+all once the card was gone. The banner's button does not depend on either.
+⚠️ **Not verified on a device**; no Dart work since 27 August has run on iOS.
 
 **ESTABLISHED BOUNDARY — `didReceive` is not entered for a notification response
 when the app is cold.**
@@ -231,19 +321,31 @@ feature — starting and stopping an event from the Lock Screen without unlockin
 ```
 1. WidgetsFlutterBinding.ensureInitialized()   local, no IO
 2. unawaited(AppInfo.load())                   started, never awaited
-3. SentryFlutter.init(...)                     release stamped in beforeSend
-4. NotificationService.init()
-5. runApp()
+3. await SentryFlutter.init(...)               release stamped in beforeSend
+     inside appRunner:
+4.   await StorageBoot.init()                  opens SQLite, runs the migration
+5.   await NotificationService.instance.init()
+6.   runApp(AppBootstrap())
 ```
 
+⚠️ **`StorageBoot.init()` was MISSING from this sequence** for 116 commits — the
+one step that opens the database and runs the migration, absent from the section
+describing the order, in a document whose §4 also said the app did not use
+SQLite. Both came from the same regeneration gap.
+
+`StorageBoot.init()` reports its outcome to Sentry on a fallback or a failed
+migration, so a device that quietly fell back to the shared_preferences store is
+visible rather than silent.
+
 **Nothing on the cold-start path may await a platform channel.** On Android a
-cold start from a notification action *is* the capture path, and it sits
-upstream of the `mer_open_latest_event` polling loop (8 × 250ms).
+cold start from a notification action *is* the capture path, and it sits upstream
+of the `mer_open_latest_event` polling loop (8 × 250ms).
 
 Version and Sentry release come from `lib/app_info.dart`, which reads the
 platform's own packaged metadata via `package_info_plus`. There is no hardcoded
-version anywhere; a previous three-way drift (pubspec, `constants.dart`, and the
-Sentry release string) is why.
+version in the code; a previous three-way drift (pubspec, `constants.dart`, and
+the Sentry release string) is why. ⚠️ `CLAUDE.md` hardcoded one anyway, on the
+line that forbade it, and was 44 builds stale before anyone noticed.
 
 Sentry release format: `au.com.notiva.medicaleventrecorder@<version>+<build>`.
 
@@ -252,8 +354,18 @@ Sentry release format: `au.com.notiva.medicaleventrecorder@<version>+<build>`.
 ## 7. Backup and restore
 
 - **Format:** JSON envelope with `format`, `schemaVersion` (int), `appVersion`,
-  `exportedAt`, `recordCount`, `records`. Deliberately not a bare array — the
-  storage payload's lack of a version marker is a mistake not repeated here.
+  `exportedAt`, `recordCount`, `records`, **`medicationNoteCount`** and
+  **`medicationNotes`** — eight fields, and the list reads as exhaustive, so it
+  is. Deliberately not a bare array: the storage payload's lack of a version
+  marker is a mistake not repeated here.
+- **`kBackupSchemaVersion` is 2**, since medication notes entered the envelope.
+  Separate from the SQLite schema version. **The bump is the safety mechanism,
+  not bookkeeping** — `parseBackup` refuses a schema newer than the build, so an
+  older build refuses a notes-bearing file instead of restoring the events and
+  silently discarding the notes.
+- **Medication notes merge by id exactly as records do**, and an absent
+  `medicationNotes` key reads as an empty list, never an error — every backup
+  taken before schema 2 lacks it.
 - **Backup:** user picks the destination every time via the system picker. No
   stored path, no bookmark, no credential, no background write.
 - **Restore:** merges by uuid id, so dedup is exact. **Only ever adds.** Existing
@@ -263,6 +375,11 @@ Sentry release format: `au.com.notiva.medicaleventrecorder@<version>+<build>`.
   this build. Validated fully before anything is written, so a restore is never
   partially applied. Unreadable records inside a valid backup are counted and
   reported, not dropped silently.
+- **The empty-backup refusal counts BOTH streams.** It was `inBackup == 0`,
+  written when events were the only kind, and it refused a backup holding
+  medication notes but no events — telling a user who logs only deviations that
+  their file contained nothing. A backup is empty when neither stream has
+  anything.
 - **Reminder banner** at 10 events since last backup, suppressed entirely when
   opened from a notification action, while an event is in progress, or when an
   event was logged this session. The capture path is never gated.
@@ -274,31 +391,52 @@ Sentry release format: `au.com.notiva.medicaleventrecorder@<version>+<build>`.
 
 ## 8. Platform branches
 
-38 `Platform.is*` sites in `lib/`, plus availability gates in Swift
-(`iOS 16.0 / 16.2 / 17.0`) that Dart cannot see. Concentrated in:
-`notification_service.dart` (init gate, iOS bailouts, Android icon resources),
-`home_screen.dart` (cold start, UI gating), `help_screen.dart` (UI gating),
-`event_record.dart` and `backup_service.dart` (export destinations).
+**49** `Platform.is*` sites in `lib/` — an earlier revision said 38. Plus
+availability gates in Swift (`iOS 16.0 / 16.2 / 17.0`) that Dart cannot see.
+
+| File | Sites |
+|---|---|
+| `help_screen.dart` | 13 |
+| `home_screen.dart` | 12 |
+| `notification_service.dart` | 10 |
+| `event_record.dart` | 6 |
+| `walkthrough_screen.dart` | 3 |
+| `backup_service.dart` | 2 |
+| `storage_boot.dart` | 1 |
 
 ---
 
 ## 9. Known-wrong and unverifiable
 
-**Stale in this repo:** `CLAUDE.md` records version 1.0.3+4 and describes iOS
-notifications as `awesome_notifications` with `ActionType.Default`. iOS has been
-native Swift since CR-42 (May 2026).
+⚠️ **THREE OF THE FOUR ENTRIES THAT STOOD HERE HAD BEEN FIXED** — the section
+listing what is known to be wrong was itself the most wrong section in the
+document. Retired entries are listed below rather than deleted, because a
+"known-wrong" list that silently drops items cannot be distinguished from one
+nobody maintains.
 
-**Backlog, recorded in `STATUS.md`:** `_clearIfTimedOut` discards an active event
-after 30 minutes but leaves `duration` at its `lt1` default, so an abandoned
-event reads as "< 1 minute" in the medical record. Needs a new
-`DurationCategory` value — a capture-model change.
+**Still true — everything about iOS runtime behaviour in this document is read
+from source, not observed.** It cannot be verified from Windows. Lock-screen
+actions, Live Activity behaviour, the iOS 16.x fallback path, App Group
+reconciliation, and cold start from a notification all require a Mac and a
+device. **No Dart work since 27 August 2026 has run on iOS at all.**
 
-**Two pre-existing test failures:** `app_smoke_test` and `export_options_test`
-set an obsolete `disclaimerAccepted` bool and never set
-`disclaimerAcceptedVersion`. They have failed since the version gate was
-introduced, well before v1.1.0.
+**Open, and verified open:**
 
-**Everything about iOS runtime behaviour in this document is read from source,
-not observed.** It cannot be verified from Windows. Lock-screen actions, Live
-Activity behaviour, the iOS 16.x fallback path, App Group reconciliation, and
-cold start from a notification all require a Mac and a device.
+- **`renameEntry` is built, tested and unreachable** — no caller in `lib/`. The
+  same shape as `setActive`, which sat unreachable for three schema versions
+  until "Your lists" shipped.
+- **Multi-condition has schema and no UI.** `ConditionStore`, `loadConditions`
+  and `addCondition` have no caller outside `lib/models/`.
+- **MER will not render in portrait on the Teclast P30.** No `screenOrientation`
+  in the manifest, no `setPreferredOrientations` in `lib/`, cause unknown. Every
+  device verification has therefore tested one orientation.
+- **Windows conversion untested** — every Windows run has migrated an empty
+  store.
+
+**RETIRED — fixed, and the entry outlived the defect:**
+
+| Entry | Fate |
+|---|---|
+| *"`CLAUDE.md` records version 1.0.3+4 and describes iOS notifications as `awesome_notifications` with `ActionType.Default`"* | Both corrected. `CLAUDE.md` now states no version at all and describes iOS as native Swift |
+| *"`_clearIfTimedOut` … leaves `duration` at its `lt1` default, so an abandoned event reads as '< 1 minute'"* | Fixed by the capture-model change — records are created with a NULL duration. The missing-data half remains but surfaces in "Needs details" |
+| *"Two pre-existing test failures: `app_smoke_test` and `export_options_test` set an obsolete `disclaimerAccepted` bool"* | Both pass. Each had THREE stacked faults; the obsolete bool was only the first |

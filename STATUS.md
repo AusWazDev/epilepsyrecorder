@@ -47,10 +47,23 @@ no donation mechanism exists anywhere in `lib/` or `pubspec.yaml`. Recorded in t
 register as open items M1 to M4, not as a decision. The Terms still promise a paid app
 in two places and must be revised **before** the store price changes.
 
-⚠️ **That decision lived only in conversation for eight days** while the superseded
-$4.99 entry sat in the register reading as current. A decision that lives only in
-conversation has no artefact to rot, so nothing ever contradicts it, and it reads as
-done. That is the finding this whole pass exists to answer.
+🔴 **CORRECTED 28 Aug 2026 — this said the decision "lived only in conversation" and
+that was FALSE.** It was recorded on 20 August in
+`docs/claude-ai-project-instructions.md:175` and its `.txt` twin, dated, with the
+supersession named.
+
+**The real finding is sharper: the two halves of this project read different files.**
+Chat reads `docs/claude-ai-project-instructions.md`, which held it from day one. The
+build side reads this file, the Change Register and `~/.claude` memory, none of which
+did. So the decision was **recorded and invisible at the same time**, and a CLI audit of
+"what is recorded" confirmed the gap every time because it was looking in the build
+side's files.
+
+**A decision is not recorded until it is in an artefact the half of the project that must
+ACT on it will read.** Monetisation is a build obligation — a donation mechanism, a Terms
+revision, a listing rewrite, a price change. See the Change Register entry for the full
+correction, including how the false claim was produced (a search scoped to the Register
+and `lib/`, never `docs/`, then generalised to "the repo").
 
 ---
 
