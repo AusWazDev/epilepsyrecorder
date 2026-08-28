@@ -2,6 +2,58 @@
 
 ---
 
+## Session: 28 August 2026 — Windows (Claude Code CLI)
+
+**Six commits, then a reconciliation pass.** Full detail is in the Change
+Register under *The record catches up — 28 August 2026*; this is the summary.
+
+| Commit | What |
+|--------|------|
+| `d73222a` | Triggers become a vocabulary table (schema v9) |
+| `9892031` | The hide affordance — "Your lists", the first UI ever to reach `is_active` |
+| `690e024` | Medication notes enter the backup envelope (backup schema 1 to 2) |
+| `cc3a450` | The empty-backup gate counts both streams |
+| `47be40b` | Four small fixes: search hint, summary labels, junk records |
+| `5b94af1` | The retired block on "Your lists": 48 rows to 27 |
+
+### The reconciliation, and why it was needed
+
+The register had stopped tracking the code at 27 Aug 20:33. **Ten commits landed
+after it**, including four schema versions and a backup-format change. Nothing was
+wrong with the work; it was invisible to every artefact except git.
+
+Corrected in this pass:
+
+- **`docs/DATA-MODEL.md` §0** regenerated from v5 to v9. All five of its divergence
+  claims were false, and it had begun contradicting itself — `rescue_med_*` appeared
+  under both "columns that exist" and "columns that do NOT exist". Four "as at v3"
+  claims in the body corrected too, including *"There is no `condition` table yet"*,
+  false since v8.
+- **`CLAUDE.md`** said `Version: 1.1.0+5` (live: `1.1.0+49`) on the same line as
+  *never hardcode this*. The number is now removed rather than updated. It also said
+  **"no SQLite"** in the auto-loaded Data storage section — false since schema v1, and
+  seeding every session with a wrong model of the storage layer. Sixteen source files
+  were missing from the structure listing.
+- **The Change Register**: ten commits added, the $4.99 pricing marked superseded in
+  place, the Terms backlog note corrected (it named §8, which is Disclaimer of
+  Warranties), and the abandoned-event defect closed.
+- **This file**: two stale-open items closed, below.
+
+### What is DECIDED and NOT BUILT
+
+**Monetisation: MER is free with an optional donation.** Decided 20 August 2026,
+superseding the June freemium plan and the $4.99 one-time price. **Nothing is built** —
+no donation mechanism exists anywhere in `lib/` or `pubspec.yaml`. Recorded in the
+register as open items M1 to M4, not as a decision. The Terms still promise a paid app
+in two places and must be revised **before** the store price changes.
+
+⚠️ **That decision lived only in conversation for eight days** while the superseded
+$4.99 entry sat in the register reading as current. A decision that lives only in
+conversation has no artefact to rot, so nothing ever contradicts it, and it reads as
+done. That is the finding this whole pass exists to answer.
+
+---
+
 ## Session: 26 August 2026 — Windows (Claude Code CLI)
 
 ⚠️ **PARTIAL. This section records the CSV delimited change only.** 23 commits landed
@@ -783,7 +835,14 @@ the list byte-identical to the session-start baseline (not merely the same count
 
 ---
 
-## Pending Change Register Entries (add on Windows)
+## Pending Change Register Entries (add on Windows) — ✅ ALL DONE
+
+⚠️ **CLOSED 28 Aug 2026. Every entry below is present in the Change Register**
+(CR-36 through CR-44, DEF-35, DEF-36, v1.0.2, v1.0.3 — verified by grep, with
+`CR-15` as a negative control returning zero). The table was left standing after
+the work was done, so it read as an outstanding obligation for weeks.
+
+**Kept as the record of what was owed and when.** Do not re-add these.
 
 | ID | Type | What | Commit |
 |----|------|------|--------|
@@ -859,10 +918,19 @@ Use the same SharedPreferences flag pattern as iOS cold-start (`kPendingOpenLate
 
 ## TODO — Next Windows Session
 - Update Notiva privacy policy (notiva-site) with Sentry disclosure — same pattern as SoundFind privacy update (short version callout, new Sentry section, rights section). Commit and deploy to notiva.com.au.
-- Add all pending Change Register entries to OneDrive doc (see table above)
+- ~~Add all pending Change Register entries to OneDrive doc (see table above)~~ **DONE — verified 28 Aug 2026**
 - Update ClickUp handoff doc — TestFlight external testing set up (4 Jun 2026 Mac session), public link https://testflight.apple.com/join/FasRwT2z, awaiting beta review
 
 ## Backlog — recorded, not fixed
+
+### OPEN — items that existed only in conversation until 28 Aug 2026
+
+| # | Item |
+|---|------|
+| C1 | **MER will not render in portrait on the Teclast P30.** No `screenOrientation` in `AndroidManifest.xml`, no `setPreferredOrientations` anywhere in `lib/`, yet the app stays at 1280x800 through `user_rotation 0`, a `wm size 800x1280` override and a relaunch, while the launcher rotates. **Cause unknown and deliberately not guessed.** Consequence: every device verification this session tested ONE orientation, and the landscape-only defects already found (`1c6c359`, the Save button under the nav bar) are exactly the class this hides. |
+| C2 | **`renameEntry` is built, tested and unreachable** — no caller in `lib/`. Identical shape to `setActive`, which sat unreachable for three schema versions until "Your lists" shipped. Two entries added on the device while testing (`Cluster headache`, `Jaw ache`) can now be hidden but not corrected. |
+| M1-M4 | **Monetisation is decided and not built** — see the Change Register, *The record catches up — 28 August 2026*. No donation mechanism; Terms and store listing still promise a paid app. |
+
 
 ### CLOSED — item 26, the notification-delegate one-liner
 Closed as recorded on a premise that cannot be settled from here, not as fixed.
@@ -884,16 +952,27 @@ Stop re-deriving this. Both the sub-17 and the iOS 26 investigations returned to
 it and neither could close it from source.
 
 
-### v1.3.0 (capture model) — abandoned events get a wrong duration
-`NotificationService._clearIfTimedOut()` discards an active event after 30
-minutes, but the record it leaves behind keeps `duration` at its `lt1`
-default. An event that was started and never ended therefore reads as
-"< 1 minute" in the user's medical record. Wrong data is worse than missing
-data, and a clinician reading the export cannot tell the two apart.
+### CLOSED 28 Aug 2026 — abandoned events get a wrong duration
+**Fixed by the capture-model change, not by a fix aimed at this.** Records are
+now created with a NULL duration, so an abandoned event is already honest and
+there is nothing to correct. `_clearIfTimedOut` clears the MARKER only, and says
+so at the call site.
 
-Fixing it needs a distinct "unknown / abandoned" value in `DurationCategory`,
-which changes the capture model, the CSV schema and every stored record's
-possible values — v1.3.0, not v1.1.0.
+An `abandon` instruction WAS built here and then removed: it solved a problem
+that belongs at creation, it only ever reached Android because the iOS timeout is
+native, and it could null a duration the user had since filled in by hand.
+
+⚠️ **This item was still being cited as the top open defect on 28 August**, in a
+memory file and in this document, after it had been fixed. Stale-open is the
+mirror of stale-decided, and it is harder to spot because it looks like
+diligence. The original text is preserved below for the reasoning, which is still
+correct about why a wrong duration would have been worse than a missing one.
+
+> `NotificationService._clearIfTimedOut()` discards an active event after 30
+> minutes, but the record it leaves behind keeps `duration` at its `lt1`
+> default. An event that was started and never ended therefore reads as
+> "< 1 minute" in the user's medical record. Wrong data is worse than missing
+> data, and a clinician reading the export cannot tell the two apart.
 
 ### v1.2.0+ (native) — iOS has no rollback copy
 `writeEventPayload` deliberately skips the rollback key on iOS, because the

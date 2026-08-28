@@ -21,7 +21,7 @@
 - **App name:** Medical Event Recorder (MER)
 - **Developer:** Notiva
 - **GitHub:** branch `MedicalEventRecorder`
-- **Version:** 1.1.0+5 (unreleased). Last App Store release was 1.0.2. Never hardcode this — it is read at runtime from the platform package metadata by `lib/app_info.dart`
+- **Version:** read it from `pubspec.yaml`, or at runtime from `lib/app_info.dart`. ⚠️ **The number is deliberately NOT stated here.** This line read `1.1.0+5` from June until 28 August 2026, when live was `1.1.0+49` — while the same sentence said *never hardcode this*. A file nothing re-derives is the wrong place for a value that moves every build. Last App Store release recorded as **1.0.2** (Apple and Play, as at 20 Aug 2026) — that one is a release fact, not a build number, and still needs checking against the console before any submission.
 - **Owner:** Waz (wjl25) — Windows PC primary
 
 ## Package / Bundle IDs — CRITICAL
@@ -41,7 +41,8 @@
 ## Tech Stack
 
 - Flutter (Dart, SDK >=3.4.0 <4.0.0) — Android, iOS, Windows, macOS, Web
-- `shared_preferences` — local data storage (no backend, no cloud)
+- `sqflite` / `sqflite_common_ffi` — **the primary store since schema v1**
+- `shared_preferences` — the fallback store, the cross-process capture inbox, and small flags (disclaimer and walkthrough versions). No longer the event store.
 - `share_plus` / `file_selector` / `cross_file` / `path_provider` — CSV export and JSON backup
 - `url_launcher` — external links (privacy policy, terms, support)
 - `awesome_notifications` ^0.11.0 — Android quick-log notification. **NOT used on iOS or Windows**
@@ -59,12 +60,28 @@ lib/
   constants.dart          — app-wide constants (kDisclaimerVersion, storage keys, URLs)
   main.dart               — entry point; binding, Sentry, NotificationService.init(), runApp()
   models/
-    event_record.dart     — EventRecord model, SharedPreferences serialisation, CSV export
-    backup.dart           — JSON backup envelope, parsing/validation, id-merge restore plan
+    event_record.dart     — EventRecord model, serialisation, CSV export (16 columns, marker v4)
+    event_store_sqlite.dart — SqliteEventStore, the DDL, and every migration v2..v9
+    storage_boot.dart     — picks the store at boot: SQLite, or shared_preferences on a fallback launch
+    storage_migration.dart — the one-way drain from the shared_preferences array into SQLite
+    capture_inbox.dart    — the cross-process inbox the iOS native path and the Android isolate write into
+    capture_instruction.dart — parses what those paths leave behind
+    ios_capture_bridge.dart — the Swift-side handoff
+    vocabulary.dart       — the DDL, seeds and rules for event types, observations and triggers; isShippedHidden, isMisdecodedTwin, setActive, renameEntry
+    vocabulary_store.dart — Vocabularies: the cached lists every picker reads
+    medication_note.dart  — the exceptions-only medication stream (missed / late / changed)
+    condition.dart        — condition + condition_observation. TABLES ONLY, no UI, zero rows
+    duration_format.dart  — duration labels and the seconds/bucket split
+    backup.dart           — JSON backup envelope (schema 2), parsing/validation, id-merge restore plan
   screens/
-    home_screen.dart      — event list, Getting Started card (first use), Help link card (returning), splash redirect
-    log_event_screen.dart — new event form
-    history_screen.dart   — event history, CSV export
+    home_screen.dart      — event list, Last Event card, overflow menu, splash redirect
+    log_event_screen.dart — the single-page form (edit path for a COMPLETE record)
+    event_wizard_screen.dart — the guided flow: four steps then a summary. Edit path for incomplete records
+    walkthrough_screen.dart — first-run, five steps (four on Windows). Flag stores a version
+    history_screen.dart   — event history, filter sheet, search, CSV export
+    medication_screen.dart — the medication deviation list
+    vocabulary_screen.dart — "Your lists": hide and unhide vocabulary entries
+    your_data_screen.dart — export / back up / restore
     about_screen.dart     — APP card, LINKS card, LEGAL card, APP DATA (reset) card
     disclaimer_screen.dart — versioned disclaimer accept gate
     help_screen.dart      — How to use guide; Quick Log Notification setup with live permission status
@@ -140,8 +157,9 @@ Omitting any one of these produces either no icon, a black circle, or incorrect 
 - `_SplashRedirect` in `home_screen.dart` reads this key — **do not revert to boolean**
 
 ### Data storage
-- All events stored in SharedPreferences as one JSON array under `kEventStorageKey` — no SQLite, no cloud sync
-- No user accounts, no analytics — privacy-first design
+- ⚠️ **CORRECTED 28 Aug 2026 — this line read "no SQLite" and was FALSE.** Events are stored in **SQLite** (`SqliteEventStore`), chosen at boot by `StorageBoot`, which falls back to the shared_preferences store only when the database cannot be opened. Schema version is `kSqliteSchemaVersion` in `models/event_store_sqlite.dart` — **v9** as at 28 Aug 2026, with tables `event`, `event_type`, `observation`, `event_observation`, `trigger_option`, `event_trigger`, `medication_note`, `condition`, `condition_observation`, `schema_meta`. See `docs/DATA-MODEL.md` §0, which is regenerated at every schema bump.
+- `epilepsy_event_records_v1` (`kEventStorageKey`) still exists and **stays in place** — it is the drained inbox the iOS native path and the Android background isolate write into. Never remove it.
+- No backend, no cloud sync, no user accounts, no analytics — privacy-first design
 - `EventRecord.fromMap` returns **nullable**; a bad timestamp yields null and that record is skipped, so one unreadable record cannot cost the whole history
 - `writeEventPayload` keeps a rollback copy under `kEventRollbackKey` — **never on iOS**, deliberately, because the native write path bypasses it and a stale copy would be a data-loss mechanism. The guard carries a DO NOT REMOVE comment
 - JSON backup/restore (`models/backup.dart`): versioned envelope, merge-by-id, never replaces

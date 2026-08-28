@@ -14,25 +14,43 @@ concluded `condition_id` did not exist. It does.
 
 ---
 
-## 0. What is BUILT, as at schema v5 — 27 August 2026
+## 0. What is BUILT, as at schema v9 — 28 August 2026
 
 **Derived from the DDL in `lib/models/`, not from memory.** Regenerate this
 section at every schema bump; a divergence table that is not maintained is worse
 than none.
 
+⚠️ **REGENERATED 28 AUGUST 2026 AFTER SITTING AT v5 THROUGH FOUR SCHEMA BUMPS.**
+Every row of the divergence table below was false, and the section had begun
+contradicting itself — the three `rescue_med_*` columns were listed under BOTH
+"columns that exist" and "columns that do NOT exist", because v5 updated one
+list and not the other. The rule above is stated in this section's own words and
+was not followed; it is restated here rather than quietly satisfied, because the
+failure mode is the one this document already names at the top: a claim that was
+correct when written, that nothing re-derives, and that reads as authoritative
+because someone wrote it down deliberately.
+
 ### Tables that exist
 
-| Table | Notes |
-|-------|-------|
-| `schema_meta` | key/value. Carries the schema version and the migration markers. |
-| `event` | 14 columns — see below. |
-| `event_type` | The vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order, emoji`. |
-| `observation` | Identical shape. Shared across conditions by §1 principle 4, so its `condition_id` will never be populated. |
+| Table | Added | Notes |
+|-------|-------|-------|
+| `schema_meta` | v1 | key/value. Carries the schema version and the migration markers. |
+| `event` | v1 | 17 columns — see below. |
+| `event_type` | v2 | The vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order, emoji`. |
+| `observation` | v2 | Identical shape. Shared across conditions by §1 principle 4, so its `condition_id` will never be populated. |
+| `event_observation` | v7 | `event_id, observation_id, position`. Normalised link. **`feelings_json` remains authoritative** — this is additive and nothing reads it yet. |
+| `medication_note` | v7 | `id, occurred_at, logged_at, kind, notes, condition_id`. The exceptions-only medication stream. `condition_id` added v8. |
+| `condition` | v8 | `id, name, seeded_key, is_active, sort_order`. **Created EMPTY and assigned to nothing.** |
+| `condition_observation` | v8 | `condition_id, observation_id, sort_order`. Relevance ORDERING, never membership. No rows, and no picker reads it. |
+| `trigger_option` | v9 | The beforehand vocabulary. Same shape as `observation`. Seven seeds, all ASCII, none retired. |
+| `event_trigger` | v9 | `event_id, trigger_id, position`. **`triggers_json` remains authoritative**, same rule as observations. |
 
-⚠️ **`emoji` was added in v4**, on both vocabulary tables, and this heading
-read `v3` until 26 August. It is presentation only: pickers render it, records
-and the CSV never do. Corrected here because §0 is the one section whose whole
-claim is that it was derived from the DDL rather than remembered.
+Indexes: `event(id)`, `event(logged_at)`, `medication_note(occurred_at)`,
+`event_observation(event_id)`, `event_trigger(event_id)`.
+
+⚠️ **`trigger_option` is deliberately NOT in `kVocabularyTables`.** That constant
+is walked by the v4 emoji ALTER, so including it would make a v3 database ALTER a
+table that v9 creates.
 
 ### `event` columns that exist
 
@@ -47,55 +65,51 @@ All nullable, NULL on every existing row. `rescue_med_helped` is TEXT holding
 whose integer mapping is load-bearing legacy a new column has no reason to
 inherit.
 
-⚠️ **`condition_id` EXISTS, on `event` and on both vocabulary tables.** Added in
-v3, nullable, and **never populated** — NULL means NOT YET SAID. It was built
-deliberately, on instruction, so that the column is in place before there is
-anything to put in it. Do not read the absence of a `condition` table as the
-absence of the column.
+⚠️ **`condition_id` EXISTS, on `event`, on both vocabulary tables and on
+`medication_note`.** Nullable, and **never populated on any row** — NULL means
+NOT YET SAID. The `condition` table now exists too (v8) and is empty, so there
+is still nothing to point at.
+
+### The BACKUP envelope is separately versioned, and is at 2
+
+`kBackupSchemaVersion = 2` since 28 August 2026, when `medicationNoteCount` and
+`medicationNotes` were added. Distinct from the SQLite schema version and bumped
+on its own cadence. The bump is the safety mechanism: `parseBackup` refuses
+`schema > kBackupSchemaVersion`, so an older build refuses a notes-bearing file
+rather than restoring the events and silently discarding the notes.
 
 ### Tables in this document that do NOT exist
 
-`condition`, `condition_observation`, `condition_trigger`, `condition_field`,
-`event_field_value`, `medication_note`, `daily_entry` (§9).
+`condition_trigger`, `condition_field`, `event_field_value`, `daily_entry` (§9).
+
+`condition_trigger` is **buildable since v9** made triggers a vocabulary, and is
+deliberately not built — relevance mapping is a no-op at one condition. Recorded
+as `kConditionTriggerStatus` in `condition.dart` so it is a status rather than an
+absence someone rediscovers.
 
 ### `event` columns in this document that do NOT exist
 
 `event_type_id` (the FK — `event.event_type` still holds the vocabulary `value`
-directly, because a join buys nothing while `condition` does not exist),
-`awareness_changed`, `aura`, `injury`, `rescue_med_given`, `rescue_med_helped`,
-`rescue_med_second_dose`, `recovery_seconds`, `witnessed_by`.
+directly, because a join buys nothing while `condition` is empty),
+`awareness_changed`, `aura`, `injury`, `recovery_seconds`, `witnessed_by`.
 
 ### Behaviour that diverges from this document
 
 | This document says | The code does |
 |---|---|
-| §5: quick record writes `condition_id` = the primary condition | Writes NULL. There is no condition to name. |
-| §5: `event_type_id` NULL until the wizard confirms it | `event_type` defaults to `'seizure'` at construction and `fromMap` coerces an absent key to it. **This is a live defect**, not a design choice — the same class as the `lt1` duration default that stage 1a retired, unfixed in `eventType` and `severity`. |
-| §6: observations and triggers both become delimited columns | Observations did, in v3. **Triggers are still one-hot** — they are not user-defined yet, so the fixed columns still represent them exactly. |
-| §7: `eventType` medication maps to a `medication_note` | Not built. `medication` is still an event type, and is marked `is_protected` so it cannot be renamed, deleted or hidden before the split. |
+| §5: quick record writes `condition_id` = the primary condition | Writes NULL. The table exists and is empty; there is still no condition to name, and no screen where anyone names one. |
+| §5: `event_type_id` NULL until the wizard confirms it | No FK exists. `event.event_type` holds the vocabulary `value` as a nullable string. **The "live defect" recorded here on 27 August — that `eventType` defaulted to `seizure` and `fromMap` coerced an absent key — was FIXED the same day**: both `eventType` and `severity` are now nullable and `fromMap` returns null for an absent key. |
+| §1 principle 2: a user may track several conditions at once | The tables support it; **no UI does.** `ConditionStore`, `loadConditions` and `addCondition` have no caller outside `lib/models/`. |
+| §7: `eventType` medication maps to a `medication_note` | **BUILT** (v7). `medication_note` is a separate table and record kind, interleaved with events in the CSV by `record_kind`. `medication` as an event type is retired by `retireMedicationEventType`, which also CLEARS `is_protected` — so nothing on a live database is protected, and `setActive`'s protection refusal is now unreachable in the app. |
 
----
+### What is BUILT that this document never described
 
-The target model for multi-condition support: what SQLite gets built against,
-and what the migration reads toward. Written before any schema exists, because
-expansion changes what a record *is* — designing tables against today's nine
-fields would mean migrating twice, and the second migration is the harder one.
-
-> **Not clinically validated.** The field set behind this model was drawn from
-> patient-facing charity diaries, Seizure Tracker's published field list, and
-> migraine diary guidance from The Migraine Trust, Migraine Canada, the National
-> Headache Foundation, the American Migraine Foundation and InformedHealth.org
-> (NCBI Bookshelf NBK328459) — not from peer-reviewed literature. See the Change
-> Register entries for 22 August 2026 for the sources and their limits. Nothing
-> here should be described to a user as clinical, standard, or validated.
-
-**Paper-tested against migraine, 22 August 2026.** The model was checked against
-a second condition before any SQLite work, to establish whether it is genuinely
-general or epilepsy with extra tables. It mostly held: triggers, duration,
-notes, aura and a post-event phase all mapped unchanged, and the before / during
-/ after ordering fits migraine better than epilepsy because the phases are more
-distinct. Three gaps were found. Two are amended below; the third is recorded in
-§9 as designed-for and deferred.
+| Thing | Note |
+|---|---|
+| Vocabulary hide / unhide | `is_active` reachable from a UI for the first time — "Your lists", via the Home overflow. `isShippedHidden` separates MER's own retirements, which a user may not reverse, from entries the user hid, which they may. |
+| Mis-decoded observation twins | `mangledLegacyObservations()` — shipped rows so a corrupted stored value resolves to a readable label. Present in the vocabulary, deliberately not rendered on the management screen. |
+| The delimited CSV | 16 columns, marker `v4` in the filename, multi-stream by `record_kind`. |
+| First-run walkthrough | Five steps, four on Windows. Flag stores a version, written on presentation. |
 
 ---
 
@@ -137,12 +151,12 @@ as a requirement it never expressed. See the `condition_id` note below and
 | Column | Notes |
 |--------|-------|
 | `id` | |
-| `condition_id` | **NULLABLE, and unpopulated as at v3.** There is no `condition` table yet — deferred until a screen exists where someone says what they track. NULL means NOT YET SAID. |
+| `condition_id` | **NULLABLE, and unpopulated as at v9.** The `condition` table now EXISTS (v8) and is empty — the blocker is no longer the table, it is that no screen exists where someone says what they track. NULL means NOT YET SAID. |
 | `value` | **ADDED.** The immutable string a record stores. Never changes, for any reason. |
 | `name` | Renamed `label` in code: what a person reads. May change; `value` may not. See §2a. |
 | `is_seeded` | Seeded entries refuse rename and delete. |
 | `is_active` | **ADDED.** Retire, never delete — the entry stays so records referencing it still render. |
-| `is_protected` | **ADDED.** May not be hidden. Exactly one entry: `medication`. |
+| `is_protected` | **ADDED, and now unreachable.** It guarded `medication` until the medication split landed; `retireMedicationEventType` retires that entry AND clears the flag on both the fresh-install and upgrade paths, so **no row on a live database carries it**. The refusal in `setActive` is kept and tested, and cannot currently fire. |
 | `is_primary` | Not built. No consumer yet. |
 | `sort_order` | |
 
@@ -158,8 +172,8 @@ seeded-and-extensible mechanism was designed once rather than twice.
 | Column | Notes |
 |--------|-------|
 | `id` | Preserved across migration — see §7. |
-| `condition_id` | **NULLABLE, and unpopulated as at v3.** ⚠️ This cell was BLANK, and the blank was repeatedly read as NOT NULL — which blocked this work for two design reads. The string "NOT NULL" has never appeared anywhere in this document (`grep -c` returns 0), so the requirement was inherited from nowhere. It is stated explicitly now. NULL means NOT YET SAID, the same rule as `occurred_at`, `details_completed`, duration at creation and the legacy buckets. |
-| `event_type_id` | **NULLABLE** until the wizard confirms it. Not built as at v3 — `event.event_type` still holds the vocabulary `value` directly, because a join buys nothing while `condition` does not exist. |
+| `condition_id` | **NULLABLE, and unpopulated as at v9.** ⚠️ This cell was BLANK, and the blank was repeatedly read as NOT NULL — which blocked this work for two design reads. The string "NOT NULL" has never appeared anywhere in this document (`grep -c` returns 0), so the requirement was inherited from nowhere. It is stated explicitly now. NULL means NOT YET SAID, the same rule as `occurred_at`, `details_completed`, duration at creation and the legacy buckets. |
+| `event_type_id` | **NULLABLE** until the wizard confirms it. Not built as at v9 — `event.event_type` still holds the vocabulary `value` directly, because a join buys nothing while `condition` is empty. |
 | `occurred_at` | Nullable. When it happened. |
 | `logged_at` | **Never null, never editable.** When it was recorded. |
 | `duration_seconds` | Nullable. A **REAL QUANTITY**, not a bucket. |
