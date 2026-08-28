@@ -660,26 +660,63 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 : await loadMedicationNotes(StorageBoot.database!),
           ),
           onBackUp: (ctx) async {
-            await showBackupOptions(ctx, _records);
+            // ⛔ THE NOTES MUST BE LOADED HERE TOO. They reached the CSV via
+            // onExport above and NOTHING ELSE, so a restore onto a new device
+            // silently lost every one — in the one feature whose whole purpose
+            // is that this file is the only copy surviving the loss of a phone.
+            //
+            // Loaded BEFORE the context is used, not inline as an argument:
+            // an await inside the argument list puts `ctx` across an async gap,
+            // which is the rule the rest of this file states explicitly.
+            final db = StorageBoot.database;
+            final notes = db == null
+                ? const <MedicationNote>[]
+                : await loadMedicationNotes(db);
+            if (!ctx.mounted) return;
+            await showBackupOptions(ctx, _records, notes: notes);
             await _refreshBackupCount();
           },
           onRestore: (ctx) async {
-            final merged = await restoreFromBackup(ctx, _records);
+            final db = StorageBoot.database;
+            final existingNotes = db == null
+                ? const <MedicationNote>[]
+                : await loadMedicationNotes(db);
+            if (!ctx.mounted) return;
+            final outcome = await restoreFromBackup(ctx, _records,
+                existingNotes: existingNotes);
             // Null means "no list to write", and restoreFromBackup has already
             // said whatever needed saying: a _refuse dialog for a real failure,
             // a snackbar for a dismissed confirm, and deliberate silence for an
             // explicit cancellation. This return is only silent because the
             // messaging belongs to the function that knows WHICH outcome it was.
-            if (merged == null) return;
-            final added = merged.length - _records.length;
-            setState(() => _records = merged);
+            if (outcome == null) return;
+            final added = outcome.merged.length - _records.length;
+            setState(() => _records = outcome.merged);
             await _persist();
+
+            // Written AFTER the events, and only ever inserted — the plan
+            // already excluded every note this device holds, so this cannot
+            // duplicate or overwrite one. A null database means notes could
+            // not be read either, so there is nothing to reconcile.
+            var notesAdded = 0;
+            if (db != null) {
+              for (final n in outcome.notesToAdd) {
+                await insertMedicationNote(db, n);
+                notesAdded++;
+              }
+            }
+
             if (!ctx.mounted) return;
+            // The notes clause appears only when there are notes, so a
+            // schema 1 backup produces the message it always did.
+            final parts = <String>[
+              '$added ${added == 1 ? "event" : "events"}',
+              if (notesAdded > 0)
+                '$notesAdded medication '
+                    '${notesAdded == 1 ? "note" : "notes"}',
+            ];
             ScaffoldMessenger.of(ctx).showSnackBar(
-              SnackBar(
-                content: Text('Restored $added '
-                    '${added == 1 ? "event" : "events"}'),
-              ),
+              SnackBar(content: Text('Restored ${parts.join(" and ")}')),
             );
           },
         ),

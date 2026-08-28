@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 import '../models/backup.dart';
+import '../models/medication_note.dart';
 import '../models/event_record.dart';
 
 /// Backup and restore, driven entirely by the system file picker.
@@ -104,13 +105,14 @@ Future<int> eventsSinceLastBackup(List<EventRecord> records) async {
 
 Future<void> backupShare(
   BuildContext context,
-  List<EventRecord> records,
-) async {
+  List<EventRecord> records, {
+  List<MedicationNote> notes = const <MedicationNote>[],
+}) async {
   // Resolved before any await so no BuildContext crosses an async gap.
   final messenger = ScaffoldMessenger.of(context);
 
   try {
-    final json = buildBackupJson(records);
+    final json = buildBackupJson(records, notes: notes);
     final dir  = await getTemporaryDirectory();
     final file = File('${dir.path}/${_backupFilename()}');
     await file.writeAsString(json, flush: true);
@@ -148,9 +150,10 @@ Future<void> backupShare(
 
 Future<void> backupSaveAs(
   BuildContext context,
-  List<EventRecord> records,
-) async {
-  final json     = buildBackupJson(records);
+  List<EventRecord> records, {
+  List<MedicationNote> notes = const <MedicationNote>[],
+}) async {
+  final json     = buildBackupJson(records, notes: notes);
   final filename = _backupFilename();
 
   // ── ANDROID — save to Downloads ──
@@ -222,8 +225,9 @@ Future<void> backupSaveAs(
 /// export so the two flows behave alike.
 Future<void> showBackupOptions(
   BuildContext context,
-  List<EventRecord> records,
-) async {
+  List<EventRecord> records, {
+  List<MedicationNote> notes = const <MedicationNote>[],
+}) async {
   if (records.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('No events to back up.')),
@@ -275,7 +279,7 @@ Future<void> showBackupOptions(
               title: const Text('Save to a file'),
               onTap: () async {
                 Navigator.pop(sheet);
-                await backupSaveAs(context, records);
+                await backupSaveAs(context, records, notes: notes);
               },
             ),
           // Same wording as the export sheet for the same action. Two labels
@@ -286,7 +290,7 @@ Future<void> showBackupOptions(
             subtitle: const Text('Email, cloud storage, spreadsheets'),
             onTap: () async {
               Navigator.pop(sheet);
-              await backupShare(context, records);
+              await backupShare(context, records, notes: notes);
             },
           ),
           ListTile(
@@ -310,10 +314,30 @@ Future<void> showBackupOptions(
 /// Returns the merged list when a restore was applied, or null when nothing
 /// was written — which covers cancelling, every refusal case, and a backup
 /// that adds nothing. Existing data is never modified before the confirm.
-Future<List<EventRecord>?> restoreFromBackup(
+/// What a completed restore produced, for the caller to write.
+///
+/// ⛔ **TWO STREAMS, TWO WRITERS, ONE RESULT.** Events are a list the caller
+/// rewrites wholesale; notes are rows it INSERTS into a SQLite table. Returning
+/// only the events is what let medication notes fall out of restore entirely,
+/// so the type now makes the second stream impossible to forget: a caller that
+/// ignores `notesToAdd` has to ignore a named field rather than simply not
+/// know it exists.
+class RestoreOutcome {
+  const RestoreOutcome(this.merged, this.notesToAdd);
+
+  /// The full event list to persist, existing plus additions.
+  final List<EventRecord> merged;
+
+  /// ONLY the notes not already present. Inserting the union would duplicate
+  /// every note already on the device.
+  final List<MedicationNote> notesToAdd;
+}
+
+Future<RestoreOutcome?> restoreFromBackup(
   BuildContext context,
-  List<EventRecord> existing,
-) async {
+  List<EventRecord> existing, {
+  List<MedicationNote> existingNotes = const <MedicationNote>[],
+}) async {
   // The picker call is guarded because a throw here is invisible otherwise.
   // restoreFromBackup is awaited from a PopupMenuButton onSelected callback,
   // whose Future the framework discards, so an escaping error becomes an
@@ -359,7 +383,7 @@ Future<List<EventRecord>?> restoreFromBackup(
     return null;
   }
 
-  final plan = planRestore(existing, parsed);
+  final plan = planRestore(existing, parsed, existingNotes: existingNotes);
   // The one remaining silent null, and deliberately so: the screen this was
   // started from is gone, so there is nobody looking at it to tell. Every other
   // null from this function either shows a _refuse dialog, shows a snackbar, or
@@ -411,7 +435,7 @@ Future<List<EventRecord>?> restoreFromBackup(
     return null;
   }
 
-  return plan.merged;
+  return RestoreOutcome(plan.merged, plan.notesToAdd);
 }
 
 Future<void> _refuse(BuildContext context, String message) async {
@@ -457,10 +481,35 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
         '${plan.unreadable == 1 ? "record" : "records"} could not be read and '
         'will be skipped.');
   }
+  // ⚠️ EVERY NOTE LINE IS CONDITIONAL ON THERE BEING NOTES, so a schema 1
+  // backup — which is every backup taken before this change — produces a
+  // dialog byte-identical to the one it produced before.
+  if (plan.notesInBackup > 0) {
+    lines.add('It also contains ${plan.notesInBackup} medication '
+        '${plan.notesInBackup == 1 ? "note" : "notes"}'
+        '${plan.notesAlreadyPresent > 0 ? ', ${plan.notesAlreadyPresent} '
+            'already on this device' : ''}.');
+  }
+  if (plan.notesUnreadable > 0) {
+    lines.add('${plan.notesUnreadable} medication '
+        '${plan.notesUnreadable == 1 ? "note" : "notes"} could not be read and '
+        'will be skipped.');
+  }
   // toAdd is an int, and was interpolated with no noun — the dialog read
   // "Restore 5?" while every other count in it was pluralised correctly.
-  final toAddLabel =
-      '${plan.toAdd} ${plan.toAdd == 1 ? "event" : "events"}';
+  //
+  // ⛔ AND IT MUST NAME BOTH STREAMS. A backup whose only new content is
+  // medication notes would otherwise offer "Restore 0 events" on a button that
+  // does something — the events-only phrasing is kept EXACTLY when there are no
+  // notes to add, so nothing existing reads differently.
+  final noteCount = plan.notesToAdd.length;
+  final labelParts = <String>[
+    if (plan.toAdd > 0 || noteCount == 0)
+      '${plan.toAdd} ${plan.toAdd == 1 ? "event" : "events"}',
+    if (noteCount > 0)
+      '$noteCount medication ${noteCount == 1 ? "note" : "notes"}',
+  ];
+  final toAddLabel = labelParts.join(' and ');
   lines.add(plan.addsNothing
       ? 'There is nothing new to restore.'
       : 'Restore $toAddLabel?');

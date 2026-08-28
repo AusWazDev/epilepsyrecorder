@@ -70,7 +70,21 @@ const String kEventRollbackKey = 'epilepsy_event_records_v1_rollback';
 // Schema version of the JSON backup envelope. Increment ONLY when the envelope
 // shape changes. A backup declaring a higher number than this build knows is
 // refused rather than partially understood.
-const int kBackupSchemaVersion = 1;
+/// ⛔ **BUMPED 1 -> 2 WHEN MEDICATION NOTES ENTERED THE ENVELOPE.**
+///
+/// The bump is not bookkeeping — it is the whole safety mechanism for the
+/// change. `parseBackup` already refuses `schema > kBackupSchemaVersion`, so
+/// an OLDER build handed a notes-bearing backup now stops with "made by a
+/// newer version of Medical Event Recorder" instead of passing the gate,
+/// reading `records`, and **silently discarding every note in the file** —
+/// which is the same data loss this change exists to fix, moved one layer
+/// along.
+///
+/// A NEW build reading a version 1 backup is unaffected: 1 > 2 is false, and
+/// the absent `medicationNotes` key reads as an empty list rather than an
+/// error. Every backup ever taken lacks that key, so treating its absence as a
+/// fault would break restore for all of them.
+const int kBackupSchemaVersion = 2;
 
 // Magic string identifying a file as a Medical Event Recorder backup. Used to
 // reject another app's JSON before anything is read from it.

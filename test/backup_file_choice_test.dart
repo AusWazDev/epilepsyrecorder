@@ -62,8 +62,19 @@ void main() {
         'exportedAt',
         'recordCount',
         'records',
-      }, reason: 'read more of it, add nothing to it — a device identifier in '
-          'particular, since these files get emailed around');
+        // ⛔ ADDED AT SCHEMA 2, and the exact-set assertion is KEPT rather than
+        // loosened to "contains" — it is what catches an accidental addition,
+        // and loosening it to accommodate a deliberate one would retire the
+        // check on its first real outing.
+        //
+        // THE RULE, restated because the list alone stopped carrying it: this
+        // file holds the USER'S OWN health data and nothing about their DEVICE.
+        // Medication notes are the former. A device identifier, an install id,
+        // a location or a diagnostic field is the latter and still may not go
+        // in — these files get emailed around.
+        'medicationNoteCount',
+        'medicationNotes',
+      }, reason: 'the user data, and nothing about the device');
     });
   });
 

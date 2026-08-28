@@ -79,7 +79,7 @@ class _Host extends StatelessWidget {
   const _Host({required this.existing, required this.onResult});
 
   final List<EventRecord> existing;
-  final void Function(List<EventRecord>?) onResult;
+  final void Function(RestoreOutcome?) onResult;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -102,14 +102,14 @@ void main() {
 
   /// Runs a restore and returns what it yielded, after [act] deals with the
   /// confirm dialog.
-  Future<List<EventRecord>?> runRestore(
+  Future<RestoreOutcome?> runRestore(
     WidgetTester tester, {
     required String? payload,
     required Future<void> Function(WidgetTester) act,
     List<EventRecord> existing = const <EventRecord>[],
   }) async {
     FileSelectorPlatform.instance = _FakeFileSelector(payload);
-    List<EventRecord>? result;
+    RestoreOutcome? result;
     var called = false;
 
     await tester.pumpWidget(_Host(
@@ -149,7 +149,8 @@ void main() {
       );
 
       expect(result, isNotNull);
-      expect(result!.map((r) => r.id), containsAll(<String>['a', 'b', 'c']));
+      expect(result!.merged.map((r) => r.id),
+          containsAll(<String>['a', 'b', 'c']));
       expect(find.textContaining('dismissed'), findsNothing);
     });
 
