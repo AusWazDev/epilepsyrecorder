@@ -2,6 +2,66 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
+<!-- CURRENT-DECISIONS:BEGIN — byte-identical copy required in BOTH files. See the note below. -->
+## CURRENT DECISIONS — the only block that reaches both halves
+
+⛔ **THIS BLOCK IS DUPLICATED ON PURPOSE, AND THE DUPLICATION CANNOT BE REMOVED.**
+The two halves of this project have physically different inbound channels: the
+CLI auto-loads files from disk, and claude.ai reads only its **pasted Project
+instructions** — it cannot read the repo, and a path it is given is a reference
+it cannot follow. So the intersection of "read automatically by both" is not a
+file at all. **The only way a decision reaches both halves is to exist in both
+channels.**
+
+It therefore lives, byte-identical, in exactly two places:
+
+| Copy | Reaches |
+|---|---|
+| `C:\dev\CLAUDE.md` | the CLI, auto-loaded every session |
+| `epilepsyrecorder/docs/claude-ai-project-instructions.md` (+ the `.txt` extract) | claude.ai, **once pasted** |
+
+⚠️ **The `.md` is only the SOURCE of the paste. Editing it changes nothing on the
+chat side until the paste is updated.** `session-end.ps1` warns when the two
+copies diverge; it cannot see the paste, so that step stays manual.
+
+### Why this block exists
+
+**A decision is not recorded until it is in an artefact the half of the project
+that must act on it will read.** The monetisation decision of 20 Aug 2026 was
+recorded correctly, on the day, in the claude.ai instructions — and was absent
+from the Change Register, `STATUS.md` and memory for eight days, while the
+superseded $4.99 price sat in the Register reading as current. It was
+**recorded and invisible at the same time**, and every CLI audit of "what is
+recorded" confirmed the gap, because it was looking in the build side's files.
+
+### ⚖️ When two copies disagree
+
+> **The Register governs on REASONING AND HISTORY** — why a thing was decided,
+> what it superseded, what evidence sat behind it.
+> **The MOST RECENT DATED STATEMENT governs on WHAT IS CURRENT**, wherever it
+> lives.
+
+⚠️ The unconditional form — *"the register governs"* — **would have picked
+$4.99 over the truth.** A register is authoritative because it is maintained,
+not because of where it sits. **The tell is a date, not a location.** Where
+neither claim is dated, neither governs: say the question is open.
+
+### The decisions
+
+| # | Decision | Since | Built? |
+|---|---|---|---|
+| D1 | **MER is FREE with an optional donation.** No feature gating, no export gate, no subscription, no trial. Supersedes the June freemium plan and the USD $4.99 one-time price. | 20 Aug 2026 | 🔴 **NO.** No donation mechanism exists. The Terms still promise a paid app in two places (`terms:38` §3, and the unnumbered callout at `terms:18`) and must be revised BEFORE any store price change |
+| D2 | **MER is a data capture tool only — never diagnostic.** Public copy must not claim diagnosis, monitoring, prediction or treatment. Claim wording is load-bearing; route anything touching it to the adviser rather than deciding it. | standing | ✅ enforced in copy |
+| D3 | **Export-shape changes need no compatibility layer.** One user, manual amendment acceptable. No compatibility mode, no second export option, no version negotiation. Shape is tracked by a filename marker, not a column. | 26 Aug 2026 | ✅ marker `v4` |
+| D4 | **The seeded catalogue is EPILEPSY ONLY this release.** Migraine needs its own research pass; shipping one well beats two thinly. | 20 Aug 2026 | ✅ |
+| D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** | SQLite v1 | ✅ |
+| D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. | 27 Aug 2026 | ✅ "Your lists" |
+
+**Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
+Claude\Medical Event Recorder — Change Register.md`). This table says WHAT is
+current; the Register says WHY.
+<!-- CURRENT-DECISIONS:END -->
+
 ## THE RULE THAT MATTERS MOST
 
 You cannot read the repository, run anything, or see a console. State claims
