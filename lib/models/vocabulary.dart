@@ -685,6 +685,41 @@ bool isShippedHidden(String table, String value) {
   return false;
 }
 
+/// A value that exists ONLY to resolve a corrupted stored string.
+///
+/// ## ⛔ PRESENT IN THE VOCABULARY, ABSENT FROM THE MANAGEMENT SCREEN
+///
+/// The mis-decoded twins are not entries anybody chose. A user never picked
+/// one, cannot pick one, and cannot act on one — they exist so that a record
+/// holding `ðµ Confused` resolves to the readable word `Confused` instead of
+/// rendering its own corruption.
+///
+/// On "Your lists" they rendered as a SECOND row identical to the clean legacy
+/// entry: same label, same "replaced by newer wording" note, same lock. Eleven
+/// of the twenty-two retired rows were duplicates of the other eleven, and five
+/// labels appeared THREE times because the current seed set carries the same
+/// word again.
+///
+/// ⚠️ **HIDING THEM IS ONLY SAFE BECAUSE OF A STRUCTURAL GUARANTEE**, and it is
+/// asserted rather than assumed: [mangledLegacyObservations] is DERIVED from
+/// [kLegacyObservations], so every twin has a clean sibling carrying an
+/// identical label. The label a user can encounter therefore stays reachable
+/// and explained; only the duplicate row goes. `vocabulary_screen_test` pins
+/// that sibling property, because if it ever broke a twin's label would become
+/// unreachable and the screen would start lying.
+///
+/// This is deliberately SEPARATE from [isShippedHidden] and must not be folded
+/// into it. That one answers "may the user un-hide this" and governs a data
+/// guard; this one answers "is there anything here for a person to read" and
+/// governs a widget. A twin is both; a clean legacy entry is only the first.
+bool isMisdecodedTwin(String table, String value) {
+  if (table != kObservationTable) return false;
+  for (final s in mangledLegacyObservations()) {
+    if (s.value == value) return true;
+  }
+  return false;
+}
+
 /// Retires an entry so pickers stop offering it. Records keep rendering.
 ///
 /// Refuses on [VocabularyEntry.isProtected] — "Medication taken" only.

@@ -33,9 +33,25 @@ import '../theme/mer_theme.dart';
 /// screen; and once that screen exists, putting hide anywhere else makes two
 /// affordances for one operation. One mechanism, one home.
 ///
-/// Hidden entries stay **in place, in sort order**, greyed. Not exiled to a
-/// separate section at the bottom — a user looking for the thing they hid looks
-/// where it used to be.
+/// Entries the USER hid stay **in place, in sort order**, greyed — a user
+/// looking for the thing they hid looks where it used to be.
+///
+/// ## ⛔ RETIRED ENTRIES ARE THE EXCEPTION, AND THE RULE ABOVE ONCE SAID
+/// OTHERWISE
+///
+/// The first version put everything in sort order and produced **48 rows, 22 of
+/// them retired and locked, and eleven of those exact duplicates** of the other
+/// eleven — the mis-decoded twins render the same label with the same note.
+/// Five labels appeared three times, because the current seed set carries the
+/// same word again. A user scrolled past all of it to reach their own entries.
+///
+/// So retired entries move to the end of their section behind a disclosure, and
+/// the twins are not rendered at all. **What must not happen is the screen
+/// starting to lie** — it is the only place a user can see why a chip renders
+/// the way it does, so every label a record can produce stays reachable:
+/// the retired block is one tap away on the same screen, and a twin's label is
+/// carried by its clean sibling, which
+/// [isMisdecodedTwin] explains and `vocabulary_screen_test` pins.
 class VocabularyScreen extends StatefulWidget {
   const VocabularyScreen({super.key});
 
@@ -69,6 +85,12 @@ const List<_Section> _kSections = <_Section>[
 ];
 
 class _VocabularyScreenState extends State<VocabularyScreen> {
+  /// Sections whose retired block is expanded, by table name.
+  ///
+  /// Collapsed by default: the retired set is fixed, shipped, and unactionable,
+  /// where the rest of the list is the user's own and is why they came.
+  final Set<String> _expanded = <String>{};
+
   Future<void> _setVisible(
       String table, VocabularyEntry e, bool visible) async {
     try {
@@ -123,13 +145,34 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
   }
 
   List<Widget> _section(_Section s) {
-    final entries = Vocabularies.allIn(s.table);
-    // ⚠️ Counts only what the USER hid. Observations ship 22 inactive rows —
-    // the retired set and their mis-decoded twins — and "22 hidden" over a list
-    // nobody has touched reads as though the user did that.
-    final hidden = entries
-        .where((e) => !e.isActive && !isShippedHidden(s.table, e.value))
-        .length;
+    // ⛔ THE MIS-DECODED TWINS ARE DROPPED HERE, and nowhere else.
+    //
+    // They stay in the vocabulary — a record holding one must keep resolving to
+    // a readable label — but they are not entries a person can read or act on.
+    // Rendering them made ELEVEN of the twenty-two retired rows exact duplicates
+    // of the other eleven. See [isMisdecodedTwin] for why dropping them cannot
+    // make the screen lie.
+    final entries = Vocabularies.allIn(s.table)
+        .where((e) => !isMisdecodedTwin(s.table, e.value))
+        .toList();
+
+    // Retired BY MER, which the user cannot reverse, versus everything they can
+    // act on. The split is what the disclosure is for: the second group is the
+    // reason anyone opens this screen.
+    final own = <VocabularyEntry>[];
+    final retired = <VocabularyEntry>[];
+    for (final e in entries) {
+      if (!e.isActive && isShippedHidden(s.table, e.value)) {
+        retired.add(e);
+      } else {
+        own.add(e);
+      }
+    }
+
+    // ⚠️ Counts only what the USER hid. "22 hidden" over a list nobody has
+    // touched reads as though the user did that.
+    final hidden = own.where((e) => !e.isActive).length;
+    final isOpen = _expanded.contains(s.table);
     return <Widget>[
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
@@ -150,8 +193,55 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
           ],
         ),
       ),
-      for (final e in entries) _row(s.table, e),
+      for (final e in own) _row(s.table, e),
+      if (retired.isNotEmpty) _retiredToggle(s.table, retired.length, isOpen),
+      if (isOpen)
+        for (final e in retired) _row(s.table, e),
     ];
+  }
+
+  /// The disclosure. Everything behind it is one tap away on the SAME screen.
+  ///
+  /// ⛔ NOT a separate screen and NOT deduplication. A separate screen is where
+  /// things go to be forgotten, and merging the clean legacy entry with its twin
+  /// would show two genuine vocabulary rows as one — misrepresenting the data
+  /// rather than tidying it. This changes what is shown FIRST, and nothing else.
+  Widget _retiredToggle(String table, int count, bool isOpen) {
+    return InkWell(
+      onTap: () => setState(() {
+        if (isOpen) {
+          _expanded.remove(table);
+        } else {
+          _expanded.add(table);
+        }
+      }),
+      child: Container(
+        decoration: const BoxDecoration(
+          border:
+              Border(bottom: BorderSide(color: MERColours.border, width: 0.5)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
+          children: [
+            Icon(isOpen ? Icons.expand_less : Icons.expand_more,
+                size: 20, color: MERColours.textMuted),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                // The count is stated whether open or closed, so the disclosure
+                // never reads as "there might be something here".
+                '$count replaced by newer wording',
+                style: const TextStyle(
+                    fontSize: 14, color: MERColours.textMuted),
+              ),
+            ),
+            Text(isOpen ? 'Hide' : 'Show',
+                style: const TextStyle(
+                    fontSize: 14, color: MERColours.action)),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _row(String table, VocabularyEntry e) {
