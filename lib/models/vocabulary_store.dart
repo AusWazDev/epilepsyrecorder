@@ -60,10 +60,13 @@ class Vocabularies {
   static List<VocabularyEntry> get offerableEventTypes =>
       offerable(kEventTypeTable, _eventTypes);
   static List<VocabularyEntry> get offerableTriggers =>
-      offerable(kTriggerTable, _triggers, usage: usageFor(kTriggerTable));
+      offerable(kTriggerTable, _triggers,
+          usage: usageFor(kTriggerTable),
+          relevant: relevantFor(kTriggerTable));
   static List<VocabularyEntry> get offerableObservations =>
       offerable(kObservationTable, _observations,
-          usage: usageFor(kObservationTable));
+          usage: usageFor(kObservationTable),
+          relevant: relevantFor(kObservationTable));
 
   /// True when mutations will persist. False on a fallback launch and in
   /// widget tests — the UI uses this to hide "add your own" rather than offer
@@ -112,6 +115,21 @@ class Vocabularies {
 
   static Map<String, int> usageFor(String table) =>
       _usage[table] ?? const <String, int>{};
+
+  /// The `seeded_key`s of the conditions this person has adopted.
+  ///
+  /// ⛔ **EMPTY ON EVERY DEVICE TODAY, AND THAT IS NOT A BUG.** `addCondition`
+  /// writes `'seeded_key': null` and there is no other writer, so a condition a
+  /// user typed carries no key — correctly, because matching free text to a
+  /// seeded mapping would be MER inferring which condition someone meant. The
+  /// key can only arrive from an explicit choice, which is the catalogue.
+  ///
+  /// So relevance ordering is inert until that lands, and this is where it
+  /// plugs in.
+  static Set<String> _adoptedKeys = const <String>{};
+
+  static Set<String> relevantFor(String table) =>
+      relevantValues(_adoptedKeys, table);
 
   /// Counts values across the record set.
   ///
@@ -174,6 +192,12 @@ class Vocabularies {
       // AFTER the vocabularies, because an ordering over a list that failed
       // to load would be an ordering over nothing.
       _usage = await _countUsage(db);
+      // Only conditions carrying a seeded_key contribute. A user-typed
+      // name has none, so this stays empty until the catalogue lands.
+      _adoptedKeys = <String>{
+        for (final c in await loadConditions(db))
+          if (c.isActive && c.seededKey != null) c.seededKey!,
+      };
       _conditionNames = <int, String>{
         for (final c in await loadConditions(db)) c.id: c.name,
       };

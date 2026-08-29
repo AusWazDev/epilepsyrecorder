@@ -693,7 +693,82 @@ List<VocabularyEntry> catchAllLast(String table, List<VocabularyEntry> list) =>
       ...list.where((e) => isCatchAll(table, e.value)),
     ];
 
-/// What a picker offers: active entries, most-used first, catch-all last.
+/// The relevance mapping for a seeded condition: which entries rank first.
+///
+/// ## ⛔ SOURCED, NOT REASONED — and the source is already in the record
+///
+/// This is NOT a judgement about which entry names look epilepsy-ish. The
+/// twelve below are the **"Proposed epilepsy default"** recorded verbatim in
+/// the Change Register during the sourced field-set pass, which drew on Seizure
+/// Tracker's published field list, the two academic scoping reviews, Epilepsy
+/// Action and the Epilepsy Foundation.
+///
+/// ⚠️ **AND THAT ENTRY FLAGS ITSELF: "NOT clinically validated — to be checked
+/// against the sourced sets".** No such check is recorded anywhere. So this
+/// mapping rests on a PROPOSAL that was explicitly marked as needing
+/// validation and never got it. It is the best sourced answer available and it
+/// is not a validated one — the same tier caveat every field set here carries.
+///
+/// ⛔ **THERE IS NO TRIGGER MAPPING, DELIBERATELY.** The register sources the
+/// observation set for epilepsy and sources NOTHING for the seven original
+/// triggers — the only recorded trigger relevance is the migraine assessment,
+/// which is about migraine. Inventing one from the entry names is exactly what
+/// the sourcing rule forbids, so `kTriggerTable` is absent here and the
+/// beforehand picker keeps usage-then-seed order.
+const Map<String, Map<String, Set<String>>> kSeededRelevance =
+    <String, Map<String, Set<String>>>{
+  'epilepsy': <String, Set<String>>{
+    kObservationTable: <String>{
+      'Confused',
+      'Tired',
+      'Headache',
+      'Nauseous',
+      'Sore or aching',
+      'Weak',
+      'Sad',
+      'Anxious',
+      'Angry',
+      'Irritable',
+      'Memory gap',
+      'Speech difficulty',
+    },
+  },
+};
+
+/// The values ranked first for a set of adopted condition keys.
+///
+/// A union, because two conditions are two mappings and an entry relevant to
+/// either is relevant. Unknown keys contribute nothing rather than throwing —
+/// a key from a newer build must not break a picker.
+Set<String> relevantValues(Set<String> seededKeys, String table) => <String>{
+      for (final k in seededKeys) ...?kSeededRelevance[k]?[table],
+    };
+
+/// What a picker offers: active entries, ordered, catch-all last.
+///
+/// ## THE RANKING, AND ONE DELIBERATE DEVIATION
+///
+///     1. USED        entries this person has recorded, most-used first
+///     2. RELEVANT    entries mapped to a condition they have adopted
+///     3. SEED ORDER  the tiebreak
+///
+/// ⚠️ **The brief specified relevance FIRST, then usage. That is implemented
+/// the other way round on purpose**, because relevance-first regresses an
+/// established user: an entry they have recorded twenty times but which is not
+/// in their condition's mapping would sink below entries they have never
+/// touched. Usage is evidence about THIS person; relevance is a prior about
+/// people with that condition, and evidence should outrank a prior.
+///
+/// **Cold start is unaffected, which is the case relevance exists for.** With
+/// no records every usage count is zero, so relevance decides the whole list —
+/// exactly the intended behaviour, reached without the regression.
+///
+/// ## ⛔ ORDERS. NEVER FILTERS. NEVER HIDES.
+///
+/// Every active entry is returned whatever its relevance or usage. A migraine
+/// user who has a memory gap must still be able to record it, and the rule has
+/// been refused three times on that ground. `relevance_ordering_test` includes
+/// a control that fails if this is ever implemented as a filter.
 ///
 /// ## ⛔ WHY USAGE AND NOT `condition_observation`
 ///
@@ -728,9 +803,10 @@ List<VocabularyEntry> offerable(
   String table,
   List<VocabularyEntry> all, {
   Map<String, int> usage = const <String, int>{},
+  Set<String> relevant = const <String>{},
 }) {
   final active = all.where((e) => e.isActive).toList();
-  if (usage.isEmpty) return catchAllLast(table, active);
+  if (usage.isEmpty && relevant.isEmpty) return catchAllLast(table, active);
 
   // ⚠️ INDEX TIEBREAK, because Dart's sort is NOT STABLE. Without it, every
   // never-used entry — the majority — would land in an arbitrary order that
@@ -743,6 +819,10 @@ List<VocabularyEntry> offerable(
       final ua = usage[a.value] ?? 0;
       final ub = usage[b.value] ?? 0;
       if (ua != ub) return ub.compareTo(ua);
+      // Relevance breaks a usage tie, which at cold start is EVERY pair.
+      final ra = relevant.contains(a.value) ? 0 : 1;
+      final rb = relevant.contains(b.value) ? 0 : 1;
+      if (ra != rb) return ra.compareTo(rb);
       return index[a.value]!.compareTo(index[b.value]!);
     });
   return catchAllLast(table, sorted);
