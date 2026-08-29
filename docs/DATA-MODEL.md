@@ -206,6 +206,12 @@ published diary"; that was drawn from seizure diaries only and stated too
 broadly. Its absence from *seizure* diaries reflects that those are clinical
 instruments, not that self-rated severity is without value.
 
+⚠️ **Shipped as "Compared with the others here"**, not as recommended below. The
+relative framing is the load-bearing part and it survives; "your other events"
+named the patient, which the observer-voice pass removed on 29 Aug 2026.
+"In this record" was considered and rejected — a record is ONE event, so it
+implies a record holds several.
+
 Consider labelling it "Compared with your other events" in the UI so the
 relative framing is explicit rather than implied.
 

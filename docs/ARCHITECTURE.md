@@ -127,7 +127,7 @@ diligence.
 
 | Was listed as false | Now |
 |---|---|
-| *"How you felt before, during and after"* — was *"one feelings list with no temporal dimension at all. The prompt is 'How are you feeling?'"* | **TRUE for before and after.** Two temporally-framed lists: *"What was happening beforehand?"* and *"How did you feel afterwards?"*. There is still nothing DURING — copy claiming that is false |
+| *"How you felt before, during and after"* — was *"one feelings list with no temporal dimension at all. The prompt is 'How are you feeling?'"* | **TRUE for before and after.** Two temporally-framed lists: *"What was happening beforehand?"* and *"How were things afterwards?"* — renamed 29 Aug 2026 to drop the PERSON, since the store listing claims carers and the old wording addressed the patient. There is still nothing DURING — copy claiming that is false |
 | *"Event type (e.g. seizure type, symptom category)"* — was *"four enum values, no sub-types"* | **Partly true.** Types are user-extensible, so a user may name their own. Still no sub-type hierarchy and no symptom categories, and `Other / custom` still has no free-text field — `notes` is the only place to say what it was |
 | *"customisable details"* (live App Store listing) | **TRUE.** Three vocabularies are user-extensible |
 

@@ -80,7 +80,10 @@ const List<_Section> _kSections = <_Section>[
       kEventTypeTable, 'Event types', 'Offered when you record what happened.'),
   _Section(kTriggerTable, 'What was happening beforehand',
       'Offered on the beforehand step. Not causes.'),
-  _Section(kObservationTable, 'How you felt afterwards',
+  // Restores the parallel across all three: Event types / What was happening
+  // beforehand / How things were afterwards. The noun form of the wizard
+  // heading, and it names nobody for the same reason.
+  _Section(kObservationTable, 'How things were afterwards',
       'Offered on the afterwards step.'),
 ];
 

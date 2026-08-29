@@ -506,7 +506,17 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
             orphanValue: _eventType,
           ),
           const SizedBox(height: 24),
-          const Text('Compared with your other events',
+          // ⚠️ THE RELATIVE FRAMING IS LOAD-BEARING AND MUST SURVIVE. Severity
+          // is kept precisely because it is a RELATIVE self-assessment — how
+          // this event compares with this person's own others — which is data
+          // a specialist cannot get any other way. Dropping to "Compared with
+          // other events" would lose the comparison set.
+          //
+          // "your other events" named the patient. "the others here" keeps
+          // the comparison and names nobody. Deliberately NOT "in this
+          // record" — a record is one event, so that phrasing implies a
+          // record contains several.
+          const Text('Compared with the others here',
               style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
           const SizedBox(height: 10),
           _chips<EventSeverity>(
@@ -549,12 +559,17 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           // A QUESTION, like every other step, and the same words the single
           // page uses.
           //
-          // ## The four wordings this has worn, so a fifth is not reached for
+          // ## The five wordings this has worn, so a sixth is not reached for
           //
           //  1. "How are you feeling?"  PRESENT TENSE. Someone logging live
           //     read it as RIGHT NOW and someone logging days later as THEN.
           //     One field, two meanings, nothing in the record saying which.
-          //  2. "How did you feel afterwards?"  Correct, and what is here now.
+          //  2. "How did you feel afterwards?"  Fixed the TENSE and left the
+          //     PERSON. First person, addressed to whoever had the event, while
+          //     the store listing says "individuals and carers". A carer
+          //     recording someone else was writing in the wrong voice, and
+          //     nothing noticed for three weeks because two separate defects
+          //     sat in one sentence and fixing the loud one looked like done.
           //  3. "Afterwards"  A noun, justified as fitting "a column of nouns"
           //     on the single page. THE COLUMN IS NOT NOUNS — it runs
           //     "What happened?", "Duration", "Severity", "Afterwards",
@@ -568,17 +583,41 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           //     RadioGroup or Semantics label being duplicated (there is
           //     neither). Nothing was being duplicated, so what was removed was
           //     the only label the field had.
+          //  5. "How were things afterwards?"  CURRENT. Keeps the tense fix,
+          //     drops the person. Takes the shape the sibling heading already
+          //     had — a question about the EVENT, naming nobody — so a patient
+          //     reads it as how things were for them and a carer as how things
+          //     were for the person they care for.
           //
           // The heading carries the temporal meaning rather than leaving it to
           // the hint, because Option A showed what happens when the hint is the
           // only thing saying it: remove one line and the meaning is gone.
-          _heading('How did you feel afterwards?',
+          // ⛔ NO PERSON IN THIS HEADING, and that is the point. It read
+          // "How did you feel afterwards?" — first person, addressed to the
+          // person who had the event. MER is patient-first but carers are a
+          // SUPPORTED audience, and the live App Store listing already says
+          // so: "Designed for individuals and carers managing epilepsy."
+          // A carer recording someone else was writing in the wrong voice.
+          //
+          // The fix is the sibling heading's own shape: a question about the
+          // EVENT, not about the person. "What was happening beforehand?"
+          // already named nobody. A patient reads this as how things were for
+          // them, a carer as how things were for the person they care for,
+          // and neither is addressed or excluded.
+          //
+          // ⚠️ NOT "Afterwards" or "Observed afterwards" — cold, and clinical
+          // wording serves the carer at the patient's expense. Patient-first
+          // means the warmth stays.
+          _heading('How were things afterwards?',
               'In the minutes and hours after it ended.'),
           _vocabMultiChips(
             table: kObservationTable,
             entries: Vocabularies.offerableObservations,
             selected: _feelings,
-            addPrompt: 'Add how you felt',
+            // The SAME string the beforehand step uses, chosen there because
+            // it completes the heading's grammar and claims nothing. It does
+            // the same work here, and the app carries one fewer wording.
+            addPrompt: 'Add something else',
           ),
           const SizedBox(height: 24),
           ..._rescueSection(),

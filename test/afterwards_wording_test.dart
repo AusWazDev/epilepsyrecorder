@@ -23,7 +23,14 @@ import 'package:medical_event_recorder/screens/log_event_screen.dart';
 ///                                     it as right now, someone logging days
 ///                                     later as then. One field, two meanings,
 ///                                     and nothing in the record said which.
-///   2. "How did you feel afterwards?" CURRENT, on both surfaces.
+///   2. "How did you feel afterwards?" Fixed the TENSE, left the PERSON.
+///                                     First person, addressed to whoever had
+///                                     the event, while the store listing says
+///                                     "individuals and carers". Superseded
+///                                     29 Aug 2026.
+///   5. "How were things afterwards?" CURRENT, on both surfaces. Names
+///                                     nobody, so it serves a patient and a
+///                                     carer without addressing either.
 ///   3. "Afterwards"                   A noun, justified as fitting "a column of
 ///                                     nouns" on the single page. THE COLUMN IS
 ///                                     NOT NOUNS — see test 7, which enumerates
@@ -44,7 +51,16 @@ import 'package:medical_event_recorder/screens/log_event_screen.dart';
 
 /// The one wording. Changing it here should be the only edit a rename needs —
 /// and this file then proves every surface followed.
-const String kAfterwardsHeading = 'How did you feel afterwards?';
+// ⛔ CHANGED FOR THE OBSERVER VOICE, 29 Aug 2026. It read "How did you feel
+// afterwards?" — first person, addressed to the person who had the event,
+// while the live App Store listing says "Designed for individuals and carers".
+// A carer recording someone else was writing in the wrong voice.
+//
+// The TENSE was fixed by the observation revision; the PERSON was not, and
+// nothing noticed for three weeks because the two are separate defects in one
+// sentence. This file existing as a single constant is what made the rename
+// one edit — see the note below.
+const String kAfterwardsHeading = 'How were things afterwards?';
 const String kAfterwardsHint = 'In the minutes and hours after it ended.';
 
 /// The noun used where a question does not fit: a bulleted summary line and a

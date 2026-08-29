@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'afterwards_wording_test.dart' show kAfterwardsHeading;
+
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
 import 'package:medical_event_recorder/screens/log_event_screen.dart';
@@ -117,14 +119,21 @@ void main() {
     // ⚠️ THIS CONTROL HAS MOVED THREE TIMES, and it is worth reading as a
     // record rather than as churn: it tracked the observation label through
     // "How are you feeling?" -> "How did you feel afterwards?" ->
-    // "Afterwards" -> and back. Two of those changes were justified by claims
-    // about the surrounding UI that turned out to be false, and both were
-    // reversed. The control caught every move. See afterwards_wording_test,
-    // which now pins the CLAIMS as well as the wording.
+    // "Afterwards" -> and back -> "How were things afterwards?" (29 Aug,
+    // the PERSON dropped so a carer is not addressed as the patient).
+    // Two of those changes were justified by claims about the surrounding
+    // UI that turned out to be false, and both were reversed. The control
+    // caught every move. See afterwards_wording_test, which now pins the
+    // CLAIMS as well as the wording.
+    //
+    // ⚠️ DERIVED FROM THE CONSTANT NOW, uppercased the way the single page
+    // renders it. This line held a FOURTH hand-written copy of the heading
+    // and broke on the rename — the copy afterwards_wording_test exists to
+    // make unnecessary.
     //
     // A positive control that never moves is a positive control nothing is
     // testing.
-    expect(find.text('HOW DID YOU FEEL AFTERWARDS?'), findsOneWidget);
+    expect(find.text(kAfterwardsHeading.toUpperCase()), findsOneWidget);
   });
 
   test('5. the CSV never labels the field at all', () {

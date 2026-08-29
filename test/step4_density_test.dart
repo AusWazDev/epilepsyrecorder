@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'afterwards_wording_test.dart' show kAfterwardsHeading;
+
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
@@ -74,11 +76,15 @@ void main() {
     // fixture - and a hardcoded number of Next taps silently measures the
     // wrong step when that changes. Walk until step 4 is on screen.
     for (var i = 0; i < 4; i++) {
-      if (find.text('How did you feel afterwards?').evaluate().isNotEmpty) break;
+      // ⚠️ THE CONSTANT, not a literal. This file held its own copy of the
+      // heading and broke on the rename — which is exactly what
+      // afterwards_wording_test exists to prevent, and it could not,
+      // because nothing here referenced it.
+      if (find.text(kAfterwardsHeading).evaluate().isNotEmpty) break;
       await tester.tap(find.widgetWithText(FilledButton, 'Next'));
       await tester.pumpAndSettle();
     }
-    expect(find.text('How did you feel afterwards?'), findsOneWidget,
+    expect(find.text(kAfterwardsHeading), findsOneWidget,
         reason: 'the step under measurement must actually be on screen');
 
     // ⚠️ MEASURED FROM THE LAST ELEMENT, not from the scroll extent.

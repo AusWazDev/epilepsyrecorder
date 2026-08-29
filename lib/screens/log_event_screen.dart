@@ -489,7 +489,9 @@ appBar: AppBar(
                         //
                         // Word for word the wizard's step 4 heading, for the same
                         // reason the type label above matches its step 2.
-                        _SectionLabel('How did you feel afterwards?'),
+                        // Matches the wizard. See the note there for why no
+                        // person appears in this heading.
+                        _SectionLabel('How were things afterwards?'),
                         const SizedBox(height: 4),
                         // "In the minutes and hours…", NOT "How you felt in
                         // the minutes and hours…". The longer form belonged to
@@ -510,7 +512,7 @@ appBar: AppBar(
                           // nowhere a record is rendered.
                           labelFor: (v) =>
                               Vocabularies.displayFor(kObservationTable, v),
-                          addLabel: 'Add how you felt',
+                          addLabel: 'Add something else',
                           onToggle: (f) => setState(() {
                             _selectedFeelings.contains(f)
                                 ? _selectedFeelings.remove(f)
@@ -521,7 +523,7 @@ appBar: AppBar(
                               : null,
                         ),
                         if (_addingIn == kObservationTable)
-                          _inlineAdd(kObservationTable, 'Add how you felt',
+                          _inlineAdd(kObservationTable, 'Add something else',
                               (e) => _selectedFeelings.add(e.value)),
                         const SizedBox(height: 20),
 
