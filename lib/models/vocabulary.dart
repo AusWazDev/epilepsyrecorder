@@ -42,6 +42,10 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 /// Table names. Used as an identifier in SQL, so they are never interpolated
 /// from anything a user can influence.
+/// Sentinel for [VocabularyEntry.copyWith], so a nullable field can be CLEARED
+/// rather than only set. See the note on `copyWith`.
+const Object _unset = Object();
+
 const String kEventTypeTable = 'event_type';
 const String kObservationTable = 'observation';
 
@@ -115,7 +119,15 @@ class VocabularyEntry {
   /// different, so an emoji-less text style can never mangle a stored value.
   String get display => emoji == null ? label : '$emoji $label';
 
-  VocabularyEntry copyWith({String? label, bool? isActive, int? sortOrder}) =>
+  /// ⚠️ `conditionId` takes a SENTINEL, not a plain null, because null is a
+  /// meaningful VALUE here — it is what unassigning a type looks like. A plain
+  /// `int? conditionId` could not distinguish 'leave it alone' from 'clear it'.
+  VocabularyEntry copyWith({
+    String? label,
+    bool? isActive,
+    int? sortOrder,
+    Object? conditionId = _unset,
+  }) =>
       VocabularyEntry(
         id: id,
         value: value,
@@ -124,7 +136,9 @@ class VocabularyEntry {
         isActive: isActive ?? this.isActive,
         isProtected: isProtected,
         sortOrder: sortOrder ?? this.sortOrder,
-        conditionId: conditionId,
+        conditionId: identical(conditionId, _unset)
+            ? this.conditionId
+            : conditionId as int?,
         emoji: emoji,
       );
 
@@ -746,6 +760,51 @@ Future<VocabularyEntry> setActive(
   await db.update(table, <String, Object?>{'is_active': active ? 1 : 0},
       where: 'id = ?', whereArgs: <Object?>[entry.id]);
   return entry.copyWith(isActive: active);
+}
+
+/// Assigns an event type to a condition, or clears it with null.
+///
+/// ## ⛔ ONE CONDITION PER TYPE, AND THE COLUMN SHAPE IS THE ENFORCEMENT
+///
+/// `condition_id` holds ONE value. There is no join table for this and there
+/// must not be one — the whole attribution model rests on a type belonging to
+/// exactly one condition, because that is what lets a record's condition be
+/// DERIVED from its type instead of stored on 72 records by a migration nobody
+/// asked for.
+///
+/// **Two conditions cannot meaningfully share a type.** A type is the name of a
+/// thing that happened; if it belonged to two conditions an event of that type
+/// could be either, which is not a type but an ambiguity. The edge case is a
+/// generic word — "Headache" is plausible for epilepsy and migraine both — and
+/// the honest handling is **two types carrying the same word, one per
+/// condition**, because a headache in a seizure cluster and a migraine headache
+/// are different clinical events even when the word matches.
+///
+/// ⚠️ **THE CONSTRAINT FAILS VISIBLY, WHICH IS THE POINT.** A user who tries to
+/// put one type under two conditions finds they cannot — the field holds one
+/// value, so the second assignment REPLACES the first and the screen says so.
+/// That is a conversation, not a silent wrong answer. Nothing here needs to
+/// throw: the shape refuses before the code has to.
+///
+/// Only [kEventTypeTable] may be assigned. Observations and triggers are SHARED
+/// across conditions by DATA-MODEL §1 principle 4 — one trigger list, one
+/// observation list — so assigning one would contradict the model.
+Future<VocabularyEntry> setConditionFor(
+  DatabaseExecutor db,
+  String table,
+  VocabularyEntry entry,
+  int? conditionId,
+) async {
+  if (table != kEventTypeTable) {
+    throw const VocabularyRuleError(
+      'Only event types belong to a condition. Observations and what was '
+      'happening beforehand are shared across every condition you track, so '
+      'you never have to set them up twice.',
+    );
+  }
+  await db.update(table, <String, Object?>{'condition_id': conditionId},
+      where: 'id = ?', whereArgs: <Object?>[entry.id]);
+  return entry.copyWith(conditionId: conditionId);
 }
 
 /// There is no delete.

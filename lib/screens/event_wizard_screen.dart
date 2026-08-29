@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
+import '../models/condition.dart';
 import '../models/event_record.dart';
+import '../models/storage_boot.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
 import '../theme/mer_theme.dart';
@@ -159,6 +161,13 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   @override
   void initState() {
     super.initState();
+    // Condition names for the picker headings. Loaded here rather than read
+    // per-build: it is one indexed query, and a heading that says "Not set"
+    // because the names had not arrived yet would be a silent wrong answer
+    // rather than a slow one.
+    //
+    // ⚠️ A STORE, not a Database — the same rule every other screen follows.
+    _loadConditionNames();
     final e = widget.existing;
     _id = e?.id ?? _uuid.v4();
     _timestamp = e?.timestamp ?? DateTime.now();
@@ -473,9 +482,20 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _heading('What happened?', 'Pick what best describes it.'),
+          // ⛔ GROUPED BY CONDITION, NOT FILTERED. There is no condition
+          // context at capture — DATA-MODEL §5, "nothing at capture time" — so
+          // a picker filtered to one condition would make a second condition
+          // unrecordable from the main flow. Grouping is what "types do not
+          // mix" actually asks for: a migraine type sits under its own heading
+          // rather than among the seizure types, and every type stays
+          // reachable.
+          //
+          // ⚠️ At ONE condition (or none) this renders EXACTLY as before —
+          // `_conditionGroups` returns null and the ungrouped path runs.
           _vocabChips(
             table: kEventTypeTable,
             entries: Vocabularies.offerableEventTypes,
+            groups: _conditionGroups(),
             isSel: (e) => _eventType != null && _eventType == e.value,
             onTap: (e) => setState(() => _eventType = e.value),
             addPrompt: 'Add an event type',
@@ -748,6 +768,93 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   /// entry. That happens for real: a backup restored from another device can
   /// carry a type this device's vocabulary has never seen. Dropping it would
   /// silently reassign the record to whatever chip happened to be selected.
+  /// The grouped rendering. One heading per condition, the add row ONCE at the
+  /// end — not per group, which would ask the user which condition they were
+  /// adding to and put a decision in a place that does not need one.
+  ///
+  /// Unassigned types come last under "Not set". They are not a condition, and
+  /// naming that group after one would be an attribution nobody made.
+  Widget _groupedVocabChips(
+    String table,
+    Map<int?, List<VocabularyEntry>> groups,
+    bool Function(VocabularyEntry) isSel,
+    void Function(VocabularyEntry) onTap,
+    String addPrompt,
+    String? orphanValue,
+    bool known,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final entry in groups.entries) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6, top: 4),
+            child: Text(
+              _conditionNames[entry.key] ?? 'Not set',
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: MERColours.textMuted),
+            ),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final e in entry.value)
+                ChoiceChip(
+                  label: Text(e.label),
+                  selected: isSel(e),
+                  onSelected: (_) => onTap(e),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            // The orphan chip belongs to no group — it is a value this device's
+            // vocabulary has never seen, so it has no condition either.
+            if (orphanValue != null && !known)
+              ChoiceChip(
+                label: Text(eventTypeLabel(orphanValue)),
+                selected: true,
+                onSelected: (_) {},
+              ),
+            if (_addingIn != table) _addRow(table, addPrompt, (e) => onTap(e)),
+          ],
+        ),
+        if (_addingIn == table) _addRow(table, addPrompt, (e) => onTap(e)),
+      ],
+    );
+  }
+
+  /// Condition names by id, loaded once for the picker headings.
+  Map<int?, String> _conditionNames = const <int?, String>{};
+
+  Future<void> _loadConditionNames() async {
+    final conditions = await ConditionStore(StorageBoot.database).load();
+    if (!mounted || conditions.isEmpty) return;
+    setState(() {
+      _conditionNames = <int?, String>{
+        for (final c in conditions) c.id: c.name,
+      };
+    });
+  }
+
+  /// Condition groups for the type picker, or NULL when grouping would show
+  /// nothing — fewer than two groups means every type is in the same place.
+  ///
+  /// Returning null rather than a one-entry map is deliberate: it keeps the
+  /// single-condition rendering on the SAME code path it has always used,
+  /// rather than a grouped path that happens to produce one group.
+  Map<int?, List<VocabularyEntry>>? _conditionGroups() {
+    final g = Vocabularies.offerableEventTypesByCondition();
+    return g.length < 2 ? null : g;
+  }
+
   Widget _vocabChips({
     required String table,
     required List<VocabularyEntry> entries,
@@ -755,8 +862,13 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     required void Function(VocabularyEntry) onTap,
     required String addPrompt,
     String? orphanValue,
+    Map<int?, List<VocabularyEntry>>? groups,
   }) {
     final known = entries.any((e) => e.value == orphanValue);
+    if (groups != null) {
+      return _groupedVocabChips(
+          table, groups, isSel, onTap, addPrompt, orphanValue, known);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

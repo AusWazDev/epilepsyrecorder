@@ -248,6 +248,90 @@ class Vocabularies {
     return updated;
   }
 
+  /// Assigns an event type to a condition, or clears it, and refreshes.
+  ///
+  /// See [setConditionFor] for why one type belongs to exactly one condition
+  /// and why that constraint is enforced by the column rather than by a throw.
+  static Future<VocabularyEntry?> setCondition(
+    String table,
+    VocabularyEntry entry,
+    int? conditionId,
+  ) async {
+    final db = _db;
+    if (db == null) {
+      // Mirrors `add` and `setVisible`: the flow completes in memory so a
+      // fallback launch is not a broken screen, and does not survive a restart.
+      if (table != kEventTypeTable) {
+        throw const VocabularyRuleError(
+          'Only event types belong to a condition. Observations and what was '
+          'happening beforehand are shared across every condition you track, '
+          'so you never have to set them up twice.',
+        );
+      }
+      final updated = entry.copyWith(conditionId: conditionId);
+      _eventTypes =
+          _eventTypes.map((e) => e.id == entry.id ? updated : e).toList();
+      return updated;
+    }
+    final updated = await setConditionFor(db, table, entry, conditionId);
+    await load(db);
+    return updated;
+  }
+
+  /// ⛔ THE DERIVATION. A record's condition is a FUNCTION OF ITS TYPE.
+  ///
+  /// This is what makes multi-condition possible without a migration. The
+  /// alternative — storing `condition_id` on every event — needs someone to
+  /// decide what the 72 existing records belong to, and **a migration deciding
+  /// that is an assertion about the user's health that nobody made.** Three
+  /// design reads rejected exactly that.
+  ///
+  /// Deriving asks the user for ONE statement instead — "these types are my
+  /// epilepsy" — and 71 records attribute themselves from it. The statement is
+  /// theirs, about their own vocabulary, and it is revisable.
+  ///
+  /// ⚠️ **NULL IS A REAL ANSWER AND MUST STAY ONE.** A record with no type
+  /// (the quick-record path writes none) has no condition, and a type nobody
+  /// has assigned has no condition. Both mean NOT YET SAID — the same rule as
+  /// `occurredAt`, `detailsCompleted` and duration at creation. Do not default
+  /// either to the primary condition: that would invent the attribution this
+  /// whole design exists to avoid.
+  static int? conditionIdForEventType(String? eventTypeValue) {
+    if (eventTypeValue == null) return null;
+    for (final e in _eventTypes) {
+      if (e.value == eventTypeValue) return e.conditionId;
+    }
+    return null;
+  }
+
+  /// Event types grouped by condition, for a PICKER.
+  ///
+  /// ⛔ **GROUPED, NOT FILTERED, AND THE DIFFERENCE IS LOAD-BEARING.** There is
+  /// no condition context at capture — DATA-MODEL §5: *nothing at capture
+  /// time* — so a picker filtered to one condition would make a second
+  /// condition unrecordable from the main flow. Grouping is what "types do not
+  /// mix" actually asks for: a migraine type sits under its own heading rather
+  /// than among the seizure types, and every type stays reachable.
+  ///
+  /// Filtering by condition is meaningful in HISTORY, where the user is asking
+  /// a question about a subset. It is not meaningful while recording.
+  ///
+  /// Returns null-keyed entries LAST — unassigned types are not a condition,
+  /// and with one condition (or none) that group is the whole list, so the
+  /// picker looks exactly as it does today.
+  static Map<int?, List<VocabularyEntry>> offerableEventTypesByCondition() {
+    final out = <int?, List<VocabularyEntry>>{};
+    for (final e in offerableEventTypes) {
+      out.putIfAbsent(e.conditionId, () => <VocabularyEntry>[]).add(e);
+    }
+    final keys = out.keys.where((k) => k != null).toList()
+      ..sort((a, b) => a!.compareTo(b!));
+    return <int?, List<VocabularyEntry>>{
+      for (final k in keys) k: out[k]!,
+      if (out.containsKey(null)) null: out[null]!,
+    };
+  }
+
   /// Every entry in [table], hidden ones included, in picker order.
   ///
   /// The management screen needs this and no other caller does: a picker shows

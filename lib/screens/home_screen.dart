@@ -27,6 +27,8 @@ import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../screens/your_data_screen.dart';
 import '../screens/medication_screen.dart';
+import '../models/condition.dart';
+import '../screens/conditions_screen.dart';
 import '../screens/vocabulary_screen.dart';
 import '../screens/walkthrough_screen.dart';
 import '../theme/mer_theme.dart';
@@ -49,6 +51,7 @@ class HomeScreen extends StatefulWidget {
 enum _HomeMenuAction {
   history,
   medication,
+  conditions,
   lists,
   yourData,
   about,
@@ -833,6 +836,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 // The overflow is where a user goes WITH A REASON, which is
                 // what Medication established. Hiding a list entry is that
                 // shape exactly: rare, deliberate, never part of capture.
+                // Named "What you track" rather than "Conditions": the user
+                // does not necessarily think of themselves as having a
+                // condition, and the screen is about their vocabulary.
+                case _HomeMenuAction.conditions:
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ConditionsScreen(
+                        store: ConditionStore(StorageBoot.database),
+                      ),
+                    ),
+                  );
+                  break;
                 case _HomeMenuAction.lists:
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -869,6 +884,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               PopupMenuItem(
                 value: _HomeMenuAction.medication,
                 child: Text('Medication'),
+              ),
+              PopupMenuItem(
+                value: _HomeMenuAction.conditions,
+                child: Text('What you track'),
               ),
               PopupMenuItem(
                 value: _HomeMenuAction.lists,
