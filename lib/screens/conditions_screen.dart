@@ -140,7 +140,18 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
   List<Widget> _conditionsSection() => <Widget>[
         _heading('Conditions',
             _conditions.isEmpty
-                ? 'Nothing named yet. Most people only ever name one.'
+                // ⛔ THE SHAPE, NOT A DIAGNOSIS. The hint below used to read
+                // "Epilepsy, migraine, something else" — naming two conditions,
+                // one of which the register has in the BLOCKED set. Naming the
+                // shape is true; naming a diagnosis is a claim about what MER
+                // serves, and it is the same claim being corrected in the store
+                // listing.
+                //
+                // It belongs HERE rather than in the hint because a placeholder
+                // vanishes the moment someone types. This blurb is visible
+                // whether the field is focused or not.
+                ? 'Nothing named yet. For things that happen in episodes — '
+                    'they start, they stop. Most people only ever name one.'
                 : 'The first one you named is your main one.'),
         for (final c in _conditions)
           _row(
@@ -167,7 +178,14 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
                     autofocus: true,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
-                      hintText: 'Epilepsy, migraine, something else',
+                      // Defers to the user's own word, the way the whole
+                      // vocabulary does — renameEntry is is_seeded = 1 only,
+                      // because a user's entry is theirs and MER does not
+                      // relabel it. Deliberately NOT "whatever you call your
+                      // episodes": this field takes a CONDITION, and that
+                      // wording invites the event type instead, producing a
+                      // condition named "Seizures" holding a type "Seizure".
+                      hintText: 'The name you use for it',
                       isDense: true,
                     ),
                     onSubmitted: (_) => _add(),
