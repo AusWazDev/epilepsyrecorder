@@ -2,6 +2,111 @@
 
 ---
 
+## Session: 27–29 August 2026 — Mac (Claude Code CLI)
+
+**iOS end-of-event surfaces, two closed backlog items, and a read-only App Store
+Connect audit.** Five commits, all pushed. No console changes — every ASC call
+was a GET.
+
+| Commit | What |
+|--------|------|
+| `0753410` | 17+: post the active notification on foreground, so a dismissed one recovers |
+| `35e49b7` | 17+: post it at start too, not only on foreground |
+| `0bb8aa7` | Take the notification delegate back after launch (backlog 26) |
+| `8b554e1` | Record the cold notification-response boundary; close backlog 26 |
+| `eb8196e` | An in-app End button on the active-event banner (backlog 25) |
+
+### The boundary, which is the durable result
+
+**`didReceive` is not entered for a notification response while the app is cold.**
+Measured on iOS 26.6 and 16.7.15, independently. The 26.6 run carried an internal
+positive control — a `UserDefaults` write by the *same* cold background process
+persisted while the breadcrumb inside `didReceive` never appeared. The voice probe
+corroborates from the other side: it ran cold and locked and its write persisted.
+**Cold background execution works; notification-response delivery is what fails.**
+
+Cause unknown and not attributable without Apple. Recorded in `docs/ARCHITECTURE.md`
+§5 with the end-route matrix by tier, and a design rule: **do not add a capture or
+end path that depends on `didReceive` reaching us cold.**
+
+### Backlog 26 — closed on an unsettleable premise, not fixed
+
+The delegate reassignment is in the tree (`0bb8aa7`) as hardening and is **not**
+claimed as the cause. It carries an `os_log` recording whether the delegate had in
+fact been stolen, so a cold locked test would close it for free. What the pass did
+settle is that the item was **dismissed on an invalid inference**: "iOS guarantees
+`didFinishLaunching` completes before `didReceive`" does not rule the theft out,
+because the theft happens inside exactly that window. Both investigations kept
+returning to this. Stop re-deriving it.
+
+### Backlog 25 — an in-app End button, built
+
+The banner rendered on iOS all along showing a running timer and offering nothing.
+The floor was at **zero on 16.2–16.x with the notification dismissed and the app
+cold** — `LiveActivityIntent` needs 17, so the card there is display-only; the event
+ran to the 30-minute timeout and wrote a wrong duration.
+
+No fourth writer: Dart invokes one channel case, Swift writes through the **same**
+`writeInboxEnd` the notification action uses, Dart drains through the existing
+transport. No schema change, no transport change. The teardown order is deliberately
+**the reverse** of `handleQuickLogEnd`'s — dismiss the Live Activity, *then* clear the
+keys — because clearing first can orphan a Live Activity that nothing will ever end.
+
+### Verified on device (Wazza's iPhone, iOS 26)
+
+- `35e49b7` — both surfaces present on the Lock Screen, both End actions visible,
+  neither obscured. **`368bb34`'s stacking does not recur**, because that was two
+  *notifications* in the Dart era, not a notification beside a Live Activity.
+- `eb8196e` — banner clears, record lands with a real duration, Live Activity goes,
+  notification reverts to idle.
+- ⚠️ **Neither tested on sub-17**, which is the tier `eb8196e` was built for. Paula's
+  phone is on 16.7.15 if it is picked up.
+
+### App Store Connect audit — read-only, 28 Aug
+
+Live listing read verbatim from the API. **All five false claims from the 20 Aug
+audit are still published**, and one has **inverted**: *"customisable details"* was
+false and is now **true** — user-defined event types, observations and triggers landed
+since. The unqualified privacy claim (*"nothing is sent to the cloud or any third
+party"*, against Sentry) is the one Apple reviews against.
+
+The whatsNew claim *"start and stop … without unlocking your iPhone"* has got **worse**,
+not better: it now fails on both halves for a cold device.
+
+`availableInNewTerritories: true` confirmed — 175 of 175 territories, none excluded.
+In practice MER auto-lists in any new Apple storefront with no review and no decision.
+Price: manual, USA base, US$4.99 / $4.24 proceeds. Google Play shows **A$6.99** — the
+storefronts disagree.
+
+**Google Play confirmed LIVE** (v1.0.2, updated 10 May 2026, A$6.99), so
+`ARCHITECTURE.md` §1's three-stores claim is true and needs no change.
+
+### ⚠️ This repository is PUBLIC
+
+`github.com/AusWazDev/epilepsyrecorder` — verified by unauthenticated API, HTTP 200,
+`"visibility": "public"`. Every commit, doc and code comment is world-readable.
+Scanned: **no key material is tracked**, and the ASC Key ID and Issuer ID appear
+nowhere in the repo. The Sentry DSN is committed in `lib/main.dart`, which is normal.
+
+### Backlog 7 — closable as already satisfied
+
+Its premise was false. The ASC Key ID and Issuer ID were never memory-only: they are
+in `OneDrive/Projects/App Dev/Claude/Dev Environment Reference.md`, which both machines
+reach. The memory file's claim to be "the only place on disk" was wrong and is what
+led Windows to believe it was blocked. Corrected in place.
+
+**What it does not unblock:** Windows still cannot call the API, because the `.p8` is
+Mac-only and single-copy by design. A second key `AuthKey_BWZ38T82MK.p8` exists in
+Downloads on Windows with an unestablished scope — the lookup procedure is recorded in
+the reference file. Do not use it and do not delete it until it is identified.
+
+### Not done, deliberately
+
+The medication and observations brief was addressed to Windows and left there — two
+sessions on one branch for a once-only migration is the collision that cost a pass.
+
+---
+
 ## Session: 28 August 2026 — Windows (Claude Code CLI)
 
 **Six commits, then a reconciliation pass.** Full detail is in the Change

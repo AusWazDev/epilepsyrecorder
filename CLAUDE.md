@@ -108,15 +108,34 @@ assets/
 notifications are native Swift: `ios/Runner/AppDelegate.swift` owns
 `UNUserNotificationCenter`, plus an ActivityKit Live Activity and an App Intent
 in `ios/MERWidget/`. `notification_service.dart:60` returns early on iOS because
-`AwesomeNotifications().initialize()` reassigns `UNUserNotificationCenter.delegate`
-to itself and breaks the native locked-screen handler. `onActionReceived` also
-returns immediately on iOS. **Do not "fix" either by removing the platform check.**
+`awesome_notifications` reassigns `UNUserNotificationCenter.delegate` to itself and
+breaks the native locked-screen handler. `onActionReceived` also returns immediately
+on iOS. **Do not "fix" either by removing the platform check.**
 
-⚠️ **iOS creates event records in Swift**, not Dart —
-`AppDelegate.handleQuickLogStart` writes `flutter.epilepsy_event_records_v1` in
-`UserDefaults` directly, and `EndMEREventIntent` (the Live Activity button, in the
-widget extension process) mutates it. Neither passes through `writeEventPayload`.
-Anything added to the Dart write path is absent on the iOS quick-log path.
+⚠️ **CORRECTED 29 Aug 2026 — the Dart guard is necessary but NOT sufficient, and it
+is not `initialize()` that steals the delegate.** The reassignment is in the plugin's
+Swift **constructor**, which `GeneratedPluginRegistrant` runs on every iOS launch
+whether or not Dart ever calls `initialize()`:
+`AwesomeNotifications()` → `activateiOSNotifications()` → an observer on
+`UIApplication.didFinishLaunchingNotification` → `delegate = self`. UIKit posts that
+notification **after** `didFinishLaunchingWithOptions` returns, so the assignment in
+`didFinishLaunching` cannot be the last word. There is a main-queue reassignment at
+the end of `didFinishLaunching` and another in `applicationDidBecomeActive`. Assume
+the delegate is contested. Full chain with file:line in `docs/ARCHITECTURE.md` §5.
+
+⚠️ **CORRECTED 29 Aug 2026 — this said "iOS creates event records in Swift" and
+that is FALSE. It inverted the single-writer property.** Swift no longer reads or
+writes the stored record list at all. `AppDelegate.handleQuickLogStart`,
+`handleQuickLogEnd` and `EndMEREventIntent` each post a **fact** to the capture inbox
+(`writeInboxStart` / `writeInboxEnd`, one `mer_inbox_<uuid>` key per instruction in
+the App Group), and **Dart's main isolate is the only writer of the record list**. The
+cross-process read-modify-write was removed, not relocated — `AppDelegate.swift`
+carries a DO-NOT-REINTRODUCE note where the record-list key used to be.
+
+⚠️ **iOS end-of-event has three surfaces, none reliable cold on every tier.** See
+`docs/ARCHITECTURE.md` §5 for the matrix and the established boundary: `didReceive` is
+**not entered for a notification response while the app is cold**, measured on 26.6 and
+16.7.15. Do not add a capture or end path that depends on it reaching us cold.
 
 ⚠️ **Windows has no notification path at all.** `init()` returns before any
 channel is created. Capture on Windows is in-app only.
