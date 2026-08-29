@@ -198,4 +198,12 @@ const List<String> kTriggerOptions = [
   'Flashing lights',
   'Illness',
   'Unknown',
+  // Appended 29 Aug 2026 with the same three in `kSeedTriggers`, which
+  // `trigger_vocabulary_test` #9 pins together. APPENDED, so the six above keep
+  // the canonical positions every existing export already used — no historical
+  // column reorders. See the seed list for sourcing, including the one entry
+  // marked INFERRED.
+  'Period or hormonal',
+  'Certain foods',
+  'Dehydration',
 ];

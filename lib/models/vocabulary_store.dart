@@ -55,10 +55,12 @@ class Vocabularies {
   static List<VocabularyEntry> get observations => _observations;
 
   /// What a picker offers: active only, "Other" last.
-  static List<VocabularyEntry> get offerableEventTypes => offerable(_eventTypes);
-  static List<VocabularyEntry> get offerableTriggers => offerable(_triggers);
+  static List<VocabularyEntry> get offerableEventTypes =>
+      offerable(kEventTypeTable, _eventTypes);
+  static List<VocabularyEntry> get offerableTriggers =>
+      offerable(kTriggerTable, _triggers);
   static List<VocabularyEntry> get offerableObservations =>
-      offerable(_observations);
+      offerable(kObservationTable, _observations);
 
   /// True when mutations will persist. False on a fallback launch and in
   /// widget tests — the UI uses this to hide "add your own" rather than offer

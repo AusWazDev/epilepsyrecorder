@@ -207,6 +207,14 @@ const String kMedicationValue = 'medication';
 const String kOtherEventTypeValue = 'other';
 const String kOtherObservationValue = 'Other';
 
+/// The trigger vocabulary's catch-all: no known trigger.
+///
+/// ⚠️ It had NO CONSTANT until 29 Aug 2026 — it existed only as the bare
+/// string `'Unknown'` inside `kSeedTriggers`, which is why it was missing
+/// from the forced-last comparison in `offerable`. The two entries that HAD
+/// constants were the two that were handled.
+const String kUnknownTriggerValue = 'Unknown';
+
 /// A seed row, before it has an id.
 class VocabularySeed {
   const VocabularySeed(
@@ -547,19 +555,58 @@ Future<List<VocabularyEntry>> loadVocabulary(
   return rows.map(VocabularyEntry.fromRow).toList();
 }
 
-/// What a picker offers: active entries, "Other" forced last.
-List<VocabularyEntry> offerable(List<VocabularyEntry> all) {
-  final active = all.where((e) => e.isActive).toList();
-  final other = active
-      .where((e) =>
-          e.value == kOtherEventTypeValue || e.value == kOtherObservationValue)
-      .toList();
-  final rest = active
-      .where((e) =>
-          e.value != kOtherEventTypeValue && e.value != kOtherObservationValue)
-      .toList();
-  return <VocabularyEntry>[...rest, ...other];
+/// The catch-all entry of a vocabulary — the one that must render LAST
+/// wherever its list is shown, whatever its `sort_order` says.
+///
+/// ## ⛔ WHY THIS IS A FUNCTION AND NOT TWO `||` COMPARISONS
+///
+/// [offerable] used to inline `value == kOtherEventTypeValue || value ==
+/// kOtherObservationValue`. That list was CORRECT and INCOMPLETE, which is the
+/// dangerous combination: **`Unknown` on the trigger vocabulary is a catch-all
+/// too and was not in it.** Nothing showed, because `Unknown` is the last seed
+/// in `kSeedTriggers` and its `sort_order` put it last anyway — so the closed
+/// list and the seed order agreed by coincidence, and the first trigger
+/// appended after it would have separated them.
+///
+/// Which is exactly what happened: the migraine pass appends three. Had this
+/// stayed a two-value comparison, `Unknown` would have rendered mid-list
+/// immediately, on the shipped epilepsy path, from a migraine change.
+///
+/// ## ⚠️ SCOPED BY (TABLE, VALUE), NOT BY VALUE ALONE
+///
+/// The same discipline as [isShippedHidden]: a defect lives at an address, not
+/// in a word. Keyed on the value alone, a USER'S OWN observation typed as
+/// "Unknown" would be silently dragged to the end of their list — their entry,
+/// reordered by a rule about somebody else's table.
+///
+/// ⚠️ **`sort_order` cannot do this job**, which is why the rule is applied at
+/// read time rather than fixed in the data. `seedVocabulary` skips values that
+/// already exist and `syncSeededPresentation` updates only `label` and `emoji`
+/// — **nothing rewrites `sort_order` on a row that is already there.** So on
+/// every existing database the catch-all keeps the order it was inserted with,
+/// and any entry appended after it sorts later. Forcing it last on the way out
+/// is the only fix that reaches a device already in the field.
+bool isCatchAll(String table, String value) {
+  if (table == kEventTypeTable) return value == kOtherEventTypeValue;
+  if (table == kObservationTable) return value == kOtherObservationValue;
+  if (table == kTriggerTable) return value == kUnknownTriggerValue;
+  return false;
 }
+
+/// Orders a vocabulary for display: the catch-all last, everything else in
+/// `sort_order`.
+///
+/// Used by [offerable] and by the management screen, which shows INACTIVE
+/// entries too and therefore cannot go through it.
+List<VocabularyEntry> catchAllLast(String table, List<VocabularyEntry> list) =>
+    <VocabularyEntry>[
+      ...list.where((e) => !isCatchAll(table, e.value)),
+      ...list.where((e) => isCatchAll(table, e.value)),
+    ];
+
+/// What a picker offers: active entries, the catch-all forced last.
+List<VocabularyEntry> offerable(String table, List<VocabularyEntry> all) =>
+    catchAllLast(table, all.where((e) => e.isActive).toList());
 
 /// The label to render for a stored [value].
 ///
@@ -1023,7 +1070,44 @@ const List<VocabularySeed> kSeedTriggers = <VocabularySeed>[
   VocabularySeed('Alcohol', 'Alcohol'),
   VocabularySeed('Flashing lights', 'Flashing lights'),
   VocabularySeed('Illness', 'Illness'),
-  VocabularySeed('Unknown', 'Unknown'),
+  VocabularySeed(kUnknownTriggerValue, 'Unknown'),
+
+  // ── APPENDED 29 AUG 2026, from the migraine research pass ────────────────
+  //
+  // ⛔ APPENDED, NOT INSERTED, AND THAT IS MECHANICAL RATHER THAN STYLISTIC.
+  // `seedVocabulary` sets `sort_order = sortBase + listIndex` and SKIPS any
+  // value already present, while `syncSeededPresentation` updates only `label`
+  // and `emoji`. So on a database that already exists, the rows above keep the
+  // orders they were inserted with, and an entry inserted MID-LIST would take
+  // an index that one of them already holds — leaving the picker to break the
+  // tie by `id`. New seeds go at the end or the order becomes arbitrary.
+  //
+  // `Unknown` therefore no longer sorts last, which is why `isCatchAll` had to
+  // learn about it in the same pass. It is forced last at read time now.
+  //
+  // ⚠️ THE OBSERVATIONS FROM THE SAME PASS ARE DELIBERATELY NOT HERE. Eleven
+  // were sourced and are held: MER records BEFOREHAND and AFTERWARDS, migraine
+  // has four phases, and entries like "Yawning" belong to prodrome. Offering a
+  // prodrome symptom under "How were things afterwards?" invites recording it
+  // as postdrome — a false statement about WHEN, stored verbatim, in the one
+  // artefact a clinician reads. Vocabularies are append-only, so that is a
+  // one-way door. The phase question is scoped separately.
+  //
+  // These three carry no phase question at all: a trigger is a trigger.
+  //
+  // Source: The Migraine Trust's own diary guidance and headache diary fact
+  // sheet, patient-facing, which is the same tier the epilepsy set came from.
+  // NOT peer-reviewed literature and not clinically validated.
+  VocabularySeed('Period or hormonal', 'Period or hormonal'),
+  VocabularySeed('Certain foods', 'Certain foods'),
+  // ⚠️ INFERRED, NOT SOURCED — stated here rather than in a caveat elsewhere,
+  // because a caveat somewhere else is not attached to the thing it qualifies.
+  // The Migraine Trust names diet, the menstrual cycle, sleep, stress and
+  // medication directly; it does NOT name dehydration. This entry was derived
+  // from a prodrome finding about thirst, which is a different claim about a
+  // different phase. It is the only value in this pass without a direct
+  // source, and it should be the first one reconsidered if the set is revised.
+  VocabularySeed('Dehydration', 'Dehydration'),
 ];
 
 /// Links an event to trigger rows. The normalised form of `triggers_json`.

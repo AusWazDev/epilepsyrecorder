@@ -155,9 +155,16 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     // Rendering them made ELEVEN of the twenty-two retired rows exact duplicates
     // of the other eleven. See [isMisdecodedTwin] for why dropping them cannot
     // make the screen lie.
-    final entries = Vocabularies.allIn(s.table)
-        .where((e) => !isMisdecodedTwin(s.table, e.value))
-        .toList();
+    // catchAllLast, for the same reason the pickers use it: this screen IS
+    // the picker's contents, and "Other" reading mid-list here while it reads
+    // last in the picker would make the two disagree about the same list.
+    // NOT offerable() — that drops inactive entries, and un-hiding them is the
+    // reason this screen exists.
+    final entries = catchAllLast(
+        s.table,
+        Vocabularies.allIn(s.table)
+            .where((e) => !isMisdecodedTwin(s.table, e.value))
+            .toList());
 
     // Retired BY MER, which the user cannot reverse, versus everything they can
     // act on. The split is what the disclosure is for: the second group is the

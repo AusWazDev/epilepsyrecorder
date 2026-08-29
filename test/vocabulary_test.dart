@@ -127,7 +127,7 @@ void main() {
         'Medication taken',
         'Other / custom',
       ]);
-      expect(offerable(types).last.value, kOtherEventTypeValue,
+      expect(offerable(kEventTypeTable, types).last.value, kOtherEventTypeValue,
           reason: '"Other" is placed last, permanently');
       await db.close();
     });
@@ -188,7 +188,8 @@ void main() {
         () async {
       final db = await openFresh();
       final obs = await loadVocabulary(db, kObservationTable);
-      final offeredValues = offerable(obs).map((e) => e.value).toSet();
+      final offeredValues =
+          offerable(kObservationTable, obs).map((e) => e.value).toSet();
 
       for (final legacy in kFeelingsOptions) {
         expect(offeredValues, isNot(contains(legacy)),
@@ -204,7 +205,8 @@ void main() {
 
     test('5. "Other" is last in the observation picker too', () async {
       final db = await openFresh();
-      final offered = offerable(await loadVocabulary(db, kObservationTable));
+      final offered = offerable(
+          kObservationTable, await loadVocabulary(db, kObservationTable));
       expect(offered.last.value, kOtherObservationValue);
       await db.close();
     });
@@ -319,7 +321,8 @@ void main() {
       // that it survives, not that the function returned something.
       final reread = await loadVocabulary(db, kObservationTable);
       expect(reread.map((e) => e.value), contains('Dizzy'));
-      expect(offerable(reread).map((e) => e.value), contains('Dizzy'));
+      expect(offerable(kObservationTable, reread).map((e) => e.value),
+          contains('Dizzy'));
       await db.close();
     });
 
@@ -476,8 +479,9 @@ void main() {
       expect(med.isProtected, isFalse,
           reason: 'the protection guarded an empty set and is discharged');
 
-      final offered = offerable(await loadVocabulary(db, kEventTypeTable))
-          .map((e) => e.value);
+      final offered =
+          offerable(kEventTypeTable, await loadVocabulary(db, kEventTypeTable))
+              .map((e) => e.value);
       expect(offered, isNot(contains(kMedicationValue)));
       await db.close();
     });
@@ -570,7 +574,8 @@ void main() {
 
     test('28. and the twins are RETIRED, never offered', () async {
       final db = await openFresh();
-      final offered = offerable(await loadVocabulary(db, kObservationTable));
+      final offered = offerable(
+          kObservationTable, await loadVocabulary(db, kObservationTable));
       expect(offered.map((e) => e.value), isNot(contains(mangledConfused)));
       // POSITIVE CONTROL: the picker is not simply empty.
       expect(offered.map((e) => e.value), contains('Confused'));
