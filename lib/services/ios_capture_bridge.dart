@@ -255,6 +255,14 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
         eventType:        existing.eventType,
         severity:         existing.severity,
         triggers:         existing.triggers,
+        // ⛔ SAME OMISSION AS capture_inbox, and this file's own comment
+        // above already stated the rule it was breaking. The rescue
+        // fields have been destroyed here since 216bef7; occurredAt would
+        // have been the fourth.
+        occurredAt:           existing.occurredAt,
+        rescueMedGiven:       existing.rescueMedGiven,
+        rescueMedHelped:      existing.rescueMedHelped,
+        rescueMedSecondDose:  existing.rescueMedSecondDose,
       );
       durationsRecovered.add(m.id);
     }

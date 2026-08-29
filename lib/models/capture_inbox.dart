@@ -232,6 +232,23 @@ InboxDrainResult applyInbox(
       // the wizard, and rebuilding without this would silently reopen a record
       // they had finished.
       detailsCompleted: record.detailsCompleted,
+      // ⛔ CARRIED, ALL OF THEM. This branch rebuilds an EXISTING record to
+      // set one value, so EVERY field it does not name is a field it DESTROYS.
+      //
+      // 🔴 THREE WERE ALREADY BEING DESTROYED before this line existed:
+      // `216bef7` added the rescue-medication fields to EventRecord and updated
+      // neither rebuild path, and nothing tested it. A user who walked the
+      // wizard and recorded a rescue dose, whose end instruction then drained
+      // afterwards — the ordering the comment above describes as EXPECTED —
+      // had all three silently reset to null.
+      //
+      // `rebuild_preserves_fields_test` compares the whole `toMap()` minus the
+      // one key this path is meant to change, so the next field added is
+      // covered without anyone remembering to come here.
+      occurredAt: record.occurredAt,
+      rescueMedGiven: record.rescueMedGiven,
+      rescueMedHelped: record.rescueMedHelped,
+      rescueMedSecondDose: record.rescueMedSecondDose,
     );
     changed = true;
   }
