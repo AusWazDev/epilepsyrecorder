@@ -76,7 +76,7 @@ void main() {
       // sort after Unknown by sort_order, so this is not passing vacuously.
       final bySortOrder =
           (await loadVocabulary(db, kTriggerTable)).map((e) => e.value).toList();
-      expect(bySortOrder.last, 'Dehydration',
+      expect(bySortOrder.last, 'Irritable',
           reason: 'POSITIVE CONTROL: by raw sort_order the catch-all is NOT '
               'last, which is exactly the condition being corrected');
       expect(bySortOrder.indexOf(kUnknownTriggerValue),
@@ -121,8 +121,25 @@ void main() {
         'Unknown',
       ], reason: 'the original seven keep their order, so no existing export '
           'column reorders');
-      expect(values.sublist(7),
-          <String>['Period or hormonal', 'Certain foods', 'Dehydration']);
+      expect(values.sublist(7), <String>[
+        'Period or hormonal',
+        'Certain foods',
+        'Dehydration',
+        // The migraine symptom entries, appended after the three triggers.
+        'Yawning',
+        'Food cravings',
+        'Numbness or tingling',
+        'Visual disturbance',
+        'Sensitive to light',
+        'Sensitive to sound',
+        'Neck stiffness',
+        'Difficulty concentrating',
+        // The three that fix the SHIPPED gap: nobody could record fatigue,
+        // nausea or irritability BEFORE an event on any condition.
+        'Tired',
+        'Nauseous',
+        'Irritable',
+      ]);
       await db.close();
     });
 

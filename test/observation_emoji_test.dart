@@ -77,7 +77,11 @@ void main() {
         expect(s.emoji, isNotNull, reason: '"${s.label}" has no glyph');
         expect(s.emoji, isNot(''));
       }
-      expect(kSeedObservations.length, 13);
+      // 13 until the migraine pass appended eight, 29 Aug 2026. The number
+      // is pinned so a seed cannot be added without this control being
+      // read -- which is exactly what happened: `Neck stiffness` was first
+      // written with no glyph and this test refused it.
+      expect(kSeedObservations.length, 21);
     });
 
     test('3. the LEGACY values keep their glyph — they are stored data', () {

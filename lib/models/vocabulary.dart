@@ -354,6 +354,58 @@ const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
   VocabularySeed('Angry', 'Angry', emoji: '😡'),
   VocabularySeed('Irritable', 'Irritable', emoji: '😠'),
   VocabularySeed(kOtherObservationValue, 'Other', emoji: '✏️'),
+
+  // ── APPENDED 29 AUG 2026, migraine research pass ─────────────────────────
+  //
+  // ⚠️ SOURCE TIER, STATED PER ENTRY. ICHD-3 (quoted verbatim in four clinical
+  // trial protocols) is a tier above the charity diaries the earlier entries
+  // came from. Patient-facing synthesis either way: NOT clinically validated,
+  // and the gaps are more reliable than the fits.
+  //
+  // ⛔ FIVE OF THESE ARE ALSO SEEDED IN THE BEFOREHAND VOCABULARY, and that
+  // duplication is DELIBERATE. ICHD-3 names fatigue, difficulty concentrating,
+  // neck stiffness and light/sound sensitivity in BOTH its prodromal and its
+  // postdromal lists — the same authority, two sentences apart. A symptom that
+  // genuinely occurs before AND after cannot be assigned to one list without
+  // discarding a documented fact.
+  //
+  // The phase is carried by WHICH LIST the value is recorded in: `triggers_json`
+  // is before, `feelings_json` is after, and the CSV keeps them in separate
+  // `beforehand` and `observations` columns. So the record is unambiguous even
+  // though the word appears twice. `DATA-MODEL.md` argues against cross-phase
+  // duplication in favour of a phase on the join — that remains the better
+  // answer and is unbuildable while the join tables are additive mirrors rather
+  // than the read path.
+  //
+  // ⚠️ `Sore or aching` is deliberately NOT duplicated: it is postdrome body
+  // aches, afterwards only. `Confused` is NOT duplicated either — ICHD-3 says
+  // "difficulty in concentrating", which now has its OWN entry below, and
+  // duplicating Confused as well would record one fact under two words.
+  VocabularySeed('Sensitive to light', 'Sensitive to light', emoji: '💡'),
+  VocabularySeed('Sensitive to sound', 'Sensitive to sound', emoji: '🔊'),
+  // Migraine Trust, alongside-symptoms. Not in ICHD-3's prodrome list.
+  VocabularySeed('Sensitive to smell', 'Sensitive to smell', emoji: '👃'),
+  // ICHD-3 lists "blurred vision" in the prodrome; visual aura is separate and
+  // also precedes the headache. ONE entry rather than a taxonomy of auras.
+  VocabularySeed('Visual disturbance', 'Visual disturbance', emoji: '👁️'),
+  VocabularySeed('Dizzy or spinning', 'Dizzy or spinning', emoji: '💫'),
+  // Migraine Trust, "being sick". Distinct from Nauseous, which MER already has.
+  VocabularySeed('Vomiting', 'Vomiting', emoji: '🤮'),
+  // ⚠️ THIS WAS SEEDED WITHOUT A GLYPH AND THAT WAS WRONG. The reasoning
+  // was "no glyph reads as a stiff neck, and a misleading one is worse than
+  // none" -- but `observation_emoji_test` #2 already settles it: every seed
+  // must HAVE a glyph, because a list with missing ones "read as unfinished",
+  // which is where the observation revision started. One blank chip among
+  // twenty-one reads as broken rather than as principled.
+  //
+  // 💢 is the tension mark, and abstraction is already the house style
+  // here -- Memory gap is 🕳️, a hole. Unicode 6.0, so it renders on
+  // every device back to minSdk 24, unlike the knot glyph considered first.
+  VocabularySeed('Neck stiffness', 'Neck stiffness', emoji: '💢'),
+  // Brain fog. ICHD-3 names it in BOTH lists, and it is why `Confused` is not
+  // duplicated: this is reduced focus, not disorientation.
+  VocabularySeed('Difficulty concentrating', 'Difficulty concentrating',
+      emoji: '🌫️'),
 ];
 
 /// Inserts seeds that are not already present, matched on `value`.
@@ -604,9 +656,60 @@ List<VocabularyEntry> catchAllLast(String table, List<VocabularyEntry> list) =>
       ...list.where((e) => isCatchAll(table, e.value)),
     ];
 
-/// What a picker offers: active entries, the catch-all forced last.
-List<VocabularyEntry> offerable(String table, List<VocabularyEntry> all) =>
-    catchAllLast(table, all.where((e) => e.isActive).toList());
+/// What a picker offers: active entries, most-used first, catch-all last.
+///
+/// ## ⛔ WHY USAGE AND NOT `condition_observation`
+///
+/// The relevance ordering these lists need was specified as
+/// `condition_observation` / `condition_trigger` — map each entry to the
+/// conditions it matters for, sort the rest lower. **Those tables cannot be
+/// populated.** `setConditionFor` throws `VocabularyRuleError` for observations
+/// and triggers by design, no screen assigns them, and conditions are NOT
+/// seeded — so there is no key to hang relevance on. `condition.dart` has said
+/// so since v9: *"BUILDABLE IS NOT USEFUL. Relevance mapping is a no-op at one
+/// condition."*
+///
+/// ⭐ **Usage relevance is a different claim and it is NOT a no-op at one
+/// condition.** It asks what THIS person has actually recorded, which is
+/// answerable from the records they already have — 72 of them — rather than
+/// from a mapping nobody can author. Same instinct as attributing a record's
+/// condition by deriving it from the event type instead of storing it.
+///
+/// ## ⚠️ ORDERS, NEVER FILTERS
+///
+/// Every active entry is still returned. A migraine user who has a memory gap
+/// must still be able to record it, and an entry used once must not vanish
+/// because it was used once. Absence of usage sorts an entry lower; it does not
+/// hide it — the rule `DATA-MODEL.md` states for the mapping this replaces.
+///
+/// ## COLD START IS SEED ORDER, WHICH IS THE RIGHT DEFAULT
+///
+/// With no records, every count is zero and the list is exactly the seed order
+/// it is today. The epilepsy set was seeded first and the migraine additions
+/// appended, so a new user meets the original thirteen before the eleven.
+List<VocabularyEntry> offerable(
+  String table,
+  List<VocabularyEntry> all, {
+  Map<String, int> usage = const <String, int>{},
+}) {
+  final active = all.where((e) => e.isActive).toList();
+  if (usage.isEmpty) return catchAllLast(table, active);
+
+  // ⚠️ INDEX TIEBREAK, because Dart's sort is NOT STABLE. Without it, every
+  // never-used entry — the majority — would land in an arbitrary order that
+  // changes between runs, which is worse than any fixed order.
+  final index = <String, int>{
+    for (var i = 0; i < active.length; i++) active[i].value: i,
+  };
+  final sorted = active.toList()
+    ..sort((a, b) {
+      final ua = usage[a.value] ?? 0;
+      final ub = usage[b.value] ?? 0;
+      if (ua != ub) return ub.compareTo(ua);
+      return index[a.value]!.compareTo(index[b.value]!);
+    });
+  return catchAllLast(table, sorted);
+}
 
 /// The label to render for a stored [value].
 ///
@@ -1108,6 +1211,50 @@ const List<VocabularySeed> kSeedTriggers = <VocabularySeed>[
   // different phase. It is the only value in this pass without a direct
   // source, and it should be the first one reconsidered if the set is revised.
   VocabularySeed('Dehydration', 'Dehydration'),
+
+  // ── APPENDED 29 AUG 2026, the migraine SYMPTOM entries ───────────────────
+  //
+  // ⛔ THESE ARE SYMPTOMS IN A LIST THAT ALSO HOLDS CONTEXT, AND THE STEP WAS
+  // WRITTEN FOR EXACTLY THAT. Its copy reads "Anything you noticed. This is not
+  // a cause — just what was going on", and the Change Register records WHY:
+  // multiple sources warn that a recorded "trigger" is often the attack already
+  // starting, naming food cravings, neck stiffness and light sensitivity as the
+  // examples. The disclaimer exists so that recording a prodrome symptom here
+  // asserts nothing about causation.
+  //
+  // ⚠️ So this is the step USED AS DESIGNED, not stretched. Asking a user to
+  // sort a symptom into prodrome-or-trigger would be asking them to interpret,
+  // which is the line this app does not cross — and per those same sources it
+  // is a judgement people reliably get wrong.
+  //
+  // The reader recovers the distinction without the user asserting it: an entry
+  // named "Food cravings" reads as prodromal and one named "Alcohol" reads as
+  // context, and neither needed a field to say so.
+  //
+  // ⛔ AND THE LAST THREE FIX A GAP IN SHIPPED CODE, not in the eleven. `Tired`,
+  // `Nauseous` and `Irritable` have been observations-only since the vocabulary
+  // landed, and observations are exclusively AFTERWARDS — so nobody, on any
+  // condition, could record fatigue or nausea BEFORE an event. Found by a
+  // research pass about eleven new entries and caused by none of them.
+  VocabularySeed('Yawning', 'Yawning'),
+  VocabularySeed('Food cravings', 'Food cravings'),
+  // Sensory aura. ICHD-3 is explicit that prodrome does NOT include aura — they
+  // are separate phases and both precede the headache, so both belong here.
+  VocabularySeed('Numbness or tingling', 'Numbness or tingling'),
+  VocabularySeed('Visual disturbance', 'Visual disturbance'),
+  VocabularySeed('Sensitive to light', 'Sensitive to light'),
+  VocabularySeed('Sensitive to sound', 'Sensitive to sound'),
+  VocabularySeed('Neck stiffness', 'Neck stiffness'),
+  VocabularySeed('Difficulty concentrating', 'Difficulty concentrating'),
+  // ICHD-3 prodrome, verbatim: "fatigue" and "nausea".
+  VocabularySeed('Tired', 'Tired'),
+  VocabularySeed('Nauseous', 'Nauseous'),
+  // ⚠️ CHARITY TIER, NOT ICHD-3 — marked here rather than in a note elsewhere,
+  // the same way `Dehydration` above is. ICHD-3's prodrome list does NOT
+  // include irritability; this rests on the mood-change finding in the American
+  // Migraine Foundation and NINDS material. Weaker than its neighbours and the
+  // second entry to reconsider if the set is revised.
+  VocabularySeed('Irritable', 'Irritable'),
 ];
 
 /// Links an event to trigger rows. The normalised form of `triggers_json`.

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:sqflite_common/sqlite_api.dart';
 
 import 'condition.dart';
@@ -58,9 +60,10 @@ class Vocabularies {
   static List<VocabularyEntry> get offerableEventTypes =>
       offerable(kEventTypeTable, _eventTypes);
   static List<VocabularyEntry> get offerableTriggers =>
-      offerable(kTriggerTable, _triggers);
+      offerable(kTriggerTable, _triggers, usage: usageFor(kTriggerTable));
   static List<VocabularyEntry> get offerableObservations =>
-      offerable(kObservationTable, _observations);
+      offerable(kObservationTable, _observations,
+          usage: usageFor(kObservationTable));
 
   /// True when mutations will persist. False on a fallback launch and in
   /// widget tests — the UI uses this to hide "add your own" rather than offer
@@ -96,6 +99,60 @@ class Vocabularies {
   /// NEVER throws and never leaves the lists empty: a database that cannot be
   /// read leaves the seeded defaults in place, which is a working app with the
   /// shipped vocabulary rather than a screen of blank chips.
+  /// How many records carry each value, keyed by TABLE then value.
+  ///
+  /// ⛔ **KEYED BY TABLE, AND THAT IS NOT TIDINESS.** Since the migraine pass a
+  /// value can exist in BOTH vocabularies — `Tired` is a prodrome symptom and a
+  /// postdrome one, so it is seeded in each. A single map keyed by value alone
+  /// would add its beforehand count to its afterwards count, and an entry used
+  /// fifty times afterwards would lead the beforehand list having never been
+  /// used there once.
+  static Map<String, Map<String, int>> _usage =
+      const <String, Map<String, int>>{};
+
+  static Map<String, int> usageFor(String table) =>
+      _usage[table] ?? const <String, int>{};
+
+  /// Counts values across the record set.
+  ///
+  /// Reads `feelings_json` and `triggers_json`, which remain AUTHORITATIVE —
+  /// `event_observation` and `event_trigger` are additive mirrors and are not
+  /// the read path, so counting from them would be counting a copy.
+  static Future<Map<String, Map<String, int>>> _countUsage(Database db) async {
+    final obs = <String, int>{};
+    final trg = <String, int>{};
+    List<Map<String, Object?>> rows;
+    try {
+      rows = await db.query('event',
+          columns: <String>['feelings_json', 'triggers_json']);
+    } catch (_) {
+      // A picker must never fail to render because a count could not be taken.
+      return const <String, Map<String, int>>{};
+    }
+    void tally(Object? raw, Map<String, int> into) {
+      if (raw is! String || raw.isEmpty) return;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) return;
+        for (final v in decoded) {
+          final s = v.toString();
+          into[s] = (into[s] ?? 0) + 1;
+        }
+      } catch (_) {
+        // One record with unparseable JSON must not cost the whole ordering.
+        // The same tolerance `EventRecord.fromMap` applies to a bad timestamp.
+      }
+    }
+    for (final r in rows) {
+      tally(r['feelings_json'], obs);
+      tally(r['triggers_json'], trg);
+    }
+    return <String, Map<String, int>>{
+      kObservationTable: obs,
+      kTriggerTable: trg,
+    };
+  }
+
   static Future<void> load(Database? db) async {
     _db = db;
     if (db == null) return;
@@ -114,6 +171,9 @@ class Vocabularies {
       // condition table is the NORMAL state — nothing is seeded and most users
       // will never name one. Keeping a stale name here would be worse than
       // holding none.
+      // AFTER the vocabularies, because an ordering over a list that failed
+      // to load would be an ordering over nothing.
+      _usage = await _countUsage(db);
       _conditionNames = <int, String>{
         for (final c in await loadConditions(db)) c.id: c.name,
       };

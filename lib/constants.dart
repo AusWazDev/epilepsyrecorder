@@ -206,4 +206,19 @@ const List<String> kTriggerOptions = [
   'Period or hormonal',
   'Certain foods',
   'Dehydration',
+  // The migraine symptom entries. Appended in the SAME ORDER as kSeedTriggers,
+  // which trigger_vocabulary_test #9 pins — the duplication is deliberate so a
+  // user's own additions cannot reorder the historical CSV column, and
+  // appending leaves every existing canonical position untouched.
+  'Yawning',
+  'Food cravings',
+  'Numbness or tingling',
+  'Visual disturbance',
+  'Sensitive to light',
+  'Sensitive to sound',
+  'Neck stiffness',
+  'Difficulty concentrating',
+  'Tired',
+  'Nauseous',
+  'Irritable',
 ];
