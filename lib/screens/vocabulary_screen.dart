@@ -94,6 +94,78 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
   /// where the rest of the list is the user's own and is why they came.
   final Set<String> _expanded = <String>{};
 
+  /// Selection mode, and what is selected — keyed `table|value`.
+  ///
+  /// ## ⛔ WHY BULK EXISTS: THE TRIM WAS CHEAP FOR MER AND EXPENSIVE FOR THE
+  /// USER
+  ///
+  /// Hiding is how a person shortens a list that now holds 22 observations and
+  /// 21 beforehand entries, most of which belong to a condition they do not
+  /// have. One `TextButton` per row made that **sixteen taps**, on a screen
+  /// reached only through the overflow menu — so the mechanism that answers
+  /// "this list is too long" cost more than the problem.
+  ///
+  /// ## ⛔ AND UNHIDE GETS THE SAME TREATMENT, WHICH IS NOT A PREFERENCE
+  ///
+  /// *A safety mechanism that can be applied but not lifted converts a success
+  /// into a permanent defect.* Hiding sixteen in one gesture while unhiding
+  /// them takes sixteen taps would leave a user one gesture from a state they
+  /// can only leave slowly. Both actions, same mode.
+  bool _selecting = false;
+  final Set<String> _selected = <String>{};
+
+  static String _key(String table, String value) => '$table|$value';
+
+  /// ⛔ RETIRED AND PROTECTED ROWS ARE NOT SELECTABLE — the same predicate the
+  /// row already uses to show a lock instead of a button.
+  ///
+  /// Excluding them here means `setVisible`'s `VocabularyRuleError` cannot be
+  /// reached from a bulk action at all. Better than catching it: a bulk
+  /// operation that partly fails is one whose result the user has to
+  /// reconstruct from a snackbar.
+  static bool _selectable(String table, VocabularyEntry e) {
+    final retired = !e.isActive && isShippedHidden(table, e.value);
+    return !(retired || (e.isProtected && e.isActive));
+  }
+
+  /// The selected rows, resolved back to entries.
+  List<(String, VocabularyEntry)> get _selectedEntries {
+    final out = <(String, VocabularyEntry)>[];
+    for (final s in _kSections) {
+      for (final e in Vocabularies.allIn(s.table)) {
+        if (_selected.contains(_key(s.table, e.value))) out.add((s.table, e));
+      }
+    }
+    return out;
+  }
+
+  Future<void> _bulkSetVisible(bool visible) async {
+    // Only rows that would actually CHANGE. Counting the others would report a
+    // number the user cannot see the effect of.
+    final targets = _selectedEntries
+        .where((r) => r.$2.isActive != visible)
+        .toList();
+    for (final (table, e) in targets) {
+      try {
+        await Vocabularies.setVisible(table, e, visible);
+      } on VocabularyRuleError {
+        // Unreachable: unselectable rows never enter the set. Swallowed rather
+        // than rethrown so one refusal could never abandon a partial batch.
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _selected.clear();
+      _selecting = false;
+    });
+    final n = targets.length;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(n == 0
+          ? 'Nothing to change.'
+          : '$n ${n == 1 ? "entry" : "entries"} ${visible ? "shown" : "hidden"}.'),
+    ));
+  }
+
   Future<void> _setVisible(
       String table, VocabularyEntry e, bool visible) async {
     try {
@@ -120,7 +192,18 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                 style: TextStyle(fontSize: 11, color: Colors.white70)),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() {
+              _selecting = !_selecting;
+              if (!_selecting) _selected.clear();
+            }),
+            child: Text(_selecting ? 'Done' : 'Select',
+                style: const TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
+      bottomNavigationBar: _selecting ? _selectionBar() : null,
       body: ListView(
         // ⚠️ viewPadding, not a fixed number. The system navigation bar
         // OVERLAYS the window rather than shrinking it, so a constant bottom
@@ -143,6 +226,51 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
             ),
           for (final s in _kSections) ..._section(s),
         ],
+      ),
+    );
+  }
+
+  /// The bulk action bar. A `bottomNavigationBar` rather than a Stack, so the
+  /// system navigation bar cannot sit over it — the defect that made the
+  /// Medication sheet's Save button unreachable in landscape.
+  Widget _selectionBar() {
+    final sel = _selectedEntries;
+    final canHide = sel.any((r) => r.$2.isActive);
+    final canShow = sel.any((r) => !r.$2.isActive);
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: MERColours.surface,
+          border: Border(top: BorderSide(color: MERColours.border)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                sel.isEmpty ? 'Select entries' : '${sel.length} selected',
+                style: const TextStyle(
+                    fontSize: 14, color: MERColours.textPrimary),
+              ),
+            ),
+            // Each action is enabled only when the selection CONTAINS a row in
+            // that state, so a mixed selection offers both and a uniform one
+            // offers the half that means something.
+            // ⚠️ "selected", because the words alone COLLIDE. The retired
+            // disclosure's toggle is also labelled Show/Hide and can sit on
+            // screen at the same time — found on the device, where "1 replaced
+            // by newer wording · Show" appeared four rows above a bulk "Show"
+            // that means something else entirely.
+            TextButton(
+              onPressed: canShow ? () => _bulkSetVisible(true) : null,
+              child: const Text('Show selected'),
+            ),
+            TextButton(
+              onPressed: canHide ? () => _bulkSetVisible(false) : null,
+              child: const Text('Hide selected'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -298,11 +426,30 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
               ],
             ),
           ),
-          if (retired || (e.isProtected && visible))
+          // ⛔ ONE PREDICATE. This read `retired || (e.isProtected && visible)`
+          // inline while `_selectable` held the identical expression — two
+          // copies that agreed today and would drift on the first change to
+          // either. The lock and the checkbox must never disagree about which
+          // rows a bulk action can touch.
+          if (!_selectable(table, e))
+            // The lock stays in BOTH modes. A locked row that lost its lock in
+            // selection mode would read as selectable-but-unticked.
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
               child: Icon(Icons.lock_outline,
                   size: 18, color: MERColours.textMuted),
+            )
+          else if (_selecting)
+            Checkbox(
+              value: _selected.contains(_key(table, e.value)),
+              onChanged: (v) => setState(() {
+                final k = _key(table, e.value);
+                if (v == true) {
+                  _selected.add(k);
+                } else {
+                  _selected.remove(k);
+                }
+              }),
             )
           else
             TextButton(
