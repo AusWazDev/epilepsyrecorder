@@ -251,6 +251,7 @@ void main() {
         'time',
         // Multi-stream: two record kinds on one timeline.
         'record_kind',
+        'condition',
         'event_type',
         'duration',
         'duration_seconds',

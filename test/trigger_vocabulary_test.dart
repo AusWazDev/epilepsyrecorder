@@ -232,10 +232,12 @@ void main() {
         referralRequired: false,
         notes: '',
       );
-      final cell = buildCsv(<EventRecord>[r]).trim().split('\n').last.split(',')[9];
+      final cell = csvCell(buildCsv(<EventRecord>[r]), 'beforehand');
       expect(cell, 'Stress; Illness; Heatwave',
           reason: 'seeded seven in canonical order, unknown appended');
-      expect(kCsvShapeVersion, 'v4', reason: 'no column added, no bump');
+      // This pass added no column. The marker is v5 because a LATER pass
+      // added `condition` - which is the rule working, not a regression.
+      expect(kCsvShapeVersion, 'v5');
     });
   });
 
@@ -264,4 +266,27 @@ void main() {
       await db.close();
     });
   });
+}
+
+/// The value of a named column in the LAST data row, found by reading the
+/// HEADER rather than counting.
+///
+/// **THIS WAS A HARDCODED INDEX AND IT BROKE TWICE.** It was `[7]` until
+/// `record_kind` landed at index 3, and `[8]` until `condition` landed at
+/// index 4 - each insert shifting every column after it. The comment
+/// explaining the FIRST shift was still sitting there when the second one
+/// happened.
+///
+/// The export's own rule is that the marker tracks the header, precisely
+/// because inserted columns move everything after them. A test that counts
+/// positions re-learns that on every insert; one that reads the header does
+/// not.
+String csvCell(String csv, String column) {
+  final lines = csv.trim().split('\n');
+  final header = lines.first.replaceFirst('﻿', '').split(',');
+  final i = header.indexOf(column);
+  if (i < 0) {
+    throw StateError('no "$column" column in the export: $header');
+  }
+  return lines.last.split(',')[i];
 }

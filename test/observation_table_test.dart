@@ -278,11 +278,7 @@ void main() {
       expect(rec.feelings, <String>[kMangledConfused],
           reason: 'the record still carries the stored string');
 
-      final cell = buildCsv(<EventRecord>[rec])
-          .trim()
-          .split('\n')
-          .last
-          .split(',')[8];
+      final cell = csvCell(buildCsv(<EventRecord>[rec]), 'observations');
       expect(cell, 'Confused', reason: 'resolved to its label, as before');
       await db.close();
     });
@@ -303,4 +299,27 @@ void main() {
           reason: 'the envelope gained nothing');
     });
   });
+}
+
+/// The value of a named column in the LAST data row, found by reading the
+/// HEADER rather than counting.
+///
+/// **THIS WAS A HARDCODED INDEX AND IT BROKE TWICE.** It was `[7]` until
+/// `record_kind` landed at index 3, and `[8]` until `condition` landed at
+/// index 4 - each insert shifting every column after it. The comment
+/// explaining the FIRST shift was still sitting there when the second one
+/// happened.
+///
+/// The export's own rule is that the marker tracks the header, precisely
+/// because inserted columns move everything after them. A test that counts
+/// positions re-learns that on every insert; one that reads the header does
+/// not.
+String csvCell(String csv, String column) {
+  final lines = csv.trim().split('\n');
+  final header = lines.first.replaceFirst('﻿', '').split(',');
+  final i = header.indexOf(column);
+  if (i < 0) {
+    throw StateError('no "$column" column in the export: $header');
+  }
+  return lines.last.split(',')[i];
 }

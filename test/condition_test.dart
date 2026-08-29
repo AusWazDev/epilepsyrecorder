@@ -251,7 +251,9 @@ void main() {
       await addCondition(db, 'Epilepsy');
       await db.close();
       // Asserted against the header the export actually writes.
-      expect(kCsvShapeVersion, 'v4');
+      // v5 since the CONDITION column landed. This pass added nothing;
+      // the marker moved later, for a different change.
+      expect(kCsvShapeVersion, 'v5');
     });
 
     test('11. condition_trigger is NOT built, and cannot be', () async {

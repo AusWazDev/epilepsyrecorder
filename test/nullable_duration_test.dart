@@ -296,7 +296,11 @@ void main() {
                         // duration_seconds, severity, observations, beforehand
       const rescue = 3; // given, helped, second_dose
       const tail = 3; // referral_required, medication_kind, notes
-      final expected = fixed + rescue + tail;
+      // DERIVED, never stored. A record's condition is a function of its event
+      // type, so this column reads the type through the vocabulary and
+      // `event.condition_id` stays NULL on every row.
+      const condition = 1;
+      final expected = fixed + rescue + tail + condition;
 
       final csv = buildCsv([rec('a', t0)]);
       final header = const LineSplitter().convert(csv).first;

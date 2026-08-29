@@ -34,8 +34,7 @@ EventRecord legacyRecord() => EventRecord(
 /// The observations cell of the single data row.
 /// ⚠️ INDEX 8, not 7 — `record_kind` landed at index 3 when the export went
 /// multi-stream, shifting everything after it by one.
-String observationsCell(String csv) =>
-    csv.trim().split('\n').last.split(',')[8];
+String observationsCell(String csv) => csvCell(csv, 'observations');
 
 void main() {
   setUp(Vocabularies.debugReset);
@@ -133,3 +132,26 @@ EventRecord _revised() => EventRecord(
       referralRequired: false,
       notes: '',
     );
+
+/// The value of a named column in the LAST data row, found by reading the
+/// HEADER rather than counting.
+///
+/// **THIS WAS A HARDCODED INDEX AND IT BROKE TWICE.** It was `[7]` until
+/// `record_kind` landed at index 3, and `[8]` until `condition` landed at
+/// index 4 - each insert shifting every column after it. The comment
+/// explaining the FIRST shift was still sitting there when the second one
+/// happened.
+///
+/// The export's own rule is that the marker tracks the header, precisely
+/// because inserted columns move everything after them. A test that counts
+/// positions re-learns that on every insert; one that reads the header does
+/// not.
+String csvCell(String csv, String column) {
+  final lines = csv.trim().split('\n');
+  final header = lines.first.replaceFirst('﻿', '').split(',');
+  final i = header.indexOf(column);
+  if (i < 0) {
+    throw StateError('no "$column" column in the export: $header');
+  }
+  return lines.last.split(',')[i];
+}

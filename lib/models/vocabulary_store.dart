@@ -1,5 +1,6 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
+import 'condition.dart';
 import 'vocabulary.dart';
 
 /// The loaded vocabularies for this launch.
@@ -35,6 +36,18 @@ class Vocabularies {
   static List<VocabularyEntry> _triggers = _fromSeeds(kSeedTriggers);
 
   static Database? _db;
+
+  /// Condition names by id, cached with the vocabularies.
+  ///
+  /// ⛔ **THIS LIVES HERE SO THE CSV DOES NOT NEED A PARAMETER.** `buildCsv`
+  /// already reads this class statically three times for labels, and it takes
+  /// no database — so a fourth static read is the SAME mechanism, not a new
+  /// dependency. The alternative, threading `conditions:` down through
+  /// `showExportOptions`, is the shape that has already failed twice in this
+  /// exact call chain: a `notes:` parameter accepted and never forwarded, found
+  /// only by diffing a device export, and the same mistake repeated in
+  /// `showBackupOptions` weeks later.
+  static Map<int, String> _conditionNames = const <int, String>{};
 
   /// Every entry, active and retired, in sort order.
   static List<VocabularyEntry> get eventTypes => _eventTypes;
@@ -94,6 +107,14 @@ class Vocabularies {
       final trg = await loadVocabulary(db, kTriggerTable);
       if (trg.isNotEmpty) _triggers = trg;
       if (obs.isNotEmpty) _observations = obs;
+      // REPLACED unconditionally, unlike the vocabularies above. An empty
+      // vocabulary means the seed did not run, which is a bug; an empty
+      // condition table is the NORMAL state — nothing is seeded and most users
+      // will never name one. Keeping a stale name here would be worse than
+      // holding none.
+      _conditionNames = <int, String>{
+        for (final c in await loadConditions(db)) c.id: c.name,
+      };
     } catch (_) {
       // Defaults stand.
     }
@@ -125,6 +146,7 @@ class Vocabularies {
       ..._fromSeeds(mangledLegacyObservations(),
           idBase: 2000, sortBase: 2000),
     ];
+    _conditionNames = const <int, String>{};
     _db = null;
   }
 
@@ -302,6 +324,28 @@ class Vocabularies {
       if (e.value == eventTypeValue) return e.conditionId;
     }
     return null;
+  }
+
+  /// The condition NAME a record with this event type belongs to, or null.
+  ///
+  /// ⛔ **THE EXPORT'S DERIVATION, AND IT READS NO DATABASE.** A record's
+  /// condition is a function of its type — pass 1's decision, and this is what
+  /// carries it into the artefact a specialist reads. Nothing writes
+  /// `event.condition_id`; it stays NULL on every row.
+  ///
+  /// ⚠️ **`EventRecord` DELIBERATELY DOES NOT GAIN A `conditionId` FIELD.** It
+  /// would be null on every record forever, since nothing populates the column
+  /// — and a field that exists and is always null is the shape that has bitten
+  /// twice this month: `setActive` sat unreachable for three schema versions
+  /// and `renameEntry` still is. Deriving needs no field.
+  ///
+  /// Returns null for: no type (the quick-record path writes none), a type
+  /// nobody has assigned, and a type assigned to a condition that no longer
+  /// exists. All three mean NOT YET SAID and none is an error.
+  static String? conditionNameForEventType(String? eventTypeValue) {
+    final id = conditionIdForEventType(eventTypeValue);
+    if (id == null) return null;
+    return _conditionNames[id];
   }
 
   /// Event types grouped by condition, for a PICKER.

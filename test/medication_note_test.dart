@@ -244,21 +244,26 @@ void main() {
   });
 
   group('THE EXPORT', () {
-    test('7. sixteen columns, record_kind after time', () {
+    test('7. seventeen columns, record_kind after time', () {
       final h = header(buildCsv(<EventRecord>[event('e', DateTime(2026, 8, 1))]));
-      expect(h.length, 16);
+      // 17 since `condition` landed before event_type. The golden header
+      // in csv_delimited_test is what enforces the marker rule; this is
+      // just the count this test depends on.
+      expect(h.length, 17);
       expect(h[3], 'record_kind');
-      expect(h[14], 'medication_kind');
-      expect(kCsvShapeVersion, 'v4');
+      expect(h[15], 'medication_kind');
+      // v5 since the CONDITION column landed, not because of this pass.
+      expect(kCsvShapeVersion, 'v5');
       expect(csvFilename(when: DateTime(2026, 8, 28, 9, 0, 0)),
-          'medical_event_recorder_20260828_090000.v4.csv');
+          'medical_event_recorder_20260828_090000.v5.csv');
     });
 
     test('8. an events-only export marks every row as an event', () {
       final rows = dataRows(
           buildCsv(<EventRecord>[event('e', DateTime(2026, 8, 1))]));
       expect(rows.single[3], kRecordKindEvent);
-      expect(rows.single[14], '', reason: 'medication_kind is not applicable');
+      expect(rows.single[15], '',
+          reason: 'medication_kind is not applicable');
     });
 
     test('9. ⛔ ONE TIMELINE: the two streams interleave by date', () {
@@ -289,9 +294,18 @@ void main() {
       )).single;
 
       expect(row[3], kRecordKindMedication);
-      expect(row[14], 'Late');
-      expect(row[15], 'took it at lunch');
-      for (final i in <int>[4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) {
+      expect(row[15], 'Late');
+      expect(row[16], 'took it at lunch');
+
+      // Column 4 is `condition`, and it is EXPLICITLY EXCLUDED from the
+      // blanking loop below rather than silently skipped. A medication note
+      // has no event type, so there is nothing to derive a condition FROM -
+      // that is "not known", not "not applicable", and the two are different
+      // facts. `medication_note.condition_id` exists and is unpopulated; when
+      // it is populated this reads it instead.
+      expect(row[4], 'unknown', reason: 'condition is not derivable for a dose');
+
+      for (final i in <int>[5, 6, 7, 8, 9, 10, 11, 12, 13, 14]) {
         expect(row[i], '', reason: 'column $i is not applicable to a dose');
       }
     });

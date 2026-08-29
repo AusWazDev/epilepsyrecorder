@@ -886,6 +886,23 @@ String buildCsv(
     // connection would be interpretation - the boundary the analysis tier was
     // rejected over.
     'record_kind',
+    // ⛔ DERIVED, NEVER STORED. `event.condition_id` is NULL on every row and
+    // stays that way — a record's condition is a FUNCTION OF ITS EVENT TYPE,
+    // which is what let 71 of 72 records attribute themselves from one user
+    // statement instead of a migration nobody asked for.
+    //
+    // It sits BEFORE event_type because that is the reading order a specialist
+    // wants: which condition, then what happened within it.
+    //
+    // ⚠️ `unknown`, not blank, and the precedent is split so this is a
+    // decision. Duration, event type and severity write `unknown` because a
+    // blank SCALAR cannot distinguish "not asked" from "not recorded" from a
+    // truncated file. Observations and beforehand write blank because they are
+    // DELIMITED and `unknown` there would parse as a member of the set.
+    // Condition is a scalar and applies to every event, so it takes the scalar
+    // rule. A user who has named nothing gets `unknown` on every row — the
+    // same shape a quick-log-only user already gets in `event_type`.
+    'condition',
     'event_type',
     'duration',
     // NEW COLUMN, deliberately, despite the multi-stream rewrite coming. One
@@ -963,6 +980,9 @@ String buildCsv(
       fmtDate.format(r.timestamp),
       fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
       kRecordKindEvent,
+      // The derivation, through the same static `buildCsv` already uses for
+      // labels. No database, no new parameter, no field on EventRecord.
+      Vocabularies.conditionNameForEventType(r.eventType) ?? 'unknown',
       eventTypeCsv(r.eventType),
       durationCsv(r.duration, r.durationSeconds),
       // EMPTY, not `unknown`, when there is no number. A word in a numeric
@@ -1040,6 +1060,11 @@ List<String> _medicationCells(
       fmtDate.format(n.occurredAt),
       fmtTime.format(n.occurredAt).replaceAll(String.fromCharCode(0x202F), ' '),
       kRecordKindMedication,
+      // ⚠️ NOT DERIVABLE, and deliberately `unknown` rather than blank. A
+      // medication note has no event type, so there is nothing to derive
+      // from. `medication_note.condition_id` exists and is unpopulated —
+      // when it is populated this reads it instead.
+      'unknown', // condition
       '', // event_type
       '', // duration
       '', // duration_seconds
@@ -1084,7 +1109,7 @@ List<String> _medicationCells(
 ///     v2   observations and beforehand became delimited columns   11
 ///     v3   rescue medication added three columns                  14
 ///     v4   multi-stream: record_kind and medication_kind           16
-const String kCsvShapeVersion = 'v4';
+const String kCsvShapeVersion = 'v5';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.
 ///

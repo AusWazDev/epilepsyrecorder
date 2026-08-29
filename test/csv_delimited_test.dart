@@ -72,15 +72,49 @@ List<String> cells(String csv) {
 // ⚠️ SHIFTED BY ONE when `record_kind` landed at index 3. Named constants
 // rather than literals precisely so a column insertion is one edit and not a
 // hunt through twenty assertions.
-const int kObservationsCell = 8;
-const int kTriggersCell = 9;
+/// THE HEADER, GOLDEN. Every column, in order, exactly as `buildCsv` writes it.
+///
+/// This is the mechanical enforcement of the marker rule. The rule says the
+/// marker tracks the header and ANY change to the column set bumps it - added,
+/// removed, renamed or reordered, no judgement about whether a change is
+/// "real". A rule stated in prose is followed when someone remembers it; test 1
+/// below fails on ANY difference from this list, so the bump cannot be
+/// forgotten.
+///
+/// It also replaces five hardcoded index constants that had to be hand-shifted
+/// twice: once when `record_kind` landed at index 3, and again when `condition`
+/// landed at index 4. Indices are now DERIVED from this list.
+const List<String> kCsvHeaderGolden = <String>[
+  'timestamp_iso',
+  'date',
+  'time',
+  'record_kind',
+  'condition',
+  'event_type',
+  'duration',
+  'duration_seconds',
+  'severity',
+  'observations',
+  'beforehand',
+  'rescue_med_given',
+  'rescue_med_helped',
+  'rescue_med_second_dose',
+  'referral_required',
+  'medication_kind',
+  'notes',
+];
+
+final int kObservationsCell = kCsvHeaderGolden.indexOf('observations');
+final int kTriggersCell = kCsvHeaderGolden.indexOf('beforehand');
+final int kConditionCell = kCsvHeaderGolden.indexOf('condition');
 
 void main() {
   setUp(Vocabularies.debugReset);
   tearDown(Vocabularies.debugReset);
 
   group('THE SHAPE', () {
-    test('1. sixteen columns, and the two delimited ones sit adjacent', () {
+    test('1. the header matches the golden EXACTLY, or the marker must bump',
+        () {
       final header = buildCsv(<EventRecord>[rec()])
           .split('\n')
           .first
@@ -88,7 +122,13 @@ void main() {
           .trim()
           .split(',');
 
-      expect(header.length, 16);
+      // Element-wise, not a length check. A rename or a reorder keeps the
+      // count identical and changes the file completely - and a spreadsheet
+      // built against the old shape breaks on either.
+      expect(header, kCsvHeaderGolden,
+          reason: 'THE COLUMN SET CHANGED. Update kCsvHeaderGolden AND bump '
+              'kCsvShapeVersion - the marker tracks the header, mechanically, '
+              'with no judgement about whether the change is "real".');
       expect(header[kObservationsCell], 'observations');
       expect(header[kTriggersCell], 'beforehand');
     });
@@ -102,7 +142,7 @@ void main() {
         feelings: const <String>['Dizzy, briefly'],
         triggers: const <String>['Stress'],
       );
-      expect(cells(buildCsv(<EventRecord>[r])).length, 16);
+      expect(cells(buildCsv(<EventRecord>[r])).length, kCsvHeaderGolden.length);
     });
   });
 
