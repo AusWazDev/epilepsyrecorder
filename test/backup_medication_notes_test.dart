@@ -252,11 +252,14 @@ void main() {
 
   group('THE SCHEMA GATE IS THE PROTECTION FOR OLD BUILDS', () {
     test('10. the version bumped, and that is what makes the refusal fire', () {
-      expect(kBackupSchemaVersion, 2);
+      // 3 since conditions and the type mapping entered the envelope. The
+      // NUMBER is not the point — the bump is, because it is what makes an
+      // older build refuse a file it would otherwise restore incompletely.
+      expect(kBackupSchemaVersion, 3);
 
       final current = jsonDecode(buildBackupJson(const <EventRecord>[]))
           as Map<String, dynamic>;
-      expect(current['schemaVersion'], 2);
+      expect(current['schemaVersion'], 3);
     });
 
     test('11. ⛔ an OLDER build REFUSES a notes-bearing backup, cleanly', () {
@@ -304,13 +307,24 @@ void main() {
       // Stated as the exact strings rather than a pattern, deliberately: the
       // un-forwarded call is a fixed shape and a literal cannot be damaged by
       // an escaping mistake the way the regex first written here was.
+      // ⚠️ THIS PARAMETER CHAIN HAS NOW GROWN THREE TIMES — `notes`, then
+      // `conditions`, then `eventTypeConditions` — and the FIRST time it grew
+      // it was dropped. Listing every forwarded argument by name is what makes
+      // a half-forwarded call fail here rather than on a device.
       const dropped = <String>[
         'backupSaveAs(context, records);',
         'backupShare(context, records);',
-      ];
-      const forwarded = <String>[
+        // The shape after `notes` landed: still a partial forward now.
         'backupSaveAs(context, records, notes: notes);',
         'backupShare(context, records, notes: notes);',
+      ];
+      // ⚠️ NO TRAILING COMMA in these literals. The LAST forwarded argument
+      // ends `);` not `,`, so a literal carrying the comma matched nothing and
+      // reported zero — the guard caught its own pattern before it could
+      // report a false clean.
+      const forwarded = <String>[
+        'conditions: conditions',
+        'eventTypeConditions: eventTypeConditions',
       ];
 
       for (final bad in dropped) {
@@ -322,10 +336,18 @@ void main() {
       // file where both calls were deleted, renamed, or moved — a null result
       // that proves the apparatus still works, not merely that it found
       // nothing.
+      // POSITIVE CONTROL. Without it this passes just as well against a file
+      // where the calls were deleted, renamed or moved — a null result that
+      // proves the apparatus still works, not merely that it found nothing.
+      //
+      // Two occurrences each: showBackupOptions forwards to BOTH backupSaveAs
+      // and backupShare, so a count of one means half the sheet was missed.
       for (final good in forwarded) {
-        expect(src.contains(good), isTrue,
-            reason: 'expected call site is gone, so the absence of the bad '
-                'form above means nothing: $good');
+        expect(RegExp(RegExp.escape(good)).allMatches(src).length,
+            greaterThanOrEqualTo(2),
+            reason: 'BOTH sheet tiles must forward $good — Save to a file AND '
+                'Share to apps. One of them dropping it is exactly how the '
+                'notes parameter was lost the first time');
       }
     });
   });

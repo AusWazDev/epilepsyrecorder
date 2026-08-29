@@ -27,7 +27,10 @@ import '../screens/history_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../screens/your_data_screen.dart';
 import '../screens/medication_screen.dart';
+import '../models/backup.dart';
 import '../models/condition.dart';
+import '../models/vocabulary.dart';
+import '../models/vocabulary_store.dart';
 import '../screens/conditions_screen.dart';
 import '../screens/vocabulary_screen.dart';
 import '../screens/walkthrough_screen.dart';
@@ -675,8 +678,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             final notes = db == null
                 ? const <MedicationNote>[]
                 : await loadMedicationNotes(db);
+            // ⛔ THE ATTRIBUTION IS DERIVED, so nothing on a record carries it
+            // and a restore onto a fresh device would produce 72 rows reading
+            // `unknown` with no way to know a mapping had been lost.
+            final conditions =
+                db == null ? const <Condition>[] : await loadConditions(db);
+            final typeMap = eventTypeConditionMap(
+                Vocabularies.allIn(kEventTypeTable), conditions);
             if (!ctx.mounted) return;
-            await showBackupOptions(ctx, _records, notes: notes);
+            await showBackupOptions(ctx, _records,
+                notes: notes,
+                conditions: conditions,
+                eventTypeConditions: typeMap);
             await _refreshBackupCount();
           },
           onRestore: (ctx) async {
@@ -684,9 +697,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             final existingNotes = db == null
                 ? const <MedicationNote>[]
                 : await loadMedicationNotes(db);
+            final existingConditions =
+                db == null ? const <Condition>[] : await loadConditions(db);
+            final existingTypeMap = eventTypeConditionMap(
+                Vocabularies.allIn(kEventTypeTable), existingConditions);
             if (!ctx.mounted) return;
             final outcome = await restoreFromBackup(ctx, _records,
-                existingNotes: existingNotes);
+                existingNotes: existingNotes,
+                existingConditions: existingConditions,
+                existingTypeConditions: existingTypeMap);
             // Null means "no list to write", and restoreFromBackup has already
             // said whatever needed saying: a _refuse dialog for a real failure,
             // a snackbar for a dismissed confirm, and deliberate silence for an
@@ -709,6 +728,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               }
             }
 
+            // ⛔ CONDITIONS FIRST, THEN THE ASSIGNMENTS THAT POINT AT THEM.
+            // The backup carries no ids — `condition.id` is AUTOINCREMENT and
+            // local — so each condition is created here and its NEW id is what
+            // the assignment uses. Doing this in the other order would assign
+            // types to conditions that do not exist yet.
+            var conditionsAdded = 0;
+            if (db != null && (outcome.conditionsToAdd.isNotEmpty ||
+                outcome.typeAssignmentsToAdd.isNotEmpty)) {
+              for (final name in outcome.conditionsToAdd) {
+                // addCondition is case-insensitive and returns the EXISTING
+                // row for a name already present, so this cannot duplicate.
+                if (await addCondition(db, name) != null) conditionsAdded++;
+              }
+              final byName = <String, int>{
+                for (final c in await loadConditions(db))
+                  c.name.toLowerCase(): c.id,
+              };
+              await Vocabularies.load(db);
+              for (final entry in outcome.typeAssignmentsToAdd.entries) {
+                final id = byName[entry.value.toLowerCase()];
+                if (id == null) continue; // named a condition that is not here
+                final matches = Vocabularies.allIn(kEventTypeTable)
+                    .where((t) => t.value == entry.key);
+                // A type this device does not have cannot be assigned. Restore
+                // does not create vocabulary rows, and inventing one here would
+                // be a second writer of the vocabulary.
+                if (matches.isEmpty) continue;
+                await Vocabularies.setCondition(
+                    kEventTypeTable, matches.first, id);
+              }
+            }
+
             if (!ctx.mounted) return;
             // The notes clause appears only when there are notes, so a
             // schema 1 backup produces the message it always did.
@@ -717,6 +768,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (notesAdded > 0)
                 '$notesAdded medication '
                     '${notesAdded == 1 ? "note" : "notes"}',
+              if (conditionsAdded > 0)
+                '$conditionsAdded '
+                    '${conditionsAdded == 1 ? "condition" : "conditions"}',
             ];
             ScaffoldMessenger.of(ctx).showSnackBar(
               SnackBar(content: Text('Restored ${parts.join(" and ")}')),

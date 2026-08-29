@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 import '../models/backup.dart';
+import '../models/condition.dart';
 import '../models/medication_note.dart';
 import '../models/event_record.dart';
 
@@ -107,12 +108,17 @@ Future<void> backupShare(
   BuildContext context,
   List<EventRecord> records, {
   List<MedicationNote> notes = const <MedicationNote>[],
+  List<Condition> conditions = const <Condition>[],
+  Map<String, String> eventTypeConditions = const <String, String>{},
 }) async {
   // Resolved before any await so no BuildContext crosses an async gap.
   final messenger = ScaffoldMessenger.of(context);
 
   try {
-    final json = buildBackupJson(records, notes: notes);
+    final json = buildBackupJson(records,
+        notes: notes,
+        conditions: conditions,
+        eventTypeConditions: eventTypeConditions);
     final dir  = await getTemporaryDirectory();
     final file = File('${dir.path}/${_backupFilename()}');
     await file.writeAsString(json, flush: true);
@@ -152,8 +158,13 @@ Future<void> backupSaveAs(
   BuildContext context,
   List<EventRecord> records, {
   List<MedicationNote> notes = const <MedicationNote>[],
+  List<Condition> conditions = const <Condition>[],
+  Map<String, String> eventTypeConditions = const <String, String>{},
 }) async {
-  final json     = buildBackupJson(records, notes: notes);
+  final json     = buildBackupJson(records,
+      notes: notes,
+      conditions: conditions,
+      eventTypeConditions: eventTypeConditions);
   final filename = _backupFilename();
 
   // ── ANDROID — save to Downloads ──
@@ -227,6 +238,8 @@ Future<void> showBackupOptions(
   BuildContext context,
   List<EventRecord> records, {
   List<MedicationNote> notes = const <MedicationNote>[],
+  List<Condition> conditions = const <Condition>[],
+  Map<String, String> eventTypeConditions = const <String, String>{},
 }) async {
   if (records.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -279,7 +292,10 @@ Future<void> showBackupOptions(
               title: const Text('Save to a file'),
               onTap: () async {
                 Navigator.pop(sheet);
-                await backupSaveAs(context, records, notes: notes);
+                await backupSaveAs(context, records,
+                    notes: notes,
+                    conditions: conditions,
+                    eventTypeConditions: eventTypeConditions);
               },
             ),
           // Same wording as the export sheet for the same action. Two labels
@@ -290,7 +306,10 @@ Future<void> showBackupOptions(
             subtitle: const Text('Email, cloud storage, spreadsheets'),
             onTap: () async {
               Navigator.pop(sheet);
-              await backupShare(context, records, notes: notes);
+              await backupShare(context, records,
+                  notes: notes,
+                  conditions: conditions,
+                  eventTypeConditions: eventTypeConditions);
             },
           ),
           ListTile(
@@ -323,7 +342,20 @@ Future<void> showBackupOptions(
 /// ignores `notesToAdd` has to ignore a named field rather than simply not
 /// know it exists.
 class RestoreOutcome {
-  const RestoreOutcome(this.merged, this.notesToAdd);
+  const RestoreOutcome(
+    this.merged,
+    this.notesToAdd, {
+    this.conditionsToAdd = const <String>[],
+    this.typeAssignmentsToAdd = const <String, String>{},
+  });
+
+  /// Condition NAMES to create. Never ids - `condition.id` is AUTOINCREMENT
+  /// and local, so the target mints its own.
+  final List<String> conditionsToAdd;
+
+  /// Event type VALUE to condition NAME, for assignments this device does not
+  /// already have. Existing assignments are left alone.
+  final Map<String, String> typeAssignmentsToAdd;
 
   /// The full event list to persist, existing plus additions.
   final List<EventRecord> merged;
@@ -337,6 +369,8 @@ Future<RestoreOutcome?> restoreFromBackup(
   BuildContext context,
   List<EventRecord> existing, {
   List<MedicationNote> existingNotes = const <MedicationNote>[],
+  List<Condition> existingConditions = const <Condition>[],
+  Map<String, String> existingTypeConditions = const <String, String>{},
 }) async {
   // The picker call is guarded because a throw here is invisible otherwise.
   // restoreFromBackup is awaited from a PopupMenuButton onSelected callback,
@@ -383,7 +417,10 @@ Future<RestoreOutcome?> restoreFromBackup(
     return null;
   }
 
-  final plan = planRestore(existing, parsed, existingNotes: existingNotes);
+  final plan = planRestore(existing, parsed,
+      existingNotes: existingNotes,
+      existingConditions: existingConditions,
+      existingTypeConditions: existingTypeConditions);
   // The one remaining silent null, and deliberately so: the screen this was
   // started from is gone, so there is nobody looking at it to tell. Every other
   // null from this function either shows a _refuse dialog, shows a snackbar, or
@@ -459,7 +496,9 @@ Future<RestoreOutcome?> restoreFromBackup(
     return null;
   }
 
-  return RestoreOutcome(plan.merged, plan.notesToAdd);
+  return RestoreOutcome(plan.merged, plan.notesToAdd,
+      conditionsToAdd: plan.conditionsToAdd,
+      typeAssignmentsToAdd: plan.typeAssignmentsToAdd);
 }
 
 Future<void> _refuse(BuildContext context, String message) async {
@@ -521,6 +560,16 @@ Future<bool?> _confirmRestore(BuildContext context, RestorePlan plan) {
         '${plan.notesInBackup == 1 ? "note" : "notes"}'
         '${plan.notesAlreadyPresent > 0 ? ', ${plan.notesAlreadyPresent} '
             'already on this device' : ''}.');
+  }
+  if (plan.conditionsInBackup > 0 || plan.typeAssignmentsInBackup > 0) {
+    // Every line here is conditional on the backup CARRYING conditions, so a
+    // schema 1 or 2 file - which is every backup taken before today - produces
+    // a dialog byte-identical to the one it produced before.
+    final n = plan.conditionsToAdd.length;
+    lines.add(n == 0
+        ? 'The conditions you track are already set up on this device.'
+        : 'It also sets up $n condition${n == 1 ? "" : "s"} you track, and '
+            'which event types belong to them.');
   }
   if (plan.notesUnreadable > 0) {
     lines.add('${plan.notesUnreadable} medication '

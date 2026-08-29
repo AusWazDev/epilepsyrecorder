@@ -84,7 +84,13 @@ const String kEventRollbackKey = 'epilepsy_event_records_v1_rollback';
 /// the absent `medicationNotes` key reads as an empty list rather than an
 /// error. Every backup ever taken lacks that key, so treating its absence as a
 /// fault would break restore for all of them.
-const int kBackupSchemaVersion = 2;
+/// ⛔ **BUMPED 2 -> 3 WHEN CONDITIONS AND THE TYPE MAPPING ENTERED THE
+/// ENVELOPE.** Same reasoning as the 1 -> 2 bump, and the same mechanism: an
+/// OLDER build handed a schema 3 backup now REFUSES on the existing gate,
+/// instead of restoring the records and silently dropping the attribution — a
+/// user would then have 72 records reading `unknown` with no way to know they
+/// had lost a mapping they never see written down.
+const int kBackupSchemaVersion = 3;
 
 // Magic string identifying a file as a Medical Event Recorder backup. Used to
 // reject another app's JSON before anything is read from it.

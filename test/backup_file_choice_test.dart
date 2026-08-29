@@ -74,6 +74,14 @@ void main() {
         // in — these files get emailed around.
         'medicationNoteCount',
         'medicationNotes',
+        // ADDED AT SCHEMA 3. Conditions and the type mapping. Still the user's
+        // own data: what they track, and which of their event types belong to
+        // it. Nothing about the DEVICE — and note there are no condition IDS
+        // here, because those are AUTOINCREMENT and local, so they would be
+        // meaningless on the machine that reads this file.
+        'conditionCount',
+        'conditions',
+        'eventTypeConditions',
       }, reason: 'the user data, and nothing about the device');
     });
   });
