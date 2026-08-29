@@ -388,7 +388,25 @@ const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
   // ICHD-3 lists "blurred vision" in the prodrome; visual aura is separate and
   // also precedes the headache. ONE entry rather than a taxonomy of auras.
   VocabularySeed('Visual disturbance', 'Visual disturbance', emoji: '👁️'),
-  VocabularySeed('Dizzy or spinning', 'Dizzy or spinning', emoji: '💫'),
+  // ⛔ THE VALUE IS `Dizzy or spinning` FOREVER; THE LABEL IS NARROWED.
+  //
+  // This entry carried two things three sources separate: vertigo is SPINNING,
+  // presyncope is LIGHT-HEADED, and DSM-5 lists both under one symptom. One
+  // entry cannot hold a distinction three sources draw, so `Light-headed or
+  // faint` is seeded below and this one keeps only the vestibular half.
+  //
+  // ⚠️ THE LABEL WAS FREE TO CHANGE AND THE VALUE NEVER WAS. Nothing had ever
+  // been recorded against this entry — it was seeded 30 Aug 2026 and the newest
+  // event predates it — but that is not why the label could move.
+  // `syncSeededPresentation` propagates `label` and `emoji` to every existing
+  // database keyed on the value, and the CSV writes LABELS via `labelFor`, so a
+  // relabel reaches the export too. The VALUE could not move at any point:
+  // `seedVocabulary` skips values that already exist, so editing it here would
+  // insert a second row and orphan this one.
+  //
+  // `Spinning` rather than `Room spinning`: vertigo is an illusion of movement
+  // of the self OR the surroundings, and the shorter label covers both.
+  VocabularySeed('Dizzy or spinning', 'Spinning', emoji: '💫'),
   // Migraine Trust, "being sick". Distinct from Nauseous, which MER already has.
   VocabularySeed('Vomiting', 'Vomiting', emoji: '🤮'),
   // ⚠️ THIS WAS SEEDED WITHOUT A GLYPH AND THAT WAS WRONG. The reasoning
@@ -406,6 +424,25 @@ const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
   // duplicated: this is reduced focus, not disorientation.
   VocabularySeed('Difficulty concentrating', 'Difficulty concentrating',
       emoji: '🌫️'),
+
+  // ── APPENDED 30 AUG 2026 — the other half of the dizziness split ──────────
+  //
+  // Presyncope, and it is NOT vertigo. Clinical reviews describe presyncope as
+  // lightheadedness, sweating, nausea, weakness and visual changes; DSM-5's
+  // panic criterion reads "feeling dizzy, unsteady, light-headed or faint".
+  // Both are distinct from the spinning of a vestibular attack.
+  //
+  // ⚠️ OBSERVATIONS ONLY, AND THAT IS A KNOWN INCOMPLETENESS RATHER THAN AN
+  // OVERSIGHT. Light-headedness BEFORE a faint is presyncope — a beforehand
+  // entry by the same rule that put `Tired` and `Nauseous` there. It is not
+  // seeded into the beforehand vocabulary because syncope is queued and held,
+  // so the gap belongs to a condition not yet in scope. Named here so it is not
+  // rediscovered as a defect.
+  //
+  // 🥴 rather than a spiral: 💫 is taken by `Spinning`, which is
+  // the entry this one exists to be distinct from.
+  VocabularySeed('Light-headed or faint', 'Light-headed or faint',
+      emoji: '🥴'),
 ];
 
 /// Inserts seeds that are not already present, matched on `value`.
