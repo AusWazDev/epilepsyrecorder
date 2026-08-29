@@ -90,7 +90,48 @@ const String kEventRollbackKey = 'epilepsy_event_records_v1_rollback';
 /// instead of restoring the records and silently dropping the attribution — a
 /// user would then have 72 records reading `unknown` with no way to know they
 /// had lost a mapping they never see written down.
-const int kBackupSchemaVersion = 3;
+/// ⛔ **BUMPED 3 -> 4 WHEN `occurredAt` ENTERED THE RECORD.**
+///
+/// ⚠️ **The envelope's top-level keys did NOT change this time** — records
+/// serialise through `EventRecord.toMap`, which is the single authority, so the
+/// new field arrived in the file with no change to `buildBackupJson` at all.
+/// The bump is made on the RULE rather than on the literal wording above: the
+/// stated purpose of every previous bump is that **an older build must refuse a
+/// file it would otherwise partially understand.**
+///
+/// Without it, a build predating this field restores a backdated record and
+/// **silently drops when it happened**, keeping only when it was typed — the
+/// exact shape of the medication-note and condition losses that forced the
+/// first two bumps. That the loss is now inside `records` rather than beside it
+/// makes it harder to notice, not less real.
+const int kBackupSchemaVersion = 4;
+
+/// Whether the STANDING quick-log notification is posted.
+///
+/// ## ⛔ DEFAULT TRUE, AND IT MUST STAY THAT WAY
+///
+/// Absent reads as true, so every existing install keeps the notification it
+/// already has. For epilepsy the standing notification is the app's strongest
+/// feature — the whole point is that a record can be made without unlocking
+/// the phone — and a silent opt-out on upgrade would remove it from the users
+/// it was built for.
+///
+/// ## WHY IT EXISTS
+///
+/// A user recording a condition AFTER THE FACT — a migraine, an IBS flare —
+/// never taps it, and it is posted whenever permission is granted rather than
+/// only while an event runs. It was therefore a permanent entry in the shade
+/// for a feature that user will never use, **re-posted every time the app
+/// opened**, with no in-app way to stop it. Revoking the OS notification
+/// permission was the only answer, and that is not an answer: it also disables
+/// the end-of-event controls, and the Help screen then reports the app as
+/// misconfigured.
+///
+/// ⚠️ **This does NOT govern the ACTIVE-EVENT notification.** If an event is
+/// running the user needs its End control, whatever they think of the standing
+/// one. See `_showNormal` — the switch is enforced there and nowhere else, so
+/// the active path cannot accidentally inherit it.
+const String kStandingNotificationKey = 'mer_standing_notification';
 
 // Magic string identifying a file as a Medical Event Recorder backup. Used to
 // reject another app's JSON before anything is read from it.

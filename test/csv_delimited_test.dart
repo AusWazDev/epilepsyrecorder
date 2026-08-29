@@ -81,6 +81,22 @@ List<String> cells(String csv) {
 /// below fails on ANY difference from this list, so the bump cannot be
 /// forgotten.
 ///
+/// ## ⛔ AND THIS LIST IS NOT THE WHOLE RULE. IT ENFORCES THE COLUMN SET AND
+/// SAYS NOTHING ABOUT WHAT A COLUMN MEANS.
+///
+/// **v6 bumped the marker with this list byte-identical.** The three time
+/// columns changed from "when an event was logged / when a note occurred",
+/// decided by `record_kind`, to "when it happened" on both kinds. A reader
+/// computing on column 1 gets a different answer and NOTHING HERE MOVED —
+/// this test passed, unchanged, across that change.
+///
+/// That is a declared scope reporting clean on everything outside itself, and
+/// the fix is not to widen this list: a header cannot express a meaning. The
+/// meaning is pinned by `occurred_at_export_test`, which builds a record whose
+/// two times DIFFER and asserts which one reaches the file. **When adding a
+/// column, this test is the enforcement. When changing what a column holds,
+/// that one is.**
+///
 /// It also replaces five hardcoded index constants that had to be hand-shifted
 /// twice: once when `record_kind` landed at index 3, and again when `condition`
 /// landed at index 4. Indices are now DERIVED from this list.

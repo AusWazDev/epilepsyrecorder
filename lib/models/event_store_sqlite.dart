@@ -320,7 +320,11 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'ordinal': ordinal,
       'id': r.id,
       'logged_at': r.timestamp.toIso8601String(),
-      'occurred_at': null,
+      // WRITTEN AT LAST. This was a literal `null` from v1 until 29 Aug
+      // 2026 -- the column existed in the original DDL and no code ever
+      // put a value in it. Null still means NOT ASKED and is still what
+      // most records carry.
+      'occurred_at': r.occurredAt?.toIso8601String(),
       'duration_bucket': r.duration?.name,
       'duration_seconds': r.durationSeconds,
       'event_type': r.eventType,
@@ -372,6 +376,11 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
   return EventRecord(
     id: row['id'] is String ? row['id'] as String : '',
     timestamp: ts.toLocal(),
+    // Same .toLocal() normalisation as the log time above. Both are
+    // stored as ISO-8601 and both must come back as local wall clock.
+    occurredAt: row['occurred_at'] is String
+        ? DateTime.tryParse(row['occurred_at'] as String)?.toLocal()
+        : null,
     duration: durationFromName(row['duration_bucket']),
     durationSeconds:
         (row['duration_seconds'] is int) ? row['duration_seconds'] as int : null,

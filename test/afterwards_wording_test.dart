@@ -186,6 +186,12 @@ void main() {
         home: LogEventScreen(existing: existing, confirmOnSave: true)));
     await tester.pumpAndSettle();
 
+    // ensureVisible BEFORE the tap, the same discipline this file already
+    // applies to 'Save changes' two lines down. The tap here started MISSING
+    // when a field was added above -- the chip stayed in the tree and moved
+    // out from under the finger, and `tap` does not throw for that, it warns.
+    await tester.ensureVisible(find.text(chipFor('Tired')));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(chipFor('Tired')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Save changes'));

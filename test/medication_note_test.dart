@@ -252,10 +252,12 @@ void main() {
       expect(h.length, 17);
       expect(h[3], 'record_kind');
       expect(h[15], 'medication_kind');
-      // v5 since the CONDITION column landed, not because of this pass.
-      expect(kCsvShapeVersion, 'v5');
+      // Not because of this pass: v5 was the condition column, v6 the time
+      // columns changing meaning. The COUNT above is what this file depends
+      // on, and seventeen is still right — v6 added no column.
+      expect(kCsvShapeVersion, 'v6');
       expect(csvFilename(when: DateTime(2026, 8, 28, 9, 0, 0)),
-          'medical_event_recorder_20260828_090000.v5.csv');
+          'medical_event_recorder_20260828_090000.v6.csv');
     });
 
     test('8. an events-only export marks every row as an event', () {

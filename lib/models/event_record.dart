@@ -290,6 +290,50 @@ String severityLabel(EventSeverity s) {
 class EventRecord {
   final String id;
   final DateTime timestamp;
+
+  /// WHEN IT HAPPENED, where that differs from when it was written down.
+  ///
+  /// ## ⛔ NULL MEANS NOT ASKED — the same rule as everything else here
+  ///
+  /// Null is not "it happened when it was logged". It is **nobody said**, and
+  /// every record written before 29 Aug 2026 carries null correctly, because
+  /// no screen could express it. There is NO derivation and there never can be
+  /// one: `condition` could be derived from the event type and duration had a
+  /// stored value to read, but nothing anywhere records when an untimed past
+  /// event actually occurred. **Those records are permanently logged-at only.**
+  ///
+  /// ## ⭐ WHY THE COALESCE IS SAFE
+  ///
+  /// Readers use `whenHappened` — `occurredAt ?? timestamp`. Because the field
+  /// is null on **every** record that predates it, that expression evaluates to
+  /// exactly today's behaviour for all of them: no record changes meaning, no
+  /// filter changes result, and no migration runs. The compatibility is by
+  /// construction rather than by care.
+  ///
+  /// ## THE COLUMN HAS BEEN THERE SINCE v1
+  ///
+  /// `occurred_at TEXT` is in the ORIGINAL DDL — verified against the v1
+  /// fixture in `sqlite_upgrade_v2_test` — so every database that has ever
+  /// existed already has it, and this needed **no ALTER and no schema bump**.
+  /// It was written as a literal `null` at both write sites and read nowhere.
+  ///
+  /// ⚠️ Never a future time. The picker's `lastDate` enforces it at the only
+  /// place a value enters.
+  final DateTime? occurredAt;
+
+  /// The time this record is ABOUT. The one expression every reader uses.
+  ///
+  /// Sorting, filtering, grouping and the export all go through here so that
+  /// "when" means one thing across the app. Writing `occurredAt ?? timestamp`
+  /// at each call site is how the two drift apart.
+  DateTime get whenHappened => occurredAt ?? timestamp;
+
+  /// Whether this record says it happened at a different time from its writing.
+  ///
+  /// Used to decide whether to SHOW the distinction. A record with no
+  /// `occurredAt`, or one saved the moment it happened, should not display two
+  /// times that say the same thing.
+  bool get isBackdated => occurredAt != null;
   /// The BUCKET. Never derived from [durationSeconds], and never derived FROM.
   ///
   /// Records captured before duration became a quantity hold a range and will
@@ -382,6 +426,7 @@ class EventRecord {
   EventRecord({
     required this.id,
     required this.timestamp,
+    this.occurredAt,
     required this.duration,
     this.durationSeconds,
     this.detailsCompleted,
@@ -431,6 +476,10 @@ class EventRecord {
   Map<String, dynamic> toMap() => {
         'id':               id,
         'timestamp':        timestamp.toIso8601String(),
+        // ALWAYS WRITTEN, including as null -- the same rule as `severity` and
+        // `triggers` below. A reader must be able to tell "asked and not
+        // answered" from a payload written before the field existed.
+        'occurredAt':       occurredAt?.toIso8601String(),
         'duration':         duration?.name,
         'durationSeconds':  durationSeconds,
         'detailsCompleted': detailsCompleted,
@@ -467,6 +516,11 @@ class EventRecord {
     return EventRecord(
       id:        (map['id'] is String) ? map['id'] as String : '',
       timestamp: timestamp,
+      // Reuses the timestamp parser, so an occurred time gets the SAME
+      // UTC-to-local normalisation the log time gets. Two different parsers
+      // for two times in one record is how a one-hour offset appears in
+      // exactly one column.
+      occurredAt: _parseTimestamp(map['occurredAt']),
       duration: durationFromName(map['duration']),
       durationSeconds:
           (map['durationSeconds'] is int) ? map['durationSeconds'] as int : null,
@@ -868,6 +922,27 @@ String buildCsv(
   sb.write('\uFEFF'); // UTF-8 BOM — tells Excel to read as UTF-8
 
   sb.writeln([
+    // ⛔ THESE THREE MEAN "WHEN IT HAPPENED", AND THAT IS A CHANGE (v6).
+    //
+    // They used to mean two different things in one column, decided by
+    // `record_kind`: an EVENT row wrote `r.timestamp` (when it was logged) and
+    // a MEDICATION row wrote `n.occurredAt` (when it happened). For a user
+    // whose events are timed those coincide and nothing showed. For a user
+    // recording a flare two days later they are days apart, so the rows
+    // interleaved in the wrong order and the same column carried two meanings.
+    //
+    // Both kinds now write WHEN THE THING HAPPENED. For events that is
+    // `whenHappened` — `occurredAt ?? timestamp` — which is byte-identical to
+    // the old behaviour for every record that does not set an occurred time,
+    // i.e. every record written before 29 Aug 2026.
+    //
+    // ⚠️ CONSEQUENCE, STATED RATHER THAN BURIED: where the two differ, the
+    // LOG TIME IS NO LONGER IN THE CSV. It is not lost — it is in the JSON
+    // backup and in `event.logged_at` — but a clinician reading only the file
+    // cannot see that a record was written three days late. A fourth time
+    // column was considered and rejected: the file already carries three, and
+    // one consistent meaning is worth more here than a completeness nobody
+    // asked for.
     'timestamp_iso',
     'date',
     'time',
@@ -975,10 +1050,13 @@ String buildCsv(
   ];
 
   for (final r in items.reversed) {
-    rows.add((at: r.timestamp, cells: [
-      r.timestamp.toIso8601String(),
-      fmtDate.format(r.timestamp),
-      fmtTime.format(r.timestamp).replaceAll('\u202F', ' '),
+    // `whenHappened`, NOT `timestamp` — both as the cells and as the SORT
+    // KEY, or a backdated record would print one time and sort by another.
+    // The medication rows below have always sorted on their occurred time.
+    rows.add((at: r.whenHappened, cells: [
+      r.whenHappened.toIso8601String(),
+      fmtDate.format(r.whenHappened),
+      fmtTime.format(r.whenHappened).replaceAll('\u202F', ' '),
       kRecordKindEvent,
       // The derivation, through the same static `buildCsv` already uses for
       // labels. No database, no new parameter, no field on EventRecord.
@@ -1109,7 +1187,13 @@ List<String> _medicationCells(
 ///     v2   observations and beforehand became delimited columns   11
 ///     v3   rescue medication added three columns                  14
 ///     v4   multi-stream: record_kind and medication_kind           16
-const String kCsvShapeVersion = 'v5';
+///     v5   condition, derived from the event type                    17
+///     v6   the three time columns mean WHEN IT HAPPENED on BOTH      17
+///          record kinds. No column added or removed - a MEANING
+///          change, which is exactly what a shape marker is for: a
+///          reader computing on column 1 gets a different answer, and
+///          nothing in the header would have told them.
+const String kCsvShapeVersion = 'v6';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.
 ///

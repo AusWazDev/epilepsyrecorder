@@ -189,8 +189,9 @@ void main() {
       expect(cell, 'Tired',
           reason: 'THE CSV DROPPED A HIDDEN VALUE — hide became a delete for '
               'the one artefact a clinician reads');
-      // Hiding changed no column. v5 is the later condition column.
-      expect(kCsvShapeVersion, 'v5');
+      // Hiding changed no column. v5 was the later condition column and v6 the
+      // time columns changing meaning.
+      expect(kCsvShapeVersion, 'v6');
       await db.close();
     });
 

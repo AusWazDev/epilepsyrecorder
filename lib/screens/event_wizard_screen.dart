@@ -7,6 +7,7 @@ import '../models/event_record.dart';
 import '../models/storage_boot.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
+import '../widgets/occurred_at_field.dart';
 import '../theme/mer_theme.dart';
 
 /// Guided detail entry: one section per screen, a summary before saving.
@@ -142,6 +143,11 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   final _notesController = TextEditingController();
 
   late DateTime _timestamp;
+
+  /// WHEN IT HAPPENED, where that differs from when this was written.
+  /// Null means NOT ASKED and is what the timer-driven path always
+  /// leaves, so it must never be defaulted to `now` on save.
+  DateTime? _occurredAt;
   DurationCategory? _bucket;
   /// NULL until the user picks. ⚠️ **The pre-selection was the trap**, and it
   /// is the same shape as the legacy duration bucket: a highlighted chip LOOKS
@@ -171,6 +177,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     final e = widget.existing;
     _id = e?.id ?? _uuid.v4();
     _timestamp = e?.timestamp ?? DateTime.now();
+    // Carried as-is INCLUDING null, the same rule as event type and
+    // severity below.
+    _occurredAt = e?.occurredAt;
     _bucket = e?.duration;
     if (e?.durationSeconds != null) {
       _minsController.text = '${e!.durationSeconds! ~/ 60}';
@@ -260,6 +269,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   EventRecord _build({bool completed = false}) => EventRecord(
         id: _id,
         timestamp: _timestamp,
+        occurredAt: _occurredAt,
         duration: _bucket,
         durationSeconds: _enteredSeconds,
         feelings: _feelings.toList(),
@@ -1048,6 +1058,25 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         // The partial is already kept; Save is what marks it finished.
         _heading('Check and save',
             'Save to finish. What you have entered is kept either way.'),
+        // ⛔ ON THE SUMMARY, NOT ON STEP 1, AND THAT IS THE DESIGN.
+        //
+        // Step 1 asks how long it lasted, and "when" would sit naturally
+        // beside it -- but every user of the TIMER path would then meet a
+        // question they never need, on the first screen, on every record. The
+        // summary is where a record is reviewed before saving, so the one
+        // person who needs to correct the time finds it at the moment they
+        // are checking the record, and nobody else is asked anything.
+        //
+        // The capture path is untouched: quick-record still takes one tap and
+        // gains no decision.
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: OccurredAtField(
+            value: _occurredAt,
+            fallback: _timestamp,
+            onChanged: (v) => setState(() => _occurredAt = v),
+          ),
+        ),
         ...lines.map((l) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Text('• $l', style: const TextStyle(fontSize: 15)),

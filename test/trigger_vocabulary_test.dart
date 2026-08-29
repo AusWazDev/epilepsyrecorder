@@ -235,9 +235,10 @@ void main() {
       final cell = csvCell(buildCsv(<EventRecord>[r]), 'beforehand');
       expect(cell, 'Stress; Illness; Heatwave',
           reason: 'seeded seven in canonical order, unknown appended');
-      // This pass added no column. The marker is v5 because a LATER pass
-      // added `condition` - which is the rule working, not a regression.
-      expect(kCsvShapeVersion, 'v5');
+      // This pass added no column. The marker is v6 because LATER passes did:
+      // v5 added `condition`, v6 changed what the time columns mean. The rule
+      // working, not a regression.
+      expect(kCsvShapeVersion, 'v6');
     });
   });
 

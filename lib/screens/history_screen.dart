@@ -177,14 +177,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
 
       // ── DATE RANGE ──
-      // Filters on `timestamp`, which the target data model maps to `logged_at`
-      // — "never null, never editable". Deliberately NOT `occurred_at`: that
-      // field is nullable and the migration leaves it NULL for every record
-      // that exists today, so a filter written against it would match none of
-      // them and would change meaning the day the expansion lands. Filtering on
-      // the log time means this predicate keeps working, and keeps meaning the
-      // same thing, across that migration.
-      if (from != null && r.timestamp.isBefore(from)) return false;
+      // ⛔ NOW `whenHappened`, AND THE OLD REASONING IS WHY THIS IS SAFE.
+      //
+      // This filtered on `timestamp` (logged_at) because `occurred_at` was
+      // null on every record that existed, so a filter written against it
+      // would have matched none of them. That is still true of every record
+      // written before 29 Aug 2026 — which is exactly why the COALESCE costs
+      // nothing: `occurredAt ?? timestamp` is `timestamp` for all of them, so
+      // this predicate returns an identical result set for the entire existing
+      // history and only differs for records that state an occurrence time.
+      //
+      // The change is required, not cosmetic. "Show me last month" filtering
+      // on the log time returns records by when they were TYPED, which for a
+      // condition recorded after the fact is the wrong month.
+      if (from != null && r.whenHappened.isBefore(from)) return false;
 
       // Text search
       if (q.isEmpty) return true;
@@ -240,7 +246,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             .join(' '),
         'referral: ${r.referralRequired ? "yes" : "no"}',
         r.notes,
-        _uiTimeFmt.format(r.timestamp),
+        // Searchable by WHEN IT HAPPENED, matching what the row displays.
+        _uiTimeFmt.format(r.whenHappened),
       ].join(' ').toLowerCase();
 
       return haystack.contains(q);
@@ -316,7 +323,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     for (var i = 0; i < records.length; i++) {
       final r   = records[i];
-      final day = DateTime(r.timestamp.year, r.timestamp.month, r.timestamp.day);
+      // Grouped under the day it HAPPENED, or a backdated record would sit
+      // under the heading for the day it was typed.
+      final w = r.whenHappened;
+      final day = DateTime(w.year, w.month, w.day);
 
       if (currentDay == null || day != currentDay) {
         final label = day == today
@@ -333,7 +343,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final next = i + 1 < records.length ? records[i + 1] : null;
       final nextDay = next == null
           ? null
-          : DateTime(next.timestamp.year, next.timestamp.month, next.timestamp.day);
+          : DateTime(next.whenHappened.year, next.whenHappened.month,
+              next.whenHappened.day);
       items.add(_HistoryItem.record(r, isLastOfDay: nextDay != day));
     }
 
@@ -612,7 +623,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() {
       final index = _records.indexWhere((e) => e.id == result.id);
       if (index != -1) _records[index] = result;
-      _records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      // Sorted on the same value the rows display and group by. A list that
+      // sorts on one time and prints another is the defect the CSV had.
+      _records.sort((a, b) => b.whenHappened.compareTo(a.whenHappened));
     });
 
     await widget.onRecordsChanged(_records);
@@ -1144,7 +1157,7 @@ class _EventListTile extends StatelessWidget {
       title: Row(
         children: [
           Expanded(
-            child: Text(timeFmt.format(r.timestamp)),
+            child: Text(timeFmt.format(r.whenHappened)),
           ),
           // No badge at all when the type is unknown. A badge is a
           // CLASSIFICATION, and there is nothing to classify — a grey chip

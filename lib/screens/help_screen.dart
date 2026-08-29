@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../constants.dart';
+import '../services/notification_service.dart';
 import '../theme/mer_theme.dart';
 import 'walkthrough_screen.dart';
 
@@ -17,6 +18,7 @@ class HelpScreen extends StatefulWidget {
 
 class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
   bool _notificationsAllowed = true;
+  bool _standingOn           = true;
   bool _showPreviewsAlways   = true;
 
   static const _navChannel = MethodChannel('au.com.notiva.mer/navigation');
@@ -27,6 +29,12 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     if (!Platform.isWindows) _checkNotifications();
     if (Platform.isIOS) _checkShowPreviews();
+    if (Platform.isAndroid) _loadStanding();
+  }
+
+  Future<void> _loadStanding() async {
+    final on = await NotificationService.standingEnabled();
+    if (mounted) setState(() => _standingOn = on);
   }
 
   @override
@@ -104,6 +112,24 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
               showPreviewsAlways:   _showPreviewsAlways,
               onOpenSettings:       _openNotificationSettings,
             ),
+
+            // ⛔ ANDROID ONLY, and that is not caution — it is the truth about
+            // where the flag reaches. iOS's persistent notification is owned by
+            // Swift in AppDelegate and this does not touch it; Windows posts
+            // nothing at all. A switch on either platform would be a control
+            // that changes nothing, which is worse than no switch.
+            //
+            // Shown only when notifications are ALLOWED. Offering "turn off the
+            // notification" directly beneath a row reading "Notifications: Off
+            // — tap to enable" is two controls arguing about the same thing.
+            if (Platform.isAndroid && _notificationsAllowed)
+              _StandingSwitch(
+                value: _standingOn,
+                onChanged: (v) async {
+                  setState(() => _standingOn = v);
+                  await NotificationService.instance.setStandingEnabled(v);
+                },
+              ),
 
             const _Section(
               title: 'RECORDING EVENTS',
@@ -494,6 +520,62 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
 /// 24 August 2026: its only source is this screen's own prose, the notification
 /// action is registered `options: []`, and the app therefore does not decide it.
 /// The row says what the SETTING is, not what iOS will do about it.
+/// The in-app off switch for the STANDING quick-log notification.
+///
+/// ## ⛔ WHY THIS EXISTS, AND WHY "REVOKE THE PERMISSION" WAS NOT AN ANSWER
+///
+/// The standing notification is posted whenever permission is granted — not
+/// only while an event runs — and is re-posted every time the app opens. For
+/// the epilepsy path that persistence IS the feature: a record can be made
+/// without unlocking the phone. For someone recording a condition after the
+/// fact — a migraine, an IBS flare — it is a permanent entry in the shade for
+/// something they will never tap.
+///
+/// Until now the only way to stop it was revoking the OS notification
+/// permission, which ALSO removes the end-of-event controls and makes this
+/// screen report the app as misconfigured. That is not an opt-out, it is a
+/// different app.
+///
+/// ⚠️ **It does not touch an event in progress.** `_showNormal` is the single
+/// enforcement point; `_showActive` shares the same notification id and is
+/// deliberately not guarded, so an event that is running keeps its End control
+/// whatever this says.
+class _StandingSwitch extends StatelessWidget {
+  const _StandingSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: MERColours.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SwitchListTile(
+          value: value,
+          onChanged: onChanged,
+          title: const Text('Quick-log notification',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          subtitle: Text(
+            // Both states say what is still TRUE, so turning it off does not
+            // read as turning the app off.
+            value
+                ? 'Always in the notification shade, so an event can be '
+                    'recorded without unlocking the phone.'
+                : 'Off. Events are still recorded in the app, and an event in '
+                    'progress still shows its controls.',
+            style: const TextStyle(fontSize: 12, color: MERColours.textMuted),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StatusBand extends StatelessWidget {
   final bool showNotifications;
   final bool notificationsAllowed;

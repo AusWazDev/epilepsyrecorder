@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/event_record.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
+import '../widgets/occurred_at_field.dart';
 import '../theme/mer_theme.dart';
 
 class LogEventScreen extends StatefulWidget {
@@ -35,9 +37,13 @@ class _LogEventScreenState extends State<LogEventScreen> {
   /// never derived from, or overwritten by, what they type.
   DurationCategory? _duration;
 
+  /// Null means NOT ASKED. Never defaulted to `now` on save.
+  DateTime? _occurredAt;
+
   final _minsController = TextEditingController();
   final _secsController = TextEditingController();
   int? _origSeconds;
+  DateTime? _origOccurredAt;
   late EventSeverity? _severity;
   late Set<String> _selectedFeelings;
   late Set<String> _selectedTriggers;
@@ -170,6 +176,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
       _minsController.text = '${e!.durationSeconds! ~/ 60}';
       _secsController.text = '${e.durationSeconds! % 60}';
     }
+    _occurredAt        = e?.occurredAt;
     _severity          = e?.severity;
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
@@ -183,6 +190,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     _origEventType = _eventType;
     _origDuration  = _duration;
     _origSeconds   = _enteredSeconds;
+    _origOccurredAt = _occurredAt;
     _origSeverity  = _severity;
     _origFeelings  = Set.from(_selectedFeelings);
     _origTriggers  = Set.from(_selectedTriggers);
@@ -203,7 +211,8 @@ class _LogEventScreenState extends State<LogEventScreen> {
 
   bool get _hasChanges {
     if (_isNew) return true;
-    return _eventType        != _origEventType ||
+    return _occurredAt       != _origOccurredAt ||
+        _eventType           != _origEventType ||
         _enteredSeconds      != _origSeconds   ||
         _severity            != _origSeverity  ||
         _referralRequired    != _origReferral  ||
@@ -215,6 +224,8 @@ class _LogEventScreenState extends State<LogEventScreen> {
         !_sameSet(_selectedTriggers, _origTriggers);
   }
 
+  static final DateFormat _whenFmt = DateFormat('d MMM yyyy · HH:mm');
+
   bool _sameSet(Set<String> a, Set<String> b) =>
       a.length == b.length && a.containsAll(b);
 
@@ -225,6 +236,15 @@ class _LogEventScreenState extends State<LogEventScreen> {
         'Event type: ${eventTypeDisplay(_origEventType) ?? 'not recorded'} '
         '→ ${eventTypeDisplay(_eventType) ?? 'not recorded'}',
       );
+    }
+    // Named the same way the other lines are: what the FIELD held, not a
+    // claim about the event. 'not recorded' is the vocabulary this list
+    // already uses for absence.
+    if (_occurredAt != _origOccurredAt) {
+      String w(DateTime? d) =>
+          d == null ? 'not recorded' : _whenFmt.format(d);
+      changes.add('When it happened: ${w(_origOccurredAt)} '
+          '→ ${w(_occurredAt)}');
     }
     if (_enteredSeconds != _origSeconds) {
       changes.add(
@@ -321,6 +341,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     final record = EventRecord(
       id:               widget.existing?.id ?? _uuid.v4(),
       timestamp:        widget.existing?.timestamp ?? DateTime.now(),
+      occurredAt:       _occurredAt,
       eventType:        _eventType,
       // The bucket is carried through UNCHANGED. Never derived from the
       // number, never cleared by it: what was recorded then and what the user
@@ -449,6 +470,29 @@ appBar: AppBar(
                             ),
                           ],
                         ),
+                        const SizedBox(height: 28),
+
+                        // ⚠️ AFTER DURATION, NOT AT THE TOP — moved there on
+                        // evidence. Placed above "What happened?" it pushed
+                        // every other field down by its own height, and a
+                        // widget test's tap on an observation chip started
+                        // MISSING: the chip was still in the tree and no
+                        // longer under the finger. That is what one more
+                        // block at the top costs on a real screen too, and
+                        // the common edit here is adding details to a quick
+                        // record, not correcting a time.
+                        //
+                        // Beside duration is also where it belongs: these are
+                        // the two questions about time, and "how long" reads
+                        // oddly separated from "when".
+                        OccurredAtField(
+                          value: _occurredAt,
+                          fallback: widget.existing?.timestamp ??
+                              DateTime.now(),
+                          onChanged: (v) =>
+                              setState(() => _occurredAt = v),
+                        ),
+
                         const SizedBox(height: 28),
 
                         _SectionLabel('Severity'),

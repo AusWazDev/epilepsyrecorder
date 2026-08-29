@@ -150,8 +150,12 @@ void main() {
       // The rule is mechanical: any change to the column set bumps the marker.
       // This is what makes that checkable rather than remembered - if someone
       // adds a column without bumping, the count here stops matching.
-      // v5 since the CONDITION column landed, not because of this pass.
-      expect(kCsvShapeVersion, 'v5');
+      // ⚠️ AND THE RULE ON THE LINE ABOVE IS INCOMPLETE, WHICH v6 EXPOSED.
+      // "Any change to the column set bumps the marker" is true and is not
+      // the whole rule: v6 bumped with the column set untouched, because the
+      // three time columns changed what they MEAN. A count cannot catch that.
+      // Not because of this pass: v5 was the condition column.
+      expect(kCsvShapeVersion, 'v6');
       expect(header(buildCsv(<EventRecord>[rec()])).length, 17,
           reason: 'the marker is DEFINED as this header. Changing one without '
               'the other is the drift the rule exists to prevent');

@@ -84,7 +84,12 @@ void main() {
       // golden header in csv_delimited_test is what enforces it; this states
       // the resulting value so a reader of THIS file knows which shape it
       // describes.
-      expect(kCsvShapeVersion, 'v5');
+      //
+      // ⚠️ THE COLUMN THIS FILE ADDED IS STILL v5's. The value below moved to
+      // v6 for a LATER change that added no column at all — the time columns
+      // changed meaning. This test's own title is about the condition column
+      // and stays true; the constant simply is not owned by this file.
+      expect(kCsvShapeVersion, 'v6');
     });
 
     test('2. an ATTRIBUTED record exports its condition NAME', () async {

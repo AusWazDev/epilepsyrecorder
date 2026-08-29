@@ -252,14 +252,23 @@ void main() {
 
   group('THE SCHEMA GATE IS THE PROTECTION FOR OLD BUILDS', () {
     test('10. the version bumped, and that is what makes the refusal fire', () {
-      // 3 since conditions and the type mapping entered the envelope. The
-      // NUMBER is not the point — the bump is, because it is what makes an
-      // older build refuse a file it would otherwise restore incompletely.
-      expect(kBackupSchemaVersion, 3);
+      // 4 since `occurredAt` entered the record. The NUMBER is not the point
+      // — the bump is, because it is what makes an older build refuse a file
+      // it would otherwise restore incompletely.
+      //
+      // ⚠️ 3 -> 4 IS THE FIRST BUMP WHERE THE ENVELOPE'S OWN KEYS DID NOT
+      // CHANGE. Records serialise through `EventRecord.toMap`, so the field
+      // arrived in the file with no edit to `buildBackupJson` at all. The
+      // constant's doc says "increment ONLY when the envelope shape changes";
+      // the bump was made on the RULE BEHIND that wording — an older build
+      // must refuse a file it would only partly understand — because such a
+      // build would restore a backdated record and silently drop when it
+      // happened. A loss inside `records` is harder to notice, not less real.
+      expect(kBackupSchemaVersion, 4);
 
       final current = jsonDecode(buildBackupJson(const <EventRecord>[]))
           as Map<String, dynamic>;
-      expect(current['schemaVersion'], 3);
+      expect(current['schemaVersion'], 4);
     });
 
     test('11. ⛔ an OLDER build REFUSES a notes-bearing backup, cleanly', () {

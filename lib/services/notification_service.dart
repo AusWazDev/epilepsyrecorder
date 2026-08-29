@@ -15,6 +15,10 @@ import 'package:uuid/uuid.dart';
 // stored list. capture_instruction.dart imports no model either, so the
 // background isolate's surface is the schema and nothing more. Four of the
 // seven historical notification failures lived in that isolate.
+// constants.dart is safe here for the same reason the two below are: it has
+// ZERO imports of its own, so it adds no surface to the isolate. The rule
+// above is about not dragging models and plugins in, not about strings.
+import '../constants.dart';
 import '../models/capture_instruction.dart';
 import '../models/duration_format.dart';
 
@@ -353,8 +357,49 @@ class NotificationService {
   //
   // ── Notification builders ─────────────────────────────────────────────────
 
+  /// Whether the standing notification should be posted. Absent means YES.
+  ///
+  /// Read fresh every time rather than cached: this also runs in the
+  /// background isolate, which does not share the main isolate's memory, and a
+  /// cached flag there would be whatever it was when the isolate spawned.
+  static Future<bool> standingEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    return prefs.getBool(kStandingNotificationKey) ?? true;
+  }
+
+  /// Turns the standing notification on or off and applies it immediately.
+  ///
+  /// ⚠️ **Turning it OFF while an event is running cancels nothing.**
+  /// `_showActive` and `_showNormal` share `_persistentId`, so cancelling here
+  /// would take down the ACTIVE notification and with it the only way to end
+  /// an event from the lock screen. The standing one simply does not come back
+  /// when that event finishes, because `_showNormal` checks the flag.
+  Future<void> setStandingEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kStandingNotificationKey, enabled);
+    if (Platform.isWindows || Platform.isIOS) return;
+
+    if (enabled) {
+      await restoreNotification();
+      return;
+    }
+    await prefs.reload();
+    final active = prefs.getString(_activeEventKey) != null;
+    if (!active) await AwesomeNotifications().cancel(_persistentId);
+  }
+
   Future<void> _showNormal() async {
     if (Platform.isIOS) return; // Swift owns iOS persistent notification
+    // ⛔ THE ONLY ENFORCEMENT POINT, deliberately. Both callers reach the
+    // standing notification through here — the restore on launch and the
+    // re-post three seconds after an event ends — and putting the check at
+    // either call site would leave the other one posting it. A third caller
+    // added later inherits the behaviour instead of having to remember it.
+    if (!await standingEnabled()) {
+      await AwesomeNotifications().cancel(_persistentId);
+      return;
+    }
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id:                 _persistentId,
