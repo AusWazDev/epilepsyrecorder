@@ -53,3 +53,23 @@ upload-keystore.jks
 
 # Session scratch — saved chat artefacts, referenced but not part of the project
 scratchpad/
+
+# ⛔ CHAT TRANSCRIPTS — NEVER COMMIT. THIS REPO IS PUBLIC.
+#
+# A chat transcript in a public repo is worse than whatever gap it fills: it
+# carries the whole conversation, not the conclusions someone chose to publish.
+#
+# ⚠️ DELIBERATELY NOT `*.txt`. `docs/claude-ai-project-instructions.txt` is
+# TRACKED — it is the pasteable source of the claude.ai Project instructions —
+# and a blanket rule would drop it from future commits silently, because
+# .gitignore does not warn when it shadows a file someone meant to keep. The
+# three `windows/**/CMakeLists.txt` are tracked too.
+#
+# Patterns are specific for that reason. `*.jsonl` is safe and included because
+# Claude Code session transcripts are JSONL and none is tracked (verified, not
+# assumed).
+MER Refresh Chat*.txt
+*Chat content*.txt
+*chat-transcript*
+transcripts/
+*.jsonl
