@@ -2,7 +2,7 @@
 
 **Generated from code at commit `d7760b2`, 28 August 2026, version 1.1.0+49, schema v9, backup schema 2.**
 
-⚠️ **Sections 2, 3, 4, 6, 8 and 9 were regenerated on 28 August 2026 after this document had stood 116 commits and four schema versions behind.** §4 asserted the app did not use SQLite; §9, the section listing what is known to be wrong, was itself wrong in three of its four entries. §1's store claim is marked UNVERIFIED rather than corrected — it needs a console this machine cannot reach.
+⚠️ **Sections 2, 3, 4, 6, 8 and 9 — as numbered then; a section was inserted on 31 Aug 2026, so those last two are now §9 and §10 — were regenerated on 28 August 2026 after this document had stood 116 commits and four schema versions behind.** §4 asserted the app did not use SQLite; §9 then, §10 now, the section listing what is known to be wrong, was itself wrong in three of its four entries. §1's store claim is marked UNVERIFIED rather than corrected — it needs a console this machine cannot reach.
 
 This document is derived by reading the repository, not written from the
 website, the store listing, or memory. Those three have each been wrong about
@@ -61,19 +61,21 @@ Console. Recorded as unverified rather than resolved in either direction.
 fields, and nothing else" and is no longer either half of that**: there are 14
 fields on `EventRecord` and a second record kind beside it.
 
-### `EventRecord` — 14 fields
+### `EventRecord` — 15 fields
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `String` | uuid v4. Internal; never shown |
-| `timestamp` | `DateTime` | **Time of logging, not time of the event.** The `event` table has an `occurred_at` column; the MODEL does not carry it and nothing populates it |
+| `timestamp` | `DateTime` | **When it was written down.** Maps to `logged_at`. Never null, never editable |
+| `occurredAt` | `DateTime?` | **When it happened**, where that differs. NULL means NOT ASKED, not "it happened when it was logged". Set through `OccurredAtField` on the wizard's summary step and inline on the form; the picker allows 2020 to now and refuses a future time rather than clamping it. Not derivable, so every record written before 30 Aug 2026 is permanently logged-at only |
+| `whenHappened` | getter | `occurredAt ?? timestamp`. **The one expression every reader uses** — History's filter, search, day grouping, sort and row time, and the CSV's three time columns and sort key. Writing the coalesce at each call site is how two readers drift apart |
 | `duration` | `DurationCategory?` | `lt1, oneToFive, gt5`. **NULLABLE** |
 | `durationSeconds` | `int?` | The measured quantity. Wins over the bucket wherever present |
 | `detailsCompleted` | `bool?` | Three-state. NULL means a record that predates the concept, not "incomplete" |
 | `eventType` | `String?` | **A STRING, not an enum.** The `EventType` enum no longer exists. Holds a vocabulary `value`; user-extensible |
 | `severity` | `EventSeverity?` | `mild, moderate, severe`. **NULLABLE** |
-| `feelings` | `List<String>` | The AFTERWARDS list. Vocabulary values from the `observation` table — 13 seeded, user-extensible |
-| `triggers` | `List<String>` | The BEFOREHAND list. Vocabulary values from `trigger_option` — 7 seeded, user-extensible |
+| `feelings` | `List<String>` | The AFTERWARDS list. Vocabulary values from the `observation` table — **34 seeded as at 31 Aug 2026**, user-extensible. ⚠️ A count rots; re-derive from `kSeedObservations` |
+| `triggers` | `List<String>` | The BEFOREHAND list. Vocabulary values from `trigger_option` — **32 seeded as at 31 Aug 2026**, user-extensible. ⚠️ A count rots; re-derive from `kSeedTriggers` |
 | `rescueMedGiven` | `bool?` | |
 | `rescueMedHelped` | `RescueResponse?` | `helped, partly, didNotHelp`. Gated behind `rescueMedGiven` |
 | `rescueMedSecondDose` | `bool?` | Gated the same way |
@@ -111,11 +113,15 @@ regeneration, and treat an entry that has become true as the more dangerous
 failure: a false negative here blocks correct copy, silently, and reads as
 diligence.
 
-- **"Date and time of the event"** — for an EVENT it is the time of logging.
-  ⚠️ **Now true for a medication note**, which carries a real `occurredAt`.
-  Do not generalise either way.
-- **"Enter it afterwards"** — you can log an event later, but its timestamp is
-  the moment you logged.
+- **"Date and time of the event"** — ⚠️ **THIS BECAME TRUE ON 30 Aug 2026 AND
+  THE ENTRY BELOW IS THE WARNING IT IGNORED.** An event now carries a real
+  `occurredAt` a user can set, so the app does record the date and time of the
+  event where they have said. It remains the time of logging where they have
+  not. **True for a medication note since the medication split.** Do not
+  generalise either way, and do not restore the old unqualified reading.
+- **"Enter it afterwards"** — ⚠️ **ALSO NOW TRUE.** You can log an event later
+  *and say when it happened*. Its `timestamp` is still the moment you logged;
+  `occurredAt` is the moment you state.
 - **"Referral information"** — it is a single bool.
 - **"Continuous monitoring", "detects", "alerts you"** — nothing observes,
   infers or notifies about a user's condition. The only notification is the
@@ -189,16 +195,16 @@ back to the shared_preferences store only when the database cannot be opened.
 | `schema_meta` | v1 | key/value. Schema version and migration markers |
 | `event` | v1 | 17 columns |
 | `event_type` | v2 | Vocabulary. `id, condition_id, value, label, is_seeded, is_active, is_protected, sort_order, emoji` |
-| `observation` | v2 | Same shape. Shared across conditions, so `condition_id` is never populated |
-| `event_observation` | v7 | `event_id, observation_id, position`. **Additive — `feelings_json` stays authoritative and nothing reads this yet** |
+| `observation` | v2 | Same shape. Shared across conditions, so `condition_id` is **never populated as at 31 Aug 2026** — and nothing writes it, so relevance is carried by `kSeededRelevance`, not by this column |
+| `event_observation` | v7 | `event_id, observation_id, position`. **Additive — `feelings_json` stays authoritative. As at 31 Aug 2026 nothing reads this join.** ⚠️ Usage ordering reads `feelings_json` directly for the same purpose, so "nothing reads it" is true of the TABLE and misleading about the DATA |
 | `medication_note` | v7 | The second record kind. `condition_id` added v8 |
 | `condition` | v8 | **Created empty and assigned to nothing.** No UI reaches it |
-| `condition_observation` | v8 | Relevance ORDERING, never membership. No rows |
+| `condition_observation` | v8 | Relevance ORDERING, never membership. **As at 31 Aug 2026: no rows, no writer, and no reader.** ⚠️ Relevance ordering IS implemented — but from the `kSeededRelevance` const map, not this table, because nothing can author rows here: `setConditionFor` throws for observations and triggers, and no condition carries a `seeded_key` |
 | `trigger_option` | v9 | The beforehand vocabulary |
 | `event_trigger` | v9 | `triggers_json` stays authoritative, same rule as observations |
 
 `condition_trigger`, `condition_field`, `event_field_value` and `daily_entry`
-are designed and **not built** — see `docs/DATA-MODEL.md`.
+are designed and **not built as at 31 Aug 2026** — see `docs/DATA-MODEL.md`.
 
 ### `shared_preferences` keys that remain
 
@@ -389,7 +395,112 @@ Sentry release format: `au.com.notiva.medicaleventrecorder@<version>+<build>`.
 
 ---
 
-## 8. Platform branches
+## 8. Picker and list behaviour
+
+⚠️ **Added 31 August 2026.** All four of these shipped and none was described here.
+**Every absence claim in this section is dated, because the six corrections that
+preceded it were all undated absence claims that had quietly become false.**
+
+### Bounded pickers — `BoundedChipWrap`
+
+`lib/widgets/bounded_chip_wrap.dart`. A collapsed vocabulary picker draws only its
+**first `kCollapsedChipRows` (3) rows**, then a disclosure reading `N to choose from`
+with `Show all` / `Show fewer`.
+
+⛔ **It bounds by ROWS, not by count**, so the number of entries offered varies with
+label width — measured at 8 on the wizard's beforehand step and 7 on afterwards, and
+9 on each of the form's two sections, from the same vocabularies.
+
+**Layout, not filtering:** `show = _expanded || rows[i] < _maxRows || _pinned[i]`.
+Chips are laid out exactly as `Wrap` would, then the ones past row 3 are not drawn.
+⭐ **So list ORDER decides membership of the visible rows, not merely sequence within
+them** — promoting an entry pulls it inside the fold and pushes another out.
+
+**Pinned chips are exempt from the bound entirely:** selected chips, orphan values a
+record already holds, and the add pill. A picker therefore grows past three rows when
+a record has many selections, which is correct — the fold must never hide what the
+record contains.
+
+⚠️ **Two instantiation sites serving four pickers** — `_vocabMultiChips` in the wizard
+(steps 3 and 4) and `_SelectionWrap` on the form (both sections). **As at 31 Aug 2026
+wizard step 2, "What happened?", is NOT bounded**: event types go through
+`_vocabChips`, which returns a plain `Wrap`, and the grouped variant
+`_groupedVocabChips` uses a plain `Wrap` twice. Four entries today, so it is
+invisible — and the grouped path is the one a second condition switches on.
+
+### Ordering — usage, then relevance, then seed order
+
+`offerable(table, all, {usage, relevant})` in `lib/models/vocabulary.dart` sorts:
+
+```
+1. usage      descending, from Vocabularies.usageFor(table)
+2. relevance  breaks a usage tie, from relevantValues(_adoptedKeys, table)
+3. seed order the index tiebreak
+```
+
+**Usage outranks relevance deliberately.** Relevance-first would sink an entry recorded
+twenty times below entries never touched: usage is evidence about this person, relevance
+is a prior about people with the condition. **Cold start is unaffected** — with no
+records every count ties and relevance decides the whole list.
+
+**Usage** is counted once at `Vocabularies.load` by `_countUsage`, tallying every value
+in `feelings_json` and `triggers_json` across **all** `event` rows — **no window, no
+recency weighting, no cap**. ⛔ **Keyed per TABLE**, because a value can be seeded in
+both vocabularies and pooling the counts would let heavy afterwards use lead the
+beforehand list.
+
+⚠️ **As at 31 Aug 2026 usage reorders the beforehand list and does NOT reorder the
+afterwards list on any device with pre-revision history.** Existing records'
+`feelings_json` holds the retired glyph-bearing legacy values, which `offerable`
+filters out as inactive before sorting, so every currently-offerable observation
+scores zero. `triggers_json` was never rewritten, so its counts match. **Not broken —
+it has no matching data, and accumulates from the first record written after the
+observation revision.**
+
+**Relevance** comes from the `kSeededRelevance` const map keyed on `condition.seeded_key`.
+⛔ **As at 31 Aug 2026 it is inert on every device**: `addCondition` writes
+`'seeded_key': null` and there is no other writer, so `_adoptedKeys` is always empty.
+The map holds one key, `'epilepsy'`, mapping observations only — there is no trigger
+set, because the record sources an observation set for epilepsy and sources nothing
+for the original seven triggers.
+
+### Bulk hide and show — "Your lists"
+
+`lib/screens/vocabulary_screen.dart`. A **Select** action in the app bar replaces each
+row's Hide/Show button with a checkbox and shows a bottom bar with `Show selected` /
+`Hide selected`, each enabled only when the selection contains a row in that state.
+Selection spans sections, keyed `table|value`.
+
+⛔ **Show is bulk because Hide is.** A mechanism that can be applied but not lifted
+converts a success into a permanent defect: hiding sixteen entries in one gesture while
+unhiding took sixteen taps would leave a user one gesture from a state they could only
+leave slowly.
+
+**Locked rows get no checkbox** — `_selectable` is the single predicate, shared with the
+row's lock icon, so a bulk action cannot reach a retired or protected entry and
+`setVisible`'s `VocabularyRuleError` is unreachable from it.
+
+⚠️ **The labels are `Hide selected` / `Show selected`, not `Hide` / `Show`**, because
+the retired-block disclosure is also labelled Show and can sit on screen at the same
+time.
+
+### The standing-notification switch
+
+`kStandingNotificationKey` in `constants.dart`, default **true** so no existing install
+silently loses the notification. Surfaced as a `SwitchListTile` on the Help screen.
+
+⛔ **Enforced in `_showNormal` and nowhere else**, so both callers — the launch restore
+and the re-post three seconds after an event ends — inherit it, and a third added later
+inherits it too. ⚠️ **`_showActive` is deliberately NOT guarded**: it shares
+`_persistentId`, so an event in progress keeps its End control whatever the switch says,
+and turning the switch off while one is running cancels nothing.
+
+**Android only**, and further gated on notifications being allowed. iOS's persistent
+notification is owned by Swift in `AppDelegate`; Windows posts none. ⚠️ **A consequence
+worth knowing: on Android with notifications denied the switch does not render at all**,
+so a user in that state cannot discover the setting exists.
+
+## 9. Platform branches
 
 **49** `Platform.is*` sites in `lib/` — an earlier revision said 38. Plus
 availability gates in Swift (`iOS 16.0 / 16.2 / 17.0`) that Dart cannot see.
@@ -406,7 +517,7 @@ availability gates in Swift (`iOS 16.0 / 16.2 / 17.0`) that Dart cannot see.
 
 ---
 
-## 9. Known-wrong and unverifiable
+## 10. Known-wrong and unverifiable
 
 ⚠️ **THREE OF THE FOUR ENTRIES THAT STOOD HERE HAD BEEN FIXED** — the section
 listing what is known to be wrong was itself the most wrong section in the
