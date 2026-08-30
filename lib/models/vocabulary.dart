@@ -443,6 +443,70 @@ const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
   // the entry this one exists to be distinct from.
   VocabularySeed('Light-headed or faint', 'Light-headed or faint',
       emoji: '🥴'),
+
+  // ── APPENDED 30 AUG 2026, the six-conditions research pass ───────────────
+  //
+  // ⚠️ SOURCE TIER: DIAGNOSTIC CRITERIA, NOT DIARIES. DSM-5's thirteen panic
+  // symptoms, the Barany Society consensus criteria for Meniere's, and clinical
+  // reviews for presyncope. That is a tier ABOVE the charity diaries the
+  // epilepsy and migraine sets came from — and it is still NOT a validated
+  // diary instrument. A symptom list lifted from criteria is not the same thing
+  // as a set someone has shown people can complete.
+  //
+  // ⛔ SEVEN OF THESE ARE ALSO SEEDED IN THE BEFOREHAND VOCABULARY. Most of the
+  // panic somatic set serves SYNCOPE as a prodrome — presyncope is described as
+  // "heart beating fast or hard, feeling hot or sweaty, feeling cold or clammy,
+  // breathing fast, ringing in your ears or decreased hearing" — so the same
+  // rule that put `Tired` and `Neck stiffness` in both lists applies again. The
+  // phase is carried by WHICH list holds the value.
+  //
+  // ⚠️ `Trembling or shaking` is NOT among them. The brief scoping this pass
+  // assigned it to both; the presyncope source quoted above does not name it,
+  // and inventing the span from the entry's plausibility is what the sourcing
+  // rule forbids. Panic only until a source says otherwise.
+  //
+  // ⛔ AND TWO ENTRIES FROM DSM-5's THIRTEEN ARE DELIBERATELY ABSENT: "fear of
+  // losing control" and "fear of dying". They record a BELIEF rather than a
+  // sensation — the only such entries there would be in any vocabulary here —
+  // they are internal states an observer cannot report, and the Help caveat
+  // covering that is decided but unwritten. The somatic entries below stand
+  // alone as diary lines; those two only make sense as diagnostic criteria, and
+  // seeding them moves this list toward reading as a screening instrument. A
+  // user who wants them can type them, in their own words, which is the same
+  // answer non-epileptic seizures got.
+  VocabularySeed('Palpitations or racing heart', 'Palpitations or racing heart',
+      emoji: '💓'),
+  VocabularySeed('Sweating', 'Sweating', emoji: '💦'),
+  VocabularySeed('Trembling or shaking', 'Trembling or shaking',
+      emoji: '📳'),
+  VocabularySeed('Short of breath', 'Short of breath', emoji: '💨'),
+  VocabularySeed('Choking feeling', 'Choking feeling', emoji: '😦'),
+  VocabularySeed('Chest pain or tightness', 'Chest pain or tightness',
+      emoji: '🫀'),
+  // One entry for both directions, as DSM-5 states it: "chills or heat
+  // sensations". A thermometer carries both where a cold face would not.
+  VocabularySeed('Chills or feeling hot', 'Chills or feeling hot',
+      emoji: '🌡️'),
+  // Derealisation and depersonalisation, in words a person would use. Also
+  // central to the dissociative-seizure framing — one entry, several
+  // conditions.
+  VocabularySeed('Feeling detached or unreal', 'Feeling detached or unreal',
+      emoji: '🌀'),
+  // Barany: fluctuating aural symptoms — hearing, tinnitus or fullness. The
+  // first two are named in the presyncope list as well; fullness is not.
+  VocabularySeed('Tinnitus or ringing in the ears',
+      'Tinnitus or ringing in the ears',
+      emoji: '🔔'),
+  // ⚠️ "Muffled or reduced hearing", NOT "hearing loss". Barany's criterion is
+  // AUDIOMETRIC — a clinician measures it. What a person can report is that
+  // sound was muffled, and the entry says only that.
+  VocabularySeed('Muffled or reduced hearing', 'Muffled or reduced hearing',
+      emoji: '🔇'),
+  VocabularySeed('Ear fullness or pressure', 'Ear fullness or pressure',
+      emoji: '👂'),
+  // BPPV: distinct from spinning, which is why the dizziness split came first.
+  VocabularySeed('Unsteady or off balance', 'Unsteady or off balance',
+      emoji: '⚖️'),
 ];
 
 /// Inserts seeds that are not already present, matched on `value`.
@@ -1320,13 +1384,16 @@ const List<VocabularySeed> kSeedTriggers = <VocabularySeed>[
   // NOT peer-reviewed literature and not clinically validated.
   VocabularySeed('Period or hormonal', 'Period or hormonal'),
   VocabularySeed('Certain foods', 'Certain foods'),
-  // ⚠️ INFERRED, NOT SOURCED — stated here rather than in a caveat elsewhere,
-  // because a caveat somewhere else is not attached to the thing it qualifies.
-  // The Migraine Trust names diet, the menstrual cycle, sleep, stress and
-  // medication directly; it does NOT name dehydration. This entry was derived
-  // from a prodrome finding about thirst, which is a different claim about a
-  // different phase. It is the only value in this pass without a direct
-  // source, and it should be the first one reconsidered if the set is revised.
+  // ⭐ SOURCED SINCE 30 AUG 2026 — the marking below is kept because the entry
+  // was seeded on an inference and the record of that should not vanish just
+  // because it later came good.
+  //
+  // It was seeded INFERRED: the Migraine Trust names diet, the menstrual cycle,
+  // sleep, stress and medication and does NOT name dehydration, so the entry
+  // rested on a prodrome finding about thirst — a different claim about a
+  // different phase. The syncope research names dehydration as a vasovagal
+  // trigger directly, so the value now has a source. **Its tier changed; the
+  // history of how it got here did not.**
   VocabularySeed('Dehydration', 'Dehydration'),
 
   // ── APPENDED 29 AUG 2026, the migraine SYMPTOM entries ───────────────────
@@ -1372,6 +1439,44 @@ const List<VocabularySeed> kSeedTriggers = <VocabularySeed>[
   // Migraine Foundation and NINDS material. Weaker than its neighbours and the
   // second entry to reconsider if the set is revised.
   VocabularySeed('Irritable', 'Irritable'),
+
+  // ── APPENDED 30 AUG 2026 — the PRESYNCOPE prodrome, and three triggers ────
+  //
+  // Presyncope is the clinically useful part of a faint and it is entirely a
+  // BEFOREHAND event: "dizziness, lightheadedness, sweating, nausea, weakness
+  // and visual changes", with "heart beating fast or hard, feeling hot or
+  // sweaty, feeling cold or clammy, breathing fast, ringing in your ears or
+  // decreased hearing". Six of those already exist here or in observations;
+  // these add the rest.
+  //
+  // ⭐ `Light-headed or faint` CLOSES A GAP THIS PROJECT NAMED WHEN IT SEEDED
+  // IT. Its observation entry carries the note "not seeded into the beforehand
+  // vocabulary because syncope is queued and held". Syncope is no longer held.
+  //
+  // ⚠️ `Pallor` is BEFOREHAND ONLY. The source names it in the prodrome and
+  // says nothing about afterwards, so adding it to observations would be a
+  // claim the source does not make. It is also one of very few entries in any
+  // vocabulary a CARER can report without inferring.
+  VocabularySeed('Palpitations or racing heart', 'Palpitations or racing heart'),
+  VocabularySeed('Sweating', 'Sweating'),
+  VocabularySeed('Short of breath', 'Short of breath'),
+  VocabularySeed('Chills or feeling hot', 'Chills or feeling hot'),
+  VocabularySeed('Tinnitus or ringing in the ears',
+      'Tinnitus or ringing in the ears'),
+  VocabularySeed('Muffled or reduced hearing', 'Muffled or reduced hearing'),
+  VocabularySeed('Light-headed or faint', 'Light-headed or faint'),
+  VocabularySeed('Pallor', 'Pallor'),
+  // The three TRIGGERS. Head position is the defining BPPV provocation;
+  // standing up and heat are the classic vasovagal ones.
+  //
+  // ⚠️ `Heat or hot weather`, NOT "feeling hot or overheated" as scoped. That
+  // wording would have put two beforehand chips about feeling hot on the same
+  // screen — one an environmental CAUSE, one the SENSATION `Chills or feeling
+  // hot` seeded above. The trigger names the weather; the observation names the
+  // feeling.
+  VocabularySeed('Head position or movement', 'Head position or movement'),
+  VocabularySeed('Standing up', 'Standing up'),
+  VocabularySeed('Heat or hot weather', 'Heat or hot weather'),
 ];
 
 /// Links an event to trigger rows. The normalised form of `triggers_json`.

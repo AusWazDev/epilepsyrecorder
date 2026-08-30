@@ -84,7 +84,7 @@ void main() {
       // 21 -> 22 with `Light-headed or faint`, 30 Aug 2026. The pin has now
       // fired on BOTH seed additions since it was written, which is what it
       // is for: a seed cannot be added without this control being read.
-      expect(kSeedObservations.length, 22);
+      expect(kSeedObservations.length, 34);
     });
 
     test('3. the LEGACY values keep their glyph — they are stored data', () {

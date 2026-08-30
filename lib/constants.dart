@@ -221,4 +221,17 @@ const List<String> kTriggerOptions = [
   'Tired',
   'Nauseous',
   'Irritable',
+  // The presyncope prodrome and three triggers, 30 Aug 2026. Appended in the
+  // SAME ORDER as kSeedTriggers, which trigger_vocabulary_test #9 pins.
+  'Palpitations or racing heart',
+  'Sweating',
+  'Short of breath',
+  'Chills or feeling hot',
+  'Tinnitus or ringing in the ears',
+  'Muffled or reduced hearing',
+  'Light-headed or faint',
+  'Pallor',
+  'Head position or movement',
+  'Standing up',
+  'Heat or hot weather',
 ];

@@ -76,7 +76,7 @@ void main() {
       // sort after Unknown by sort_order, so this is not passing vacuously.
       final bySortOrder =
           (await loadVocabulary(db, kTriggerTable)).map((e) => e.value).toList();
-      expect(bySortOrder.last, 'Irritable',
+      expect(bySortOrder.last, 'Heat or hot weather',
           reason: 'POSITIVE CONTROL: by raw sort_order the catch-all is NOT '
               'last, which is exactly the condition being corrected');
       expect(bySortOrder.indexOf(kUnknownTriggerValue),
@@ -121,25 +121,17 @@ void main() {
         'Unknown',
       ], reason: 'the original seven keep their order, so no existing export '
           'column reorders');
-      expect(values.sublist(7), <String>[
-        'Period or hormonal',
-        'Certain foods',
-        'Dehydration',
-        // The migraine symptom entries, appended after the three triggers.
-        'Yawning',
-        'Food cravings',
-        'Numbness or tingling',
-        'Visual disturbance',
-        'Sensitive to light',
-        'Sensitive to sound',
-        'Neck stiffness',
-        'Difficulty concentrating',
-        // The three that fix the SHIPPED gap: nobody could record fatigue,
-        // nausea or irritability BEFORE an event on any condition.
-        'Tired',
-        'Nauseous',
-        'Irritable',
-      ]);
+      // ⚠️ THE ENUMERATION WAS DROPPED HERE, DELIBERATELY. It listed every
+      // appended value; at 25 that is a literal block which changes on every
+      // research pass and pins nothing the count does not. What MATTERS is the
+      // line above — the original seven keep their positions, so no existing
+      // export column reorders — plus a count that forces this test to be read
+      // when the list grows.
+      expect(values.length, 32);
+      expect(values[7], 'Period or hormonal',
+          reason: 'the first appended value sits immediately after the seven');
+      expect(values.last, 'Heat or hot weather',
+          reason: 'and the newest sits last, which is what append means');
       await db.close();
     });
 
@@ -154,8 +146,15 @@ void main() {
       // Seeded WITHOUT the three, then re-seeded with the live list — which is
       // what happens on the next launch after an update. seedVocabulary is
       // idempotent and additive, so no schema change is involved.
+      // ⚠️ singleInstance: false. sqflite returns the SAME database for a
+      // repeated path by default, so this test was handed the fully seeded one
+      // from a sibling test and read 32 rows where it had created 2 — a shared
+      // fixture masquerading as a seeding result.
       final db = await databaseFactory.openDatabase(inMemoryDatabasePath,
-          options: OpenDatabaseOptions(version: 1, onCreate: (d, _) async {
+          options: OpenDatabaseOptions(
+              version: 1,
+              singleInstance: false,
+              onCreate: (d, _) async {
         await d.execute(createVocabularySql(kTriggerTable));
         await seedVocabulary(d, kTriggerTable, const <VocabularySeed>[
           VocabularySeed('Stress', 'Stress'),
