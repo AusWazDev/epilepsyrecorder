@@ -32,7 +32,7 @@ would be six permanent rows in a real vocabulary.
 | | |
 |---|---|
 | **First-run screens** (disclaimer, walkthrough) and **empty states** | `run-as` is refused on a release build — *"package not debuggable"* — so the only route to clear `disclaimerAcceptedVersion` / `walkthroughSeenVersion` is **`pm clear`, which wipes all app data including the 72 records** |
-| **`Reset app?` dialog** | ⛔ **Deliberately never opened.** One mis-tap on its confirm destroys 72 irreplaceable records, and **there is no backend — export is the only preservation path.** A screenshot does not justify that |
+| **`Reset app?` dialog** | ⛔ **Deliberately never opened.** One mis-tap on its confirm destroys 72 records that only a backup taken beforehand could return. A screenshot does not justify that. ⚠️ **The justification first written here said "export is the only preservation path" and that was wrong — see the correction below. The decision stands on its own terms** |
 | **`history__delete-dialog`** | Blocked by the accessibility defect below. `medication__delete-dialog` is captured at all three widths and is the same `AlertDialog` |
 | **`form__confirm-dialog` at 375×667 only** | Present at 430 and 800. At 375 `Save changes` stayed below the fold after two scrolls. A navigation limit, not a layout finding |
 
@@ -104,6 +104,62 @@ refuses to capture at the wrong viewport.**
 ⚠️ **`am start` failed with `Error type 3`** because `applicationId` and the Android `namespace`
 differ. The first script suppressed stderr, so **every dump was of the launcher and every tap
 missed** — a loud failure turned silent.
+
+### 🔴 CORRECTION — "export is the only preservation path" was wrong
+
+**Written by me in this entry and in the Change Register. The app was right all
+along; `your_data_screen` distinguishes the two cards precisely.**
+
+**Backup is the preservation path.** The file holds **records, medication notes,
+conditions and the type-to-condition mapping**. Restore is **merge-by-id and
+add-only** — `RestorePlan`: *"There is no replace mode and no 'start afresh' here
+by design."* ⭐ **So on a fresh install, merging against an empty list is a full
+reconstruction: it rebuilds what an uninstall destroys.**
+
+**Export is the sharing path.** CSV, 17 columns, and the screen says so —
+*"This is a copy to share or work with. **It cannot be read back** into the app."*
+
+⚠️ **Two save routes, and they differ in a way that matters.** `backupSaveAs`
+writes to a location the user chooses. `backupShare` writes to
+`getTemporaryDirectory()` and hands an `XFile` to the share sheet — **so if the
+share is abandoned, nothing durable exists.**
+
+⭐ **The `Reset app?` decision stands; only its justification was wrong.** A
+backup taken at some past moment is not the same as no loss, so declining to
+open a dialog whose confirm button destroys the current state was correct on
+its own terms. **A wrong reason for a right decision is still worth correcting,
+because the reason is what the next decision gets made from.**
+
+### ⚠️ The CSV cannot distinguish a backdated record — routed to the adviser
+
+`isBackdated` exists on `EventRecord` and, **as at 31 August 2026, has no
+caller anywhere in `lib/`.** The export has **no logged-at column**: its three
+time columns are all `whenHappened`. **So a reader of the CSV cannot tell a
+backdated record from a live-logged one, and cannot infer it** — nothing marks
+the distinction.
+
+⭐ **The model already holds the fact.** This is not a data gap; it is a question
+about **what the export represents** to the specialist who reads it, which is a
+claim-wording matter. **Routed to the adviser. Unresolved. Not decided here in
+either direction.**
+
+### 🔴 The legacy-value discontinuity — a standing property, not a one-off
+
+**Usage ranking silently stops working for entries whose values were retired.**
+`offerable` filters inactive entries **before** sorting, so counts attached to
+retired values are discarded: a user's own history stops informing what they are
+offered.
+
+⚠️ **The symptom is a list quietly reverting to seed order** — no error, nothing
+missing, just a ranking that no longer ranks. **Observed as at 31 August 2026:**
+the beforehand picker reorders (`Poor sleep` ahead of `Stress`) and the
+afterwards picker does not, because the 72 records' `feelings_json` holds the
+retired glyph-bearing legacy values while `triggers_json` was never rewritten.
+
+⛔ **Record it as a property of append-only vocabularies meeting usage ranking,
+not as an incident.** Values are permanent and entries are retired rather than
+deleted, so **any future relabelling does this again** — and it will present the
+same way: a picker that used to adapt, quietly not adapting.
 
 ### Where the rest of this is
 
