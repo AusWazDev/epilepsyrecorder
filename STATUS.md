@@ -2,6 +2,99 @@
 
 ---
 
+## Session: 30 August 2026 — Mac (Claude Code CLI)
+
+**The chip wall: measured on a phone, then bounded.** Build 1.1.0+53 installed to
+Wazza's iPhone (iPhone16,2, 26.6) via `devicectl`. 59 event records on the device.
+`ios/` untouched — tree `adc7299b` throughout.
+
+### What the phone showed that the tablet could not
+
+The tablet's five rows of observation chips are **nineteen** on an iPhone 15 Pro Max
+and **twenty-two** on an iPhone 8. Rendered at exact metrics (430x932 @3x and
+375x667 @2x, real safe-area insets, real SF Pro and Apple Color Emoji), chip set
+verified against the device database.
+
+| Surface | Chips | Rows 15PM / iP8 | *Rescue* below fold |
+|---|---|---|---|
+| Wizard step 4 | 34 observations | 19 / 22 | 527pt / 887pt |
+| Wizard step 3 | 32 beforehand | 15 / 17 | — |
+| Form — observations | 34 | 16 / 20 | 1236pt / 1699pt |
+| Form — beforehand | 32 | 13 / 15 | — |
+
+Notes was worse than either question everywhere — 787pt down on the wizard, 1414pt
+on the form, 1877pt on an iPhone 8 form.
+
+**The finding is not the chips.** Rescue medication and referral are not chips, so
+trimming the vocabulary does not reach them. And it is structural rather than a
+threshold: six user-added entries took step 4 from 19 rows to 22 and pushed rescue
+from 527pt to 695pt — a 32% deterioration with nothing seeded by MER. **No entry was
+trimmed. The vocabulary was never the defect; the layout was built against a
+five-row tablet wall and never re-measured at a third of the width.**
+
+### The fix — bounded pickers
+
+`lib/widgets/bounded_chip_wrap.dart`. A real `RenderBox`, because `Wrap` is as tall
+as its content and row packing is only known at layout. Draws `kCollapsedChipRows`
+rows plus anything pinned; withheld chips are skipped in **both** `paint` and
+`hitTestChildren`. Row assignment is decided against the FULL packing — deciding
+against the reflowed list would let hidden chips pull later ones up into the cap.
+
+Three call sites: `_vocabMultiChips` in the wizard, both `_SelectionWrap` sections
+in the form. Disclosure copies `_retiredToggle` on "Your lists", including its rule
+that **the count is stated in both states** — "34 to choose from", "2 of 34
+selected" — so a closed picker can never read as "three is all there is".
+
+**Pinned == selected**, and that turned out to be the wizard's existing orphan rule
+needing a second half: rendering a carried value was enough until a cap existed.
+14 tests in `test/bounded_chip_wrap_test.dart`; the load-bearing ones are that nine
+selected observations all render *and the picker grows past three rows to do it*,
+and that a withheld chip is out of the hit-test path — with a positive control on a
+drawn chip so the negative cannot pass vacuously.
+
+| Measured after | 15 Pro Max | iPhone 8 |
+|---|---|---|
+| Step 4 — rescue / referral / notes | all visible | visible / visible / 123pt |
+| Step 4 total | 2.24 -> **1.03 screens** | 3.41 -> **1.41** |
+| Step 3 total | 1.37 -> **1.00** | 2.27 -> **1.00** |
+| Form — rescue | 1236 -> **377pt** | 1699 -> **543pt** |
+| Form total | 3.21 -> **2.11 screens** | 4.71 -> **2.75** |
+
+Wizard solved outright. The form is structurally sound and bounded but the rescue
+question is still half a screen down on 15PM and a full screen on an iPhone 8;
+A-on-the-form (questions above the chips) remains available and its usual objection
+— that it inverts a narrative sequence — is weakest there, because the form is not
+a narrative.
+
+### ⛔ The projection miss, and why it is worth recording
+
+Projected ~213pt for the form; measured **377pt**. Cause: the pinned add pill wraps
+onto a fourth row and was costed at zero. A collapsed picker is 3 chip rows + an add
+row + the disclosure.
+
+**The first measurement run agreed with the projection.** The form gates its pill on
+`Vocabularies.canPersist` (`_db != null`), and a widget test has no database — so the
+pill was not mis-costed there, it was *absent from the screen being measured*. The
+run reported a layout the device never renders.
+
+Same class as the shared fixture in `catch_all_last_test` that read 32 rows where it
+had created 2. An environment that differs from the real one returns a number that
+looks like a result. **Anything measuring a layout for a real-device claim must set a
+database first.** Recorded on `BoundedChipWrap` where the cap will next be re-derived.
+
+### Also settled
+
+- Physical iOS 26 devices have **no scriptable screenshot or input path** via
+  `devicectl` — the phone cannot be driven or captured from a CLI session. Layout
+  questions get answered by rendering at exact metrics instead.
+- Simulator builds hang on this Mac in `AssetCatalogSimulatorAgent` / `actool`,
+  reproducibly, booted or shut down. Device release builds are unaffected.
+- The device database is readable: `devicectl device copy from --user mobile
+  --domain-type appDataContainer`, which is how the 59-record count and the
+  34/32 active-vocabulary counts were verified rather than assumed.
+
+---
+
 ## Session: 27–29 August 2026 — Mac (Claude Code CLI)
 
 **iOS end-of-event surfaces, two closed backlog items, and a read-only App Store

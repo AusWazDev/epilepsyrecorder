@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/event_record.dart';
 import '../models/vocabulary.dart';
+import '../widgets/bounded_chip_wrap.dart';
 import '../models/vocabulary_store.dart';
 import '../widgets/occurred_at_field.dart';
 import '../theme/mer_theme.dart';
@@ -1008,13 +1009,17 @@ class _SelectionWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: <Widget>[
-        ...options.map((option) {
-        final isSelected = selected.contains(option);
-        return GestureDetector(
+    // ⛔ SELECTED CHIPS ARE PINNED, so the collapsed picker can never hide a
+    // value this record already carries. `options` is offerable-plus-carried,
+    // so a retired legacy value is in the list AND selected AND therefore
+    // pinned — it survives the cap for the same reason it survives retirement.
+    final chips = <Widget>[];
+    final pinned = <bool>[];
+
+    for (final option in options) {
+      final isSelected = selected.contains(option);
+      pinned.add(isSelected);
+      chips.add(GestureDetector(
           onTap: () => onToggle(option),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
@@ -1047,10 +1052,14 @@ class _SelectionWrap extends StatelessWidget {
               ),
             ),
           ),
-        );
-        }),
-        if (onAdd != null)
-          GestureDetector(
+        ));
+    }
+
+    // An ACTION, not an entry: pinned so collapsing never puts it out of
+    // reach, and excluded from the count for the same reason.
+    if (onAdd != null) {
+      pinned.add(true);
+      chips.add(GestureDetector(
             onTap: onAdd,
             child: Container(
               padding:
@@ -1071,8 +1080,14 @@ class _SelectionWrap extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-      ],
+          ));
+    }
+
+    return BoundedChipWrap(
+      chips: chips,
+      pinned: pinned,
+      totalCount: options.length,
+      selectedCount: selected.where(options.contains).length,
     );
   }
 }

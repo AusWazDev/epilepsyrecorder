@@ -6,6 +6,7 @@ import '../models/condition.dart';
 import '../models/event_record.dart';
 import '../models/storage_boot.dart';
 import '../models/vocabulary.dart';
+import '../widgets/bounded_chip_wrap.dart';
 import '../models/vocabulary_store.dart';
 import '../widgets/occurred_at_field.dart';
 import '../theme/mer_theme.dart';
@@ -958,32 +959,49 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   }) {
     final known = entries.map((e) => e.value).toSet();
     final orphans = selected.where((v) => !known.contains(v)).toList();
+
+    // ⛔ PINNED == SELECTED. The orphan rule this method already held — a
+    // value the record carries always gets a chip — is now also what keeps
+    // that chip out of the collapsed picker's cap. Both exist so an edit path
+    // cannot hide a recorded answer; before the cap, rendering was enough.
+    final chips = <Widget>[];
+    final pinned = <bool>[];
+
+    for (final e in entries) {
+      pinned.add(selected.contains(e.value));
+      chips.add(FilterChip(
+        // display, not label — the glyph belongs on a chip and nowhere
+        // a record is rendered. See Vocabularies.displayFor.
+        label: Text(e.display),
+        selected: selected.contains(e.value),
+        onSelected: (_) => setState(() => selected.contains(e.value)
+            ? selected.remove(e.value)
+            : selected.add(e.value)),
+      ));
+    }
+    for (final v in orphans) {
+      pinned.add(true);
+      chips.add(FilterChip(
+        label: Text(Vocabularies.displayFor(table, v)),
+        selected: true,
+        onSelected: (_) => setState(() => selected.remove(v)),
+      ));
+    }
+    // An ACTION, not an entry: pinned so collapsing never puts it out of
+    // reach, and excluded from the count for the same reason.
+    if (_addingIn != table) {
+      pinned.add(true);
+      chips.add(_addRow(table, addPrompt, (e) => selected.add(e.value)));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final e in entries)
-              FilterChip(
-                // display, not label — the glyph belongs on a chip and nowhere
-                // a record is rendered. See Vocabularies.displayFor.
-                label: Text(e.display),
-                selected: selected.contains(e.value),
-                onSelected: (_) => setState(() => selected.contains(e.value)
-                    ? selected.remove(e.value)
-                    : selected.add(e.value)),
-              ),
-            for (final v in orphans)
-              FilterChip(
-                label: Text(Vocabularies.displayFor(table, v)),
-                selected: true,
-                onSelected: (_) => setState(() => selected.remove(v)),
-              ),
-            if (_addingIn != table)
-              _addRow(table, addPrompt, (e) => selected.add(e.value)),
-          ],
+        BoundedChipWrap(
+          chips: chips,
+          pinned: pinned,
+          totalCount: entries.length + orphans.length,
+          selectedCount: selected.length,
         ),
         if (_addingIn == table)
           _addRow(table, addPrompt, (e) => selected.add(e.value)),
