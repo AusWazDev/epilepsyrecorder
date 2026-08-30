@@ -19,11 +19,11 @@ verified against the device database.
 |---|---|---|---|
 | Wizard step 4 | 34 observations | 19 / 22 | 527pt / 887pt |
 | Wizard step 3 | 32 beforehand | 15 / 17 | — |
-| Form — observations | 34 | 16 / 20 | 1236pt / 1699pt |
+| Form — observations | 34 | 16 / 20 | 1401pt / 1855pt |
 | Form — beforehand | 32 | 13 / 15 | — |
 
-Notes was worse than either question everywhere — 787pt down on the wizard, 1414pt
-on the form, 1877pt on an iPhone 8 form.
+Notes was worse than either question everywhere — 787pt down on the wizard, 1579pt
+on the form, 2033pt on an iPhone 8 form.
 
 **The finding is not the chips.** Rescue medication and referral are not chips, so
 trimming the vocabulary does not reach them. And it is structural rather than a
@@ -57,8 +57,8 @@ drawn chip so the negative cannot pass vacuously.
 | Step 4 — rescue / referral / notes | all visible | visible / visible / 123pt |
 | Step 4 total | 2.24 -> **1.03 screens** | 3.41 -> **1.41** |
 | Step 3 total | 1.37 -> **1.00** | 2.27 -> **1.00** |
-| Form — rescue | 1236 -> **377pt** | 1699 -> **543pt** |
-| Form total | 3.21 -> **2.11 screens** | 4.71 -> **2.75** |
+| Form — rescue | 1401 -> **377pt** | 1855 -> **543pt** |
+| Form total | 3.42 -> **2.11 screens** | 4.97 -> **2.75** |
 
 Wizard solved outright. The form is structurally sound and bounded but the rescue
 question is still half a screen down on 15PM and a full screen on an iPhone 8;
@@ -71,6 +71,14 @@ a narrative.
 Projected ~213pt for the form; measured **377pt**. Cause: the pinned add pill wraps
 onto a fourth row and was costed at zero. A collapsed picker is 3 chip rows + an add
 row + the disclosure.
+
+⚠️ **Every no-database form figure in this entry has been re-measured and replaced**,
+including the BEFORE column — the fault contaminated the baseline as well as the
+projection, and a before/after pair taken under different conditions is not a
+comparison. With a database the form's event-type grid also gains an "Add your own"
+tile, a third grid row the earlier run never drew: the true before is 3.42 / 4.97
+screens, not 3.21 / 4.71. The wizard numbers were unaffected throughout, because its
+add row is not gated on `canPersist`.
 
 **The first measurement run agreed with the projection.** The form gates its pill on
 `Vocabularies.canPersist` (`_db != null`), and a widget test has no database — so the
