@@ -2,6 +2,117 @@
 
 ---
 
+## Session: 30 August 2026 — Windows (Claude Code CLI)
+
+**The design-audit capture set, and two defects found while making it.** Documentation pass; no
+source changed. Full treatment of the measurement artefacts is in the **Change Register**, which
+does **not** travel by `git push` — this entry carries enough that nobody has to go looking.
+
+### The capture set
+
+`docs/design-audit/captures/` — **65 PNGs plus `INDEX.md`**, on origin at **`715ca95`**.
+**22 layouts at 430×932, 21 at 375×667, 22 at 800×1280.**
+
+⛔ **THESE ARE WIDTH PROXIES, NOT iOS SCREENSHOTS.** Android on the Teclast P30 with the display
+overridden to iPhone logical sizes. They reproduce **logical width, and therefore wrapping and
+layout**. They do **not** reproduce iOS fonts, safe-area insets, the Dynamic Island or iOS chrome.
+
+⚠️ **And a real iPhone is reachable from the Mac** — the chip-wall measurements in the session
+below were taken on `iPhone16,2` via `devicectl`. **These proxies are the Windows-side
+equivalent, not a substitute where the real device is available.** `INDEX.md` names which screens
+width is the point on.
+
+**Device state at capture, verified at the time:** 72 records, 62 this month, 1 condition, 4
+seeded event types plus 1 user-added and hidden, 34 observations, 32 beforehand, persistence
+available. **No synthetic vocabulary entries were added** — append-only means six test entries
+would be six permanent rows in a real vocabulary.
+
+### Not captured, and why
+
+| | |
+|---|---|
+| **First-run screens** (disclaimer, walkthrough) and **empty states** | `run-as` is refused on a release build — *"package not debuggable"* — so the only route to clear `disclaimerAcceptedVersion` / `walkthroughSeenVersion` is **`pm clear`, which wipes all app data including the 72 records** |
+| **`Reset app?` dialog** | ⛔ **Deliberately never opened.** One mis-tap on its confirm destroys 72 irreplaceable records, and **there is no backend — export is the only preservation path.** A screenshot does not justify that |
+| **`history__delete-dialog`** | Blocked by the accessibility defect below. `medication__delete-dialog` is captured at all three widths and is the same `AlertDialog` |
+| **`form__confirm-dialog` at 375×667 only** | Present at 430 and 800. At 375 `Save changes` stayed below the fold after two scrolls. A navigation limit, not a layout finding |
+
+⭐ **All of these are reachable on the disposable profile**, which is where they belong.
+
+### ⛔ Wizard step 2 is UNBOUNDED — recorded here properly
+
+Until now this existed only in `docs/SESSION-HANDOVER.md`. **The STATUS.md hit for "step 2" is an
+unrelated Swift schema note.**
+
+`BoundedChipWrap` has **two instantiation sites** serving **four pickers** — wizard step 3, wizard
+step 4, and both form sections. **Wizard step 2, "What happened?", is not among them.** Event
+types go through `_vocabChips`, which returns a plain `Wrap`, and the grouped variant
+`_groupedVocabChips` uses a plain `Wrap` twice.
+
+⚠️ **Four entries today, so it is invisible — and the grouped path is exactly the one a second
+condition switches on.** It cannot be seen on this device at four event types, which is why it
+belongs to the disposable-profile pass.
+
+### 🔴 ACCESSIBILITY DEFECT — a destructive control with no label, on every row
+
+**`history_screen.dart`, the `IconButton` with `Icons.delete_outline` inside `_EventListTile`** —
+`icon:` and `onPressed:` and **no `tooltip`**. It renders with `content-desc=""`, so a screen
+reader announces **nothing** for it.
+
+**It is on every row: all 72, and every record added after.**
+
+⛔ **It is an inconsistency, not a house style, and that is what makes it a defect.**
+`medication_screen.dart` builds the same control **with `tooltip: 'Delete'`**, four files away.
+The other two `Icons.delete` uses are not comparable — `about_screen.dart` carries a visible
+`Text('Reset app (clear all data)')`, and the one in `help_screen.dart` is a decorative row icon,
+not a control.
+
+⭐ **Fixing it also unblocks `history__delete-dialog`**, which three capture attempts failed to
+open because the control could only be located by geometry.
+
+**Not repaired: repairing it mid-audit changes the thing being audited.**
+
+### ⚠️ Key duplication — latent risk, NOT a live defect
+
+`disclaimerAcceptedVersion` appears as a **raw string literal in three files** — `main.dart`
+(read), `disclaimer_screen.dart` (write), `home_screen.dart` (read). **All three are
+byte-identical, so nothing is broken today.**
+
+**The recordable shape is sharper than the duplication:** `constants.dart` **references the key
+twice in prose and does not define it**, while **defining both walkthrough keys**
+(`kWalkthroughSeenVersionKey`, `kWalkthroughSeenLegacyBoolKey`). **The file that owns storage keys
+discusses this one and does not hold it** — and **storage keys are immutable once published.**
+
+**Not repaired, same reason.**
+
+### Measurement artefacts 11 and 12 — compact; full treatment in the Register
+
+**11 — the wrong build.** The installed APK **predated the rebase**: `bounded_chip_wrap.dart`
+arrived in the tree *after* the last `flutter build`. A full pass would have produced **65
+correctly-named files of a build that no longer existed**, showing 13 unbounded chip rows while
+being read as current — **and the decision they feed is whether the bounded pickers work.**
+Caught by probing `libapp.so` for **`Show fewer`**, absent from the old build. **`Show all` was
+rejected as non-discriminating** because it appears elsewhere in the app.
+⭐ **General form: a capture must be tied to a build identifier, not to the assumption that the
+installed artefact matches the tree.**
+
+**12 — the wrong viewport.** Auto-rotate re-asserted landscape on a physically-landscape tablet,
+so a 430 override rendered **932 wide — wider than the tablet's own portrait.** Fixed by
+disabling auto-rotate **before** the override; the capture script now **reads back `cur=` and
+refuses to capture at the wrong viewport.**
+⭐ **General form: a viewport must be read back, not assumed set.**
+
+⚠️ **`am start` failed with `Error type 3`** because `applicationId` and the Android `namespace`
+differ. The first script suppressed stderr, so **every dump was of the launcher and every tap
+missed** — a loud failure turned silent.
+
+### Where the rest of this is
+
+**Change Register** — the full artefact entries with their general forms, the `am start` note, and
+the first entries for the handover and the capture set. ⚠️ **The Register is OneDrive-only and
+does not travel by `git push`.**
+
+---
+
 ## Session: 30 August 2026 — Mac (Claude Code CLI)
 
 **The chip wall: measured on a phone, then bounded.** Build 1.1.0+53 installed to
