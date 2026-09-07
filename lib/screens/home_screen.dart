@@ -1463,15 +1463,44 @@ class _UnsavedEventsBanner extends StatelessWidget {
 /// succeeds. This condition clears only on RELAUNCH, so a button would imply
 /// an action that does not exist. The guidance is in the body text instead.
 ///
-/// ## The wording, and the three things it is careful not to say
+/// ## 🔴 THE BODY WAS REVISED 7 SEPTEMBER 2026, BECAUSE A RENDER FOUND IT
+/// ## SAYING SOMETHING FALSE
+///
+/// The superseded wording, quoted in place because it was decided deliberately
+/// and the record of that decision must stay true:
+///
+/// > *"The app is running on an earlier storage system, so your history may
+/// > look shorter than it is. Nothing has been deleted. Closing and reopening
+/// > the app usually resolves it."*
+///
+/// ⛔ **"MAY LOOK SHORTER THAN IT IS" DESCRIBES ONLY ONE OF THE TWO FALLBACK
+/// STATES, AND UNDERSTATES THE OTHER.**
+///
+/// | When the fallback engages | What the user sees |
+/// |---|---|
+/// | **Before** the migration completed | a PARTIAL history - the JSON is still in `epilepsy_event_records_v1`. Measured on iOS 7 Sep 2026: **42 of 58 records** |
+/// | **After** the migration completed | **NOTHING.** The key was drained and cleared once SQLite took over, and the fallback store reads that key. Measured on Android 7 Sep 2026: an empty list and **`Total saved` reading 0** |
+///
+/// ⭐ **So the visible count depends on whether the migration ever completed** -
+/// pre-migration gives partial, post-migration gives zero - and the old wording
+/// covered the first case while telling a user with an EMPTY list that their
+/// history merely looked "shorter".
+///
+/// ⚠️ **A PASSING TEST COULD NOT HAVE FOUND THIS.** The widget tests assert the
+/// banner renders and that its copy is present; they cannot know the sentence
+/// is untrue. It was found by triggering a genuine fallback on the device and
+/// reading `Total saved: 0` off the screen beside the banner.
+///
+/// ## The three things the wording is still careful not to say
 ///
 /// ⛔ **It does not say "lost".** The records are still in
-/// `epilepsy_event_records_v1` - the fallback store IS that key - so nothing
-/// has gone anywhere.
+/// `epilepsy_event_records_v1` on a pre-migration fallback, and in the SQLite
+/// store - untouched, just unopened - on a post-migration one. "the records are
+/// still on this device" holds in both.
 ///
-/// ⛔ **It does not claim records are MISSING.** On the observed failure the
-/// outcome carried `sourceEntries: 0`: the store never opened, so it never
-/// read them. "May look shorter than it is" is the honest form.
+/// ⛔ **It does not claim a specific amount is missing.** "not showing, or is
+/// showing only partly" covers both states without asserting which one this is,
+/// which the app cannot tell the user without reading a store it could not open.
 ///
 /// ⛔ **It does not imply an action that does not exist.** Closing and
 /// reopening is what usually resolves it; there is nothing to tap.
@@ -1511,9 +1540,9 @@ class _StorageFallbackBanner extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            'The app is running on an earlier storage system, so your '
-            'history may look shorter than it is. Nothing has been '
-            'deleted. Closing and reopening the app usually resolves it.',
+            'Your history is not showing, or is showing only partly. '
+            'Nothing has been deleted — the records are still on this '
+            'device. Closing and reopening the app usually resolves it.',
             style: TextStyle(
               fontSize: 13,
               height: 1.4,

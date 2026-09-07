@@ -102,11 +102,26 @@ void main() {
 
     expect(find.text(kTitle), findsOneWidget,
         reason: 'the only user-facing signal that the history may be short');
+    // ⛔ THE TWO LOAD-BEARING CLAUSES, ASSERTED SEPARATELY.
+    //
+    // ⚠️ This finder previously read 'Nothing has been deleted.' with a full
+    // stop, and it FAILED when the body was revised on 7 Sep 2026 — which is
+    // the test doing its job, not a breakage. The revision is recorded on
+    // _StorageFallbackBanner: the old wording said the history "may look
+    // shorter than it is", which is false on a post-migration fallback where
+    // the list is empty and Total saved reads 0.
     expect(
-      find.textContaining('Nothing has been deleted.'),
+      find.textContaining('not showing, or is showing only partly'),
       findsOneWidget,
-      reason: 'the records are still in epilepsy_event_records_v1, and the '
-          'copy must not imply otherwise',
+      reason: 'covers BOTH fallback states — partial before the migration '
+          'completed, empty after it — without asserting which one this is',
+    );
+    expect(
+      find.textContaining('the records are still on this device'),
+      findsOneWidget,
+      reason: 'the "does not say lost" guarantee: pre-migration they are in '
+          'epilepsy_event_records_v1, post-migration in the SQLite store, '
+          'untouched and merely unopened',
     );
 
     // ⛔ NO OVERFLOW AT PHONE WIDTH. Flutter surfaces a RenderFlex overflow as
