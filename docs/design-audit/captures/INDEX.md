@@ -135,3 +135,18 @@ versus `au.com.notiva.medical_event_recorder` — so `am start -n <pkg>/.MainAct
 `disclaimer_screen.dart`, `home_screen.dart` — while the walkthrough gate has a proper constant,
 `kWalkthroughSeenVersionKey`. **Three copies of a storage key that must never change.** All three
 readers only route on it; none has a side effect.
+
+---
+
+## Added 7 September 2026 — after fix 1
+
+⛔ **THE 30 AUGUST SET IS NOT MODIFIED. This is an ADDITION.** A capture in that set is the
+record of what the screen looked like on 30 August; overwriting one would make a dated
+artefact show undated content.
+
+| File | What changed |
+|---|---|
+| `history__default__430x932__2026-09-07-after-fix-1.png` | **Fix 1, the quick-log row.** The gap list moved out of the content run onto its own smaller, muted line, so a timestamp-only record no longer describes itself solely by what it lacks. Compare against `history__default__430x932.png` (30 Aug). |
+
+**Row heights measured from the two captures, not inferred:** complete row 73 px unchanged ·
+partial row 73 → 77 px · timestamp-only row unchanged. One row boundary drops below the fold.

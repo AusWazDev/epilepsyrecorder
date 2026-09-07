@@ -1134,21 +1134,16 @@ class _EventListTile extends StatelessWidget {
       if (r.triggers.isNotEmpty)
         'Beforehand: ${r.triggers.map((v) => Vocabularies.labelFor(kTriggerTable, v)).join(', ')}',
       if (r.referralRequired)     'Referral: Yes',
-      // WHAT IS MISSING, NAMED. A quick-record shows a timestamp and almost
-      // nothing else; in a mixed list that reads as variation, but in a
-      // FILTERED list of them every row differs only by time and the screen
-      // reads as broken rather than as a work queue.
+      // ⛔ THE GAP LINE IS NO LONGER IN `parts`. IT MOVED TO ITS OWN LINE
+      // BELOW - see the `subtitle` builder. `parts` is now CONTENT ONLY.
       //
-      // Naming the gaps turns the list into something a user can ACT on:
-      // which row to open, and what it will ask. It is PRESENTATION — the
-      // fields are already null and the row already omits them — not
-      // interpretation.
-      //
-      // Shown in a mixed list too, deliberately. A row that only explained
-      // itself while a filter was on would make the filter the only way to
-      // understand the list.
-      if (isIncomplete(r))
-        'Needs: ${missingFields(r).join(", ")}',
+      // Why, recorded 7 Sep 2026. For a timestamp-only record every branch
+      // in this list is false, so the gap line was the ONLY element and
+      // `parts.join` rendered the row's entire description of the event as a
+      // list of what it lacked. That is the output of the primary action -
+      // one tap, nothing gated - presented as an incomplete thing awaiting
+      // repair. Wording alone could not reach it: the register would change
+      // and the content would not.
       if (notesShort.isNotEmpty)  'Notes: $notesShort',
     ];
 
@@ -1165,11 +1160,73 @@ class _EventListTile extends StatelessWidget {
           if (r.eventType != null) _EventTypeBadge(type: r.eventType!),
         ],
       ),
-      subtitle: Text(
-        parts.join(' · '),
-        maxLines:  2,
-        overflow:  TextOverflow.ellipsis,
-      ),
+      // ⛔ CONTENT FIRST, THE GAP LINE DEMOTED BENEATH IT. 7 Sep 2026.
+      //
+      // The gap list is METADATA ABOUT THE ROW, not a description of the
+      // event, so it renders smaller and in `textMuted` on its own line.
+      // The row now says what IS known first, and what is still open after.
+      //
+      // ✅ THE WORK-QUEUE CASE SURVIVES UNCHANGED, which is the property the
+      // counter-argument at the top of `parts` defends: in a filtered list of
+      // quick-records the gap line is still present on every row, still names
+      // which fields the row will ask for, and is still the thing that makes
+      // the list actionable. Only its PROMINENCE changed.
+      //
+      // ⚠️ THE maxLines BUDGET IS UNCHANGED AT TWO TEXT LINES: content takes
+      // 2 when there is no gap line and 1 when there is.
+      //
+      // ⛔ ROW HEIGHTS, MEASURED ON THE DEVICE AT 430 AND NOT INFERRED FROM
+      // THE BUDGET. This comment first claimed an incomplete row is never
+      // taller than a complete one, and that timestamp-only rows get slightly
+      // SHORTER. BOTH WERE FALSE - they were read off the maxLines budget
+      // rather than off a screen. Measured from the divider positions in the
+      // 430x932 capture of 7 Sep 2026:
+      //
+      //   complete row                        73 px  ->  73 px   unchanged
+      //   PARTIAL row (content + gap line)    73 px  ->  77 px   +4 px
+      //   timestamp-only row (gap line only)         unchanged   (day-header
+      //                                               boundaries align at y=331)
+      //
+      // So a partial row IS taller, by 4 px, because `ListTile`'s subtitle
+      // area absorbs most of a 12 px second line. Cumulative effect in the
+      // default view: one row boundary drops below the fold. Negligible, but
+      // it is a real cost and it is not zero.
+      subtitle: Builder(builder: (_) {
+        final content = parts.join(' · ');
+        final gaps = isIncomplete(r)
+            ? 'Needs: ${missingFields(r).join(", ")}'
+            : null;
+        if (gaps == null) {
+          return Text(
+            content,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Omitted entirely when empty. An empty Text would spend a line
+            // on nothing, which is what a timestamp-only record would get.
+            if (content.isNotEmpty)
+              Text(
+                content,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            Text(
+              gaps,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                color: MERColours.textMuted,
+              ),
+            ),
+          ],
+        );
+      }),
       trailing: IconButton(
         icon:      const Icon(Icons.delete_outline),
         onPressed: onDelete,
