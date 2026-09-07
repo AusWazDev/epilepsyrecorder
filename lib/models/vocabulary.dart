@@ -357,10 +357,17 @@ const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
 
   // ── APPENDED 29 AUG 2026, migraine research pass ─────────────────────────
   //
-  // ⚠️ SOURCE TIER, STATED PER ENTRY. ICHD-3 (quoted verbatim in four clinical
-  // trial protocols) is a tier above the charity diaries the earlier entries
-  // came from. Patient-facing synthesis either way: NOT clinically validated,
-  // and the gaps are more reliable than the fits.
+  // ⚠️ SOURCE TIER, STATED PER ENTRY. ICHD-3, quoted verbatim in four
+  // clinical trial protocols. Patient-facing synthesis either way: NOT
+  // clinically validated, and the gaps are more reliable than the fits.
+  // 
+  // ⚠️ NARROWED 7 SEP 2026. This read "a tier above the charity diaries
+  // the earlier entries came from", which is not what the earlier entries
+  // are. The thirteen observations seeded before this append are an
+  // EDITORIAL REVISION of the eleven values the app already shipped - not a
+  // charity-diary set. ICHD-3 is a tier above the epilepsy FIELD sourcing;
+  // against the earlier OBSERVATIONS it is not a comparison of tiers at all,
+  // because those were never sourced. See kSeededRelevance.
   //
   // ⛔ FIVE OF THESE ARE ALSO SEEDED IN THE BEFOREHAND VOCABULARY, and that
   // duplication is DELIBERATE. ICHD-3 names fatigue, difficulty concentrating,
@@ -448,9 +455,14 @@ const List<VocabularySeed> kSeedObservations = <VocabularySeed>[
   //
   // ⚠️ SOURCE TIER: DIAGNOSTIC CRITERIA, NOT DIARIES. DSM-5's thirteen panic
   // symptoms, the Barany Society consensus criteria for Meniere's, and clinical
-  // reviews for presyncope. That is a tier ABOVE the charity diaries the
-  // epilepsy and migraine sets came from — and it is still NOT a validated
-  // diary instrument. A symptom list lifted from criteria is not the same thing
+  // reviews for presyncope. That is a tier ABOVE the MIGRAINE set's charity
+  // diaries — and it is still NOT a validated diary instrument.
+  // 
+  // ⚠️ NARROWED 7 SEP 2026. This read "above the charity diaries the
+  // epilepsy AND migraine sets came from". True of migraine, whose entries
+  // came from The Migraine Trust. NOT true of the epilepsy observations,
+  // which are an editorial revision of already-shipped values rather than a
+  // sourced set. See kSeededRelevance. A symptom list lifted from criteria is not the same thing
   // as a set someone has shown people can complete.
   //
   // ⛔ SEVEN OF THESE ARE ALSO SEEDED IN THE BEFOREHAND VOCABULARY. Most of the
@@ -925,8 +937,14 @@ Set<String> relevantValues(Set<String> seededKeys, String table) => <String>{
 /// ## COLD START IS SEED ORDER, WHICH IS THE RIGHT DEFAULT
 ///
 /// With no records, every count is zero and the list is exactly the seed order
-/// it is today. The epilepsy set was seeded first and the migraine additions
-/// appended, so a new user meets the original thirteen before the eleven.
+/// it is today. The thirteen original observations were seeded first and
+/// everything since was APPENDED, so a new user meets those thirteen before
+/// the twenty-one added later.
+///
+/// ⚠️ COUNTS CORRECTED 7 SEP 2026, derived from `kSeedObservations`: 13
+/// original + 8 (migraine, 29 Aug) + 1 (dizziness split, 30 Aug) + 12
+/// (six conditions, 30 Aug) = 34. This read "the original thirteen before the
+/// eleven", which described a 24-entry list and was two appends out of date.
 List<VocabularyEntry> offerable(
   String table,
   List<VocabularyEntry> all, {
@@ -1444,8 +1462,17 @@ const List<VocabularySeed> kSeedTriggers = <VocabularySeed>[
   // These three carry no phase question at all: a trigger is a trigger.
   //
   // Source: The Migraine Trust's own diary guidance and headache diary fact
-  // sheet, patient-facing, which is the same tier the epilepsy set came from.
-  // NOT peer-reviewed literature and not clinically validated.
+  // sheet, patient-facing. NOT peer-reviewed literature and not clinically
+  // validated.
+  // 
+  // ⚠️ NARROWED 7 SEP 2026. This read "the same tier the epilepsy set
+  // came from", which overclaimed by implying the epilepsy OBSERVATION set
+  // was sourced from charity diaries too. It was not. The comparison holds
+  // only for the epilepsy FIELDS - aura, rescue medication, awareness
+  // change, injury - which did come from Seizure Tracker's published field
+  // list and the epilepsy charity diaries. The epilepsy OBSERVATIONS are an
+  // editorial revision of values already shipped; see the provenance note
+  // on kSeededRelevance.
   VocabularySeed('Period or hormonal', 'Period or hormonal'),
   VocabularySeed('Certain foods', 'Certain foods'),
   // ⭐ SOURCED SINCE 30 AUG 2026 — the marking below is kept because the entry
