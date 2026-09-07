@@ -146,7 +146,7 @@ artefact show undated content.
 
 | File | What changed |
 |---|---|
-| `history__default__430x932__2026-09-07-after-fix-1.png` | **Fix 1, the quick-log row.** The gap list moved out of the content run onto its own smaller, muted line, so a timestamp-only record no longer describes itself solely by what it lacks. Compare against `history__default__430x932.png` (30 Aug). |
+| `history__default__430x932__2026-09-07-after-fix-1.png` | **Fix 1, the quick-log row — BOTH parts.** (B) The gap list moved out of the content run onto its own smaller, muted line, so a timestamp-only record no longer describes itself solely by what it lacks. (A) The copy is now `Add details:` rather than `Needs:`, matching the app-bar title of the wizard the row opens. Compare against `history__default__430x932.png` (30 Aug). |
 
 **Row heights measured from the two captures, not inferred:** complete row 73 px unchanged ·
 partial row 73 → 77 px · timestamp-only row unchanged. One row boundary drops below the fold.

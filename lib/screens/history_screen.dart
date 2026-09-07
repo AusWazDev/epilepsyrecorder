@@ -1194,7 +1194,25 @@ class _EventListTile extends StatelessWidget {
       subtitle: Builder(builder: (_) {
         final content = parts.join(' · ');
         final gaps = isIncomplete(r)
-            ? 'Needs: ${missingFields(r).join(", ")}'
+            // ⭐ "Add details:", not "Needs:". Changed 7 Sep 2026.
+            //
+            // The row names the ACTION and the screen it opens carries the
+            // SAME WORD: tapping an incomplete row routes to the wizard,
+            // whose app bar reads 'Add details' (event_wizard_screen.dart).
+            // "Needs" stated a deficiency and the destination stated an
+            // action; they now agree.
+            //
+            // ⚠️ THE FIELD LIST IS UNCHANGED, and so is `missingFields`.
+            // This is a change of REGISTER, not of content - the row still
+            // enumerates exactly which fields the wizard will ask for, which
+            // is what makes a filtered list of quick-records actionable.
+            //
+            // ⚠️ Three other registers for this same concept are LEFT
+            // ALONE and are a separate decision: the filter chip and its
+            // label say "Needs details" / "needs details", and the Last
+            // Event card says "Tap edit to update details". Only the row was
+            // in scope here.
+            ? 'Add details: ${missingFields(r).join(", ")}'
             : null;
         if (gaps == null) {
           return Text(

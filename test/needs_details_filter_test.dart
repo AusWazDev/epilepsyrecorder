@@ -329,11 +329,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Showing 1 of 2'), findsOneWidget);
-      expect(find.textContaining('Needs: duration'), findsOneWidget);
+      // FINDER, not a claim about the copy - this test is about the ROUTE.
+      expect(find.textContaining('Add details: duration'), findsOneWidget);
 
       // Tap the row. The route is the wizard, and it opens on the step that
       // asks the missing question.
-      await tester.tap(find.textContaining('Needs: duration'));
+      // FINDER, not a claim about the copy. The colon keeps this from also
+      // matching the wizard's own app-bar title, which reads 'Add details'.
+      await tester.tap(find.textContaining('Add details: duration'));
       await tester.pumpAndSettle();
       expect(find.text('How long did it last?'), findsOneWidget,
           reason: 'the completion route lands on the gap, not on step one');
@@ -378,7 +381,11 @@ void main() {
     });
   });
 
-  group('THE ROW NAMES WHAT IS MISSING', () {
+  // ⚠️ RENAMED 7 Sep 2026. This group was 'THE ROW NAMES WHAT IS MISSING',
+  // which described behaviour that no longer exists: the row now names what
+  // it will ASK FOR rather than what the record lacks. A group name that
+  // outlives the behaviour it describes is the stale-reason-string class.
+  group('THE ROW NAMES WHAT IT WILL ASK FOR', () {
     Future<void> pump(WidgetTester tester, List<EventRecord> records) async {
       tester.view.physicalSize = const Size(800, 1280);
       tester.view.devicePixelRatio = 1.0;
@@ -397,13 +404,13 @@ void main() {
       // Without this the row is a timestamp and nothing else, and a filtered
       // list of them differs only by time.
       await pump(tester, <EventRecord>[rec('a')]);
-      expect(find.textContaining('Needs: duration, type, severity'),
+      expect(find.textContaining('Add details: duration, type, severity'),
           findsOneWidget);
     });
 
     testWidgets('15. and names ONLY what is missing', (tester) async {
       await pump(tester, <EventRecord>[rec('a', secs: 90, type: 'seizure')]);
-      expect(find.textContaining('Needs: severity'), findsOneWidget);
+      expect(find.textContaining('Add details: severity'), findsOneWidget);
       expect(find.textContaining('duration'), findsNothing);
     });
 
@@ -411,7 +418,7 @@ void main() {
         (tester) async {
       // Otherwise test 14 passes against a row that annotates everything.
       await pump(tester, <EventRecord>[full('a')]);
-      expect(find.textContaining('Needs:'), findsNothing);
+      expect(find.textContaining('Add details:'), findsNothing);
     });
   });
 }
