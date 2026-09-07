@@ -292,6 +292,57 @@ Temporary writer and control were uncommitted throughout and removed. Repo clean
 entered only through *Edit details* on the existing incomplete record and always abandoned
 without saving**, so no 73rd record exists and no vocabulary row was added.
 
+### 🔴 The banner rendered, and three corrections came out of it
+
+**1. `wm size` inherits the rotation in force when the override is applied.** Not a `wm size`
+defect. Measured both directions on 7 Sep 2026:
+
+    starting cur=932x430 (landscape)  ->  wm size 430x932  ->  cur=932x430   FAILS
+    starting cur=800x1280 (portrait)  ->  wm size 430x932  ->  cur=430x932   WORKS, first try
+
+**Be in portrait, confirm it, then override.** The six earlier failures all began landscape. ⚠️
+And the black `screencap` frames were a **covered, locked screen** — not a secure-surface block.
+**Mean pixel brightness is the discriminating check**; `SCREEN_STATE_ON` read ON throughout while
+every frame measured 0.0.
+
+**2. 🔴 THE FALLBACK SHOWS ZERO RECORDS POST-MIGRATION, AND THAT FALSIFIED THE COPY.**
+
+| Fallback engages | User sees |
+|---|---|
+| **before** the migration completed | **PARTIAL** — the JSON is still in `epilepsy_event_records_v1`. iOS, 7 Sep 2026: **42 of 58** |
+| **after** the migration completed | ⛔ **NOTHING** — the key was drained and cleared when SQLite took over. Android, 7 Sep 2026: empty list, **`Total saved` 0** |
+
+The body said the history *"may look shorter than it is."* **On this device it looks empty.**
+Revised, with the superseded sentence quoted in place in the widget's doc comment. Pushed as
+`2d5cab9`.
+
+⛔ **A RENDER FOUND A FALSE SENTENCE A PASSING TEST COULD NOT.** The widget tests assert the
+banner renders and that its copy is present; **they cannot know the sentence is untrue.** Found by
+triggering a genuine fallback and reading `Total saved: 0` off the screen beside it — the same
+class as the 4 px row change the `history__default` recapture found earlier the same day.
+
+**3. ✅ THE BANNER IS VISUALLY VERIFIED. THE CHECK IS CLOSED.** 430×932, viewport guarded at
+`cur=430x932`, frame brightness 202–207: **no overflow**, clean three-line wrap, correct spacing
+against the app bar, and **amber reads as attention rather than alarm.**
+
+⭐ **The stacked-amber concern does not arise — the backup reminder is GREEN.** Captured with both
+cards present: amber above green, plainly distinguishable. **A question that was going to be
+settled by reasoning was settled by one frame.**
+
+⚠️ **Height measured, not inferred: 105 px against the previous 106 px.** The revised copy was
+expected to be a line longer and is **one pixel shorter** — the longer sentence wraps into the
+same three lines.
+
+⚠️ **Stacking evidence came from the backup reminder, not the active-event banner, deliberately.**
+`_handleStart` writes a start instruction the main isolate drains into a record, so producing an
+active event would have created a **73rd record**. The backup reminder is in the same exclusive
+chain, so it demonstrates the identical property at zero data risk.
+
+**Data safety:** four release builds, real keystore, `adb install -r` throughout. **72 records and
+`Last Event 27 Aug 2026 16:41` identical before and after** — a matching timestamp is stronger
+than a matching count, because a count can coincide. Nothing created or altered; no taps while on
+the fallback store.
+
 ### Also this session
 
 - **Restore now carries adoption state** (`21a7552`). `seededKey` and `isActive` were written
@@ -406,6 +457,12 @@ so a 430 override rendered **932 wide — wider than the tablet's own portrait.*
 disabling auto-rotate **before** the override; the capture script now **reads back `cur=` and
 refuses to capture at the wrong viewport.**
 ⭐ **General form: a viewport must be read back, not assumed set.**
+⛔ **ANNOTATED 7 Sep 2026 (late): "disabling auto-rotate before the override" is NECESSARY BUT
+NOT SUFFICIENT, and the same claim in the Register was WRONGER still.** `wm size` is applied in
+the rotation in force at the time — so an override landing from a LANDSCAPE state lands rotated,
+and setting `user_rotation` afterwards fires no re-layout because it is already that value. **The
+display must already be portrait when `wm size` lands.** Six failures in the banner pass, all
+from a landscape start. The read-back guard is what made it diagnosable rather than mysterious.
 
 ⚠️ **`am start` failed with `Error type 3`** because `applicationId` and the Android `namespace`
 differ. The first script suppressed stderr, so **every dump was of the launcher and every tap
