@@ -112,6 +112,40 @@ enum BackupProblem {
 
 /// Result of reading a candidate backup file. Either [records] is populated and
 /// [problem] is null, or the reverse. Never both.
+/// One condition as it travels in the envelope.
+///
+/// ## ⛔ THE ENVELOPE ALREADY CARRIED THIS. ADDED 7 SEPTEMBER 2026.
+///
+/// `buildBackupJson` has written `seededKey` and `isActive` since schema 3, and
+/// the restore loop read **`name` only** — so adoption state was written into
+/// every file and discarded on the way back in. A user who adopted a condition,
+/// backed up, reinstalled and restored got the condition back by name with
+/// `seeded_key` NULL and relevance ordering silently gone.
+///
+/// ⚠️ **This replaced a `List<String>` of names.** Names plus a parallel lookup
+/// was considered and rejected: two structures describing one list is the
+/// drift-on-first-change defect already recorded twice in this codebase.
+/// [ParsedBackup.conditionNames] survives as a DERIVED getter, so every
+/// name-only caller and its tests are untouched.
+class BackupCondition {
+  const BackupCondition({
+    required this.name,
+    this.seededKey,
+    this.isActive = true,
+    this.sortOrder = 0,
+  });
+
+  /// NO ID. `condition.id` is AUTOINCREMENT and therefore local — it means
+  /// nothing on the target, which mints its own. Conditions travel as NAMES.
+  final String name;
+
+  /// Null for a user-typed condition, which is every condition to date.
+  final String? seededKey;
+
+  final bool isActive;
+  final int sortOrder;
+}
+
 class ParsedBackup {
   final List<EventRecord> records;
 
@@ -124,9 +158,14 @@ class ParsedBackup {
   /// as [unreadableRecords] so a partial file reports rather than hides.
   final int unreadableNotes;
 
-  /// Condition NAMES in the file, in their stored order. **Empty for every
-  /// schema 1 and 2 backup**, which is every backup taken before this change.
-  final List<String> conditionNames;
+  /// Conditions in the file, in their stored order, WITH their adoption
+  /// state. **Empty for every schema 1 and 2 backup.**
+  final List<BackupCondition> conditions;
+
+  /// Names only, DERIVED. Kept so name-only callers and their tests are
+  /// unaffected by the carrier type — there is ONE source of truth above.
+  List<String> get conditionNames =>
+      <String>[for (final c in conditions) c.name];
 
   /// Event type VALUE to condition NAME. Empty for schema 1 and 2.
   final Map<String, String> eventTypeConditions;
@@ -143,7 +182,7 @@ class ParsedBackup {
     this.records = const [],
     this.notes = const <MedicationNote>[],
     this.unreadableNotes = 0,
-    this.conditionNames = const <String>[],
+    this.conditions = const <BackupCondition>[],
     this.eventTypeConditions = const <String, String>{},
     this.unreadableRecords = 0,
     this.declaredCount = 0,
@@ -263,14 +302,30 @@ ParsedBackup parseBackup(String raw) {
   // The protection against the reverse - an OLD build reading a NEW file - is
   // the schema gate above, which is why the version was bumped to 3.
   final rawConditions = map['conditions'];
-  final conditionNames = <String>[];
+  final conditions = <BackupCondition>[];
   if (rawConditions is List) {
     for (final entry in rawConditions) {
       if (entry is! Map) continue;
       final name = entry['name'];
       // A condition with no usable name cannot be merged by name, and name is
       // the only thing that survives the id being local. Skipped, not invented.
-      if (name is String && name.trim().isNotEmpty) conditionNames.add(name);
+      if (name is! String || name.trim().isEmpty) continue;
+      // ⛔ ADOPTION STATE IS READ HERE AS OF 7 SEP 2026. It has been WRITTEN
+      // since schema 3 and was discarded on the way in. Absence still reads as
+      // the DEFAULT rather than as a fault: a schema 1 or 2 file has no
+      // `conditions` key at all, and a malformed field degrades rather than
+      // refusing the file — the same tolerance the notes and records take.
+      final key = entry['seededKey'];
+      final active = entry['isActive'];
+      final order = entry['sortOrder'];
+      conditions.add(BackupCondition(
+        name: name,
+        seededKey: key is String && key.trim().isNotEmpty ? key : null,
+        // Anything that is not an explicit `false` reads as ACTIVE. A missing
+        // or malformed flag must never hide a condition on restore.
+        isActive: active is bool ? active : true,
+        sortOrder: order is int ? order : 0,
+      ));
     }
   }
 
@@ -291,7 +346,7 @@ ParsedBackup parseBackup(String raw) {
     records: parsed,
     notes: parsedNotes,
     unreadableNotes: unreadableNotes,
-    conditionNames: conditionNames,
+    conditions: conditions,
     eventTypeConditions: eventTypeConditions,
     unreadableRecords: unreadable,
     declaredCount: declared is int ? declared : rawRecords.length,
@@ -326,13 +381,23 @@ class RestorePlan {
   final int notesAlreadyPresent;
   final int notesUnreadable;
 
-  /// Condition names in the backup that the target does NOT already have.
+  /// Conditions in the backup the target does NOT already have, WITH their
+  /// adoption state so `addCondition` can carry it.
   ///
   /// ⚠️ ADDITIONS, like [notesToAdd] and unlike [merged]. A condition the
   /// target already has is REUSED, not duplicated - `addCondition` matches
-  /// case-insensitively by name, so "Migraine" does not become a second entry
-  /// beside "migraine".
-  final List<String> conditionsToAdd;
+  /// case-insensitively by name, so "Migraine" does not become a second
+  /// entry beside "migraine".
+  ///
+  /// ⛔ **KNOWN LIMITATION, AND IT FOLLOWS FROM EXISTING-WINS RATHER THAN
+  /// FROM THIS CHANGE.** Because a condition already present by name is
+  /// reused and never written, **adoption state only ever arrives for a
+  /// condition being CREATED** — chiefly a clean install. Adopt a condition
+  /// on device A while device B already holds that name unadopted, and no
+  /// restore will ever carry the adoption across. That is existing-wins
+  /// working as designed; recorded 7 Sep 2026 so it is not later
+  /// rediscovered as a defect.
+  final List<BackupCondition> conditionsToAdd;
 
   final int conditionsInBackup;
   final int conditionsAlreadyPresent;
@@ -378,7 +443,7 @@ class RestorePlan {
     this.notesInBackup = 0,
     this.notesAlreadyPresent = 0,
     this.notesUnreadable = 0,
-    this.conditionsToAdd = const <String>[],
+    this.conditionsToAdd = const <BackupCondition>[],
     this.conditionsInBackup = 0,
     this.conditionsAlreadyPresent = 0,
     this.typeAssignmentsToAdd = const <String, String>{},
@@ -459,14 +524,14 @@ RestorePlan planRestore(
   // carried at all.
   final haveNames =
       existingConditions.map((c) => c.name.toLowerCase()).toSet();
-  final conditionsToAdd = <String>[];
+  final conditionsToAdd = <BackupCondition>[];
   var conditionsAlreadyPresent = 0;
-  for (final name in backup.conditionNames) {
-    if (haveNames.contains(name.toLowerCase())) {
+  for (final c in backup.conditions) {
+    if (haveNames.contains(c.name.toLowerCase())) {
       conditionsAlreadyPresent++;
     } else if (!conditionsToAdd
-        .any((n) => n.toLowerCase() == name.toLowerCase())) {
-      conditionsToAdd.add(name);
+        .any((o) => o.name.toLowerCase() == c.name.toLowerCase())) {
+      conditionsToAdd.add(c);
     }
   }
 
@@ -499,7 +564,7 @@ RestorePlan planRestore(
     merged: merged,
     notesToAdd: noteAdditions,
     conditionsToAdd: conditionsToAdd,
-    conditionsInBackup: backup.conditionNames.length,
+    conditionsInBackup: backup.conditions.length,
     conditionsAlreadyPresent: conditionsAlreadyPresent,
     typeAssignmentsToAdd: typeAssignmentsToAdd,
     typeAssignmentsInBackup: backup.eventTypeConditions.length,

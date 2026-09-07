@@ -28,10 +28,17 @@ class Condition {
 
   /// Non-null only for a condition MER itself defines.
   ///
-  /// It is what tells the app whether extra typed fields apply — a seeded
-  /// `epilepsy` may later carry fields MER has researched, where a user-named
-  /// one gets the standard shape. **Nothing reads it yet**, and nothing seeds
-  /// one, so it is null on everything that exists.
+  /// It is what tells the app whether extra typed fields apply, and it is the
+  /// key `kSeededRelevance` is looked up by.
+  ///
+  /// ⚠️ **CORRECTED 7 SEP 2026. This read "Nothing reads it yet", which
+  /// has been false since `ce76d5a`** — `Vocabularies.load` reads it to build
+  /// `_adoptedKeys`, which drives relevance ordering.
+  ///
+  /// ⛔ **STILL NULL ON EVERY DEVICE, checked 7 Sep 2026.** The only writers
+  /// are [addCondition] and the restore path, and nothing has ever passed a
+  /// non-null value — no catalogue exists for a user to choose from. So the
+  /// reader exists, the writer exists, and the value does not.
   final String? seededKey;
 
   final bool isActive;
@@ -117,7 +124,23 @@ Future<List<Condition>> loadConditions(DatabaseExecutor db) async {
 /// Case-insensitive and trimmed, exactly like `addUserEntry` — so "Migraine"
 /// does not create a second entry beside "migraine". Returns null for empty
 /// input rather than creating a blank row.
-Future<Condition?> addCondition(DatabaseExecutor db, String typed) async {
+///
+/// ## ⛔ ADOPTION STATE IS APPLIED ONLY ON CREATE, AND THAT IS EXISTING-WINS
+///
+/// `seededKey` and `isActive` are written **only when a row is inserted.** A
+/// name already present returns the EXISTING condition untouched — its
+/// adoption state is not overwritten, because a restore that reassigned it
+/// would re-decide something the person on this device already decided.
+///
+/// ⚠️ **The cost, recorded rather than fixed:** adopt a condition on device
+/// A while device B already holds that name unadopted, and no restore will
+/// carry the adoption across. See `RestorePlan.conditionsToAdd`.
+Future<Condition?> addCondition(
+  DatabaseExecutor db,
+  String typed, {
+  String? seededKey,
+  bool isActive = true,
+}) async {
   final text = typed.trim();
   if (text.isEmpty) return null;
 
@@ -128,11 +151,24 @@ Future<Condition?> addCondition(DatabaseExecutor db, String typed) async {
   final order = existing.isEmpty ? 0 : existing.last.sortOrder + 1;
   final id = await db.insert(kConditionTable, <String, Object?>{
     'name': text,
-    'seeded_key': null,
-    'is_active': 1,
+    'seeded_key': seededKey,
+    'is_active': isActive ? 1 : 0,
     'sort_order': order,
   });
-  return Condition(id: id, name: text, sortOrder: order);
+  // ⛔ THE RETURNED OBJECT MUST AGREE WITH THE ROW JUST WRITTEN.
+  //
+  // Until 7 Sep 2026 this returned `Condition(id:, name:, sortOrder:)` while
+  // writing `'seeded_key': null` unconditionally, so the two agreed only BY
+  // COINCIDENCE — the object's defaults happened to match the literals. The
+  // moment a caller could pass adoption state, that coincidence would have
+  // become a caller holding an object that disagreed with its own row.
+  return Condition(
+    id: id,
+    name: text,
+    seededKey: seededKey,
+    isActive: isActive,
+    sortOrder: order,
+  );
 }
 
 /// The store a screen is given. **Never a `Database`.**

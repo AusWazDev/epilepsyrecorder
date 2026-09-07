@@ -345,13 +345,17 @@ class RestoreOutcome {
   const RestoreOutcome(
     this.merged,
     this.notesToAdd, {
-    this.conditionsToAdd = const <String>[],
+    this.conditionsToAdd = const <BackupCondition>[],
     this.typeAssignmentsToAdd = const <String, String>{},
   });
 
-  /// Condition NAMES to create. Never ids - `condition.id` is AUTOINCREMENT
-  /// and local, so the target mints its own.
-  final List<String> conditionsToAdd;
+  /// Conditions to create, WITH their adoption state. Never ids -
+  /// `condition.id` is AUTOINCREMENT and local, so the target mints its own.
+  ///
+  /// ⚠️ Carried as `BackupCondition` since 7 Sep 2026 rather than as bare
+  /// names, so `seeded_key` and `is_active` survive the restore instead of
+  /// being written into the file and dropped on the way back in.
+  final List<BackupCondition> conditionsToAdd;
 
   /// Event type VALUE to condition NAME, for assignments this device does not
   /// already have. Existing assignments are left alone.

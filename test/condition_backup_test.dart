@@ -97,7 +97,8 @@ void main() {
       });
 
       final plan = planRestore(const <EventRecord>[], parsed);
-      expect(plan.conditionsToAdd, <String>['Epilepsy', 'Migraine']);
+      expect(plan.conditionsToAdd.map((c) => c.name),
+          <String>['Epilepsy', 'Migraine']);
       expect(plan.typeAssignmentsToAdd.length, 3);
     });
 
@@ -125,8 +126,30 @@ void main() {
           reason: 'condition.id is AUTOINCREMENT and LOCAL. Carrying it would '
               'point at whatever row happens to hold that id on the target');
       expect(written['name'], 'Epilepsy');
-      expect(json.contains('97'), isFalse,
-          reason: 'the local id must not appear anywhere in the file');
+      // ⛔ REPLACED 7 SEP 2026 — THIS ASSERTION WAS PROBABILISTIC AND READ
+      // AS EXACT. It was:
+      //
+      //   expect(json.contains('97'), isFalse,
+      //       reason: 'the local id must not appear anywhere in the file');
+      //
+      // It greps the WHOLE document for a two-digit substring, so it collides
+      // with `exportedAt`'s microseconds. MEASURED: 11 passes and 1 failure
+      // over 12 isolated runs, i.e. it fails about one run in twelve, and it
+      // has done so since the day it was written. Any two-digit id collides
+      // the same way.
+      //
+      // ⭐ It also masqueraded as a regression: it fired during an unrelated
+      // change and was nearly recorded as caused by it.
+      //
+      // The replacement ENUMERATES the keys instead of searching for the
+      // absence of a value — exact, and it also catches a key nobody expected
+      // rather than only the one that was thought of.
+      expect(
+          written.keys,
+          unorderedEquals(
+              <String>['name', 'seededKey', 'isActive', 'sortOrder']),
+          reason: 'the condition map carries exactly these four keys - no id, '
+              'and nothing unexpected either');
     });
   });
 
@@ -158,7 +181,7 @@ void main() {
       );
       final planNew = planRestore(const <EventRecord>[], parseBackup(fixed));
 
-      expect(planNew.conditionsToAdd, <String>['Epilepsy']);
+      expect(planNew.conditionsToAdd.map((c) => c.name), <String>['Epilepsy']);
       expect(planNew.typeAssignmentsToAdd.length, 1);
       expect(planNew.conditionsToAdd.length,
           isNot(planOld.conditionsToAdd.length),
@@ -166,6 +189,85 @@ void main() {
               'match, nothing was actually fixed');
     });
   });
+
+  group('⭐ ADOPTION STATE SURVIVES THE ROUND TRIP', () {
+    // ⛔ THE ENVELOPE CARRIED THESE TWO FIELDS SINCE SCHEMA 3 AND THE RESTORE
+    // LOOP READ `name` ONLY, so adoption state was written into every file and
+    // discarded on the way back in. Fixed 7 Sep 2026; these are the tests that
+    // make the fix installed rather than merely made.
+
+    test('14. seededKey and isActive reach the plan, not just the name', () {
+      final json = buildBackupJson(
+        <EventRecord>[rec('a', 'seizure')],
+        conditions: <Condition>[
+          const Condition(
+              id: 1, name: 'Epilepsy', seededKey: 'epilepsy', sortOrder: 0),
+          const Condition(
+              id: 2, name: 'Retired thing', isActive: false, sortOrder: 1),
+        ],
+        eventTypeConditions: const <String, String>{},
+      );
+      final parsed = parseBackup(json);
+      expect(parsed.isValid, isTrue, reason: parsed.message);
+
+      final plan = planRestore(const <EventRecord>[], parsed);
+      final byName = <String, BackupCondition>{
+        for (final c in plan.conditionsToAdd) c.name: c,
+      };
+
+      expect(byName['Epilepsy']!.seededKey, 'epilepsy',
+          reason: 'the whole point: a key written to the file reaches restore');
+      expect(byName['Epilepsy']!.isActive, isTrue);
+      expect(byName['Retired thing']!.isActive, isFalse,
+          reason: 'an explicit false must survive, or a hidden condition comes '
+              'back visible');
+      expect(byName['Retired thing']!.seededKey, isNull);
+    });
+
+    test('15. ⛔ NEGATIVE CONTROL: names alone would pass test 14 for neither',
+        () {
+      // Without this, test 14 is satisfied by any change that happens to carry
+      // names, which is what the code did before the fix.
+      final json = buildBackupJson(
+        <EventRecord>[rec('a', 'seizure')],
+        conditions: <Condition>[
+          const Condition(
+              id: 1, name: 'Epilepsy', seededKey: 'epilepsy', sortOrder: 0),
+        ],
+        eventTypeConditions: const <String, String>{},
+      );
+      final plan = planRestore(const <EventRecord>[], parseBackup(json));
+      expect(plan.conditionsToAdd.single.name, 'Epilepsy');
+      expect(plan.conditionsToAdd.single.seededKey, isNotNull,
+          reason: 'a name-only carrier returns null here, which is exactly the '
+              'defect this pass closed');
+    });
+
+    test('16. absence still reads as the DEFAULT, never as a fault', () {
+      // A schema 3 file written by a build that omitted the keys, and a
+      // malformed value. Neither may refuse the file or hide the condition.
+      final map = jsonDecode(buildBackupJson(
+        <EventRecord>[rec('a', 'seizure')],
+        conditions: <Condition>[cond(1, 'Epilepsy')],
+        eventTypeConditions: const <String, String>{},
+      )) as Map<String, dynamic>;
+      (map['conditions'] as List)[0] = <String, Object?>{
+        'name': 'Epilepsy',
+        'isActive': 'yes please', // malformed on purpose
+        // seededKey and sortOrder omitted entirely
+      };
+
+      final parsed = parseBackup(jsonEncode(map));
+      expect(parsed.isValid, isTrue, reason: parsed.message);
+      final c = parsed.conditions.single;
+      expect(c.seededKey, isNull);
+      expect(c.isActive, isTrue,
+          reason: 'anything that is not an explicit false reads as ACTIVE - a '
+              'malformed flag must never hide a condition on restore');
+      expect(c.sortOrder, 0);
+    });
+  });
+
 
   group('MERGE — EXISTING ALWAYS WINS', () {
     test('5. a condition the target already has is REUSED, not duplicated', () {
@@ -181,7 +283,7 @@ void main() {
           reason: 'matched CASE-INSENSITIVELY, the same comparison '
               'addCondition uses — "Epilepsy" must not become a second entry '
               'beside "epilepsy"');
-      expect(plan.conditionsToAdd, <String>['Migraine']);
+      expect(plan.conditionsToAdd.map((c) => c.name), <String>['Migraine']);
     });
 
     test('6. ⛔ a type already assigned to a DIFFERENT condition KEEPS its own',
@@ -324,7 +426,7 @@ void main() {
       final plan = planRestore(const <EventRecord>[], parsed);
 
       expect(plan.addsNothing, isFalse);
-      expect(plan.conditionsToAdd, <String>['Epilepsy']);
+      expect(plan.conditionsToAdd.map((c) => c.name), <String>['Epilepsy']);
       expect(plan.typeAssignmentsToAdd, <String, String>{
         'seizure': 'Epilepsy'
       });

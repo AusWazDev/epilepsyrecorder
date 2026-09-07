@@ -104,6 +104,43 @@ const String kEventRollbackKey = 'epilepsy_event_records_v1_rollback';
 /// exact shape of the medication-note and condition losses that forced the
 /// first two bumps. That the loss is now inside `records` rather than beside it
 /// makes it harder to notice, not less real.
+/// ## ⛔ 7 SEPTEMBER 2026 — RESTORE BEGAN READING TWO FIELDS AND THIS DID
+/// ## NOT MOVE. THAT IS A DECISION, NOT AN OVERSIGHT.
+///
+/// `seededKey` and `isActive` have been WRITTEN into the envelope since schema
+/// 3 and the restore loop read `name` only, so adoption state was discarded on
+/// the way back in. Restore now reads both. **No bump, and the reasoning is
+/// recorded here because an unbumped reader change otherwise reads as a
+/// forgotten step.**
+///
+/// **1. THE CHANGE IS READER-SIDE. NO BYTE OF THE FILE CHANGES.**
+/// `buildBackupJson` is untouched. Nothing new enters the envelope, so there is
+/// nothing a newer file could contain that an older build would partially
+/// understand — which is the exact hazard every previous bump existed to stop.
+///
+/// **2. THE THREE PREVIOUS BUMPS PROTECTED IRREPLACEABLE HISTORY.** The
+/// medication notes, the type-to-condition mapping and `occurredAt` were each
+/// information that existed nowhere else; an old build dropping them destroyed
+/// them. **Adoption state is a PREFERENCE the user can restate in one tap.** An
+/// old build dropping `seeded_key` leaves them exactly where they stand today:
+/// condition present by name, relevance inert. Nothing becomes unrecoverable.
+///
+/// ⚠️ **That is the distinction, and it is a difference in KIND rather than
+/// in degree.** The rule below — *"an older build must refuse a file it would
+/// otherwise partially understand"* — does not decide this case on its wording
+/// alone, and the 3 → 4 bump is precedent for bumping even when no top-level
+/// key changed. So the question was decided on what the rule is FOR.
+///
+/// **3. A BUMP HAS A REAL COST HERE.** It would make every build now installed
+/// refuse every file a fixed build writes — including files whose adoption
+/// state is null, which is every file in existence. Android, iOS and Windows
+/// update independently, so that is a self-inflicted incompatibility across
+/// three platforms to protect a field that is currently always null.
+///
+/// ⛔ **BUMP IF THIS CHANGES:** the day adoption state stops being cheaply
+/// restatable — a catalogue with clinical content behind it, or anything that
+/// makes re-adopting cost the user more than a tap — this reasoning expires and
+/// the file needs the gate.
 const int kBackupSchemaVersion = 4;
 
 /// Whether the STANDING quick-log notification is posted.

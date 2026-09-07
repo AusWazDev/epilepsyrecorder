@@ -736,10 +736,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             var conditionsAdded = 0;
             if (db != null && (outcome.conditionsToAdd.isNotEmpty ||
                 outcome.typeAssignmentsToAdd.isNotEmpty)) {
-              for (final name in outcome.conditionsToAdd) {
+              for (final c in outcome.conditionsToAdd) {
                 // addCondition is case-insensitive and returns the EXISTING
                 // row for a name already present, so this cannot duplicate.
-                if (await addCondition(db, name) != null) conditionsAdded++;
+                //
+                // ⛔ ADOPTION STATE IS PASSED THROUGH AS OF 7 SEP 2026. The
+                // envelope has carried `seededKey` and `isActive` since schema 3
+                // and this loop discarded both. Note the consequence, which is
+                // existing-wins and not a defect: a condition already present by
+                // name is returned untouched, so adoption only ever arrives for
+                // a condition being CREATED - chiefly a clean install.
+                if (await addCondition(db, c.name,
+                        seededKey: c.seededKey, isActive: c.isActive) !=
+                    null) {
+                  conditionsAdded++;
+                }
               }
               final byName = <String, int>{
                 for (final c in await loadConditions(db))
