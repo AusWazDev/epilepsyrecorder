@@ -2,6 +2,146 @@
 
 ---
 
+## Session: 7 September 2026 — Windows (Claude Code CLI)
+
+**Condition relevance measured on the device, and retired.** The mechanism works and buys the
+user nothing. Fuller treatment is in the **Change Register**, which does **not** travel by
+`git push` — this entry carries enough that nobody has to go looking.
+
+### 🔴 THE FINDING: RELEVANCE ORDERING PRODUCES ZERO OBSERVABLE CHANGE
+
+`seeded_key = 'epilepsy'` set on the device's real condition row, against the real **72
+records**, afterwards picker rendered at **430×932** before and after:
+
+    AFTERWARDS  baseline vs seeded_key live      differing px = 0
+    AFTERWARDS  baseline vs first probe build    differing px = 0
+
+**Both renders show the same seven entries in the same order** — Tired, Weak, Memory gap,
+Speech difficulty, Confused, Headache, Sore or aching. **Pixel-identical**, status and
+navigation bars excluded.
+
+### ⭐ THE CONTROL, WITHOUT WHICH THE NULL IS WORTHLESS
+
+**An unchanged picker cannot be distinguished from a probe that silently failed.** So the same
+build also mapped three triggers — `Dehydration`, `Yawning`, `Food cravings`, none of them
+visible at baseline — to `'epilepsy'`, and the **beforehand** picker was rendered in the same
+session, on the same build, at the same width:
+
+    baseline    Poor sleep · Stress · Missed medication · Alcohol · Flashing lights · Illness · …
+    key live    Poor sleep · Dehydration · Yawning · Food cravings · Stress · Missed medication · …
+
+    BEFOREHAND  baseline vs seeded_key live      differing px = 13,199
+
+⛔ **The three mapped triggers jumped from invisible to positions 2, 3 and 4.** So the key WAS
+set, `_adoptedKeys` WAS non-empty, and ordering WAS live — **while the afterwards list moved
+zero pixels. 0 against 13,199.**
+
+⭐ **`Poor sleep` stayed first**, because usage outranks relevance exactly as specified — a
+second, independent confirmation the comparator behaves as designed.
+
+### The structural cause
+
+    kSeedObservations, the 13 original      kSeededRelevance['epilepsy'] IS seed positions 1-12
+     1 Tired             8 Nauseous
+     2 Weak              9 Sad              The three-row bound shows positions 1-7.
+     3 Memory gap       10 Anxious
+     4 Speech difficulty 11 Angry           ALL SEVEN are already among the twelve.
+     5 Confused        12 Irritable
+     6 Headache        13 Other
+     7 Sore or aching
+
+⛔ **Every entry already visible is already relevant, so relevance has nothing to promote.** It
+can only reorder *within* an already-relevant head, and with every usage count at zero the
+tiebreak is seed index — which is the order already on screen. **Seed order is a perfect proxy
+for epilepsy relevance**, because epilepsy was the first condition seeded.
+
+⚠️ **AND THIS WAS THE GENEROUS CASE.** Usage is inert on the afterwards list (the 72 records'
+`feelings_json` holds retired glyph-bearing legacy values), so relevance decided the list **in
+isolation**, with no competing signal. **It will never run better than this.**
+
+### 🔴 DECISION: TASKS 2 AND 3 ARE RETIRED, NOT DEFERRED
+
+**`seeded_key` gets no writer.** Retired on this measurement:
+
+| Retired | |
+|---|---|
+| `activeConditions()` | the display-caller filter |
+| the `is_active` writer for conditions | `addCondition` keeps writing `1` |
+| a deactivate control | no UI, no path |
+| `DATA-MODEL.md:481` | the migration row that would create Epilepsy with `seeded_key 'epilepsy'` |
+
+⛔ **The adviser question is WITHDRAWN. There is no claim left to route.** It asked whether
+ordering an unvalidated observation set by a self-named condition sits inside the line for a
+capture-only tool. **Nothing is being ordered by condition, so nothing asserts anything.**
+
+### ✅ WHAT STAYS, AND WHY IT MUST NOT BE READ AS AN OVERSIGHT
+
+⛔ **`kSeededRelevance` and the ordering comparator STAY IN PLACE. Built, correct, tested, and
+DELIBERATELY UNACTIVATED as at 7 September 2026 — this measurement is the reason.** It is inert
+because no condition carries a key, and inert is the intended state. **A future session finding
+a ranking key with no writer must not read that as a gap and wire it up: it was measured on real
+data and produced nothing.**
+
+✅ **The `is_active` asymmetry documentation STAYS** — `_adoptedKeys` filters at
+`vocabulary_store.dart:199` and `_conditionNames` does not at `:201`, and
+`event_type.condition_id` must keep pointing at a deactivated id. **That describes why the code
+is correct and outlives the mechanism it was written for.** Committed at `293b1e7`.
+
+### ⭐ THE PREDICTION WAS RIGHT AND THE MEASUREMENT WAS STILL WORTH MAKING
+
+**The Register had already argued exactly this**, on 30 August: *"seed order is already a perfect
+proxy for epilepsy relevance… ranking them first changes nothing."* **Recorded explicitly,
+because a verification that confirms its own prediction reads as wasted and this one was not.**
+
+The argument was an argument. **This is 0 pixels against a 13,199-pixel control, on the real
+records, at the width the bound bites.** This project has repeatedly found reasoning that
+sounded right and was wrong — and the same argument would have been cited to *justify building
+the catalogue* just as easily as to retire it. **A measurement can retire a plan; an argument
+about the same facts had already failed to.**
+
+### The revert, proven rather than asserted
+
+**A fourth build carried the control mapping and NO writer**, which discriminates the live
+database value:
+
+    vs BASELINE beforehand   (0 = key is NULL)      differing px = 0
+    vs KEY-LIVE beforehand   (0 = key still set)    differing px = 13,199
+
+⭐ **`seeded_key` is NULL again, read off a discriminating control** rather than inferred from
+"the write worked in the other direction". **The pristine 30 August APK (md5 `97b9c653…`) was
+reinstalled**, display reset to 800×1280, auto-rotate re-enabled, **72 records intact and
+measured at every step.**
+
+⚠️ **FOUR BUILDS, NOT THE TWO SCOPED.** One was spent before the null was recognised as needing
+a control; one is the revert verifier. **Both were necessary and neither was foreseen** — the
+scope of two assumed a result that could be read directly, and a null cannot be.
+
+⚠️ Also declined: reading the value out of a JSON backup, which would have worked but meant
+pulling 72 real medical records to a temp directory to check one field.
+
+### Nothing committed from the test
+
+Temporary writer and control were uncommitted throughout and removed. Repo clean at `293b1e7`,
+`build/app/outputs/flutter-apk/app-release.apk` restored to the pristine md5. **The wizard was
+entered only through *Edit details* on the existing incomplete record and always abandoned
+without saving**, so no 73rd record exists and no vocabulary row was added.
+
+### Also this session
+
+- **Restore now carries adoption state** (`21a7552`). `seededKey` and `isActive` were written
+  into the envelope since schema 3 and the restore loop read `name` only. **No schema bump**, with
+  the reasoning recorded beside `kBackupSchemaVersion` and an expiry condition. ⚠️ Still worth
+  having despite the retirement above: it closes a live data-loss path on a field the envelope
+  already carried, and `isActive` matters independently of relevance.
+- **`vocabulary.dart` provenance corrected** (`17a2a62`, `91c2520`). The twelve are an editorial
+  revision of already-shipped values, not a sourced set: of four cited sources, two academic
+  reviews are recorded as never read and Epilepsy Action published no field set. Three tier
+  claims narrowed, one stale count fixed.
+- **Two verification findings** recorded in the Register: a type change under `expect` passes the
+  analyzer, and a control that selects the wrong unit confirms whatever was already believed.
+
+---
+
 ## Session: 30 August 2026 — Windows (Claude Code CLI)
 
 **The design-audit capture set, and two defects found while making it.** Documentation pass; no
