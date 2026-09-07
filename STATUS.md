@@ -84,6 +84,37 @@ September — both mine — and never reached a store build.**
 ⚠️ **The older occurrences in that group share the SYMPTOM and not this cause, and remain
 separately unexplained.** They are worth their own look, on their own merits.
 
+
+> 🔴 **CORRECTED 7 September 2026 (Windows), FROM THE SENTRY DATA. The two paragraphs above
+> are right that no user was affected and wrong about WHY the group holds seven events.**
+>
+> The Mac end wrote, and the Windows brief repeated, that the issue *"groups on the generic
+> message"* so several unrelated root causes land in it, and that the older occurrences
+> *"share the SYMPTOM and not this cause, and remain separately unexplained."*
+>
+> ⛔ **They do not share the symptom. Five of the seven are the migration SUCCEEDING.**
+> Aggregated on message within `MEDICAL-EVENT-RECORDER-9`:
+>
+> | Message | Level | Count |
+> |---|---|---|
+> | `Storage migrated to SQLite` | **info** | 4 |
+> | `Storage migration did not complete; running on shared_preferences` | **error** | **2** |
+> | `Storage migrated to SQLite root /` | **info** | 1 |
+>
+> ⭐ **Sentry has grouped an INFO-level success message together with an ERROR-level failure
+> message.** That, not a shared symptom with differing causes, is why the headline read
+> *7 occurrences, 4 users, first seen 25 August*: it is 5 successes plus 2 failures, and the
+> "4 users" are install ids across Windows, the Teclast tablet and two iOS installs.
+>
+> ✅ **So there is nothing separately unexplained.** The pre-7-September events are
+> `Storage migrated to SQLite` on Android, iOS and Windows — the path working. **The
+> failure's true first occurrence is 7 September 2026 and it has never occurred otherwise.**
+>
+> ⚠️ **What this changes practically:** no second investigation is owed. What IS owed is that
+> **`main.dart` sends a success and a failure through the same `Sentry.captureMessage` shape,
+> so Sentry groups them** — which is why the issue's own metadata cannot be read as evidence
+> about either. Checked 7 September 2026.
+
 ### ⚠️ RELATED, AND INDEPENDENT OF THE ABOVE: THE FALLBACK IS SILENT
 
 **Nothing in `lib/` reads `StorageBoot.outcome` or `StorageBoot.isSqlite`** — grepped, zero
