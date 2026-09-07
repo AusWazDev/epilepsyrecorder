@@ -49,6 +49,14 @@ class Vocabularies {
   /// exact call chain: a `notes:` parameter accepted and never forwarded, found
   /// only by diffing a device export, and the same mistake repeated in
   /// `showBackupOptions` weeks later.
+  ///
+  /// ⛔ **NOT FILTERED ON `is_active`, unlike `_adoptedKeys`. Do not "fix"
+  /// that.** Recorded 7 Sep 2026. This feeds the CSV's `condition` column for
+  /// records ALREADY WRITTEN, so filtering it would make deactivating a
+  /// condition blank the condition on past events — an export reading
+  /// `unknown` for records nobody edited. See [load] for the full reason and
+  /// for why `event_type.condition_id` must keep pointing at a deactivated
+  /// id.
   static Map<int, String> _conditionNames = const <int, String>{};
 
   /// Every entry, active and retired, in sort order.
@@ -118,14 +126,24 @@ class Vocabularies {
 
   /// The `seeded_key`s of the conditions this person has adopted.
   ///
-  /// ⛔ **EMPTY ON EVERY DEVICE TODAY, AND THAT IS NOT A BUG.** `addCondition`
-  /// writes `'seeded_key': null` and there is no other writer, so a condition a
-  /// user typed carries no key — correctly, because matching free text to a
-  /// seeded mapping would be MER inferring which condition someone meant. The
-  /// key can only arrive from an explicit choice, which is the catalogue.
+  /// ⛔ **EMPTY ON EVERY DEVICE TODAY, AND THAT IS NOT A BUG.** No condition
+  /// has ever carried a key: nothing offers a user an explicit choice to
+  /// adopt one, and matching their free text to a seeded mapping would be MER
+  /// inferring which condition they meant. **So relevance ordering is inert
+  /// until a catalogue lands, and this is where it plugs in.**
   ///
-  /// So relevance ordering is inert until that lands, and this is where it
-  /// plugs in.
+  /// ⚠️ **CORRECTED 7 SEP 2026. This read "`addCondition` writes
+  /// `'seeded_key': null` and there is no other writer", and both halves are
+  /// now out of date** — `addCondition` takes a `seededKey` argument, and the
+  /// restore path passes one through from the backup envelope. **What has not
+  /// changed is that no caller ever passes a non-null value**, because there
+  /// is still nothing for a user to choose from. The writers exist; the value
+  /// does not.
+  ///
+  /// ⭐ **FILTERED ON `is_active`, unlike `_conditionNames`.** That
+  /// asymmetry is deliberate and is explained in full in [load]. In short:
+  /// this drives a SUGGESTION and may be revoked; that drives the CSV's
+  /// historical ATTRIBUTION and must not be.
   static Set<String> _adoptedKeys = const <String>{};
 
   static Set<String> relevantFor(String table) =>
@@ -192,12 +210,45 @@ class Vocabularies {
       // AFTER the vocabularies, because an ordering over a list that failed
       // to load would be an ordering over nothing.
       _usage = await _countUsage(db);
-      // Only conditions carrying a seeded_key contribute. A user-typed
-      // name has none, so this stays empty until the catalogue lands.
+      // ⛔ THE TWO LINES BELOW READ THE SAME LIST UNDER DIFFERENT RULES,
+      // AND THAT IS DELIBERATE. Documented 7 Sep 2026 because it reads as an
+      // inconsistency and the reason is not local to either line.
+      //
+      //   _adoptedKeys      FILTERS on is_active
+      //   _conditionNames   does NOT filter
+      //
+      // ⭐ They answer different questions, and the split IS the
+      // deactivation semantics: STOP SUGGESTING, KEEP ATTRIBUTING.
+      //
+      // `_adoptedKeys` drives RELEVANCE ORDERING - a forward-looking
+      // suggestion about what to offer next. Deactivating a condition should
+      // stop it suggesting entries, so this one filters.
+      //
+      // `_conditionNames` drives `conditionNameForEventType`, which is the
+      // CSV's `condition` column - HISTORICAL ATTRIBUTION of records already
+      // written. ⛔ IF THIS FILTERED, deactivating a condition would blank
+      // the condition on every past event whose type maps to it: the export
+      // would read `unknown` for records nobody edited, retroactively
+      // changing what the file says about what already happened. That is the
+      // one thing this project refuses, and it is why the absence of a filter
+      // here is load-bearing rather than an oversight.
+      //
+      // ⚠️ BEFORE CHANGING EITHER LINE, note what makes reactivation
+      // lossless: `event_type.condition_id` keeps pointing at the deactivated
+      // condition's id. Nothing clears or validates it, so deactivate then
+      // reactivate restores the previous state exactly. Clearing it would
+      // make deactivation a one-way door and turn "stop suggesting" into a
+      // partial delete.
+      //
+      // Only conditions carrying a seeded_key contribute to relevance. A
+      // user-typed name has none, so `_adoptedKeys` stays empty until a
+      // condition is adopted with an explicit key.
       _adoptedKeys = <String>{
         for (final c in await loadConditions(db))
           if (c.isActive && c.seededKey != null) c.seededKey!,
       };
+      // NOT filtered on is_active - see the block above. Every condition's
+      // name stays resolvable so the export never loses attribution.
       _conditionNames = <int, String>{
         for (final c in await loadConditions(db)) c.id: c.name,
       };

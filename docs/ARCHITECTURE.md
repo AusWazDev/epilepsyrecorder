@@ -458,11 +458,52 @@ it has no matching data, and accumulates from the first record written after the
 observation revision.**
 
 **Relevance** comes from the `kSeededRelevance` const map keyed on `condition.seeded_key`.
-⛔ **As at 31 Aug 2026 it is inert on every device**: `addCondition` writes
-`'seeded_key': null` and there is no other writer, so `_adoptedKeys` is always empty.
-The map holds one key, `'epilepsy'`, mapping observations only — there is no trigger
-set, because the record sources an observation set for epilepsy and sources nothing
-for the original seven triggers.
+The map holds one key, `'epilepsy'`, mapping **observations only**.
+
+⛔ **As at 7 Sep 2026 it is inert on every device: no condition has ever carried a
+`seeded_key`**, so `_adoptedKeys` is always empty and `relevantFor` always returns an empty
+set. Relevance is proved in tests only.
+
+⚠️ **Two claims here were corrected on 7 Sep 2026.** This paragraph read *"`addCondition`
+writes `'seeded_key': null` and there is no other writer"* — `addCondition` now takes a
+`seededKey` argument and the restore path passes one through, so the writers exist; **what
+is still true is that no caller ever passes a non-null value**, because nothing offers a
+user a condition to adopt. It also read that the record *"sources nothing for the original
+seven triggers"*, which is still true of those seven and stopped describing the
+vocabulary: **25 of the 32 trigger seeds are sourced per entry.** The absence of a trigger
+mapping now rests on a narrower ground that does not depend on the count — the sourced
+trigger material is migraine, panic and presyncope material, and **none of it speaks to
+epilepsy**, so a mapping keyed `'epilepsy'` cannot be built from it.
+
+#### ⛔ `_adoptedKeys` FILTERS `is_active`. `_conditionNames` DOES NOT. DO NOT "FIX" THAT.
+
+**Documented 7 Sep 2026, in `Vocabularies.load` and on both field declarations, because it
+reads as an inconsistency and the reason is not local to either line.** Two adjacent
+statements read the same `loadConditions` result under different rules:
+
+| Field | Filters `is_active`? | Drives |
+|---|---|---|
+| `_adoptedKeys` | **yes** | relevance ordering — a forward-looking **suggestion** |
+| `_conditionNames` | **no** | `conditionNameForEventType` → the CSV `condition` column — historical **attribution** |
+
+⭐ **The split IS the deactivation semantics: STOP SUGGESTING, KEEP ATTRIBUTING.**
+Deactivating a condition should stop it offering entries, which is what the filter does.
+
+⛔ **If `_conditionNames` filtered, deactivating a condition would blank the condition on
+every past event whose type maps to it** — the export would read `unknown` for records
+nobody edited, retroactively changing what the file says about what already happened.
+**That is the one thing this project refuses**, and it is why the absence of a filter is
+load-bearing rather than an oversight.
+
+⚠️ **And what makes reactivation lossless: `event_type.condition_id` keeps pointing at the
+deactivated condition's id.** Nothing clears or validates it, so deactivate-then-reactivate
+restores the previous state exactly. **Clearing it would make deactivation a one-way door
+and turn "stop suggesting" into a partial delete.**
+
+⚠️ **No `is_active` writer exists for conditions as at 7 Sep 2026** — `addCondition` writes
+`1`, and there is no deactivate path — so `c.isActive &&` is a guard that has never once
+been false. The semantics above are what it will mean when a writer lands, and they are
+recorded now so the guard is not read as dead code and removed.
 
 ### Bulk hide and show — "Your lists"
 
