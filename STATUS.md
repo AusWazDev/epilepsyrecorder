@@ -2,6 +2,141 @@
 
 ---
 
+## Session: 7 September 2026 (evening) — Mac (Claude Code CLI)
+
+**First real-iOS capture set, and a build-ordering defect found the hard way — by shipping it
+to the device that holds the only copy of 16 records.** 23 captures added; the 30 August set
+untouched. Full per-file detail in `docs/design-audit/captures/INDEX.md`.
+
+### 🔴 FINDING 1 — A SIMULATOR BUILD SILENTLY POISONS THE NEXT DEVICE BUILD
+
+**Severity: high. Causes silent data-visibility loss on a real device, with no user-facing
+indication.**
+
+**One cause, not two.** `build/native_assets/ios/` is **not keyed by device vs simulator** —
+both are `ios`. So `flutter build ios --simulator` followed by `flutter build ios --release`
+in the same tree gives the device app the **simulator-platform** native-assets frameworks,
+and the device build reuses them without rebuilding.
+
+**The symptom on device** — `objective_c.framework` fails to load:
+
+    Couldn't resolve native function 'DOBJC_initializeApi'
+      in 'package:objective_c/objective_c.dylib'
+    … Runner.app/Frameworks/objective_c.framework/objective_c
+      (mach-o file …, but incompatible platform
+       (have 'iOS-simulator', need 'iOS'))
+
+That throws inside `StorageBoot.init()`'s outer `try`, so `_store = EventStore()` — **the app
+runs on the shared_preferences fallback and shows only the pre-migration records.** On this
+device: **42 of 58 visible. 16 records invisible.** Home read `Total saved 42` and
+`LAST EVENT 24 Aug 20:07` against a SQLite store holding 58 with a newest of 27 Aug 21:19.
+
+⛔ **DETECTION — the check to run, and the one that would have caught this in the first
+minute:**
+
+    vtool -show-build <framework binary>     must report  platform IOS
+                                             IOSSIMULATOR means the build is bad
+
+`lipo -info` reporting `x86_64 arm64` on a **device** build is the giveaway.
+
+⛔ **THE FIX I FIRST TRIED DOES NOT WORK. DO NOT REPEAT IT.** `lipo -extract arm64` plus
+re-signing is useless: **the arm64 slice is still a SIMULATOR arm64 slice**, and `dlopen`
+rejects it identically on platform, not on architecture. Signature-only re-signing installed
+cleanly and still fell back.
+
+⭐ **THERE IS NO SEPARATE SIGNING DEFECT. Correcting the earlier report in this session, which
+described two.** With a clean cache Xcode signs these frameworks correctly with
+`TeamIdentifier=B7LWF6Z674` and no manual step is needed at all. The adhoc signature AND the
+wrong platform were both symptoms of the one stale-cache cause.
+
+**The actual fix:**
+
+    flutter clean
+    flutter pub get          # clean removes .dart_tool/package_config.json,
+                             # so --no-pub fails without this
+    flutter build ios --release --no-pub    # NO preceding simulator build
+
+Verified after: both frameworks `arm64 / IOS`, signed `B7LWF6Z674`, bundle 27.8 MB against
+29.7 MB with the fat simulator frameworks, and the app read **58 / 27 Aug 21:19** on launch.
+
+### ⭐ THE SENTRY SIDE, FROM WINDOWS — ONE INCIDENT, CONFIRMED FROM BOTH ENDS
+
+Windows independently pulled `MEDICAL-EVENT-RECORDER-9` and found the **same
+`objective_c` simulator-slice error**:
+
+| | |
+|---|---|
+| Occurrences of THIS error | **twice** |
+| Release | **1.1.0+53** both times |
+| `build_type` | **adhoc** both times |
+| Install id | **one** |
+| First occurrence of this error | **7 September** |
+| Store builds affected | **NONE** — last store release is **1.0.2** |
+
+⛔ **That ties the two halves into a single incident and CORRECTS AN OVERSTATEMENT MADE
+EARLIER IN THIS SESSION.** The Mac end read the issue's *group* metadata — first seen 25
+August, 7 occurrences, 4 users — and inferred the fallback "has been firing in the wild."
+**It has not, for this cause.** The issue groups on the generic message *"Storage migration
+did not complete; running on shared_preferences"*, so several root causes land in one issue.
+**The simulator-slice cause is confined to two adhoc dev installs on one device on 7
+September — both mine — and never reached a store build.**
+
+⚠️ **The older occurrences in that group share the SYMPTOM and not this cause, and remain
+separately unexplained.** They are worth their own look, on their own merits.
+
+### ⚠️ RELATED, AND INDEPENDENT OF THE ABOVE: THE FALLBACK IS SILENT
+
+**Nothing in `lib/` reads `StorageBoot.outcome` or `StorageBoot.isSqlite`** — grepped, zero
+consumers. The app shows a subset of the user's records with **no indication whatever**; the
+only signal leaves the device to Sentry (`main.dart:49`). A user silently seeing 42 of 58
+records is the exact failure mode the SQLite migration exists to prevent. **Surfacing
+`isSqlite` somewhere the user or a support conversation can reach it is a real gap**, whatever
+caused any individual fallback.
+
+### 🔴 FINDING 2 — iOS HAS NO `adb`, SO DEVICE CAPTURES CANNOT BE SCRIPTED
+
+**Severity: process. Governs how any future capture pass must be planned.**
+
+The 30 August set was scripted with `uiautomator dump` (element bounds by text) plus
+`input tap`. **iOS has no equivalent. Established by testing, not assumption:**
+
+| Route | Result |
+|---|---|
+| `flutter screenshot --type=device` | **Refused for a wireless device** |
+| Flutter's bundled `idevicescreenshot` | **Broken** — `@loader_path/../` deps resolve to `artifacts/` while Flutter files them in `artifacts/openssl/` etc. Repairable with `install_name_tool`, but then reports `No device found`: libimobiledevice needs USB, and its lockdown path is unlikely to serve iOS 26 |
+| `xcrun devicectl` | **No screenshot subcommand at all** — copy, info, install, notification, orientation, process, reboot, sysdiagnose, uninstall |
+| Touch injection into a physical iPhone | **No path exists** outside an XCUITest harness, which needs `integration_test` in `pubspec.yaml` plus a test target |
+| App-level navigation shortcut | **None** — no `CFBundleURLTypes`, no named routes, no `onGenerateRoute`, so `simctl openurl` cannot reach a screen |
+
+⛔ **PHYSICAL-DEVICE CAPTURES ARE MANUAL.** The working method is the operator navigating and
+pressing side + volume-up, then AirDrop. That produced tonight's 9 files at exact 1290×2796.
+
+⭐ **SIMULATORS ARE FULLY SCRIPTABLE, with one non-obvious requirement.**
+`simctl io screenshot` is exact. For input, **`cliclick` drags and synthetic `CGEvent`
+scroll-wheel events both do NOTHING** to a Flutter surface. What works is posting explicit
+`leftMouseDown` → ~60 × `leftMouseDragged` → `leftMouseUp`. Screen origin comes from the
+accessibility tree: under **Window → Point Accurate** the `AXGroup` child of the Simulator
+window is exactly the device rect (375×667 at 1:1), so screenshot pixel `(px, py)` maps to
+`(originX + px/2, originY + py/2)`. Requires Accessibility permission for the terminal.
+
+⚠️ **`devicectl` exposes no bundle-container domain**, so an installed binary cannot be read
+back off the phone. A build can only be probed as the artifact that was installed, plus
+runtime evidence on screen.
+
+### Data safety through the pass
+
+`mer_events.db` copied off **before** the first install and re-read four times during.
+**58 events and `sha256 e6366d33…` byte-identical every time; zero records dated 7
+September; no vocabulary row appended.** Three copies now exist off-device. The wizard was
+entered twice and the form three times, all via guarded exits — see INDEX.md for why that
+route is narrow.
+
+⚠️ **`flutter build` and `flutter pub get` each modify `pubspec.lock`** (`matcher`
+0.12.18→0.12.19, `test_api` 0.7.9→0.7.10, both test-only transitives). Reverted each time.
+`--no-pub` prevents it — **but not after `flutter clean`.**
+
+---
+
 ## Session: 7 September 2026 — Windows (Claude Code CLI)
 
 **Condition relevance measured on the device, and retired.** The mechanism works and buys the
