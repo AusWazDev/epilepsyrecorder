@@ -94,6 +94,30 @@ decides the whole list.
 `'seeded_key': null` and nothing else assigns it, so `_adoptedKeys` is always empty and
 `relevantValues` returns the empty set.
 
+> ⚠️ **ANNOTATED 7 SEPTEMBER 2026 — READ THE THREE STATEMENTS ABOVE WITH THIS ATTACHED.**
+>
+> **Everything above is still true and is left as written.** But three of those statements name the
+> missing `seeded_key` writer as the reason relevance is inert — *"no `seeded_key` writer"* in the
+> table, *"relevance was built for cold start… it therefore decides the whole list"*, and
+> *"dormant on every device that can exist"* — and together they read as pointing at a fix.
+>
+> ⛔ **RELEVANCE IS NOT THE FIX. It was measured and it changes nothing.** Setting the key on the
+> real device produced **0 differing pixels** on this picker at this width against the real 72
+> records, with a 13,199-pixel control proving the key was set and the ordering live. **All seven
+> entries the bound displays are already among the twelve, so relevance can only reorder an
+> already-relevant head.** Relevance is now dormant **by decision, not by omission** — see §10
+> recommendation 3.
+>
+> ✅ **What survives unchanged, and is the correct diagnosis of this section:** the bound is right
+> and must not be removed; usage genuinely reorders the beforehand list and genuinely scores zero
+> on the afterwards list; and the cause of that zero is the one this section already names — the
+> **retired glyph-bearing legacy values**, filtered out as inactive before sorting.
+>
+> ⭐ **So the live question is the one in §11: whether those retired values can be mapped forward
+> to their current equivalents.** That would restore *usage* ranking, which is the only ranking on
+> this list that has ever been shown to do anything. **It is now the only live thread on the
+> ordering problem.**
+
 ⛔ **Afterwards scores zero** because existing records reference the **retired glyph-bearing legacy
 values**, which `offerable` filters out as inactive **before** sorting. **So the afterwards list is
 in pure seed order, and the three-row bound is cutting it by seed position and label width.**
@@ -339,6 +363,40 @@ than the layout work.**
 ⚠️ **And it belongs ahead of the layout work, not after it: a bound cutting a RANKED list is a
 different design problem from a bound cutting seed order.** Solving the layout against the current
 behaviour would be solving the wrong problem.
+
+> 🔴 **RETIRED 7 SEPTEMBER 2026, ON MEASUREMENT RATHER THAN ARGUMENT.**
+>
+> **The recommendation above is left exactly as written**, because this document records what was
+> recommended on the evidence available on 31 August and **it was sound on that evidence.**
+> Rewriting it would make a record of 31 August describe something that did not happen.
+>
+> **What was measured.** `seeded_key = 'epilepsy'` was set on the device's real condition row and
+> the afterwards picker rendered at 430×932 against the real **72 records**, before and after:
+> **0 differing pixels.** Same seven entries, same order, pixel-identical.
+>
+> ⭐ **Against a control that proves the null.** The same build also mapped three
+> normally-invisible triggers to `'epilepsy'`; the **beforehand** picker moved **13,199 pixels**
+> and those three jumped to positions 2, 3 and 4 — so the key WAS set and ordering WAS live,
+> **while the afterwards list moved nothing. 0 against 13,199, same build, same minute.**
+>
+> **The structural cause.** `kSeededRelevance['epilepsy']` **is** seed positions 1 to 12, and the
+> three-row bound displays positions 1 to 7 — so **all seven entries already visible are already
+> among the twelve.** Relevance can only reorder an **already-relevant head**, and with every
+> usage count at zero the tiebreak is **seed index**, which is the order already on screen.
+>
+> ⚠️ **This was the GENEROUS case, so the result generalises rather than being specific to this
+> device.** Usage is inert on the afterwards list, so relevance decided it **in isolation** with no
+> competing signal. **Any real usage history makes relevance matter LESS, not more.**
+>
+> ⛔ **So the second claim above — "fixes cold start and the afterwards list at once" — is false,
+> and the sequencing claim beneath it falls with it: the bound is NOT cutting a rankable list that
+> merely lacks a writer.** `seeded_key` gets no writer; `activeConditions()`, the `is_active`
+> writer, the deactivate control and the `DATA-MODEL.md:481` migration row are all retired.
+> `kSeededRelevance` and the comparator stay in place, **built, correct, tested and deliberately
+> unactivated.**
+>
+> **Full treatment: `STATUS.md`, session of 7 September 2026 (Windows), and the Change Register,
+> entry of the same date. The Register does not travel by `git push`.**
 
 ### Then the component vocabulary
 
