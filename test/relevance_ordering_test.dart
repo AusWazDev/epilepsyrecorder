@@ -64,9 +64,15 @@ void main() {
 
     test('3. ⛔ THERE IS NO TRIGGER MAPPING, and that is deliberate', () {
       expect(relevantValues(<String>{'epilepsy'}, kTriggerTable), isEmpty,
-          reason: 'the register sources the observation set for epilepsy and '
-              'sources nothing for the seven original triggers — inventing one '
-              'from the entry names is what the sourcing rule forbids');
+          reason: 'no trigger relevance can be sourced for EPILEPSY. '
+              'Restated 7 Sep 2026: this reason previously read "the register '
+              'sources nothing for the seven original triggers", which is still '
+              'true and stopped describing the vocabulary - 25 of the 32 trigger '
+              'seeds ARE sourced, per entry. The claim that holds is narrower and '
+              'does not depend on the count: the sourced trigger material is '
+              'migraine, panic and presyncope material, and none of it speaks to '
+              'epilepsy. Inventing a mapping from the entry names is what the '
+              'sourcing rule forbids');
     });
   });
 

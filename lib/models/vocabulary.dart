@@ -759,26 +759,90 @@ List<VocabularyEntry> catchAllLast(String table, List<VocabularyEntry> list) =>
 
 /// The relevance mapping for a seeded condition: which entries rank first.
 ///
-/// ## ⛔ SOURCED, NOT REASONED — and the source is already in the record
+/// ## 🔴 THE PROVENANCE CLAIM HERE WAS WRONG. CORRECTED 7 SEPTEMBER 2026.
 ///
-/// This is NOT a judgement about which entry names look epilepsy-ish. The
-/// twelve below are the **"Proposed epilepsy default"** recorded verbatim in
-/// the Change Register during the sourced field-set pass, which drew on Seizure
-/// Tracker's published field list, the two academic scoping reviews, Epilepsy
-/// Action and the Epilepsy Foundation.
+/// This comment read **"SOURCED, NOT REASONED — and the source is already in
+/// the record"**, and said the twelve *"drew on Seizure Tracker's published
+/// field list, the two academic scoping reviews, Epilepsy Action and the
+/// Epilepsy Foundation."* **Three of those four do not survive checking, in
+/// the Change Register's own words:**
 ///
-/// ⚠️ **AND THAT ENTRY FLAGS ITSELF: "NOT clinically validated — to be checked
-/// against the sourced sets".** No such check is recorded anywhere. So this
-/// mapping rests on a PROPOSAL that was explicitly marked as needing
-/// validation and never got it. It is the best sourced answer available and it
-/// is not a validated one — the same tier caveat every field set here carries.
+///   * **The two academic scoping reviews were never read.** The register's
+///     sourcing section states it verbatim: *"the two academic scoping reviews
+///     identified earlier were NOT accessible — PMC is behind a reCAPTCHA and
+///     the Seizure review is paywalled."*
+///   * **Epilepsy Action published no field set** to draw on — *"points to
+///     third-party diaries rather than publishing a field set."*
+///   * **Seizure Tracker and the Epilepsy Foundation WERE read** — but the
+///     section that used them produced **no observation list at all.** Its
+///     output was four event FIELDS (aura, rescue medication, awareness
+///     change, injury). Seizure Tracker's "post event" section is named in
+///     that pass and its contents are enumerated nowhere.
 ///
-/// ⛔ **THERE IS NO TRIGGER MAPPING, DELIBERATELY.** The register sources the
-/// observation set for epilepsy and sources NOTHING for the seven original
-/// triggers — the only recorded trigger relevance is the migraine assessment,
-/// which is about migraine. Inventing one from the entry names is exactly what
-/// the sourcing rule forbids, so `kTriggerTable` is absent here and the
-/// beforehand picker keeps usage-then-seed order.
+/// ## ⛔ AND THE ORDERING IS THE POINT: THE TWELVE PRECEDE THE SOURCING
+///
+/// They sit at **Register L267** and the field-set research at **L294** — the
+/// same day, in that order. The entry carrying them is titled *"Observation
+/// set **revision**"*, and it says of itself *"to be checked against the
+/// sourced sets in item 7."* ⭐ **So they were an INPUT AWAITING validation,
+/// not an output of it**, and "item 7" is a decision recording the METHOD to
+/// be used — *"field sets to be sourced, not invented"* — rather than a corpus
+/// that existed when it was cited.
+///
+/// ## ✅ WHAT THEY ACTUALLY ARE, WHICH IS A REAL PROVENANCE
+///
+/// **An editorial revision of the eleven observation values already shipped**
+/// in the app: the fatigue triplication collapsed to `Tired`, a few added.
+/// **Not invented from nothing, and not sourced either.** That is the honest
+/// description, and it is weaker than what this comment used to claim.
+///
+/// ## ⛔ NOT CLINICALLY VALIDATED, AND NO DOCUMENT CHECK CAN MAKE THEM SO
+///
+/// The register entry flags itself — *"NOT clinically validated"* — and **no
+/// check against the sourced sets is recorded anywhere.** ⚠️ **Nor could one
+/// succeed: the corpus it names disclaims that status in its own words** —
+/// *"it is NOT the peer-reviewed literature and must not be presented as
+/// such. Nothing here is clinically validated."* **A check against it could
+/// neither fail informatively nor confer validation.**
+///
+/// ⭐ **This needs an adviser or a fresh sourcing pass against post-ictal
+/// literature. The two named reviews remain the right sources and remain
+/// unobtained, which makes it a procurement question, not a research one.**
+///
+/// **It is still the best answer available and it is used only to ORDER, never
+/// to filter — so being wrong costs a worse ranking, not a hidden entry.**
+///
+/// ## ⛔ THERE IS NO TRIGGER MAPPING, DELIBERATELY — restated 7 September 2026
+///
+/// This read *"the register... sources NOTHING for the seven original
+/// triggers."* **Still literally true, and it stopped describing the
+/// vocabulary: `kSeedTriggers` now holds 32 entries, and 25 of them ARE
+/// sourced**, per entry, across three marked appends (two on 29 Aug 2026 from
+/// the migraine pass, one on 30 Aug 2026 for the presyncope prodrome), citing
+/// The Migraine Trust, ICHD-3, DSM-5, the Bárány Society consensus criteria
+/// and NINDS/MedlinePlus as a cross-check. Tiers are marked individually,
+/// including one seeded `INFERRED` and later upgraded.
+///
+/// **The seven that remain unsourced, named rather than left as a blanket
+/// claim:** `Stress`, `Poor sleep`, `Missed medication`, `Alcohol`,
+/// `Flashing lights`, `Illness`, `Unknown`. They predate the sourcing decision
+/// of 22 Aug 2026 and are original app content. The only pass to touch them
+/// did so as a gap COUNT — *"MER has 7 triggers against Seizure Tracker's 10"*
+/// — naming three absences without sourcing a set.
+///
+/// ⚠️ **So the absence of a trigger mapping now rests on a claim about a
+/// MINORITY of the list.** It stands anyway, for a reason that does not depend
+/// on the count: **the sourced trigger material is migraine, panic and
+/// presyncope material, and none of it says anything about which triggers
+/// matter for EPILEPSY.** A mapping keyed `'epilepsy'` cannot be built from
+/// sources about other conditions, and inventing one from the entry names is
+/// exactly what the sourcing rule forbids. `kTriggerTable` is therefore absent
+/// here and the beforehand picker keeps usage-then-seed order.
+///
+/// ⛔ **BOTH CLAIMS ABOVE EXPIRED WITHOUT ANYTHING NOTICING — one when the
+/// register recorded its own sources as unread, one when the vocabulary grew
+/// from 7 to 32. A provenance claim carries an expiry date; re-derive it from
+/// the register and the seed lists rather than carrying it forward.**
 const Map<String, Map<String, Set<String>>> kSeededRelevance =
     <String, Map<String, Set<String>>>{
   'epilepsy': <String, Set<String>>{
