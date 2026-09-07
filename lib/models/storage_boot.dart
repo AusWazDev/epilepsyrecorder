@@ -51,9 +51,15 @@ class StorageBoot {
   static Database? get database => _db;
 
   /// Test seam: lets a test install a chosen store and outcome.
+  ///
+  /// ⛔ FIXED 7 Sep 2026. `result` was accepted and NEVER ASSIGNED, so no
+  /// test could install an outcome and nothing could exercise the fallback
+  /// state. A seam that silently drops its argument is worse than no seam:
+  /// a test written against it passes while testing nothing.
   static void debugSet({EventStore? store, Database? db, MigrationOutcome? result}) {
     _store = store;
     _db = db;
+    outcome = result;
   }
 
   static void configureDatabaseFactory() {

@@ -109,6 +109,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _openingLatest = false;
   bool _loggedThisSession      = false; // an event was logged in this session
   bool _backupBannerDismissed  = false; // user dismissed it
+
+  /// Whether this launch fell back to the shared_preferences store.
+  ///
+  /// ⛔ READS THE BOOT OUTCOME DIRECTLY AND HOLDS NO STATE OF ITS OWN, which
+  /// is what makes it persist for the whole session. `StorageBoot.outcome` is
+  /// set once before anything renders and never changes again, so there is
+  /// nothing to invalidate and nothing to keep in sync.
+  ///
+  /// ⚠️ NULL is NOT a fallback. `outcome` is null when `init()` never ran -
+  /// every widget test that builds a screen without booting - and those must
+  /// not show a storage warning.
+  bool get _storageFellBack {
+    final o = StorageBoot.outcome;
+    return o != null && !o.succeeded;
+  }
   int  _eventsSinceBackup      = 0;
 
   /// An event in progress suppresses the banner too, but needs no flag: the
@@ -991,6 +1006,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
+
+                        // ── STORAGE FALLBACK WARNING ──
+                        //
+                        // ⛔ TOPMOST, AND IT STACKS. It is NOT a branch of the
+                        // exclusive chain below for the reason recorded on the
+                        // unsaved-write warning: that chain hides whichever
+                        // banner it displaces, including the active-event
+                        // banner, whose End button is the only way to end an
+                        // event on Android.
+                        //
+                        // It sits ABOVE the unsaved-write warning because it
+                        // explains why the list may look short, which is
+                        // context for anything else on the screen.
+                        //
+                        // ⚠️ NO DISMISS CONTROL AND NO ACTION BUTTON. Same
+                        // policy as _UnsavedEventsBanner: this is not advice
+                        // the user can judge and set aside. And unlike that
+                        // banner there is no retry to offer - the condition
+                        // clears only on relaunch, so offering a button would
+                        // imply an action that does not exist.
+                        if (_storageFellBack) ...[
+                          const _StorageFallbackBanner(),
+                          const SizedBox(height: 12),
+                        ],
                         // ── UNSAVED-WRITE WARNING ──
                         // Rendered ABOVE the banner chain below, not as another
                         // branch of it. The chain is exclusive, so putting this
@@ -1400,6 +1439,85 @@ class _UnsavedEventsBanner extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
               ),
               child: Text(retrying ? 'Saving…' : 'Retry'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown when this launch could not open its SQLite store.
+///
+/// ⛔ MODELLED ON [_UnsavedEventsBanner], WHOSE DOC COMMENT IS THE POLICY FOR
+/// THIS CLASS OF MESSAGE AND IS FOLLOWED HERE VERBATIM:
+///
+///   * **No dismiss control.** The condition is not advice the user can judge
+///     and set aside - it means records they have are not being shown.
+///   * **Amber rather than red.** The records are intact and recoverable, and
+///     the person reading this may have just logged a seizure. It needs to be
+///     noticed and acted on, not to frighten.
+///
+/// ⚠️ AND ONE DELIBERATE DEPARTURE: NO ACTION BUTTON. That banner offers
+/// Retry because a write can be retried and it clears itself the moment one
+/// succeeds. This condition clears only on RELAUNCH, so a button would imply
+/// an action that does not exist. The guidance is in the body text instead.
+///
+/// ## The wording, and the three things it is careful not to say
+///
+/// ⛔ **It does not say "lost".** The records are still in
+/// `epilepsy_event_records_v1` - the fallback store IS that key - so nothing
+/// has gone anywhere.
+///
+/// ⛔ **It does not claim records are MISSING.** On the observed failure the
+/// outcome carried `sourceEntries: 0`: the store never opened, so it never
+/// read them. "May look shorter than it is" is the honest form.
+///
+/// ⛔ **It does not imply an action that does not exist.** Closing and
+/// reopening is what usually resolves it; there is nothing to tap.
+class _StorageFallbackBanner extends StatelessWidget {
+  const _StorageFallbackBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFF9800), width: 0.5),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.storage_outlined,
+                  size: 20, color: Color(0xFFE65100)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'This launch could not open its stored records.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFE65100),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
+          Text(
+            'The app is running on an earlier storage system, so your '
+            'history may look shorter than it is. Nothing has been '
+            'deleted. Closing and reopening the app usually resolves it.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: Color(0xFFE65100),
             ),
           ),
         ],
