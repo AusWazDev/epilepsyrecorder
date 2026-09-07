@@ -203,6 +203,57 @@ flutter build appbundle --release
 flutter build ipa --release
 ```
 
+### ⛔ iOS BUILD HYGIENE — A SIMULATOR BUILD POISONS THE NEXT DEVICE BUILD
+
+⚠️ **`build/native_assets/ios/` is NOT keyed by device versus simulator — both are `ios`.** So
+`flutter build ios --simulator` followed by `flutter build ios --release` in the same tree hands
+the DEVICE app the **simulator-platform** native-assets frameworks, and the device build reuses
+them without rebuilding.
+
+**The symptom is not a build failure. It is silent data loss at runtime.**
+`objective_c.framework` fails `dlopen` with *"have 'iOS-simulator', need 'iOS'"*, that throws
+inside `StorageBoot.init()`'s **outer** `try`, and the app falls back to the shared_preferences
+store — **showing only the pre-migration records, with no user-facing indication.** Measured
+7 September 2026: **42 of 58 records visible, 16 invisible.**
+
+**1. AFTER ANY SIMULATOR BUILD, BEFORE BUILDING FOR DEVICE:**
+
+```bash
+flutter clean
+flutter pub get      # clean removes .dart_tool/package_config.json,
+                     # so --no-pub fails outright without this
+flutter build ios --release --no-pub
+```
+
+**2. BEFORE ANY DEVICE INSTALL, VERIFY THE MACH-O PLATFORM:**
+
+```bash
+APP=build/ios/iphoneos/Runner.app
+for FW in objective_c sqlite3; do
+  vtool -show-build "$APP/Frameworks/$FW.framework/$FW" | grep platform
+done
+# MUST report  platform IOS
+# IOSSIMULATOR means the build is bad — do NOT install it
+```
+
+`lipo -info` reporting `x86_64 arm64` on a **device** build is the giveaway: a device framework
+has no business carrying an x86_64 slice. Bundle size is a secondary tell — 27.8 MB correct
+against 29.7 MB poisoned.
+
+⛔ **DO NOT "FIX" IT WITH `lipo -extract arm64` PLUS RE-SIGNING. IT DOES NOT WORK.** The arm64
+slice is **itself a simulator arm64 slice**, and `dlopen` rejects on **platform, not
+architecture** — so extracting arm64 fails identically. Signature-only re-signing installs
+cleanly and still falls back. **Both were tried on 7 September 2026; both failed.**
+
+⭐ **There is NO separate signing defect.** With a clean cache Xcode signs these frameworks
+correctly with `TeamIdentifier=B7LWF6Z674` and **no manual signing step is needed at all.** The
+adhoc signature and the wrong platform were both symptoms of the one stale-cache cause.
+
+⚠️ **The fallback is silent.** Nothing in `lib/` reads `StorageBoot.outcome` or
+`StorageBoot.isSqlite`, so nothing surfaces it — the only signal leaves the device to Sentry
+(`main.dart:49`, issue `MEDICAL-EVENT-RECORDER-9`). **After any device install, confirm the
+record count on the home screen against the database before trusting the build.**
+
 ---
 
 ## Signing & Build Credentials
