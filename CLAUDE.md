@@ -353,7 +353,10 @@ record count on the home screen against the database before trusting the build.*
 *Added 8 September 2026. Both rules are here because a check PASSED and the result was
 wrong — that is the shared shape, and it is why neither is a style preference.*
 
-### ⛔ TEST HARNESS — ONE STATE PER PROCESS, OR THE MEASUREMENTS ARE FICTION
+### ⛔ TEST HARNESS — ONE PREFS-DEPENDENT TEST PER PROCESS, OR THE MEASUREMENTS ARE FICTION
+
+⚠️ **This heading read *"ONE STATE PER PROCESS"* until 8 September 2026 (evening). "State" was the
+wrong unit — see MUST 1 below.**
 
 ⚠️ **`SharedPreferences.setMockInitialValues` does NOT take effect once an instance
 exists earlier in the same file.** The plugin caches its instance for the life of the
@@ -376,9 +379,45 @@ numbers:**
 states that were meant to differ.** ⛔ **Had two of the seven happened to be genuinely
 similar, nothing would have flagged it.** Implausibility is not a check.
 
-**1. MUST: one preference state per test PROCESS.** One `setMockInitialValues` per file,
-called before any code touches `SharedPreferences`. More than one state means more than
-one file.
+**1. MUST: one prefs-dependent TEST per test PROCESS.** One `setMockInitialValues` per
+file, called before any code touches `SharedPreferences`.
+
+> ⛔ **CORRECTED 8 September 2026 (evening). This MUST read, until that date:**
+>
+> > *"**1. MUST: one preference state per test PROCESS.** One `setMockInitialValues` per
+> > file, called before any code touches `SharedPreferences`. More than one state means
+> > more than one file."*
+>
+> ⚠️ **THAT WAS WRITTEN FROM THE SYMPTOM, NOT THE MECHANISM, and it is narrower than the
+> truth in the one direction that matters.** *"More than one state means more than one
+> file"* implies the trigger is **how many STATES** a file uses. It is not. The trigger is
+> **how many TESTS in the file depend on prefs at all** — which the mechanism paragraph
+> above already says correctly: `setMockInitialValues` *"does NOT take effect once an
+> instance exists earlier in the same file."* **Once. Not once per state.**
+>
+> ⭐ **SO A FILE WITH TWO PREFS-DEPENDENT TESTS IS ALREADY BROKEN, EVEN IF BOTH SET THE
+> IDENTICAL STATE.** The second test does not get the state it asked for; it gets whatever
+> the first test left, and if the first test's body changed anything the second reads that
+> instead.
+>
+> **EVIDENCE, 8 September 2026 — six tests needed THREE files:**
+>
+>     rate tests 1-4 + record tests 5, 5b, ONE file   -> 5 and 5b read the count as -1
+>     rate tests 1-4 | record tests 5 + 5b, TWO files -> 5 passed, 5b STILL read -1
+>     rate 1-4 | record 5 | record 5b, THREE files    -> all six passed
+>
+> ⛔ **All three files set the SAME two prefs keys to the SAME values.** Under the old
+> wording that is "one state", so one file should have sufficed. **It took three.**
+>
+> ⚠️ **And note how it presented: not as a failure of the thing being tested, but as a
+> HELPER returning -1** — the "Total saved" figure could not be found, because the screen
+> was not showing what the test had asked for. **Two rounds were spent rewriting that
+> helper, including once by geometry, before the process boundary was the suspect.** The
+> rule was in this file the whole time and its own title pointed at states.
+
+**The practical test: count the tests in the file that touch `SharedPreferences` at all. If
+it is more than one, split the file** — do not count states, and do not reason about
+whether the states are the same.
 
 **2. MUST: prove the states differ before reading the numbers.** Assert that at least two
 measurements are NOT equal, as a negative control on the harness itself. A harness that

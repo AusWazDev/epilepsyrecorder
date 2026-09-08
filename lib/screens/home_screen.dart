@@ -75,12 +75,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Map<String, dynamic>? _activeEvent;
   bool _loaded = false;
   bool _buttonFlash = false;
+
+  /// ⛔ THE FLASH IS RATE-BOUNDED. AUDIT.md §13(ah).
+  ///
+  /// `_buttonFlash` swaps this button's fill to white, a **76.4% of full-scale
+  /// luminance change** against `MERColours.alert`. Measured 8 Sep 2026: with
+  /// only the 200 ms hold below, taps spaced 200-333 ms apart produced **four
+  /// onsets per second**, over WCAG 2.3.1's three-per-second threshold. Flutter's
+  /// own `kDoubleTapTimeout` is **300 ms**, inside that band.
+  ///
+  /// ⭐ 500 ms, not the 334 ms that merely satisfies the criterion. This is an
+  /// epilepsy app and one millisecond from failing is not a margin.
+  bool _flashOnCooldown = false;
+  static const Duration _kFlashHold   = Duration(milliseconds: 200);
+  static const Duration _kMinFlashGap = Duration(milliseconds: 500);
   bool _notificationsAllowed = true;
   bool _showPreviewsAlways   = true;
 
   /// Decorative flash on the record button. A Timer, not an awaited delay, so
   /// it cannot sit in the path between a tap and the record being written.
   Timer? _flashTimer;
+  Timer? _flashCooldown;
 
   // ── UNSAVED-WRITE WARNING STATE ──
   // Set when a write failed and the list on screen is ahead of storage. Loaded
@@ -239,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     _flashTimer?.cancel();
+    _flashCooldown?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -557,25 +573,55 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       detailsCompleted: false,
     );
 
+    // ⛔ THE FLASH IS GATED. THE RECORD IS NOT. Everything above this line
+    // has already run, so a tap ALWAYS creates a record at full rate no matter
+    // what the display does.
+    //
+    // Three cases, and the third is forced by the mechanism rather than chosen:
+    //   already lit   -> EXTEND the white, no new onset. Taps this close were
+    //                    always safe: they hold the fill on rather than strobe.
+    //   lit recently  -> IGNORED for display. There is no active flash to
+    //                    extend, so "extend" is not an available option here.
+    //   otherwise     -> a new ONSET, and the cooldown starts.
+    final extending = _buttonFlash;
+    final mayOnset   = extending || !_flashOnCooldown;
+
     setState(() {
       _records.insert(0, rec);
       _loggedThisSession = true;
-      _buttonFlash       = true;
+      if (mayOnset) _buttonFlash = true;
     });
 
     // Started, deliberately NOT awaited: the confirmation must not wait on
     // storage. A failure raises the warning banner instead of being silent.
     unawaited(_persist());
 
+    // ⭐ Every tap is still confirmed, at every rate: this snackbar is not
+    // gated, so suppressing a flash never costs the user their feedback.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Event recorded')),
     );
 
-    // Decorative only. Restarted on each tap so a run of taps keeps flashing.
-    _flashTimer?.cancel();
-    _flashTimer = Timer(const Duration(milliseconds: 200), () {
-      if (mounted) setState(() => _buttonFlash = false);
-    });
+    // Decorative only.
+    //
+    // ⚠️ THIS COMMENT READ *"Restarted on each tap so a run of taps keeps
+    // flashing"* UNTIL 8 SEPTEMBER 2026, AND THAT IS NO LONGER TRUE. A run of
+    // taps now keeps the button LIT, and re-flashes at most every 500 ms. The
+    // old behaviour was the defect: see AUDIT.md §13(ah).
+    if (mayOnset) {
+      _flashTimer?.cancel();
+      _flashTimer = Timer(_kFlashHold, () {
+        if (mounted) setState(() => _buttonFlash = false);
+      });
+
+      // Only a genuine ONSET starts the cooldown. An extension must not push
+      // it forward, or a sustained run would defer the next onset for ever.
+      if (!extending) {
+        _flashOnCooldown = true;
+        _flashCooldown?.cancel();
+        _flashCooldown = Timer(_kMinFlashGap, () => _flashOnCooldown = false);
+      }
+    }
   }
 
   // ── RECORD WITH DETAILS ──

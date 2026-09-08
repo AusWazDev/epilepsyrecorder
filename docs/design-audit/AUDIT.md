@@ -1537,6 +1537,34 @@ CONTROL, MediaQuery present : 4      known-absent probe : 0
 repeating animation and nothing longer than 150 ms, there is very little motion to reduce.** It is
 a gap in principle, not a gap a user would feel today.
 
+⛔ **AND WHY IT WAS MISSED IS A TAXONOMY FAILURE, NOT A CONTROL FAILURE — recorded 8 September
+2026, because the distinction changes the remedy.**
+
+**Every control in this search fired.** `AnimatedContainer = 5` proved the reader reached the
+widgets. `sqflite = 3` proved `pubspec` was read. The known-absent probe returned zero. **Eleven
+`repeat` hits and six `reverse` hits were each adjudicated individually rather than counted.**
+⭐ **Nothing about the apparatus was wrong. The FRAME was wrong.**
+
+**The search enumerated animation CONSTRUCTS BY TYPE** — `AnimatedContainer`,
+`AnimationController`, `Tween`, `Lottie`, `.repeat(`, animation packages, GIF assets. **WCAG 2.3.1
+is not about constructs. It is about LUMINANCE OVER TIME.** A `bool` swapped inside a
+`backgroundColor` expression, driven by a `Timer` this search did examine and classified by the
+*other* thing that timer drives, is a 76.4%-of-full-scale luminance change at up to five per
+second — and it is not an animation widget, so a type-based enumeration cannot see it.
+
+⭐ **THE TRANSFERABLE RULE: SEARCH THE CRITERION, NOT THE IMPLEMENTATION.** The criterion is
+"luminance changing at rate", so the search should have enumerated **every expression that can
+change a colour over time** — ternaries on a `bool`, `WidgetStateColor.resolveWith`, `setState`
+touching any colour field, and timers by *what they set* rather than by their type. §13(t) found
+the same shape from the other direction: the colour-alone search found 4 conditional colours until
+it was run multiline, and then found 14.
+
+⚠️ **The scope of this search was set before the criterion was read carefully**, and that is the
+correctable part. ⛔ **A control can only tell you your instrument works on the corpus you pointed
+it at. It cannot tell you that you pointed it at the wrong corpus** — which is the same lesson as
+the declared-versus-derived scope class this document already records, arriving in a criterion set
+rather than in a script.
+
 ---
 
 ### (w) THE PALETTE IS NOT IN THE PALETTE
@@ -2018,6 +2046,89 @@ run-of-taps case was designed for rather than overlooked.**
 repeating animation, no controller, no Lottie, no GIF, no animation package, and the 1 Hz
 `_ActiveEventBanner` timer changes no colour. **What (v) got wrong was the scope of its search, not
 any of its individual results.**
+
+✅ **FIXED 8 September 2026 — BOUNDED, NOT REMOVED. The finding above stands as written.**
+
+**The flash stays.** It is deliberate feedback on the one-tap capture path. What changed is that a
+flash ONSET may now begin no sooner than **500 ms** after the previous onset. **The 200 ms hold is
+unchanged, the colours are unchanged, and the appearance of a single flash is unchanged.**
+
+**BEFORE and AFTER, onsets per second, swept over every tap interval from 10 to 1000 ms:**
+
+| Tap interval | BEFORE | AFTER | over 3/sec before | over 3/sec after |
+|---|---|---|---|---|
+| 150 ms | 1 | 1 | no | no |
+| **250 ms** | **4** | **2** | ⛔ **YES** | no |
+| **300 ms** | **4** | **2** | ⛔ **YES** | no |
+| 400 ms | 3 | 2 | no | no |
+| 600 ms | 2 | 2 | no | no |
+| **worst case, any interval** | **5 onsets/sec at 240 ms** | **2 onsets/sec** | ⛔ **OVER** | **compliant** |
+
+⭐ **THE AFTER FIGURE IS THE POINT: no tap interval reaches four onsets in a second any more.**
+
+⛔ **500 ms, NOT the 334 ms that merely satisfies the criterion — and this is recorded as a MARGIN
+DECISION, not a correctness one, because a mutation at 334 ms passes every test.** One millisecond
+from failing is not a margin in an epilepsy app.
+
+**WHAT SETTLED IT, AND WHAT WAS NOT NEEDED.** ⭐ **Flutter's own `kDoubleTapTimeout` is 300 ms** —
+read from `flutter/packages/flutter/lib/src/gestures/constants.dart`, where its own comment says
+it is *"the maximum time from the start of the first tap to the start of the second tap in a
+double-tap gesture."* **300 ms falls inside the original 200-333 ms band.** So the interval the
+framework itself treats as one deliberate double-tap was an interval that produced four onsets per
+second.
+
+⛔ **That is why the CSV export of the 72 records' millisecond timestamps was NOT needed.** The
+export was identified as the way to measure how fast this user actually taps. **The platform's own
+model of a double-tap lands in the band regardless of what any one user does**, so the question
+stopped being empirical. ⭐ **A measurement that would have settled it was available and was made
+unnecessary by a cheaper one that settled it more generally.**
+
+⚠️ **THE POLARITY FINDING, AND IT IS THE REASON THIS SURVIVED VISUAL TESTING.** The button is
+**mostly WHITE with brief dark notches**, not mostly-orange with bright pulses. At 250 ms it was
+white for 200 ms and alert for 50 — three frames at 60 Hz:
+
+    BEFORE  250 ms  4 taps  4 onsets/sec  ⛔ OVER 3/sec
+            WWWWWWWWWWWWWWWWWWWWaaaaaWWWWWWWWWWWWWWWWWWWWaaaaaWWWWWWWWWWWWWWWWWWWWaaaaaWWWWWWWWWWWWWWWWWWWWaaaaa
+     AFTER  250 ms  4 taps  2 onsets/sec  compliant
+            WWWWWWWWWWWWWWWWWWWWaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaWWWWWWWWWWWWWWWWWWWWaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+⛔ **ANYONE TESTING THIS BY EYE WOULD LIKELY HAVE SAID IT DOES NOT STROBE.** A mostly-white button
+with a 50 ms interruption does not look like a flashing orange button, which is what "flash" primes
+a tester to look for. ⭐ **The luminance test caught what the visual impression would not — the same
+shape as the storage-fallback banner, whose copy and layout were confirmed on a device render while
+its contrast sat at 3.46:1 against a 4.5:1 requirement (§13(s)).** **Looking at it is not measuring
+it, in both directions: it can pass what should fail, and it can seem to pass what does fail.**
+
+⭐ **AND THE THIRD CASE WAS FORCED BY THE MECHANISM RATHER THAN CHOSEN.** The question of what a
+suppressed tap should do — extend the current white, or be ignored — has only one available answer:
+
+| Tap arrives | State | What happens |
+|---|---|---|
+| within 200 ms of an onset | button is **WHITE** | **EXTENDS** the white. No new onset. These taps were always safe — they hold the fill on rather than strobe |
+| 200-500 ms after an onset | button is **ALERT** | **IGNORED for display.** ⛔ There is no active flash to extend, so "extend" is not an available option |
+| 500 ms or more after an onset | either | a new **ONSET**, and the cooldown restarts |
+
+**An extension deliberately does NOT push the cooldown forward**, or a sustained run of fast taps
+would defer the next onset indefinitely.
+
+⛔ **THE RECORD IS NEVER GATED, AND THAT IS TESTED SEPARATELY BECAUSE IT OUTRANKS THE FIX.** Every
+tap creates a record at every interval. **Measured at 150 ms: 7 taps, 7 records, 1 onset.** At
+250 ms: **4 taps, 4 records, 2 onsets** — so onsets really were suppressed there, which is what
+stops that check passing vacuously. ⭐ **And the mutation that reverts the gate leaves both record
+counts unchanged**, proving the two paths are independent in both directions.
+
+**VERIFIED, mutation-proven** — `test/flash_rate_bound_test.dart`,
+`test/flash_records_never_gated_test.dart`, `test/flash_records_never_gated_250_test.dart`.
+Reverting the gate fails exactly tests 1, 2 and 5b and returns 250 ms and 300 ms to four onsets.
+⭐ **The onset counter samples the button's ACTUAL PAINTED FILL frame by frame and counts
+alert-to-white edges** — it does not read the private flag and does not trust the timer.
+
+⚠️ **THREE TEST FILES FOR SIX TESTS, and the reason is the rule in `CLAUDE.md`.** The two tests
+that read the app's own "Total saved" figure depend on `SharedPreferences` state, and
+`setMockInitialValues` does not take effect once an instance exists earlier in the same file. **Run
+alongside the rate tests they returned -1 for the count; run together as a pair, the second still
+returned -1.** ⛔ **The rule is not "one file per concern" — it is ONE PREFS STATE PER PROCESS, and
+a file with two prefs-dependent tests already breaks it.**
 
 ---
 
