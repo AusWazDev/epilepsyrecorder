@@ -1320,6 +1320,37 @@ procedure rather than content:**
 | ⛔ **`adb` is not on `PATH`, and its location is recorded nowhere** | **0 hits** for `platform-tools` or `adb.exe` across `STATUS.md`, `CLAUDE.md` and `captures/INDEX.md`; control `adb shell` present in `INDEX.md`, known-absent probe 0. **Every recorded capture command begins `adb shell …` and none of them runs as written.** It is at `C:\Users\wjl25\AppData\Local\Android\Sdk\platform-tools\adb.exe`. ⭐ **A procedure recorded in full, that cannot be executed from the record** |
 | ⚠️ **A superseded device claim still reads as current** | `STATUS.md:1693`, session of **26 April 2026**: *"MER will not render in portrait on the Teclast P30… Cause unknown and deliberately not guessed."* **Superseded** — the 30 August and 7 September passes both forced portrait successfully, and `INDEX.md` records *"Orientation: Portrait, forced."* ⛔ **Dated, therefore resolvable — but only by someone who checks the date rather than the claim** |
 
+➕ **INSTANCE 12, 8 September 2026 (evening) — and it is a DISTINCT SUB-SHAPE, not another
+instance of distance.**
+
+| # | The knowledge | Where it sat | What happened anyway |
+|---|---|---|---|
+| 12 | `setMockInitialValues` *"does NOT take effect once an instance exists earlier in the same file"* — **once, not once per state** | **`CLAUDE.md`'s own test-harness rule, in the rule's FIRST PARAGRAPH** | the same rule's **heading** said *"ONE STATE PER PROCESS"* and its **MUST 1** said *"more than one state means more than one file"*. Six tests needed three files, all setting the identical state |
+
+⛔ **EVERY OTHER INSTANCE IN THIS TABLE IS A DISTANCE PROBLEM — the fact was in another file, another
+section, or twenty lines away, and was not read. THIS ONE WAS READ.** The rule was consulted; the
+mechanism paragraph was correct and correctly understood. **What misled was the rule's own SUMMARY
+of itself.**
+
+⭐ **A heading and a numbered MUST are what a reader uses to decide whether a rule applies to their
+situation.** Both pointed at *how many STATES* a file uses. The situation was *how many TESTS
+depend on prefs at all* — a file with two prefs-dependent tests setting the SAME state is already
+broken, which the summary excluded by its own wording. **So the rule was consulted, believed, and
+gave the wrong answer, while the paragraph above the wrong answer held the right one.**
+
+⚠️ **AND IT PRESENTED AS SOMETHING ELSE ENTIRELY, which is why it cost two rounds.** Not a test
+failure and not a wrong measurement — **a helper function returning `-1`**, because the screen the
+test expected was not the screen on display. **The helper was rewritten twice, once by geometry,
+before the process boundary became the suspect.** A diagnostic in a separate file then printed the
+expected text immediately, which is what pointed at the file boundary rather than the finder.
+
+⭐ **THE SUB-SHAPE, STATED SO IT IS RECOGNISABLE NEXT TIME: a rule can be undermined by its own
+summary.** Distance is not the only failure mode for written knowledge — **compression is another,
+and it is harder to spot, because the summary is exactly the part a reader trusts to tell them
+whether to read the rest.** ⛔ **Practical form: when a rule states a mechanism and then states a
+countable condition, check that the condition follows from the mechanism.** Here it did not: *"once
+an instance exists"* does not license *"more than one state means more than one file"*.
+
 ### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
 
 **Code-verified, 8 Sep 2026.** Every pair derived by reading the source and pairing each
@@ -2182,3 +2213,414 @@ which is how the divergence was noticed and is also the correct behaviour for a 
 targets come from `MaterialTapTargetSize.padded`, which `theme_data.dart` selects for Android,
 Fuchsia and iOS and **not** for Windows. **The desktop build's discard buttons are unmeasured, and
 this table does not describe them.**
+
+---
+
+### (aj) 🔴 THE CAPTURE INSTRUMENT PRODUCED A FALSE FINDING WITH CORROBORATION
+
+**8 September 2026.** ⛔ **This is a finding about the audit's own instrument, not about the app,
+and it is the most serious of those recorded so far** — because unlike a declared scope or a
+mis-framed search, **this one produced a specific, plausible, corroborated defect that does not
+exist.**
+
+**WHAT ALMOST SHIPPED:** that the walkthrough has **no navigation controls on Windows** — no
+`Next`, no `Skip`, no page indicators — so **a first-run Windows user cannot get past step 1 of 5**,
+and since `walkthroughSeenVersion` is written only by the walkthrough's own completion handler,
+**the app is unusable on a fresh Windows profile.**
+
+⭐ **IT WAS CORROBORATED FOUR WAYS, AND EVERY ONE OF THEM AGREED:**
+
+| Corroboration | What it said |
+|---|---|
+| A row-scan of the frame | **no non-background pixel anywhere below y=400** |
+| The same scan at a LARGER window | still nothing but a 3-pixel edge artefact |
+| A pixel-sampling probe | app-bar navy at the top, scaffold grey below — *"consistent with MER"* |
+| **A causal story that fit** | there is **no Windows app data on this machine** — the MSIX install from 25 Aug has 2 files and no database, **exactly what a first run that never completed looks like** |
+
+⛔ **ALL OF IT WAS WRONG, AND FROM TWO SEPARATE FAULTS IN ONE INSTRUMENT:**
+
+**Fault 1 — a FALSE NEGATIVE.** The window had been sized to 882 px tall against an 816 px working
+area (`GetWindowRect` reported `T=-14`), so the client area's bottom sat at screen y=861 —
+**below the visible desktop.** `Graphics.CopyFromScreen` photographed the desktop there. **The
+navigation was rendering the whole time, off-screen.**
+
+**Fault 2 — a FALSE POSITIVE, minutes later.** `SetForegroundWindow` **failed silently**, so the
+next capture was **the user's Gmail inbox**. The row-scan then reported *"76 rows of real content
+below y=400"* — a number that looked exactly like the refutation of Fault 1. ⛔ **Had that frame
+not been read, the sequence would have run: defect found, defect confirmed, defect disproved, all
+three from photographs of things that were not the app.**
+
+⭐ **THE SAME INSTRUMENT GAVE A FALSE NEGATIVE AND A FALSE POSITIVE WITHIN MINUTES, ON THE SAME
+QUESTION.** Not a biased instrument — an unreliable one, wrong in whichever direction the desktop
+happened to be arranged.
+
+⛔ **WHAT CAUGHT IT WAS READING THE FRAME. NO CHECK CAUGHT IT.** The row-scan confirmed the false
+finding twice, with counts that looked like data. The pixel probe agreed. **Both were measuring
+faithfully; they were measuring the wrong pixels.**
+
+⚠️ **THE TRANSFERABLE RULE, AND IT IS THE SAME SHAPE AS §13(v)'s TAXONOMY FAILURE.** `CopyFromScreen`
+does not measure a window. **It measures the screen region where a window is** — a PROXY, standing
+in for the thing, and identical to it only while nothing is on top and nothing is off-screen.
+⭐ **An instrument that measures a proxy fails in ways its own controls cannot detect, because the
+controls run on the proxy too.** (v) enumerated animation constructs when the criterion was
+luminance over time; this photographed screen regions when the subject was a window. **Both had
+working controls pointed at the wrong thing.**
+
+✅ **RESOLVED THE SAME DAY, AND THE REPLACEMENT WAS PROVEN BEFORE ANY CAPTURE WAS KEPT.**
+`PrintWindow` with `PW_RENDERFULLCONTENT`, into a **window-rect** bitmap, then **cropped to the
+client rect**:
+
+| Proof | Result |
+|---|---|
+| Two consecutive captures of an unchanged window | **byte-identical md5** — `6C9ADEE5…` |
+| **The same window FULLY OCCLUDED by a topmost form covering the whole screen** | **BYTE-IDENTICAL md5 to the unoccluded capture** |
+| Captured while MER was **not frontmost** | succeeded; `GetForegroundWindow` confirmed it was not |
+
+⚠️ **Three method faults were found and fixed getting there, each recorded because each would have
+corrupted captures silently:** `PrintWindow` renders the **whole window** at 0,0, so a
+client-sized bitmap clips the bottom-right and includes the title bar; the **title bar repaints on
+focus change**, so window-rect captures of an unchanged window differ — cropping to the client area
+removes it and restores determinism; and in the PowerShell helper **`$h = Get-MerWindow` silently
+overwrote the `$H` height parameter, because PowerShell variables are case-insensitive**, producing
+`requested_logical=1012x62852502` and a resize to an unintended size.
+
+⛔ **AND THE FRAME CHECK VERIFIES IDENTITY, NOT COMPLETENESS. THE TWO ARE DIFFERENT GUARANTEES AND
+NEITHER SUBSTITUTES FOR THE OTHER.** A four-property check — a ≥30-row contiguous `#0D4F82`
+app-bar band, `#F5F8FB` dominating the body, fewer than 900 distinct colours in a sample, and all
+three theme colours present — was **demonstrated failing** before being trusted:
+
+| Frame | check |
+|---|---|
+| real MER | **pass** — 64 app-bar rows, bgFrac 0.631, 88 distinct |
+| **the Gmail frame that fooled the old probe** | ⛔ **FAIL** — 0 app-bar rows, bgFrac 0, **1317 distinct colours** |
+| a magenta form filling the screen | ⛔ **FAIL** |
+| a desktop-only region | ⛔ **FAIL** |
+| **the two mis-sized MER frames** | ⚠️ **PASS — and correctly, because they WERE MER, merely clipped** |
+
+⭐ **So this check would NOT have caught Fault 1.** Completeness is guaranteed by the METHOD
+instead — `PrintWindow` plus a `GetClientRect` crop is structurally independent of screen position,
+which is what the occlusion proof establishes. ⛔ **The old check — "app-bar navy at the top and
+grey below" — passed on Gmail, and is retired.**
+
+---
+
+### (ak) THE APP REQUESTS A WINDOW LARGER THAN A COMMON LAPTOP DISPLAY CAN SHOW
+
+**Code-verified and measured, 8 September 2026.** `windows/runner/main.cpp`:
+
+```cpp
+Win32Window::Size size(1280, 720);
+```
+
+⚠️ **That is LOGICAL**, and `win32_window.cpp:134-135` scales it by `dpi / 96.0` before
+`CreateWindow`. On this machine:
+
+| | |
+|---|---|
+| Monitor DPI | **120**, so scale **1.25** |
+| Requested window | 1280x720 logical = **1600x900 PHYSICAL** |
+| Physical display | **1536x864** — working area **1536x816** |
+| ⛔ **Fits?** | **No, in either dimension** |
+| What the OS granted | **1280x720 physical = 1012x546 LOGICAL** |
+
+⭐ **So the app opens 21% narrower and 24% shorter, in logical terms, than its own source asks
+for** — and nothing in the app knows, because there are no width or height breakpoints anywhere
+(§13(aa): `MediaQuery...size.width` 0 hits, width-threshold branching 0 hits).
+
+⚠️ **1280x720 logical is not an unreasonable request** — it is a common default. **What makes it
+unreachable here is DPI scaling**, which is the ordinary configuration on a laptop, not an exotic
+one. ⭐ **A 1536x864 panel at 125% is a mainstream Windows laptop**, and on it this app can never
+open at the size it requests.
+
+✅ **AND THE CLAMP IS GRACEFUL — measured, not assumed, and this is the part §13(aj) nearly got
+wrong.** At the granted 1012x546 logical, and at the machine's maximum 1216x622, the walkthrough's
+`Next`, `Skip` and page indicators are all **present in the tree and fully inside the window**,
+with **zero elements overflowing** — verified in
+`test/windows_walkthrough_layout_test.dart` under `TargetPlatform.windows`.
+
+⭐ **The control is what makes that mean something: the SAME test under `TargetPlatform.android` at
+the SAME two sizes agrees exactly.** So the clamp is not a Windows problem, and §13(aj)'s
+walkthrough concern is **WITHDRAWN in full**. The only platform difference measured is the button's
+own height — `nextTop` 494 on Windows against 478 on Android, both ending at 526 — which is
+`shrinkWrap` giving a **32 px** control where `padded` gives **48 px**, exactly as §13(y) predicts.
+
+⚠️ **UNMEASURED, AND NOT GUESSED: what happens at a genuinely wide desktop size.** The maximum
+logical client this display allows is about **1216x622**, so **1920-wide cannot be captured or
+measured on this machine at all.** §13(aa)'s 3.6x width split was measured in a widget test at
+1920 rather than on a real window, and that distinction is deliberate.
+
+---
+
+### (al) 🔴 ON WINDOWS THE LAYOUT IS 1.25x WIDER THAN THE WINDOW — CONTENT IS OFFSET RIGHT AND CLIPPED
+
+⭐ **THE FIRST FINDINGS IN THIS DOCUMENT THAT REST ON REAL WINDOWS CAPTURES.** Not 1x Android
+proxies, not widget tests: `PrintWindow(PW_RENDERFULLCONTENT)` into a window-rect bitmap cropped
+by `GetClientRect`, the method proven occlusion-independent in §13(aj). **Four frames, each
+content-checked, in `captures/`.**
+
+**MEASURED at four window widths, 8 September 2026, at the machine's real 125% scaling:**
+
+| Client | Content | Left margin | Right margin | Centred would be |
+|---|---|---|---|---|
+| 876 px | 650 | 225 | **2** | 113 |
+| 1124 px | 650 | 380 | 94 | 237 |
+| 1265 px | 650 | 468 | 147 | 307 |
+| 1520 px | 649 | 628 | 243 | 435 |
+
+⛔ **THE CAUSE, AND IT IS ONE CAUSE FOR TWO SYMPTOMS.** The app **lays out at a width equal to the
+PHYSICAL pixel count while rendering at the DPI scale factor**, so the layout is **1.25x wider than
+the window it is drawn into**. Content centred inside that over-wide layout is pushed right, and
+the right-hand portion falls outside the client area entirely. **The offset and the clipping are
+the same defect.**
+
+**The model fits every measurement to within 3 px** — content centred as if the viewport's logical
+width equalled its physical pixel count:
+
+    876 px  -> predicted 222.5, measured 225      1265 px -> predicted 465.6, measured 468
+
+✅ **SETTLED BY A PREDICTION THAT COULD HAVE FAILED IN A SPECIFIC DIRECTION.** Relaunched
+**DPI-unaware** — per-process via `__COMPAT_LAYER=DPIUNAWARE`, so **no system setting was written**
+— which makes logical and physical identical. The model predicted the offset would **vanish**:
+
+| At `GetDpiForWindow` = 96 | Content | Left | Right | Centred? |
+|---|---|---|---|---|
+| client 875 px | 518 | **178** | **179** | ✅ |
+| client 1264 px | 519 | **372** | **373** | ✅ |
+
+⭐ **AND THE WIDGET-TEST CONTROL CLOSES IT: the two instruments agree EXACTLY at DPR 1.0 and
+disagree only at 1.25.**
+
+| | widget test | real capture |
+|---|---|---|
+| DPR 1.0, 875 px | 177.5 | **178** ✅ |
+| DPR 1.0, 1264 px | 372 | **372** ✅ |
+| DPR 1.25, 1265 px | 307.5 px equivalent | **468** ⛔ |
+| DPR 1.25, 876 px | 113 px equivalent | **225** ⛔ |
+
+⛔ **So this is a REAL, DPI-DEPENDENT DEFECT, not a capture artefact** — and two further checks rule
+the artefact out independently: the offset is **invariant to window position on screen** (468 /
+467 / 468 at x=20, 250, 0), and cropped and uncropped captures agree.
+
+⚠️ **THE REACH IS THE SERIOUS PART. 125% is the DEFAULT on most modern Windows laptops** — this
+machine is a 1536x864 panel at 125%, an entirely ordinary configuration. **On any Windows display
+scaled above 100%, MER's content is offset right and clipped on the right.** The app ships on the
+Microsoft Store.
+
+⭐ **WHAT TIPPED THE READING, AND IT IS THE REASON THIS WAS NOT LEFT OPEN: the CLIPPING.** A
+compositing artefact shifts a frame; it does not clip content against a boundary **the layout
+believes is there**. At 876 px the right margin is **2 px** — content flush against the edge. That
+is a layout terminating where it thinks the viewport ends, and the viewport it thinks it has is the
+wrong one.
+
+---
+
+### (am) 🔴 CONTENT CLIPS AT NARROW WIDTHS, AND THERE IS NO FLOOR
+
+**Seen directly in real Windows captures, 8 September 2026.**
+
+| Width | What is lost |
+|---|---|
+| **400 logical** | the stats card's fourth column is **cut mid-word** — the `R` of `Referrals` visible, the rest gone |
+| **94 logical** | **`Record Event` breaks as `Recor / d / Event`** — a mid-word break in the PRIMARY ACTION's label — and the stats row is four numbers in unreadable two-letter fragments |
+
+⛔ **MER ENFORCES NO MINIMUM WINDOW SIZE.** `WM_GETMINMAXINFO` and `MinTrackSize`: **0 hits** across
+`windows/runner/`; control `Win32Window` = **21 hits**, so the search was live. **The only floor is
+the OS's own**, measured by asking for smaller and smaller widths:
+
+    requested 400 -> granted 400.0     requested 150 -> granted 150.4
+    requested 300 -> granted 300.8     requested 100 -> granted 100.0
+    requested 200 -> granted 199.2     requested  60 -> granted  94.4  (clamped by Windows)
+
+⭐ **94.4 logical is reachable in ONE DRAG**, from a window whose default the OS already clamps
+(§13(ak)).
+
+⚠️ **A VIEW, MARKED AS A VIEW: this outranks §13(al)'s offset.** The offset **misplaces readable
+content**; this **loses it**. A user who cannot read `Referrals` cannot know what the number means,
+and a primary action labelled `Recor d Event` is not a label. ⛔ **AND THE COUNTERWEIGHT: "reachable"
+is not "likely".** Nobody drags a window to 94 px on purpose, there is **no usage evidence either
+way** (§13(u): no telemetry of any kind), and a user who does it can drag back.
+
+⛔ **THE DESIGN QUESTION, RECORDED AND NOT ANSWERED: prevent, or support.**
+
+| | |
+|---|---|
+| **Prevent** | a minimum window size in `windows/runner/` makes 400 unreachable. **Small** — one `WM_GETMINMAXINFO` handler |
+| **Support** | responsive layout makes narrow widths work. **Not small** — and §13(aa) records that there are no breakpoints anywhere to build on |
+
+**DESIGN-TRACK, and it belongs with the component vocabulary** rather than ahead of it.
+
+---
+
+### (an) THE WIDTH STRATEGY PRODUCES BOTH FAILURES FROM ONE ABSENCE
+
+**8 September 2026.** ⭐ **§13(aa) reaching its conclusion, and it is not restated here** — 3 screens
+capped at `maxWidth: 520`, 9 uncapped, **no width breakpoints anywhere**.
+
+⛔ **ONE ABSENCE, TWO OPPOSITE FAILURES.** A wide window **strands** capped content in an empty
+field — §13(ac) measured 34.9% void on each side at 800 logical, and the desktop captures show the
+same shape at 1216. A narrow window **clips** it — §13(am). **There is no width at which a single
+fixed cap is right for both, which is what a breakpoint is for.**
+
+⚠️ **AND THE APP BAR ADVERTISES THE WIDTH THE CONTENT IGNORES.** The `#0D4F82` band spans the full
+client width at every size measured — 40 to 69 contiguous rows at widths from 118 px to 1520 px —
+while the body sits in a 520-logical column. ⭐ **The chrome tells the user how wide the window is;
+the content behaves as though it were on a phone.**
+
+---
+
+### (ao) THE TABLET'S VOID READING DOES NOT TRANSFER TO DESKTOP
+
+**8 September 2026.** ⛔ **§13(ac) recorded a reading that the void BELOW home's content may be the
+more serious half, from measurements at 430x932 and 800x1280. THAT READING DOES NOT DESCRIBE
+DESKTOP, and this records the limit rather than withdrawing it.**
+
+**At the OS-granted 546 logical height there is no bottom void** — the captures show content
+running from the app bar to near the lower edge, with `Need Help with MER?` close to the bottom.
+**The window is short, not tall.**
+
+⭐ **The desktop constraint is HORIZONTAL, not vertical**, which is the opposite of the tablet's.
+§13(ac)'s figures were 876 and 1224 logical **tall**; desktop gets **546**, and the machine's
+maximum is **622** (§13(ak)).
+
+⛔ **§7 AND §13(e) ARE NOT SUPERSEDED. Both stand.** §7's recommendation to anchor rather than
+centre still addresses the tablet case it was made about. ⚠️ **What is recorded here is that a
+reading taken at one aspect ratio was carried toward a platform with a different one**, and the
+carrying was not warranted.
+
+---
+
+### (ap) THREE SCREENS WERE NOT CAPTURED, AND THE REASON IS §13(z)
+
+**8 September 2026.** `history`, `form` and the discard dialog were **not** captured on Windows.
+
+⛔ **DESKTOP HAS NO `uiautomator` EQUIVALENT.** Every tablet capture was confirmed against the
+accessibility tree before the shot — that is how the state was known. On Windows the only route
+was pixel-hunting: the app bar's top-right band was searched for a menu glyph and returned
+**0 white-ish pixels**, so the navigation could not be located reliably. ⭐ **After §13(aj), guessing
+at coordinates was not an acceptable method.**
+
+⚠️ **KEYBOARD NAVIGATION IS UNTESTED, NOT A FINDING.** `TAB` produced **byte-identical md5s** before
+and after — `6C9ADEE5E747` both times — which would suggest no focus indication. ⛔ **But there is
+no control proving `SendKeys` reached the app at all**, and a silent input failure looks exactly
+like an unresponsive app. **Recorded as untested.**
+
+⭐ **THE CONNECTION, AND IT IS THE POINT OF THIS FINDING: this is §13(z)'s semantics gap arriving as
+a practical obstacle.** The app exposes nothing a desktop automation tool can navigate by — and
+**that is the same absence that makes it unnavigable by a screen reader.** §13(z) recorded semantics
+as unmeasured from source; this is what unmeasured semantics feels like from outside. **The four
+`tooltip:` occurrences in all of `lib/` (§13(ab)) are the whole of the app's exposed vocabulary.**
+
+---
+
+### (aq) THE CONTENT CHECK'S bgFrac WAS RETIRED, AND THE METHOD MATTERS MORE THAN THE CHANGE
+
+**8 September 2026.** The frame-identity check built in §13(aj) had four properties. Both narrow
+captures **FAILED** it:
+
+    home__narrow__400x546              bar=52  bgFrac=0.319  distinct=65  palette=True  -> FAIL
+    home__narrowest-os-permits__94x546 bar=40  bgFrac=0.311  distinct=61  palette=True  -> FAIL
+
+**Both are genuine MER frames.** They failed on `bgFrac` alone — the requirement that `#F5F8FB`
+dominate the body — **because content legitimately fills more of a narrow frame.** The threshold
+had been calibrated on wide frames.
+
+⛔ **THE THRESHOLD WAS NOT LOOSENED TO MAKE THEM PASS. THAT WOULD BE BENDING THE CHECK TO FIT THE
+DATA.** Instead, dropping `bgFrac` from the verdict was **tested against every negative**:
+
+| Frame | bar | distinct | palette | verdict without bgFrac |
+|---|---|---|---|---|
+| real MER, wide | 64 | 88 | True | **pass** |
+| **the Gmail frame** | **0** | **1317** | **False** | ⛔ **FAIL** |
+| a magenta form filling the screen | **0** | 1 | **False** | ⛔ **FAIL** |
+| a desktop-only region | **0** | 548 | **False** | ⛔ **FAIL** |
+
+⭐ **Every negative still fails, on `bar` and `palette`. `bgFrac` was doing no work against them** —
+it was excluding legitimate frames and catching nothing. It is now **reported but not decisive**,
+with the reasoning in the script.
+
+⚠️ **THE TRANSFERABLE RULE: remove a criterion only after showing the NEGATIVES still fail without
+it.** ⛔ **The tempting move is to check whether the positives still pass, which proves nothing** —
+a check with no criteria passes every positive. **A criterion earns its place by rejecting
+something, and it can only be removed by demonstrating that nothing it rejected is now accepted.**
+
+---
+### (ar) THE WALKTHROUGH MISSED ITS BRIEF — DESIGN-TRACK
+
+**Recorded 8 September 2026 from the developer's own account, and it is not a defect finding.**
+Nothing in the walkthrough is broken: §13(ak) verified its controls are present and fully within
+the window at every size tested, on both platforms. ⛔ **The gap is between what was asked for and
+what was built.**
+
+**IN HIS TERMS:** he asked for a **visual, interactive walkthrough of the app's function** — the
+user tapping the real button, editing a real record, seeing the notification path — and received
+**a card slideshow.** Five pages of text and an icon, with `Next`, `Back` and `Skip`.
+
+⭐ **AND THE COINCIDENCE IS NOT ONE: THE SCREEN NOBODY ASSESSED IS THE SCREEN THAT MISSED ITS
+BRIEF.** `walkthrough_screen` has **zero findings in §§1-12**, **one capture** in the whole set
+(step 1 of 5, at 375 only), and is **uncapturable on the tablet without destroying the 72 records**
+(§13(q)). **It was never looked at, and it was the thing that had gone wrong.**
+
+**TWO CANDIDATE SHAPES, AND NEITHER IS CHOSEN HERE:**
+
+| | How it works | What it costs |
+|---|---|---|
+| **COACH MARKS over the live app** | an overlay dims the screen, cuts a hole around the **real** control, and the user taps the real thing | **No data is created and there is nothing to reset.** ⛔ But the user never completes a capture, so they learn where the button is without learning what happens after |
+| **GUIDED SANDBOX** | the user drives real screens and creates a **real** record, cleaned up afterwards | Teaches by doing, which is what was asked for. ⛔ **Cleanup that misidentifies a record deletes a medical record** — and §13(ad) shows seven rows in this history are byte-identical, so "the one we just made" is not always distinguishable |
+
+⛔ **TWO CONSTRAINTS ANY SOLUTION MUST SURVIVE:**
+
+1. **WINDOWS HAS NO NOTIFICATION PATH AT ALL** — `notification_service.init()` returns before any
+   channel is created. **A step pointing at lock-screen capture points at nothing.** ⭐ **The Help
+   screen already solves exactly this**, and §8 records it as working: Windows gets a **replacement
+   section** explaining the absence, because *"a user who finds nothing here cannot tell whether the
+   section is missing or the feature is absent."* **Borrow that pattern rather than hiding the step.**
+2. **NOTHING GATES CAPTURE, THE RECORD, OR EXPORT** — that is a standing property of this app.
+   **Coach marks must therefore be dismissible at every step**, and a walkthrough that must be
+   completed before the button works would break it.
+
+⚠️ **A VIEW, MARKED AS A VIEW: coach marks plus one deliberate throwaway record.** The core action
+is **one tap**, and there is little to teach beyond where the button is — so the overlay carries
+most of the value and a single sandboxed record covers the "what happens next" the overlay cannot.
+
+⛔ **AND THE LIMIT ON THAT VIEW IS STATED BECAUSE IT MATTERS: this has not been used.** The
+developer has used this app; the view above has not. **If what users actually miss is the EDITING
+flow rather than the capture — the wizard, the form, `Add details` — then the answer changes**,
+because editing is where the app has two paths, two idioms and two densities (§10 decision 1).
+
+⚠️ **IT BELONGS WITH THE COMPONENT VOCABULARY, NOT AHEAD OF IT. A walkthrough overlay IS a
+component** — a dim layer, a cutout, an anchored tooltip, a step controller — and §1 records that
+this app's problem is that every screen was solved and nothing was solved once. **Building the
+overlay before the vocabulary means building it twice.**
+
+#### The packages, evaluated 8 September 2026 from pub.dev rather than from memory
+
+| Package | Version | Published | Likes | Points | Windows |
+|---|---|---|---|---|---|
+| **showcaseview** | 5.1.0 | 2026-06-17 | **3115** | 150 | ✅ |
+| **tutorial_coach_mark** | 1.3.4 | **2026-08-28** | 1599 | 150 | ✅ |
+| onboarding_overlay | 3.2.3 | 2025-10-24 | 375 | 150 | ✅ |
+| overlay_tooltip | 0.2.4 | 2025-03-26 | 240 | 140 | ✅ |
+| flutter_welcome_kit | 2.1.0 | 2026-05-07 | 19 | 150 | ✅ |
+| ~~feature_discovery~~ | 0.14.2 | **2024-12-07** | 788 | 140 | ✅ |
+
+**All six carry `platform:windows` on pub.dev, plus `is:dart3-compatible`, `is:null-safe` and
+`is:wasm-ready`.** None declares platforms in its own `pubspec`, which for a **pure-Dart** package
+means universal support — and pub.dev's tags confirm it.
+
+⛔ **WINDOWS SUPPORT WAS EXPECTED TO BE THE FILTER AND IT ELIMINATED NOBODY.** The expectation was
+reasonable — many Flutter packages quietly omit desktop, and MER ships on the Microsoft Store — but
+**a coach-mark overlay is a `Stack` and a `CustomPainter`, so there is no native code to port.**
+⭐ **The filter that mattered turned out to be maintenance, not platform:** `feature_discovery` is
+**21 months stale** and is the only one ruled out.
+
+**THE HAND-ROLLED ALTERNATIVE, COSTED SO THE CHOICE HAS BOTH SIDES:** a `Stack` over the app, a
+dimming layer, a **cutout** (`ClipPath` with an inverted `Path`, or a `CustomPainter` using
+`BlendMode.clear` on a saved layer), **`GlobalKey`-anchored positioning** to read each real
+control's `RenderBox` rect, **tooltip placement that flips near an edge**, and a controller
+sequencing the steps. ⭐ **The cutout and the edge-flipping are the real work; the rest is a
+`Stack`.**
+
+⚠️ **MER has 12 direct dependencies today**, so adding one for a first-run feature is a real cost
+to weigh against `showcaseview`'s 3,115 likes.
+
+⛔ **NO PACKAGE CHOSEN, and no shape chosen. DESIGN-TRACK.**

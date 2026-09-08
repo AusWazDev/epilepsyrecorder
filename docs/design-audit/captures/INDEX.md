@@ -99,6 +99,54 @@ carries the timestamp, and a dated filename goes stale the moment it is re-shot.
 (`md5 be3d0730…`), so it is named `1-of-2` / `2-of-2`. That agrees with the recorded measurement
 of 2.11 screens at 430.
 
+### ⭐ DESKTOP CAPTURES — the convention, decided 8 September 2026 BEFORE any shot
+
+**The existing rule, unchanged for mobile:**
+
+    {screen}__{state}__{logicalW}x{logicalH}[__{date}-{tag}].png
+
+⛔ **THE QUESTION WAS WHETHER A WINDOW SIZE BELONGS WHERE A LOGICAL WIDTH DOES. IT DOES, AND THE
+RUNNER SETTLES IT RATHER THAN TASTE.** `windows/runner/main.cpp` requests
+`Win32Window::Size size(1280, 720)`, and `win32_window.cpp:134-135` scales that by
+`dpi / 96.0` before `CreateWindow`:
+
+```cpp
+UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
+double scale_factor = dpi / 96.0;
+... Scale(size.width, scale_factor), Scale(size.height, scale_factor) ...
+```
+
+⭐ **So the number in the source is LOGICAL and the OS supplies a separate DPR multiplier — the
+identical relationship the mobile suffixes already encode.** `430x932` is an iPhone's logical size
+with DPR carried by the device tag; `1280x720` is the desktop window's logical size with DPR
+carried the same way. **No new segment is needed, and inventing one would have made the two
+platforms look structurally different when they are not.**
+
+**So, for Windows:**
+
+| Segment | Windows meaning |
+|---|---|
+| `{screen}` | unchanged — `home`, `history`, `form`, and the same names as mobile |
+| `{state}` | unchanged — `default`, `discard-dialog`, and so on |
+| `{logicalW}x{logicalH}` | **the WINDOW's logical size, not the display's.** A desktop window is resizable, so this is the only size that means anything about the layout |
+| `{date}-{tag}` | **`{date}-windows-desktop`**, and the tag is MANDATORY here rather than optional |
+
+⛔ **THE TAG IS MANDATORY ON EVERY DESKTOP CAPTURE, and that is the one real change.** On mobile an
+untagged file means "1x Android proxy" — a default that exists because 66 of 89 files are that.
+**A desktop capture must never be able to inherit that default**, because a reader who mistakes a
+Windows window for an Android proxy at the same numbers draws a wrong conclusion from a correct
+file. ⭐ **Same reason the width-proxy warning exists at the top of this document.**
+
+⚠️ **DPR IS RECORDED IN THIS INDEX, NOT IN THE FILENAME**, exactly as it is for mobile — where the
+scale factor is carried by `ios-15promax-device` versus `ios-se3-sim` versus untagged, and the
+actual `1290x2796` never appears in a name.
+
+⛔ **`assets/screenshots/windows/` IS NOT THIS SET AND MUST NOT BE READ AS IT.** Those four files —
+`mer-win-1` to `mer-win-4`, at 1103x927, 1102x922, 1107x928 and 1106x925, dated 3 May 2026 — are
+**Microsoft Store listing screenshots**. They carry **no screen segment, no state segment, no size
+segment and no date**, so they are structurally incapable of joining this convention. **They are
+evidence that the target has been photographed before; they are not design-audit captures.**
+
 ---
 
 ## ⛔ Not captured, and why
@@ -443,3 +491,100 @@ nothing, verified**, because nothing had been answered.
 | **`form__discard-dialog-rescue` at 375 and 800** | Not attempted. The 430 capture establishes the change-list content; the two widths add layout information the plain discard dialog already gives at all three |
 | **The 200% text-scale set** | ⛔ **Deliberately out of scope for this pass.** There is no filename convention for text scale — nothing in the existing 99 files encodes one — and it needs its own decision. See `AUDIT.md` §13(u) |
 | **`disclaimer` and `walkthrough` at any width** | ⛔ **Still unreachable — see the original table.** Both are pass 2b, on a disposable profile |
+
+---
+
+## Added 8 September 2026 — pass 1, the WINDOWS DESKTOP set
+
+⛔ **THE FIRST REAL WINDOWS CAPTURES IN THIS SET. Nothing existing is modified.** Every earlier
+file is either a 1x Android width proxy or a real iOS frame; these are Windows rendering Windows.
+
+⛔ **AND THE METHOD IS NOT THE ONE USED FOR MOBILE.** `adb shell screencap` has no desktop
+equivalent, and the obvious substitute — `Graphics.CopyFromScreen` — **photographs the screen
+region where a window is, not the window.** It produced a false negative AND a false positive
+within minutes on 8 Sep 2026: see `AUDIT.md` §13(aj). **It is not used here.**
+
+### What was captured
+
+| File | Client px | Bytes | md5 |
+|---|---|---|---|
+| `home__default__1012x546__2026-09-08-windows-desktop.png` | 1265x682 | 20 KB | `d4e90fd983ed` |
+| `home__default__1216x622__2026-09-08-windows-desktop.png` | 1520x778 | 21 KB | `28821f212ad4` |
+| `home__narrow__400x546__2026-09-08-windows-desktop.png` | 500x682 | 14 KB | `fb58ba363b62` |
+| `home__narrowest-os-permits__94x546__2026-09-08-windows-desktop.png` | 118x682 | 9 KB | `96235a01dadc` |
+
+**4 files, 4 distinct md5s.** Each was content-checked BEFORE being kept; a frame that failed the
+check was deleted rather than kept with a caveat.
+
+⚠️ **`history`, `form` and the discard dialog are NOT here** — see the not-captured table below.
+
+### The method, and the proofs it passed
+
+```powershell
+# PrintWindow(PW_RENDERFULLCONTENT) into a WINDOW-rect bitmap, then crop to the CLIENT rect.
+$wr = GetWindowRect($hwnd); $cr = GetClientRect($hwnd)
+$off = ClientToScreen($hwnd, 0,0) - $wr.TopLeft        # 7,30 on this machine
+$full = new Bitmap($wr.width, $wr.height)
+PrintWindow($hwnd, $full.GetHdc(), 2)                   # 2 = PW_RENDERFULLCONTENT
+$client = $full.Clone(Rectangle($off.X, $off.Y, $cr.R, $cr.B))
+```
+
+| Proof | Result |
+|---|---|
+| Two consecutive captures of an unchanged window | **byte-identical md5** |
+| The same window **fully occluded** by a topmost form covering the whole screen | **BYTE-IDENTICAL** |
+| Captured while MER was **not frontmost** | succeeded; `GetForegroundWindow` confirmed it was not |
+| Offset **invariant to window position** on screen | 468 / 467 / 468 at x = 20, 250, 0 |
+
+⚠️ **Three method faults were found and fixed getting there:** `PrintWindow` renders the WHOLE
+window at 0,0 so a client-sized bitmap clips and includes the title bar; the **title bar repaints
+on focus change** so window-rect captures of an unchanged window differ, which the client crop
+removes; and `$h = Get-MerWindow` **silently overwrote the `$H` height parameter** because
+PowerShell variables are case-insensitive.
+
+### The frame-identity check
+
+**Three decisive properties, each reported:** a ≥30-row contiguous `#0D4F82` app-bar band spanning
+the full width, fewer than 900 distinct colours in a sample, and **all three theme colours present**
+(`0D4F82`, `F5F8FB`, `FFFFFF`). **Demonstrated failing before being trusted** — a Gmail frame scored
+`bar=0, distinct=1317, palette=False`; a magenta form and a desktop-only region both scored
+`bar=0, palette=False`.
+
+⛔ **IT VERIFIES IDENTITY, NOT COMPLETENESS.** Both mis-sized frames from the aborted attempt PASS
+it, correctly, because they were MER — merely clipped. **Completeness is guaranteed by the METHOD**:
+`PrintWindow` plus a `GetClientRect` crop is structurally independent of screen position.
+
+⚠️ **A fourth property, `bgFrac`, was RETIRED — see §13(aq).** It rejected both narrow frames
+because content legitimately fills more of a narrow frame. **The threshold was not loosened;
+dropping it was tested against every negative, all of which still fail.**
+
+### Window sizes, and why they are not the ones the source requests
+
+| | |
+|---|---|
+| Monitor | **1536x864 physical**, DPI **120**, scale **1.25** — working area 1536x816 |
+| `main.cpp` requests | `Size(1280, 720)` **logical** = **1600x900 physical** |
+| ⛔ Fits? | **No, in either dimension** |
+| OS-granted launch default | **1265x682 px = 1012x546 logical** |
+| Machine maximum | **1520x778 px = 1216x622 logical** |
+| Narrowest the OS permits | **118 px = 94.4 logical** — a Windows floor; MER enforces none |
+
+### Database state at capture time
+
+⛔ **THERE IS NO APP DATA ON THIS MACHINE, so the before-and-after record discipline had nothing to
+guard.** A sweep of `AppData` found one directory — `Local\Packages\Notiva.MedicalEventRecorder_…`,
+the MSIX install of 25 Aug 2026 — holding **2 files, 16 KB, no database and no preferences.** The
+launches in this pass created none, verified after closing. ⚠️ **That is a fact about THIS MACHINE,
+not about the build.**
+
+⭐ **Consequence worth recording: the disclaimer and walkthrough gates are UNSET on Windows**, so the
+two screens that are uncapturable on the tablet without `pm clear` are reachable here for free.
+
+### ⛔ Not captured, and why — additions to the table above
+
+| Layout | Reason |
+|---|---|
+| **`history`, `form`, the discard dialog** | ⛔ **Desktop has no `uiautomator` equivalent.** Every tablet capture was confirmed against the accessibility tree before the shot; on Windows the only route was pixel-hunting, and a search of the app bar's top-right band for a menu glyph returned **0 white-ish pixels**. After §13(aj), guessing at coordinates was not an acceptable method. See §13(ap) |
+| **The wide-desktop case (1920)** | ⛔ **Not possible on this machine.** The maximum logical client the 1536x864 display allows is about 1216x622 |
+| **The 200% text-scale set** | Still out of scope, and still without a filename convention — see §13(u) |
+| **DPI-96 test frames** | ⚠️ **Deliberately NOT kept in this set.** Two frames were captured at `GetDpiForWindow = 96`, via a per-process `__COMPAT_LAYER=DPIUNAWARE` launch, to settle §13(al). **They are evidence about a DEFECT, not records of how the app looks** — the app does not run at 96 DPI on this machine. Their measurements are in §13(al) |
