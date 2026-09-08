@@ -292,6 +292,28 @@ The screen is roughly **56 % empty at 430**, **37 % at 375**, and **about three-
 ⭐ **The screen titled "Check and save" cannot be used to check, and is the emptiest screen in the
 app.** It also carries the least discoverable capability in the app — see §4.
 
+> ⚠️ **ANNOTATED 8 September 2026 (evening) — THE THREE PERCENTAGES ARE APPEARANCE-DERIVED AND
+> UNVERIFIED. The finding stands; the figures are not measurements.**
+>
+> **Instrument: tablet `adb screencap` frames, DPR 1.0, read by eye.** ⭐ **That instrument is
+> geometry-faithful** — framebuffer, no compositing, no DPI translation, 1 logical px = 1 stored px
+> — so **this is NOT the §13(al) class**, where the instrument itself was unfaithful. The defect
+> available here is precision, not fidelity.
+>
+> ⛔ **AND PRECISION HAS ALREADY FAILED ONCE ON THE SAME FRAMES, THE SAME EYE AND THE SAME DAY.**
+> §7's void figures, read the same way, were found **57 to 105 px out** when widget tests measured
+> the same quantities. **These three figures inherit that error rate**, and *"roughly"* and
+> *"about three-quarters"* are doing real work in the sentence.
+>
+> ⚠️ **NOT RE-MEASURED, AND THE REASON IS NAMED: §13(ac) measured HOME, not `wizard-5-summary`.**
+> No widget test has ever rendered the review step. **So these figures are neither confirmed nor
+> contradicted** — unlike §7's, which are corrected. ⛔ **Do not cite them as measurements.**
+>
+> ✅ **WHAT DOES NOT DEPEND ON THEM: the review step echoes type, severity, observations,
+> beforehand and notes NOWHERE, which is code-verified**, and the ordering — that this is the
+> emptiest screen in the app — survives any plausible correction to three figures that are 37, 56
+> and ~75. **The conclusion is a ranking, and the ranking is not close.**
+
 ---
 
 ## 4. Backdating exists, is well built, and is buried
@@ -383,6 +405,23 @@ about where this might land, not a recommendation.**
 ⛔ **Notes is the only place a carer records what no chip covers.** It is **most reachable in the
 secondary feature and least reachable in the primary capture path.**
 
+> ⚠️ **ANNOTATED 8 September 2026 (evening) — `78 %` AND `two-thirds` ARE DESCRIBED, NOT MEASURED,
+> AND NOTHING IN THIS SECTION RESTS ON THEM.**
+>
+> ⛔ **Instrument: neither a widget test NOR a capture.** This section's own basis line reads
+> **Described** — the depths were reasoned about, not read off a frame and not measured. ⭐ **That
+> is a weaker basis than §3's and §7's, not a stronger one**, and it is stated here so the two
+> percentages are never mistaken for the widget-test figures elsewhere in §13.
+>
+> ✅ **THE FINDING IS A RANKING, AND A RANKING IS WHAT THIS BASIS CAN CARRY.** Notes is
+> **absent** from every other surface and **never echoed before save** — both code-verified — and
+> its depth ordering across the three surfaces where it exists does not turn on whether step 4's
+> position is 78 % or 70 %. ⛔ **The inversion is the finding: most reachable in the secondary
+> feature, least reachable in the primary capture path.** That is a comparison, and it holds under
+> any correction either figure could take.
+>
+> ⚠️ **Re-measurable by widget test and NOT DONE.** The two figures are open, not wrong.
+
 ---
 
 ## 7. Home is well composed and loses it with height
@@ -404,6 +443,66 @@ impression, **and independent of every open decision in this document.**
 > about MOVEMENT.** Any anchoring change has to hold across that range.
 > ⚠️ **The figures are not comparable with the "150 px of void" above** — different measurement
 > bases, one a device capture with a status bar, one a widget test without one.
+> ⛔ **CORRECTED 8 September 2026 (evening) — THE RECONCILIATION ABOVE RUNS IN THE WRONG DIRECTION,
+> and it appears in three places in this document.** [The sentence it corrects reads that the bases
+> differ because *"§7 measured a device capture including a status bar"* while these are *"widget
+> tests without one"*. **It stays readable above; it does not explain the gap.**]
+>
+> ⚠️ **A status bar makes the void above the content LARGER in frame coordinates, never smaller** —
+> it pushes everything down. §7's figures are **smaller** than the widget tests', so a status bar is
+> the wrong sign. **And every non-empty occupancy state in §13(e) raises `btnTop` further**, so no
+> occupancy explains it either. ⛔ **The bases are not incommensurable. §7's numbers are simply out
+> by 57 to 105 px, and §7 now records that** — an explanation was offered where a measurement was
+> available.
+>
+> ⭐ **THE LESSON IS ABOUT THE EXPLANATION, NOT THE NUMBERS: a plausible reconciliation closed a
+> question that a re-run of an existing test would have settled.** Both widget tests already existed
+> when that sentence was written. **Where two figures for the same quantity disagree, re-measure
+> before reconciling** — a reconciliation that is never checked is indistinguishable from one that
+> is right, and this one survived three separate writings.
+
+> ⛔ **CORRECTED 8 September 2026 (evening) — THE FIGURES IN THIS SECTION ARE WITHDRAWN AND THE
+> MIDPOINT CLAIM IS RETRACTED. THE RECOMMENDATION IS CONFIRMED BY MEASUREMENT AND STANDS.**
+>
+> **The instrument.** These figures were read by eye off tablet `adb screencap` frames. ⭐ **That
+> instrument is geometry-FAITHFUL** — `screencap` reads the framebuffer, so there is no window
+> manager, no per-window compositing and no DPI translation between the layout and the file, and
+> with the display override 1 logical px = 1 stored px. ⛔ **It is NOT the instrument that produced
+> §13(al).** What failed here is not fidelity, it is **PRECISION**: the numbers were estimated by
+> eye and hedged as *"roughly"* and *"around"*, and measurement now puts them 57 to 105 px out.
+>
+> **Measured in widget tests, 430x932 and 800x1280, DPR 1.0** — `test/home_void_430_test.dart`
+> and `test/home_void_800_test.dart`, re-run 8 September 2026:
+>
+> | | claimed here | measured | out by |
+> |---|---|---|---|
+> | void above the primary action, 430 | **≈150** | **246.5** above the content block; **255** above the button block per §13(e) | **97 to 105** |
+> | void above, 800 | **≈350** | **427** | **77** |
+> | void below, 800 | **≈370** | **427** | **57** |
+>
+> ⛔ **AND THE MIDPOINT CLAIM IS FALSE BY MEASUREMENT.** At 800 the viewport spans y **56 to
+> 1280**, so its midpoint is **668**. `Record Event` measures `btnTop=519.0 btnBottom=556.0`
+> — **the primary action sits 112 px ABOVE the midpoint, entirely above it**, not below.
+>
+> ⭐ **AND IT NEVER FOLLOWED FROM THIS SECTION'S OWN FIGURES, which is the part worth keeping.**
+> *"350 px above and 370 px below"* places the content **above** centre by 10 px, because less
+> space above than below means the block sits high. **The stated conclusion contradicts the stated
+> premise**, and no instrument is responsible for that — it was available to a reader of this
+> section from the day it was written. ⚠️ **Read the arithmetic of a claim, not only its
+> instrument.** A figure can be imprecise and a conclusion can be invalid, and these are two
+> separate defects that happened to appear in one sentence.
+>
+> ✅ **WHAT STANDS, AND IT IS NOW MEASUREMENT-BACKED RATHER THAN EYEBALLED:**
+> **the content is centred rather than anchored** — §13(ac) measured the voids **exactly equal at
+> both widths**, 246.5/246.5 and 427/427, which is what centring means; **the first thing a tablet
+> user sees is empty space** — 427 px of void above content in a 1224 px viewport, more void than
+> content; and **at 375 this is the best-composed screen in the app**, which is an APPEARANCE
+> reading and is exactly what a capture is for.
+>
+> ⛔ **THE RECOMMENDATION TO ANCHOR RATHER THAN CENTRE IS UNAFFECTED.** Every withdrawn figure was
+> too SMALL. The measured voids are larger than the ones that motivated the recommendation, so
+> correcting them strengthens it. ⚠️ **The recommendation was never load-bearing on the numbers**
+> — it rests on the layout being `Center`, which is code-verified.
 
 ---
 
@@ -850,6 +949,24 @@ among the three chain members reachable on Windows**, and neither nudge card was
 ⚠️ **The numbers are NOT comparable with §7's "roughly 150 px of void".** §7 measures void above the
 button on a device capture with a status bar; these are absolute window coordinates in a widget test
 without one. **Different bases — do not subtract one from the other.**
+
+⛔ **CORRECTED 8 September 2026 (evening) — THE RECONCILIATION ABOVE RUNS IN THE WRONG DIRECTION,
+and it appears in three places in this document.** [The sentence it corrects reads that the bases
+differ because *"§7 measured a device capture including a status bar"* while these are *"widget
+tests without one"*. **It stays readable above; it does not explain the gap.**]
+
+⚠️ **A status bar makes the void above the content LARGER in frame coordinates, never smaller** —
+it pushes everything down. §7's figures are **smaller** than the widget tests', so a status bar is
+the wrong sign. **And every non-empty occupancy state in §13(e) raises `btnTop` further**, so no
+occupancy explains it either. ⛔ **The bases are not incommensurable. §7's numbers are simply out
+by 57 to 105 px, and §7 now records that** — an explanation was offered where a measurement was
+available.
+
+⭐ **THE LESSON IS ABOUT THE EXPLANATION, NOT THE NUMBERS: a plausible reconciliation closed a
+question that a re-run of an existing test would have settled.** Both widget tests already existed
+when that sentence was written. **Where two figures for the same quantity disagree, re-measure
+before reconciling** — a reconciliation that is never checked is indistinguishable from one that
+is right, and this one survived three separate writings.
 
 ⭐ **HARNESS METHOD, recorded because two configurations produced convincing wrong numbers before
 this one.** Seven states in one `testWidgets` reported an identical `btnTop` for all seven. Splitting
@@ -1920,6 +2037,24 @@ below than above.
 370 below"** — §7 measured a device capture including a status bar; these are widget tests without
 one. **§13(e) already records that basis difference.**
 
+⛔ **CORRECTED 8 September 2026 (evening) — THE RECONCILIATION ABOVE RUNS IN THE WRONG DIRECTION,
+and it appears in three places in this document.** [The sentence it corrects reads that the bases
+differ because *"§7 measured a device capture including a status bar"* while these are *"widget
+tests without one"*. **It stays readable above; it does not explain the gap.**]
+
+⚠️ **A status bar makes the void above the content LARGER in frame coordinates, never smaller** —
+it pushes everything down. §7's figures are **smaller** than the widget tests', so a status bar is
+the wrong sign. **And every non-empty occupancy state in §13(e) raises `btnTop` further**, so no
+occupancy explains it either. ⛔ **The bases are not incommensurable. §7's numbers are simply out
+by 57 to 105 px, and §7 now records that** — an explanation was offered where a measurement was
+available.
+
+⭐ **THE LESSON IS ABOUT THE EXPLANATION, NOT THE NUMBERS: a plausible reconciliation closed a
+question that a re-run of an existing test would have settled.** Both widget tests already existed
+when that sentence was written. **Where two figures for the same quantity disagree, re-measure
+before reconciling** — a reconciliation that is never checked is indistinguishable from one that
+is right, and this one survived three separate writings.
+
 ---
 
 ### (ad) HISTORY IS UNSCANNABLE WHEN RECORDS RESEMBLE EACH OTHER
@@ -2336,6 +2471,48 @@ Gmail frame was caught because the subject was visibly wrong; a correctly-subjec
 wrong geometry looks exactly right. ⛔ **Subject and geometry are two properties, and the eye only
 checks one.**
 
+⭐ **THE PATTERN UNDERNEATH ALL FOUR, ADDED 8 September 2026 (evening): AN INSTRUMENT HAS SEVERAL
+PROPERTIES, AND PROVING ONE READS AS PROVING THE INSTRUMENT.**
+
+**Recorded HERE rather than in §13(r), and the reason matters.** §13(r) is about correct knowledge
+that existed, was written down, and did not travel. **This is not that** — it is a property of
+instruments and belongs with the instrument record. ⚠️ **There IS an §13(r) instance inside it,
+named below, but the pattern itself is not one.**
+
+⛔ **`PrintWindow` was proven OCCLUSION-INDEPENDENT and then trusted for GEOMETRY.** The proof was
+real: byte-identical md5 under a full-screen topmost window, which is a genuine result about a
+genuine property. ⛔ **It says nothing whatever about scale.** Two properties were needed —
+occlusion-independence and geometry-fidelity — **exactly one was tested, and the tested one was
+reported as though the instrument had been cleared.**
+
+**The same shape, three times over, at three different levels:**
+
+| Level | Property proven | Property assumed | Cost |
+|---|---|---|---|
+| **The eye** | the frame's **SUBJECT** is right | the frame's **GEOMETRY** is right | §13(al), committed as 🔴 |
+| **The instrument** | **occlusion**-independent | **scale**-faithful | §13(al), and (an)/(ao)'s withdrawn figures |
+| **The check** | `bgFrac`, `palette`, `bar`, `rows` all passed | the frame therefore measures truly | two narrow captures failed a check that was measuring the wrong thing — §13(aq) |
+
+⭐ **AND THE TELL IS ALWAYS THE SAME: the passing result is TRUE.** Nothing in any of those three
+rows is a false measurement of the property it measured. **The falsehood enters in the WIDTH of the
+conclusion drawn**, which is why no amount of re-running the check catches it. ⛔ **A clean result
+over an unstated set of properties is indistinguishable from a clean result over all of them.**
+
+**PRACTICAL FORM: before trusting an instrument, ENUMERATE the properties the claim depends on,
+and mark each one tested or assumed.** For a capture that is at least: subject, occlusion, scale,
+crop, colour fidelity, and timing. ⭐ **Name the assumed ones in the finding.** The INDEX.md
+annotation now does exactly this — *"occlusion-independent and NOT geometry-faithful at scaled
+DPI; both properties were needed and only one was tested"* — and that sentence is the whole lesson.
+
+⚠️ **THE §13(r) INSTANCE, AND IT IS A CLEAN ONE.** `C:\dev\CLAUDE.md` already carries this rule in
+general form, written weeks earlier: **DERIVED SCOPE IS NOT THE SAME AS COMPLETE COVERAGE**, with
+the instruction to *"state what a check's denominator IS, and never let 'derived' be read as
+'total'"*. ⛔ **A capture-proof's denominator is its PROPERTIES, and it was never stated.** The
+knowledge existed, in a file that loads every session, phrased generally enough to cover this
+exactly — **and it did not travel from a rule about audit scripts to a rule about a screenshot.**
+⭐ **That is §13(r)'s pattern precisely: the lesson was not missing, it was not where it would be
+read.**
+
 ### (ak) THE APP REQUESTS A WINDOW LARGER THAN A COMMON LAPTOP DISPLAY CAN SHOW
 
 **Code-verified and measured, 8 September 2026.** `windows/runner/main.cpp`:
@@ -2599,6 +2776,35 @@ client width at every size measured — 40 to 69 contiguous rows at widths from 
 while the body sits in a 520-logical column. ⭐ **The chrome tells the user how wide the window is;
 the content behaves as though it were on a phone.**
 
+⛔ **SPLIT 8 September 2026 (evening) — THE CONCLUSION IS SOUND AND TWO CORROBORATIONS ARE
+WITHDRAWN. Both halves of this finding are here on purpose; they have different instruments.**
+
+✅ **SOUND — the whole argument, and it needs no capture.** *3 screens capped at `maxWidth: 520`,
+9 uncapped, no width breakpoints anywhere* is §13(aa), **measured in a widget test**. *A wide
+window strands capped content* is §13(ac), **measured in a widget test** — 34.9 % void each side
+at 800 logical. *A narrow window clips it* is §13(am) as corrected, **measured in a widget test**
+at 94 logical. ⭐ **One absence, two opposite failures, and no breakpoint to resolve them: that
+stands entirely on widget tests.**
+
+⛔ **WITHDRAWN — the two claims read off `PrintWindow` frames at DPR 1.25.** *"the desktop captures
+show the same shape at 1216"* and *"the `#0D4F82` band spans the full client width at every size
+measured — 40 to 69 contiguous rows at widths from 118 px to 1520 px."* **That is the instrument
+that produced §13(al)**, and §13(al)'s mechanism is recorded as **inferred, not verified**, so its
+unfaithfulness is not established to be horizontal-only. ⚠️ **A row count is a vertical geometric
+quantity and a band's extent is a horizontal one. Neither is safe from an unidentified scale
+artefact**, and *"spans the full client width"* is exactly the kind of claim a uniform scale error
+leaves looking correct.
+
+⭐ **THE APP-BAR OBSERVATION IS NOT LOST, IT IS DEMOTED TO WHAT A CAPTURE CAN CARRY: the chrome
+LOOKS as wide as the window while the body LOOKS like a phone column.** ✅ **That is an appearance
+reading, it is what the frames are valid for, and it is the rhetorical point of the paragraph.**
+⛔ **What is withdrawn is every NUMBER in it.** The `520`-logical column it is contrasted against
+is a widget-test figure and survives; the `1216`, the `1520` and the `40 to 69` do not.
+
+⚠️ **NOT RE-MEASURED. Establishing the desktop app bar's height and extent needs a widget test at
+`TargetPlatform.windows`, which has not been written** — §13(ak)'s existing desktop test measures
+the walkthrough, not the app bar.
+
 ---
 
 ### (ao) THE TABLET'S VOID READING DOES NOT TRANSFER TO DESKTOP
@@ -2619,6 +2825,39 @@ maximum is **622** (§13(ak)).
 centre still addresses the tablet case it was made about. ⚠️ **What is recorded here is that a
 reading taken at one aspect ratio was carried toward a platform with a different one**, and the
 carrying was not warranted.
+
+⛔ **SPLIT 8 September 2026 (evening) — THE LIMIT THIS FINDING RECORDS IS SOUND. THE EVIDENCE
+OFFERED FOR IT IS PARTLY WITHDRAWN.**
+
+✅ **SOUND — the heights, because they are the OS's own numbers.** `546` logical granted and `622`
+logical maximum come from `GetClientRect` and the Win32 DPI and working-area values in §13(ak),
+**not from a frame**. ⭐ **That is the same class of evidence that DISPROVED §13(al)** — reading
+the window rect directly is what settled it — so these two figures are as reliable as anything in
+this document.
+
+✅ **SOUND — the reasoning, which needs no measurement at all.** §13(ac)'s figures were taken at
+**876 and 1224 logical tall** and desktop gets **546**. ⭐ **A reading about vertical void does not
+transfer to a viewport less than half the height, and that follows from the two heights alone.**
+The claim that the desktop constraint is horizontal rather than vertical follows from the aspect
+ratio, not from any frame.
+
+⛔ **WITHDRAWN — the one claim read off `PrintWindow` frames at DPR 1.25.** *"the captures show
+content running from the app bar to near the lower edge, with `Need Help with MER?` close to the
+bottom."* **That is a vertical-extent measurement from the §13(al) instrument**, whose
+unfaithfulness is recorded as inferred rather than verified and is therefore not established to
+spare the vertical axis. ⚠️ **So *"at the OS-granted 546 logical height there is no bottom void"*
+is DOWNGRADED from measured to unverified.**
+
+⭐ **AND THE FINDING SURVIVES THE DOWNGRADE INTACT, WHICH IS WHY IT IS SPLIT RATHER THAN
+RETRACTED.** Its purpose is to stop §13(ac)'s tablet reading being carried to desktop. **That
+purpose is served by the height difference — 546 against 1224 — which is OS-derived.** ⛔ **Whether
+a bottom void exists on desktop is now OPEN, and it was never load-bearing here.** ⚠️ **What a
+capture CAN still say: the screen LOOKS full rather than empty at that height.** That is an
+appearance reading and is retained as one.
+
+⛔ **§7 AND §13(e) REMAIN UNSUPERSEDED, AND §7 IS SEPARATELY CORRECTED** — its void figures were
+withdrawn the same evening for a different reason, precision rather than fidelity. **Neither
+correction touches its recommendation.**
 
 ---
 
