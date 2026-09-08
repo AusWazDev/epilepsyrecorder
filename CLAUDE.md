@@ -2,6 +2,10 @@
 
 > **Auto-loaded by Claude Code on every session start.**
 > This file covers code context only — tech stack, key files, architecture, gotchas.
+>
+> ⭐ **NOT FOR: anything the documents below are authoritative for.** This file is a working index and a gotcha list. **Architecture → `docs/ARCHITECTURE.md`** (already deferred to below, and that deferral is correct — it is the authority, not this file). **Schema → `docs/DATA-MODEL.md`. Design, layout and UX → `docs/design-audit/AUDIT.md`. Session history → `STATUS.md`.**
+> ⛔ **Where this file and one of those disagree, THAT document governs and this one is the stale copy.** Several blocks below restate their content; a restatement is a convenience copy that nothing re-derives.
+>
 > **For the full derived architecture — capture model, all five record-creation
 > sites, the two notification solutions, storage shape — see `docs/ARCHITECTURE.md`,
 > which is regenerated from the code at each version bump.**
@@ -298,6 +302,87 @@ record count on the home screen against the database before trusting the build.*
 | `kPrivacyUrl` | notiva.com.au/medical-event-recorder/privacy/ |
 | `kContactUrl` | notiva.com.au/contact/ |
 | `kSupportEmail` | Support email address |
+
+---
+
+## Working Rules — verification
+
+*Added 8 September 2026. Both rules are here because a check PASSED and the result was
+wrong — that is the shared shape, and it is why neither is a style preference.*
+
+### ⛔ TEST HARNESS — ONE STATE PER PROCESS, OR THE MEASUREMENTS ARE FICTION
+
+⚠️ **`SharedPreferences.setMockInitialValues` does NOT take effect once an instance
+exists earlier in the same file.** The plugin caches its instance for the life of the
+process, and a Dart test FILE is one process. So the second `setMockInitialValues` in a
+file is accepted, returns normally, and **changes nothing** — every later test reads the
+FIRST test's preferences.
+
+**The symptom is not a test failure. It is a uniform set of measurements that looks
+exactly as convincing as a correct one.** Nothing throws, nothing is skipped, every
+`expect` passes. **A wrong number and a right number are the same shape on the screen.**
+
+**Measured 8 September 2026 — two configurations, both producing convincing wrong
+numbers:**
+
+    seven home-screen states in ONE test   -> all seven identical      WRONG
+    one test each, ONE file                -> prefs-driven states identical  WRONG
+    one state per PROCESS (one per file)   -> states differ            CORRECT
+
+⭐ **The first failure was caught only because "all seven identical" was implausible for
+states that were meant to differ.** ⛔ **Had two of the seven happened to be genuinely
+similar, nothing would have flagged it.** Implausibility is not a check.
+
+**1. MUST: one preference state per test PROCESS.** One `setMockInitialValues` per file,
+called before any code touches `SharedPreferences`. More than one state means more than
+one file.
+
+**2. MUST: prove the states differ before reading the numbers.** Assert that at least two
+measurements are NOT equal, as a negative control on the harness itself. A harness that
+can only return one answer must fail loudly, not quietly agree with itself.
+
+**3. MUST NOT: trust a measurement set in which every value matches.** Treat it as a
+harness fault until proven otherwise. Re-run one state in isolation and compare.
+
+### ⛔ ANNOTATION VERIFICATION — A SENTENCE CAN BE BROKEN WITH ZERO DELETIONS
+
+⚠️ **Inserting into the middle of a sentence splits it in two while deleting nothing.**
+Every word survives, in order. **Word counts pass. Deletion counts pass. `git diff
+--stat` shows insertions only.** The document now contains a rewrite presented as an
+annotation.
+
+**The symptom is not a failed check. It is a passing one.** Happened 8 September 2026 on
+`AUDIT.md` §8, where an annotation landed mid-sentence and every count-based check
+reported clean.
+
+**1. MUST: compare each affected original sentence AS A WHOLE, whitespace-normalised,
+before and after.** Nothing else catches it — not word counts, not deletion counts, not
+character deltas, not `diff --stat`.
+
+**2. MUST: run a positive control on the comparison itself.** Deliberately mangle one
+known sentence and confirm the check REPORTS it. A comparison that returns zero breaks
+because it is not looking is indistinguishable from one that returns zero because there
+are none.
+
+**3. MUST: adjudicate every flag before believing it — the naive check has KNOWN
+false-positive classes, and this list will grow**, all confirmed 8 September 2026 on real edits where the text was
+byte-identical:
+
+    markdown HEADINGS   no terminal punctuation, so a heading glues to the sentence
+                        after it; inserting between them dissolves the false join
+    BOLD terminators    a sentence ending `.**` defeats a `(?<=[.!?])\s+` lookbehind,
+                        so it glues to the next sentence.  Split on `(?<=[.!?])\**\s+`
+    BLOCKQUOTE markers  a `>` continuation line changes the leading-token count without
+                        changing a word.  Strip `^\s*>+\s?` before comparing
+    TABLE rows          a whole table has no terminal punctuation and normalises to ONE
+                        pseudo-sentence, so any cell edit flags the entire table
+    BULLET runs         same cause: a run of bullets with no full stops normalises to one
+                        pseudo-sentence that spans SECTIONS, so an edit anywhere after it
+                        changes where it ends and flags the whole run
+
+**Strip heading lines and blockquote markers, split on `(?<=[.!?])\**\s+`, and hand-check
+what survives.** ⭐ **A flag is a candidate, not a finding** — the same rule this project
+already applies to null results.
 
 ---
 

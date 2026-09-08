@@ -516,6 +516,24 @@ the wizard and complete ones here, so this is the edit path for every record a u
 **Recorded as a defect, not a design preference.** The screen offers a Cancel affordance and a Save
 affordance; a user who has typed into it and presses back has no signal that the two differ.
 
+> ➕ **ADDED 8 September 2026 — the SIZING above is corrected, and this finding now has a
+> prerequisite.**
+>
+> ⭐ **A complete dirty check ALREADY EXISTS and this finding did not know it.** `_hasChanges`
+> (`:213`) compares **eleven** fields against an `_orig*` snapshot taken in `initState` (`:191-202`),
+> and it handles all three awkward cases correctly: duration is normalised to an int through
+> `_enteredSeconds` before comparing, the two chip sets use an order-independent `_sameSet`, and
+> notes is `.trim()`ed on both sides. `occurredAt` compares `DateTime?` directly, so **"not asked"
+> stays distinct from a cleared value.**
+>
+> ⛔ **It is already wired — but to `_save()` (`:301`), not to any exit.** So the finding above
+> stands exactly as written; only its COST changes. **The remaining work is a `PopScope` and a
+> dialog, not building the check.**
+>
+> ⚠️ **PREREQUISITE — see §13(m).** `_buildChangeList()`, the natural content for that dialog,
+> **omits the three rescue fields.** Reusing it here inherits that gap. **(m) is fixed before or
+> with (a).**
+
 ### (b) Exit behaviour is not uniform, and the wizard already has the right pattern
 
 **Code-verified, 8 Sep 2026.** Exactly one `PopScope` exists in `lib/` — `event_wizard_screen.dart`:
@@ -757,3 +775,39 @@ because it has its own screen rather than a row in History.**
 
 ⭐ **Belongs with the component vocabulary in §10**, not with the layout work: it is a question about
 what a row means when the list holds more than one kind of thing.
+
+### (m) 🔴 The save confirmation omits the rescue fields — a live defect
+
+**Code-verified, 8 Sep 2026.** `_hasChanges` (`log_event_screen.dart:213`) checks **eleven** fields.
+`_buildChangeList()` (`:233-287`) covers **eight**. **Rescue given, rescue helped and rescue second
+dose are absent from the list and present in the check.**
+
+```
+rescue mentions in _hasChanges     (213-226):  3
+rescue mentions in _buildChangeList (233-287): 0   <- control, same search shape
+```
+
+⛔ **THE CONSEQUENCE.** Edit ONLY a rescue field on an existing record and press Save with
+`confirmOnSave` true. `_hasChanges` returns true, so the no-op guard passes and the
+*"No changes to save."* short-circuit does not fire. The dialog then renders
+*"Save the following changes?"* above an **empty list**. **The user confirms a change the dialog
+does not name.**
+
+⭐ **THE CLINICAL WEIGHT IS THE POINT, AND IT RUNS THE WRONG WAY.** The three omitted fields record
+**whether emergency medication was given, whether it helped, and whether a second dose was
+needed.** They are among the most consequential fields in the app, and they are precisely the ones
+the confirmation does not name. The eight fields it does name include notes and chip selections.
+
+⚠️ **LIVE IN THE PUBLISHED VERSION. Not introduced by any pending fix**, and not a consequence of
+this session's work. `confirmOnSave` and `_buildChangeList` both date from `0de48d1`, 21 March
+2026 — a large mixed commit whose message does not mention either.
+
+⚠️ **CONSEQUENCE FOR (a), AND IT ORDERS THE TWO.** `_buildChangeList()` is the obvious content for
+the discard prompt (a) needs — it is the only per-field diff renderer in the file. **An exit prompt
+reusing it inherits this gap**, and would then omit the rescue fields from a *discard* warning as
+well as a save one. **(m) must be fixed before or with (a), not after it.**
+
+⚠️ **INFERRED, NOT REPRODUCED.** The empty-list outcome is **derived from the two functions' field
+coverage**, not observed at runtime. The field counts and the zero/three control above are
+code-verified; the rendered empty dialog is not. **No device reproduction was attempted** — it
+would require editing one of the 72 real records.

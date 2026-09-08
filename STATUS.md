@@ -1,5 +1,8 @@
 # Medical Event Recorder — Session Log
 
+
+⭐ **NOT FOR: current state of anything.** This is an append-only record of what happened in each session, so **every entry is true only of its own date** and older entries are routinely superseded by newer ones without being edited. For what is CURRENT: architecture → `docs/ARCHITECTURE.md`, schema → `docs/DATA-MODEL.md`, design findings → `docs/design-audit/AUDIT.md`, code conventions → `CLAUDE.md`. ⛔ **Citing a session entry as current state is the error this line exists to prevent.**
+
 ---
 
 ## Session: 7 September 2026 (evening) — Mac (Claude Code CLI)
@@ -589,6 +592,17 @@ drawn chip so the negative cannot pass vacuously.
 | Step 3 total | 1.37 -> **1.00** | 2.27 -> **1.00** |
 | Form — rescue | 1401 -> **377pt** | 1855 -> **543pt** |
 | Form total | 3.42 -> **2.11 screens** | 4.97 -> **2.75** |
+
+⚠️ **ANNOTATED 8 September 2026 — `2.11` IS NOT COMPARABLE WITH A RESCUE-EXPANDED
+FIGURE. Kept, not deleted.** The table gives platform and picker state and **omits the
+rescue state and the measurement method.** The `Form — rescue` row immediately above
+records `1401 -> 377pt`, so rescue collapsed versus expanded is worth about a screen on
+15 Pro Max — **large enough that a form total is a different quantity depending on which
+it was.**
+
+⭐ **Treat 2.11 as valid only against a measurement taken the same way.** See
+`docs/SESSION-HANDOVER.md` for the same annotation and for the caveat recording that this
+table's baseline was already contaminated once by an unrecorded condition.
 
 Wizard solved outright. The form is structurally sound and bounded but the rescue
 question is still half a screen down on 15PM and a full screen on an iPhone 8;

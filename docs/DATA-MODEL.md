@@ -12,6 +12,8 @@ because someone once wrote it down deliberately. It was cited as current on
 26 August 2026 — four days and three schema versions later — in a brief that
 concluded `condition_id` did not exist. It does.
 
+⭐ **NOT FOR: runtime architecture, record-creation sites or platform behaviour — that is `docs/ARCHITECTURE.md`. Not for design or UI — that is `docs/design-audit/AUDIT.md`. Not for session history — that is `STATUS.md`.** This document says what is STORED, never how it is captured or displayed.
+
 ---
 
 ## 0. What is BUILT — schema v9, verified against the code 7 September 2026

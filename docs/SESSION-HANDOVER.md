@@ -142,6 +142,22 @@ renders.** With a database the form's event-type grid also gains an "Add your ow
 grid row the earlier run never drew. **The fault contaminated the baseline as well as the
 projection, and a before/after pair taken under different conditions is not a comparison.**
 
+⚠️ **ANNOTATED 8 September 2026 — THE 2.11 FIGURE CANNOT BE COMPARED AGAINST A
+RESCUE-EXPANDED MEASUREMENT, AND IS NOT DELETED.** The row states its platform
+(15 Pro Max) and its picker state (before / after bounded pickers). **It states neither
+the RESCUE STATE nor the MEASUREMENT METHOD.**
+
+⛔ **Both omissions matter here specifically, because the rescue section is the largest
+single block on this form** — recorded two rows up as `1401 -> 377pt`, so its expanded
+and collapsed heights differ by roughly a screen on this device. **A form total measured
+with rescue collapsed and one measured with it expanded are different quantities**, and
+nothing on this row says which was taken.
+
+⭐ **So: use 2.11 only against another figure taken the same way.** Any future
+rescue-expanded number is a new baseline, not a later reading of this one. **The caveat
+above already shows this table has been contaminated once** by a condition nobody recorded
+at the time — the absent add pill — which is the same failure in a different variable.
+
 **The wizard figures were unaffected throughout**, because its add row is not gated on
 `canPersist`.
 

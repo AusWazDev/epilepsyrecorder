@@ -73,3 +73,9 @@ MER Refresh Chat*.txt
 *chat-transcript*
 transcripts/
 *.jsonl
+
+# Sentry native crash-reporter RUNTIME STATE, written by the app on Windows desktop.
+# Not build output and not source: a run directory, a lock file, metadata and
+# settings.dat, all written at app start. Untracked and stale since 25 Aug 2026.
+# IGNORED, NOT DELETED - the directory stays on disk.
+.sentry-native/

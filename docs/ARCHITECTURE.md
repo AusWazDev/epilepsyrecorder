@@ -8,6 +8,8 @@ This document is derived by reading the repository, not written from the
 website, the store listing, or memory. Those three have each been wrong about
 this app at least once.
 
+⭐ **NOT FOR: design, layout, UI or UX judgement — that is `docs/design-audit/AUDIT.md`. Not for the schema — that is `docs/DATA-MODEL.md`. Not for session history — that is `STATUS.md`.** This document says how the code is SHAPED, never whether that shape is good. ⚠️ **`AUDIT.md` does not itself declare a scope** (checked 8 Sep 2026); this pointer is a statement about what that document IS, not a quotation from it.
+
 > **Regenerate at every version bump.** A stale architecture document is worse
 > than none, because it reads as authoritative.
 >
@@ -161,7 +163,7 @@ numbers in this table and three were wrong within days.
 | # | Site | Trigger | Runtime | Writes |
 |---|---|---|---|---|
 | 1 | `home_screen.dart` `_quickRecord` | Record Event button | Main isolate | `_persist()` → `EventStore.save` |
-| 2 | `log_event_screen.dart` save | Save on the single-page form | Main isolate | returns the record, then `_persist()` |
+| 2 | `log_event_screen.dart` save | Save on the single-page form | Main isolate | returns the record, then `_persist()`. ⚠️ **NOT A CREATION SITE — see the note below this table** |
 | 3 | `event_wizard_screen.dart` `_capture` / `_build` | Next, Skip to end, or backing out | Main isolate | returns the record, then `_persist()`. ⚠️ **Guarded by `_hasAnyInput`** — an untouched wizard creates nothing |
 | 4 | `notification_service.dart` `_handleStart` | "Log Event Now" | **Android background isolate** | `writeEventPayload`; sets `mer_active_event` |
 | 5 | `notification_service.dart` `_handleEnd` | "Event Ended" | **Android background isolate** | rebuilds the record to set `duration` from elapsed time |
@@ -173,6 +175,31 @@ numbers in this table and three were wrong within days.
 Sites 6 and 7 **do not pass through `writeEventPayload`** and know nothing about
 any Dart-side storage convention. Anything added to the Dart write path must be
 assumed absent on iOS quick-log until proven otherwise.
+
+⚠️ **ROW 2 IS A TABLE-MEMBERSHIP DEFECT, ANNOTATED 8 September 2026 — the row's own
+wording is ACCURATE and is left standing.** *"Save on the single-page form"* correctly
+describes the gesture, and the record it returns really is written by `_persist()`. **The
+defect is that the row is in THIS table.**
+
+**`LogEventScreen` is not a record-creation site.** Checked 8 September 2026: **no
+production call constructs it without an existing record.** All three sites pass one —
+`home_screen.dart:600` and `:821`, and `history_screen.dart:614` — and `_openLogScreen()`
+with no argument occurs **0 times**. Creation is routed elsewhere: `_recordWithDetails`
+calls `_openWizard(existing: null)`, and `_openDetails` sends complete records here and
+incomplete ones to the wizard via `wantsWizard`.
+
+⛔ **The capability survives and is why the row reads plausibly.** `existing` is declared
+`EventRecord?` defaulting to `null`, so the constructor still ACCEPTS a creation call.
+**Nothing calls it that way.** A reader checking the constructor signature confirms the
+row; a reader enumerating the call sites refutes it.
+
+⭐ **`CLAUDE.md:78` already states the role correctly** — *"the single-page form (edit path
+for a COMPLETE record)"* — **and is not restated here.** See also
+`docs/design-audit/AUDIT.md` §13(a) and §13(m), which treat this screen as the edit path
+throughout.
+
+**Not renumbered, not deleted.** Removing the row would lose the true statement it makes
+about where a saved record goes.
 
 ---
 
