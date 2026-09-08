@@ -2302,7 +2302,39 @@ instead — `PrintWindow` plus a `GetClientRect` crop is structurally independen
 which is what the occlusion proof establishes. ⛔ **The old check — "app-bar navy at the top and
 grey below" — passed on Gmail, and is retired.**
 
----
+➕ **A FOURTH INSTRUMENT FAILURE, 8 September 2026 (evening) — AND IT IS THE SHARPEST, BECAUSE IT
+HAPPENED AFTER THIS FINDING WAS WRITTEN.**
+
+**The sequence, in one session:**
+
+| | |
+|---|---|
+| **1** | The capture instrument produced a **false negative** — the walkthrough's missing navigation |
+| **2** | The same instrument produced a **false positive** minutes later — the Gmail frame |
+| **3** | **THIS FINDING WAS WRITTEN**, naming the cause: an instrument that measures a PROXY fails in ways its own controls cannot detect |
+| **4** | The replacement instrument was proven occlusion-independent, and then produced a **third false finding** — §13(al)'s DPI offset — which was **committed as 🔴 with a "SETTLED" claim** |
+
+⛔ **THE DOCUMENT, THE AUTHOR, AND THE REPEAT, ALL IN ONE SESSION.** §13(r) records that documenting
+a failure mode does not inoculate against it. **This is that at its sharpest: the rule was written
+here, four hours before being walked into.**
+
+⚠️ **AND THE MECHANISM OF THE REPEAT IS WORTH NAMING PRECISELY, BECAUSE IT IS NOT THE SAME AS
+INSTANCES 1 AND 2.** Those were an instrument measuring the wrong pixels. **This one was a reading
+of a frame treated as INDEPENDENT CONFIRMATION of a measurement that came through the same
+pipeline.** The offset was called *"visible to the eye"* and *"unmistakable"*, and the clipping in
+two frames was said to have *"tipped"* the verdict.
+
+⛔ **NONE OF THAT WAS INDEPENDENT. Reading a frame and measuring a frame are the same evidence when
+the frame is the thing at fault.** An eye applied to a corrupted image confirms the corruption with
+complete sincerity — which is exactly what instances 1 and 2 already demonstrated, and exactly what
+was forgotten.
+
+⭐ **THE COUNTERWEIGHT, AND IT IS REAL: reading the frame is what CAUGHT instances 1 and 2.** So the
+lesson is not "do not read frames". **It is that reading a frame tests whether the frame shows what
+you think it shows — the SUBJECT — and cannot test whether the frame's GEOMETRY is faithful.** The
+Gmail frame was caught because the subject was visibly wrong; a correctly-subjected frame with
+wrong geometry looks exactly right. ⛔ **Subject and geometry are two properties, and the eye only
+checks one.**
 
 ### (ak) THE APP REQUESTS A WINDOW LARGER THAN A COMMON LAPTOP DISPLAY CAN SHOW
 
@@ -2412,6 +2444,71 @@ believes is there**. At 876 px the right margin is **2 px** — content flush ag
 is a layout terminating where it thinks the viewport ends, and the viewport it thinks it has is the
 wrong one.
 
+⛔ **RETRACTED 8 September 2026 (evening). THE FINDING ABOVE IS WRONG. Its text and its 🔴 are
+left exactly as written, because a record of what was concluded that day must stay true — and
+because the reasoning that produced it is the transferable part.**
+
+**THERE IS NO APP DEFECT HERE. The offset is an artefact of the capture instrument.**
+
+**THE DECISIVE MEASUREMENT, which needs neither `PrintWindow` nor a click.** Flutter's Windows
+surface is a CHILD window, so its rect can be read directly:
+
+    PARENT   class=FLUTTER_RUNNER_WIN32_WINDOW  clientRect=1265x682  dpi=120
+    AT-PT    class=FLUTTERVIEW                  clientRect=1265x682  parent=46665734  dpi=120
+
+⭐ **The `FLUTTERVIEW` child's client rect EQUALS the parent's — 1265x682, not the 1581 the model
+required.** So the embedder passes the correct physical size, Flutter's logical width is
+1265 / 1.25 = **1012**, and **the widget test at exactly those metrics reports 246 / 246 — centred.**
+
+**THREE LAYERS RULED OUT, each with evidence:**
+
+| Candidate | Verdict |
+|---|---|
+| `windows/runner/` | ⛔ **BYTE-IDENTICAL to the SDK template.** `flutter_window.cpp`, `win32_window.cpp`, `utils.cpp`, both headers and `runner.exe.manifest` all diff clean against `flutter_tools/templates/app/windows.tmpl/runner`. **MER has not touched the embedder.** The manifest declares `PerMonitorV2`, so the app is correctly DPI-aware |
+| the engine / embedder | ⛔ **RULED OUT by the `FLUTTERVIEW` rect above** |
+| Dart-side layout | ⛔ **RULED OUT** — the widget test at DPR 1.25 / 1265x682 centres exactly |
+| Flutter version | **Not implicated.** Recorded because the finding cites it: Flutter **3.41.3** stable, engine `14e407f9`, Dart 3.11.1 |
+
+⛔ **SO IT IS THE CAPTURE. THIRD FALSE FINDING FROM THAT PIPELINE**, after the off-screen false
+negative and the Gmail false positive in §13(aj).
+
+⚠️ **THE MECHANISM IS INFERRED, NOT VERIFIED, AND IS RECORDED AS AN EXPLANATION RATHER THAN A
+MEASUREMENT.** `PW_RENDERFULLCONTENT` appears to composite the DirectComposition / ANGLE
+`FLUTTERVIEW` child imperfectly on a DPI-scaled window. **What is MEASURED is that the offset is not
+in the app; the internals of `PrintWindow` were not instrumented.**
+
+---
+
+⛔ **WHY THE DPI-96 TEST DID NOT SETTLE IT, AND THIS IS THE PART WORTH KEEPING.**
+
+The retracted finding called itself *"SETTLED BY A PREDICTION THAT COULD HAVE FAILED IN A SPECIFIC
+DIRECTION."* **The prediction was falsifiable. It was not DISCRIMINATING.**
+
+| Hypothesis | Prediction at DPI 96 |
+|---|---|
+| the app lays out wrong at high DPI | offset vanishes |
+| **`PrintWindow` mis-scales at high DPI** | **offset vanishes** |
+
+⭐ **Both rivals predict the same result, so the result chose neither.** At DPI 96 there is no
+scaling for `PrintWindow` to get wrong, which is precisely why the test looked conclusive and was
+not.
+
+> ⛔ **THE RULE: A PREDICTION MUST DISCRIMINATE BETWEEN HYPOTHESES, NOT MERELY BE FALSIFIABLE.**
+> Before running a test, ask what the RIVAL hypothesis predicts. **If both predict the same
+> outcome, the test cannot settle it** — however cleanly it succeeds, and however specific the
+> direction of the prediction sounds.
+
+⚠️ **AND THE TWO EXCLUSIONS CITED WITH IT WERE WEAKER THAN THEY WERE PRESENTED:**
+
+- **"Invariant to window position"** rules out a **translation** error. The artefact is a **scale**
+  error. ⛔ **It was never in scope for the thing it was offered against.**
+- **"Cropped and uncropped captures agree"** shows only that the crop is **self-consistent** —
+  **both go through `PrintWindow`.** A shared upstream fault is invisible to a comparison of two
+  things downstream of it.
+
+⭐ **This is the proxy-instrument class from §13(aj) recurring: the controls ran on the proxy, so
+they could not see the proxy failing.**
+
 ---
 
 ### (am) 🔴 CONTENT CLIPS AT NARROW WIDTHS, AND THERE IS NO FLOOR
@@ -2448,6 +2545,42 @@ way** (§13(u): no telemetry of any kind), and a user who does it can drag back.
 | **Support** | responsive layout makes narrow widths work. **Not small** — and §13(aa) records that there are no breakpoints anywhere to build on |
 
 **DESIGN-TRACK, and it belongs with the component vocabulary** rather than ahead of it.
+
+⚠️ **CORRECTED 8 September 2026 (evening). The finding above is PARTLY WRONG. Its text is left as
+written; what follows separates what survives from what does not.**
+
+⛔ **WRONG — BOTH DESCRIPTIONS WERE READ FROM ARTEFACT FRAMES**, produced by the capture pipeline
+retracted in §13(al):
+
+| Claimed | Actual, from the widget test at DPR 1.25 |
+|---|---|
+| *"at 400 logical the stats card's fourth column is cut mid-word — the `R` of `Referrals` visible, the rest gone"* | ⛔ **FALSE. At 400 logical: content 360 wide, 20 px padding each side, ZERO overflowing texts.** The layout is fine |
+| *"at 94 logical `Record Event` breaks as `Recor / d / Event`"* | ⛔ **FALSE for that element.** No overflow of `Record Event` at any width measured |
+| *"the stats row is four numbers in unreadable two-letter fragments"* | ⛔ **Not reproduced** |
+
+✅ **REAL, and measured with the reliable instrument:**
+
+    NARROW logical=400  capLeft=20.0 capW=360.0  overflowingTexts=0  exception=true
+    NARROW logical=94   capLeft=20.0 capW=54.0   overflowingTexts=2  exception=true
+                        Medical Event Reco@66..352 | Record · Review · @66..296
+
+⭐ **At 94 logical there IS genuine overflow — but it is the APP BAR, not the body.** Two texts
+extend to x=352 and x=296 in a **94-wide** viewport: the title `Medical Event Recorder` and the
+subtitle `Record · Review · Share`. **Nothing in the content column overflows at either width.**
+
+⚠️ **AND SOMETHING REAL THAT THIS FINDING DID NOT NOTICE: both widths raise a framework
+exception.** Recorded separately as **§13(as)**, because it is reliably measured and nobody has
+examined it.
+
+⭐ **THE DESIGN QUESTION SURVIVES — BUT ITS EVIDENCE HAS SHRUNK, AND THAT CHANGES ITS WEIGHT.** The
+prevent-versus-support choice above stands as a question. **What it no longer rests on is a failure
+at 400 logical.** The measured failure is at **94** — the OS floor, reachable only by dragging a
+window to a sliver — rather than at 400, which is an ordinary narrow window. ⛔ **A defect at 400
+would have made "prevent" nearly obvious. A defect only at 94 does not.**
+
+⚠️ **The claims about the RUNNER stand and were re-verified**: `WM_GETMINMAXINFO` and `MinTrackSize`
+return **0 hits** across `windows/runner/`, control `Win32Window` **21 hits**; and the granted-width
+table down to **94.4 logical** came from `GetClientRect` read-back, **not from any capture.**
 
 ---
 
@@ -2624,3 +2757,33 @@ sequencing the steps. ⭐ **The cutout and the edge-flipping are the real work; 
 to weigh against `showcaseview`'s 3,115 likes.
 
 ⛔ **NO PACKAGE CHOSEN, and no shape chosen. DESIGN-TRACK.**
+
+---
+
+### (as) ⚠️ A FRAMEWORK EXCEPTION IS RAISED AT NARROW WIDTHS — UNEXAMINED
+
+**Measured in a widget test, 8 September 2026, at `TargetPlatform.windows` and DPR 1.25.**
+
+    NARROW logical=400  capW=360.0  overflowingTexts=0  exception=true
+    NARROW logical=94   capW=54.0   overflowingTexts=2  exception=true
+
+⛔ **`tester.takeException()` returns non-null at BOTH widths** — including **400 logical, where
+nothing overflows visually and the content column is a healthy 360 px wide.** So the exception is
+not the same thing as the visible overflow, and it fires where nothing looks wrong.
+
+⚠️ **ALMOST CERTAINLY A `RenderFlex` OVERFLOW, AND THAT IS INFERRED RATHER THAN READ.** The
+exception object was not captured or printed — only its presence was recorded. ⛔ **The actual
+exception type and message are UNKNOWN and were not looked at.**
+
+⭐ **WHY THIS IS RECORDED SEPARATELY RATHER THAN FOLDED INTO §13(am): it is the one thing in that
+area measured by an instrument that has not lied.** §13(am)'s descriptions came from artefact
+frames and are retracted; this came from a widget test. **It is also the only finding here that
+suggests the narrow case has a real problem at 400 logical after all** — just not the one that was
+claimed.
+
+⛔ **NOT INVESTIGATED. What raises it, in which widget, and whether it also fires on Android at the
+same width, are all open.** ⚠️ **Do not assume it is Windows-specific** — the test set
+`TargetPlatform.windows`, but nothing establishes that the platform matters, and §13(ak) found the
+platforms agreeing on the walkthrough layout at every size tested.
+
+---

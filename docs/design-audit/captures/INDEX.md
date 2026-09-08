@@ -587,4 +587,24 @@ two screens that are uncapturable on the tablet without `pm clear` are reachable
 | **`history`, `form`, the discard dialog** | ⛔ **Desktop has no `uiautomator` equivalent.** Every tablet capture was confirmed against the accessibility tree before the shot; on Windows the only route was pixel-hunting, and a search of the app bar's top-right band for a menu glyph returned **0 white-ish pixels**. After §13(aj), guessing at coordinates was not an acceptable method. See §13(ap) |
 | **The wide-desktop case (1920)** | ⛔ **Not possible on this machine.** The maximum logical client the 1536x864 display allows is about 1216x622 |
 | **The 200% text-scale set** | Still out of scope, and still without a filename convention — see §13(u) |
-| **DPI-96 test frames** | ⚠️ **Deliberately NOT kept in this set.** Two frames were captured at `GetDpiForWindow = 96`, via a per-process `__COMPAT_LAYER=DPIUNAWARE` launch, to settle §13(al). **They are evidence about a DEFECT, not records of how the app looks** — the app does not run at 96 DPI on this machine. Their measurements are in §13(al) |
+| **DPI-96 test frames** | ⚠️ **Deliberately NOT kept in this set.**
+
+⛔ **ANNOTATED 8 September 2026 (evening) — THESE FOUR CAPTURES ARE VALID FOR APPEARANCE AND
+INVALID FOR GEOMETRY. They are NOT deleted.**
+
+**What they still evidence:** colour as rendered, type as rendered, that Windows renders MER at
+all, that the app bar spans the full client width, and what the screen looks like at four window
+sizes. ⭐ **That is what a capture is for.**
+
+⛔ **What they do NOT evidence: any horizontal position, margin, offset or clipping claim.**
+`AUDIT.md` §13(al) records a red-flagged defect derived from these frames — a DPI-dependent
+horizontal offset — and **it is RETRACTED**. The `FLUTTERVIEW` child's client rect equals the
+parent's (1265x682), the runner is byte-identical to the SDK template, and a widget test at the
+same metrics centres exactly. **The offset was a `PrintWindow` artefact**, the third false finding
+from this pipeline.
+
+⚠️ **So the method proven in §13(aj) is occlusion-independent and NOT
+geometry-faithful at scaled DPI.** Both properties were needed; only one was tested. **The standing
+rule is now in the repo `CLAUDE.md`: captures answer "how does it look", never "where is it".**
+
+| **DPI-96 test frames (continued)** | — | Two frames were captured at `GetDpiForWindow = 96`, via a per-process `__COMPAT_LAYER=DPIUNAWARE` launch, to settle §13(al). **They are evidence about a DEFECT, not records of how the app looks** — the app does not run at 96 DPI on this machine. Their measurements are in §13(al) |

@@ -350,6 +350,56 @@ record count on the home screen against the database before trusting the build.*
 
 ## Working Rules — verification
 
+### ⛔ CAPTURES ANSWER "HOW DOES IT LOOK". THEY DO NOT ANSWER "WHERE IS IT" OR "HOW BIG IS IT"
+
+⚠️ **Geometry comes from widget tests. Appearance comes from captures. Do not cross them.**
+
+**The capture pipeline on this project has produced FOUR false findings, all on 8 September 2026,
+all with corroboration that looked like data:**
+
+    1. false NEGATIVE  the walkthrough's navigation was "missing" -- the window was sized past
+                       the working area, so the client bottom was off-screen and the capture
+                       photographed the desktop there
+    2. false POSITIVE  SetForegroundWindow failed silently and the frame was another
+                       application entirely; a row-scan reported "76 rows of real content"
+    3. false FINDING   a DPI-dependent horizontal offset, committed as a red-flag defect with a
+                       "SETTLED" claim. FLUTTERVIEW's clientRect equals the parent's, so the
+                       embedder is correct and the offset was a PrintWindow artefact
+    4. false DETAIL    text described as clipped mid-word at a width where a widget test shows
+                       zero overflow
+
+⭐ **THE SHAPE IS THE SAME EVERY TIME: a capture measures the SCREEN or a COMPOSITED SURFACE, and
+neither is the widget tree.** Occlusion, window position, DPI scaling, child-window compositing and
+z-order all sit between the layout and the pixels. **A widget test has none of them.**
+
+**1. MUST: take every geometric figure from a widget test.** Margins, offsets, widths, tap targets,
+overflow, void proportions, whether something is centred, whether something clips. ⛔ **If a number
+would change when a window moves, a capture cannot establish it.**
+
+**2. MUST: use captures for appearance only** — colour as rendered, type as rendered, whether a
+thing looks like what it is, whether copy reads well, whether two elements are distinguishable.
+⭐ **These are the questions a widget test cannot answer, which is why captures are still worth
+taking.**
+
+**3. MUST: state which instrument a finding rests on.** The scope statement's basis rule already
+requires naming the capture basis; this extends it — **a finding that cites a capture for a
+geometric claim is wrong by construction.**
+
+**4. MUST NOT: treat reading a frame as independent confirmation of a measurement from the same
+frame.** ⛔ **Reading a frame tests its SUBJECT — is this the right screen — and cannot test its
+GEOMETRY.** The Gmail frame was caught by eye because the subject was visibly wrong; a
+correctly-subjected frame with wrong geometry looks exactly right. **Subject and geometry are two
+properties and the eye checks only one.**
+
+⭐ **AND THE DISCRIMINATION RULE, learned from the same incident: a prediction must discriminate
+between hypotheses, not merely be falsifiable.** The DPI-96 test was offered as decisive because it
+could have failed. **Both rival hypotheses — "the app lays out wrong at high DPI" and "PrintWindow
+mis-scales at high DPI" — predicted the same outcome**, so its success chose neither. ⛔ **Before
+running a test, ask what the RIVAL predicts. If both predict the same result, the test cannot
+settle it.**
+
+⚠️ **Full history in `docs/design-audit/AUDIT.md` §13(aj), §13(al) and §13(am).**
+
 *Added 8 September 2026. Both rules are here because a check PASSED and the result was
 wrong — that is the shared shape, and it is why neither is a style preference.*
 
