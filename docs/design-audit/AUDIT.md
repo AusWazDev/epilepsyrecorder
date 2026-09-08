@@ -1474,6 +1474,14 @@ exist yet.**
 
 ### (v) ✅ FLASH CONTENT — CLEAN, and recorded as a positive result
 
+> ⛔ **QUALIFIED THE SAME DAY BY §13(ah) — 8 September 2026. The verdict below is left as
+> written; it records what this search found, and every individual result in it still holds.**
+> But the search MISSED one flash: `Record Event`'s `backgroundColor` swaps to white for 200 ms
+> on every tap — a **76.4% luminance change** — and taps spaced 200 to 333 ms apart exceed the
+> three-per-second threshold. ⭐ **It was missed because this search enumerated animation
+> WIDGETS and TIMERS BY TYPE, and that flash is a `bool` swapped inside a colour expression.**
+> See §13(ah).
+
 **Code-verified, 8 Sep 2026.** WCAG 2.3.1 Level A: nothing may flash more than three times per
 second. ⭐ **This is an epilepsy app, so a clean pass is worth recording in its own right rather
 than noted as an absence.**
@@ -1724,3 +1732,342 @@ instances in §13(t) are reachable by a screen reader at all.
 ⚠️ **Scope for part 2**, and it is a larger surface than the four criteria already measured: 108
 interactive constructions were enumerated for §13(x), and **how many of them announce themselves is
 unknown.** ⛔ **Do not infer a count from the one known instance.**
+
+---
+
+### ⛔ NAMING FROM HERE: (aa), (ab), (ac) …
+
+**Section 13 reached (z) on 8 September 2026 and the alphabet ran out.** Continuing as **doubled
+letters** — `(aa)` through `(az)`, then `(ba)` — because it is unambiguous, sorts correctly, and
+does not renumber anything already written. ⛔ **The alternative considered and rejected was
+restarting at (a) in a new section 14**, which would have created two findings called (a) in one
+document. **Recorded rather than chosen silently.**
+
+⚠️ **EVERY FINDING BELOW RESTS ON 1x ANDROID PROXIES, and the scope amendment's rule applies:
+layout and wrapping only, NOT rendering.** Where a finding is measured from source or from a
+widget test rather than from a capture, it says so. **No finding here rests on how anything looked
+on iOS, because nothing here was seen on iOS.**
+
+---
+
+### (aa) 🔴 THE WIDTH STRATEGY IS INCONSISTENT, NOT ABSENT
+
+**Code-verified, 8 Sep 2026.** ⛔ **An earlier claim in this session — that content is capped at
+`maxWidth: 520` app-wide — IS WRONG.** The inventory, derived from every file in `lib/screens/`:
+
+| CAPPED at `maxWidth: 520` | UNCAPPED — full-bleed |
+|---|---|
+| `home_screen.dart:1003` | `history_screen.dart` |
+| `log_event_screen.dart:555` | `event_wizard_screen.dart` |
+| `your_data_screen.dart:62` | `about_screen.dart` · `conditions_screen.dart` · `disclaimer_screen.dart` · `help_screen.dart` · `medication_screen.dart` · `vocabulary_screen.dart` · `walkthrough_screen.dart` |
+| **3 screens** | **9 screens** |
+
+⚠️ **`medication_screen`'s bare `Center` at `:144` is an empty-state message, not a width cap** —
+checked, because it looks like one in a grep.
+
+⭐ **MEASURED, not inferred: the cap binds only above 560.** At 800 the content region is **520 px
+wide inside a 760 px viewport**; at 430 it is **390 px, the full padded width**, so the cap is
+inert on a phone. Both figures from a widget test, not a capture.
+
+⛔ **THE INCONSISTENCY IS WORSE THAN ABSENCE, AND THAT IS THE FINDING.** A user moving from Home
+(520, centred) to History (full-bleed 760) sees **the content region change width by 240 px with
+no change of context**. Absence would at least be uniform. **Neither behaviour is declared
+anywhere** — there is no breakpoint, no documented rule, and no comment in any of the three capped
+screens explaining why those three.
+
+⚠️ **§13(y) AND THE SCOPE AMENDMENT BOTH OVERSTATE THIS, and are corrected here rather than
+rewritten.** Both describe *"content capped at `maxWidth 520` with no breakpoints"* as an app-wide
+property. **It is true of 3 screens of 12.** The "no breakpoints" half stands unchanged and was
+verified: `MediaQuery...size.width` **0 hits**, width-threshold branching **0 hits**, and both
+`LayoutBuilder`s use `maxHeight` only.
+
+---
+
+### (ab) 🔴 DESTRUCTIVE AFFORDANCE DENSITY ON HISTORY
+
+**Measured in a widget test, 8 Sep 2026** — `test/history_delete_geometry_test.dart`, twelve
+same-shaped complete records.
+
+| | 375x667 | 430x932 | 800x1280 |
+|---|---|---|---|
+| **delete controls on screen at once** | **7** | **11** | **12** |
+| icon glyph | 24x24 | 24x24 | 24x24 |
+| **tap target** | **48x48** | **48x48** | **48x48** |
+| centre-to-centre, consecutive targets | 85 | **73** | **73** |
+| **vertical GAP between targets** | 37 | **25** | **25** |
+
+⛔ **Every row carries an unlabelled destructive control, and at 430 there are eleven of them on
+one screen, 25 px apart.** The tap target is a correct 48x48 — ⭐ **the crowding is not the target
+size, it is the density**: eleven adjacent 48 px destructive targets in a 932 px viewport.
+
+⚠️ **THE TEXT-TO-ICON DISTANCE IS UNDETERMINED FROM THIS HARNESS, and that is recorded rather than
+estimated.** The finder used to locate a row's title reported a left edge that **moved by the full
+width delta** across the three cases (258 → 313 → 683 as width went 375 → 430 → 800). A
+left-aligned `ListTile` title cannot do that, so the finder was matching something else and the
+element could not be identified with confidence. ⛔ **A number whose subject is unknown is worse
+than no number.** The claim that at 800 an icon sits closer to the next row's icon than to its own
+row's text is therefore **NEITHER CONFIRMED NOR CONTRADICTED.**
+
+**Semantics, re-confirmed 8 Sep 2026.** `history_screen.dart:1248` is
+`IconButton(icon: Icon(Icons.delete_outline), onPressed: onDelete)` — **no `tooltip`, no
+`semanticLabel`.** ⭐ **And the app-wide sweep is worse than §8 states: `tooltip:` appears exactly
+FOUR times in all of `lib/`** — `history:670` Filters, `history:703` Export CSV, `home:1604`
+Dismiss, `medication:171` Delete. **History labels its two app-bar actions and not the destructive
+control on every one of its rows.** See §13(z) — semantics scope arriving with a visual case.
+
+⭐ **THE DESIGN QUESTION, RECORDED AND NOT ANSWERED: does a destructive control belong on every
+row at all?** ⚠️ **And the premise offered for asking it does not hold.** History has **no
+selection mode** — the `__selection-mode` captures are `vocabulary__selection-mode`, not
+`history__`, checked 8 Sep 2026. `history_screen.dart`'s nine `selection`/`_selected` hits are
+filter-chip state. ⛔ **So "given selection mode exists" is false for this screen**, and the
+question has to be asked without it.
+
+---
+
+### (ac) HOME'S VOID IS BELOW AS WELL AS ABOVE — and it is exactly symmetric
+
+**Measured in widget tests, 8 Sep 2026**, one width per PROCESS —
+`test/home_void_430_test.dart` and `test/home_void_800_test.dart` — because
+`setMockInitialValues` does not take effect twice in one file.
+
+| | 430x932 | 800x1280 |
+|---|---|---|
+| viewport height | 876 | 1224 |
+| content height | 383 | **370** |
+| **void ABOVE** | **246.5** | **427** |
+| **void BELOW** | **246.5** | **427** |
+| content as % of viewport | **43.7%** | **30.2%** |
+| **void each side as %** | **28.1%** | **34.9%** |
+
+⭐ **THE VOIDS ARE EXACTLY EQUAL AT BOTH WIDTHS — 246.5 / 246.5 and 427 / 427.** That is the
+centring, measured rather than described, and it is why the two halves cannot be discussed
+separately.
+
+⛔ **AT 800 THERE IS MORE EMPTY SPACE ABOVE THE CONTENT THAN THERE IS CONTENT (34.9% against
+30.2%), AND THE SAME AGAIN BELOW.** Content occupies under a third of the window.
+
+⚠️ **Content is SHORTER at 800 than at 430** — 370 against 383 — because the 520 cap lets text wrap
+less. **So widening the window shrinks the content and doubles the void.**
+
+⭐ **A READING, MARKED AS A READING AND NOT A CONCLUSION.** The void **below** may be the more
+serious half: space above a primary action reads as breathing room, while space below it reads as
+a page that has ended, and at 800 there is 427 px of it beneath `Record Event`. ⚠️ **This runs
+CONTRARY to §7 and §13(e), which both treat the void above as the problem.** ⛔ **Neither is
+superseded. Both stand.** §7's recommendation to anchor rather than centre addresses both halves
+at once, and this finding does not change it — it says only that the case for it may be stronger
+below than above.
+
+⚠️ **The figures are not comparable with §7's "roughly 150 px of void" or "around 350 above and
+370 below"** — §7 measured a device capture including a status bar; these are widget tests without
+one. **§13(e) already records that basis difference.**
+
+---
+
+### (ad) HISTORY IS UNSCANNABLE WHEN RECORDS RESEMBLE EACH OTHER
+
+**Read from the device's accessibility tree AND seen in
+`history__default__430x932__2026-09-08.png`, 8 Sep 2026 — so the ROW CONTENT is code-level
+evidence, not a proxy reading, and only the visual density rests on the 1x capture.**
+
+**Counted from the device's own accessibility tree, 8 Sep 2026, not from the image:** the visible
+list runs
+
+    4:41 PM   Add details: duration, type, severity
+    10:17 PM  Seizure / fit   1m 45s · Mild
+    10:03 PM  Seizure / fit   Mild   Add details: duration
+    4:07 PM   Seizure / fit   1-5 minutes · Mild
+    3:27 PM   Seizure / fit   < 1 minute · Mild
+    1:54 PM   Seizure / fit   < 1 minute · Mild
+    3:07 AM   Seizure / fit   < 1 minute · Mild
+    3:05 AM   Seizure / fit   < 1 minute · Mild
+    3:01 AM   Seizure / fit   < 1 minute · Mild      <-- and SIX more, byte-identical
+    ...
+
+⛔ **SEVEN rows are BYTE-IDENTICAL — `3:01 AM · Seizure / fit · < 1 minute · Mild` — and TEN
+consecutive rows read `< 1 minute · Mild`.** ⭐ **On the seven identical rows even the timestamp
+stops distinguishing them**, so nothing on the row identifies which record it is. A reader cannot
+tell them apart, and neither can a reader who has just deleted one.
+
+⚠️ **THIS IS TEST DATA AND THE DENSITY IS NOT REPRESENTATIVE.** Seven identical events at the same
+minute is not a real history. ⛔ **But the failure mode is real and does not depend on the data
+being synthetic**: any user whose events genuinely resemble one another — the same type, the same
+severity, the same duration bucket, which is the common case for a single well-characterised
+condition — gets the same wall. **A row that distinguishes records only by fields that repeat
+distinguishes nothing.**
+
+⭐ **Cross-reference §13(l): the screen already struggles to say how ONE record kind should appear
+in it.** This finding is about the same list before a second kind is added.
+
+---
+
+### (ae) THE NEWEST RECORD PRESENTS AS INCOMPLETE, AT THE TOP OF THE LIST
+
+**Seen directly, 8 Sep 2026, 1x proxy.** The first row of History reads
+**`4:41 PM · Add details: duration, type, severity`** — the most recent record, at the top, framed
+by what it lacks.
+
+⛔ **§5 IS THE FINDING AND IS NOT RESTATED HERE.** It records the trade in full, including the
+code's own counter-argument that a filtered list of quick-logs *"reads as broken rather than as a
+work queue"* without the gap list. ⚠️ **What this adds is only WHERE it lands: at the top, on the
+default screen, on the newest record** — so the first thing a reader sees in History is a
+deficiency notice on the thing they did most recently.
+
+⭐ **Fix 1A is visible and working in the same capture** — the copy reads `Add details:` and not
+`Needs:`, on the real device. ⛔ **The open question in §5 is not answered here, and this finding
+does not answer it.**
+
+---
+
+### (af) THE BOUNDED-CHIP LABEL COUNTS WHAT EXISTS, NOT WHAT IS HIDDEN
+
+**Seen directly, 8 Sep 2026, 1x proxy, and confirmed against the device's own accessibility tree:
+`32 to choose from · Show all`.**
+
+The label sits beside a picker showing roughly ten chips out of 32 or 34. ⛔ **It names the size of
+the VOCABULARY, not how many are shown and not how many are hidden** — so the number a reader most
+needs, *how much is behind "Show all"*, is the one arithmetic they have to do themselves.
+
+⚠️ **Minor, and vocabulary-track.** ⭐ **It belongs with the component-vocabulary work in §10
+rather than with the layout work**, because it is a question about what a count means, and the same
+label appears on every bounded picker in the app.
+
+---
+
+### (ag) THE FILLED-BUTTON PALETTE — one fill, four opposite meanings
+
+**Code-verified, 8 Sep 2026.** Every `FilledButton` and `ElevatedButton` in `lib/screens/`, by
+fill:
+
+| Fill | Distinct buttons | Labels it carries |
+|---|---|---|
+| **navy #0D4F82** — 14 from the theme default, 1 explicit `MERColours.primary` | **15** | `I Understand and Agree` · `Add` (wizard) · `Next` (wizard) · **`Delete`** (history:576) · **`Reset`** (home:845) · `Record with details` · `Back up now` · `Add` (form) · **`Save`** · **`Go back`** · **`Cancel`** · **`Delete`** (medication:94) · `Save` (medication) · `Next` (walkthrough) · your-data action |
+| **`MERColours.alert` #E05B3A** | **1** | **`Record Event`** — the primary capture action, and it FLASHES: see §13(ah) |
+| **#D32F2F red** | **1** | `End Event` |
+| **#E65100 amber** | **1** | `Retrying` (storage-fallback banner) |
+| | **18 total** | |
+
+⚠️ **The counts are DISTINCT CONSTRUCTOR SITES, computed rather than read off a grep.** A first
+pass reported 17 navy by double-counting multi-line constructors and by misparsing `Record Event`'s
+`_buttonFlash ? … : …` ternary as the theme default — **which would have hidden §13(ah) entirely.**
+
+⛔ **NAVY FILLS `Delete`, `Save`, `Go back` AND `Cancel`** — a destructive confirmation, an
+affirmative confirmation, a stay-here and a leave-here, in one colour. ⭐ **§1 already records this
+as *"Destructive Delete and confirmatory Save are both filled blue, with no red anywhere"* — this
+quantifies it: 15 of 18 filled buttons share one fill, and four of those fifteen have mutually
+opposite consequences.**
+
+⚠️ **And there IS red, in two shades, contradicting §1's "no red anywhere"** — `#D32F2F` on
+`End Event` and `#E65100` on the fallback banner. ⛔ **Neither is on a destructive control.** The
+one red-filled button ends an event; the two destructive `Delete` buttons are navy. **So red exists
+and is spent on something else**, which is a stronger version of §8's *"orange does three jobs"*.
+
+---
+
+### (ah) 🔴 THE RECORD EVENT BUTTON FLASHES, AND §13(v) MUST BE QUALIFIED
+
+⛔ **THIS CORRECTS §13(v), WHICH RECORDED FLASH CONTENT AS CLEAN ON 8 SEPTEMBER 2026. (v)'s search
+did not find this, and the reason is worth recording: it enumerated ANIMATION WIDGETS and TIMERS
+BY TYPE, and this is neither** — it is a `bool` swapped in a `backgroundColor`, driven by a
+`Timer` that (v) did examine and classified by the *other* thing it drives.
+
+**Code-verified, `home_screen.dart`:**
+
+```dart
+backgroundColor: _buttonFlash ? Colors.white : MERColours.alert,   // :1114
+
+_buttonFlash = true;                                               // :563
+// Decorative only. Restarted on each tap so a run of taps keeps flashing.
+_flashTimer?.cancel();
+_flashTimer = Timer(const Duration(milliseconds: 200), () {
+  if (mounted) setState(() => _buttonFlash = false);               // :577
+});
+```
+
+**MEASURED against WCAG 2.3.1's general flash threshold, both conditions:**
+
+| | |
+|---|---|
+| `#E05B3A` relative luminance | **0.2363** |
+| `#FFFFFF` relative luminance | **1.0000** |
+| luminance change | **76.4% of full scale** — threshold is 10% → **MET** |
+| darker state below 0.80 | **0.2363** → **MET** |
+| **so a single transition IS a "flash" by the luminance test** | **YES** |
+
+⭐ **AND THE RATE IS WHERE IT RESOLVES — the cancel-and-restart is a genuine safety property.**
+Taps closer together than 200 ms **hold the button white continuously** rather than strobing,
+because each tap cancels the pending timer. So fast tapping is *safer* than moderate tapping:
+
+    tap spacing   white   orange   flashes/sec   over 3/sec?
+      150 ms       --      --         0.00       no flashing at all, stays white
+      200 ms       --      --         0.00       no flashing at all, stays white
+      250 ms      200ms    50ms       4.00       ⛔ EXCEEDS
+      300 ms      200ms   100ms       3.33       ⛔ EXCEEDS
+      350 ms      200ms   150ms       2.86       under
+      500 ms      200ms   300ms       2.00       under
+
+⛔ **THE EXPOSED BAND IS TAPS SPACED 200-333 ms APART — 3 to 5 Hz — where the threshold is
+exceeded.** Outside it, below 3 Hz or above 5 Hz, it is not.
+
+⚠️ **WHETHER A USER REACHES THAT BAND IS UNMEASURED AND IS NOT GUESSED HERE.** It requires
+deliberate repeated tapping of the primary capture button at a sustained 3 to 5 taps per second.
+⭐ **But this is an epilepsy app, the flashing element is the largest button on the home screen,
+and the code comment says the behaviour is intentional — *"a run of taps keeps flashing"* — so the
+run-of-taps case was designed for rather than overlooked.**
+
+⛔ **RECORDED, NOT FIXED, and no fix proposed.** ⚠️ **§13(v)'s other conclusions stand**: no
+repeating animation, no controller, no Lottie, no GIF, no animation package, and the 1 Hz
+`_ActiveEventBanner` timer changes no colour. **What (v) got wrong was the scope of its search, not
+any of its individual results.**
+
+---
+
+### (ai) THE DISCARD DIALOG, ASSESSED ON THE DEVICE
+
+**Seen directly at all three widths, 8 Sep 2026, 1x proxies** —
+`form__discard-dialog__{375x667,430x932,800x1280}__2026-09-08.png`.
+
+**✅ WHAT HOLDS:**
+
+- **It does not read as the save dialog.** Different title, different verbs, different button
+  arrangement.
+- **The change list is legible at all three widths**, and wraps rather than truncating.
+- ⭐ **The field-name prefix defeats the `Yes`/`Partly`/`No` collision recorded in §13(p).**
+  `• Rescue medication: not recorded → Yes` and `• Did it help: Yes → Partly` are unambiguous
+  precisely because the field is named before the value. **A finding in one place turning out to be
+  already mitigated in another.**
+- **`Go back` and `Discard` are visually distinguishable** — one filled, one not.
+- ⭐ **`not recorded` rather than `No`, confirmed on a real record**, which is the nullable-bool
+  distinction surviving all the way to the screen.
+
+**⛔ WHAT DOES NOT:**
+
+- **At 800 the dialog is phone-sized and sits low in the window.** It is not scaled to the
+  viewport, so on a tablet it reads as a phone dialog on a large surface.
+- ⛔ **It obscures the control the user just changed, and this is DERIVED FROM MEASURED
+  COORDINATES rather than eyeballed.** At 800 the severity pills sit at y **548-592**
+  (`Mild [140,547][305,593]`, `Severe [487,548][652,592]`), and the dialog's own buttons sit at y
+  **692-740**, putting the dialog body across roughly y 500-740. **The two overlap: the dialog
+  covers the severity row, which is the field named in the list beneath it.**
+  ⚠️ **And WHICH control it obscures VARIES BY WIDTH** — at 430 the same pills are at y **509-555**
+  while the dialog's buttons are at y **500-548**, a different overlap again. The dialog's position
+  is fixed relative to the window; the content behind it is not, because the form scrolls
+  differently at each width. **So there is no single answer to "what does it hide", and that is
+  itself the finding.**
+
+**Discard's tap target, measured on the device's accessibility tree at each width:**
+
+| Width | `Discard` bounds | Target |
+|---|---|---|
+| 375x667 | `[244,367][311,415]` | **67 x 48** |
+| 430x932 | `[299,500][366,548]` | **67 x 48** |
+| 800x1280 | `[490,692][557,740]` | **67 x 48** |
+
+⭐ **48 high at every width, so it meets WCAG 2.2 AA's 24x24 and Material's 48 — and the visual
+affordance is smaller than the target, which is correct rather than a defect.** ⚠️ **A tap at
+`(620,690)` — 63 px right of the target's right edge — hit the dialog barrier and dismissed it**,
+which is how the divergence was noticed and is also the correct behaviour for a barrier tap.
+
+⛔ **AND §13(y) APPLIES DIRECTLY HERE: on Windows there is no padded default at all.** These 48 px
+targets come from `MaterialTapTargetSize.padded`, which `theme_data.dart` selects for Android,
+Fuchsia and iOS and **not** for Windows. **The desktop build's discard buttons are unmeasured, and
+this table does not describe them.**
