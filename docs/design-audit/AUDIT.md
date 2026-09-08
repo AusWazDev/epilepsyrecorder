@@ -811,3 +811,31 @@ well as a save one. **(m) must be fixed before or with (a), not after it.**
 coverage**, not observed at runtime. The field counts and the zero/three control above are
 code-verified; the rendered empty dialog is not. **No device reproduction was attempted** — it
 would require editing one of the 72 real records.
+
+### (n) `ARCHITECTURE.md` §3's table membership is wrong for more than one row — OPEN STRUCTURAL QUESTION
+
+**Code-verified, 8 Sep 2026.** The table is titled **"Record creation — sites across three
+runtimes"**. At least four of the things in or missing from it are not record creation.
+
+| | Why it is not record creation |
+|---|---|
+| **Row 2** `log_event_screen.dart` | No production call constructs it without an existing record. Three call sites, all pass one; `_openLogScreen()` bare occurs **0 times**. It is the EDIT path. Recorded in §13(a) and annotated in `ARCHITECTURE.md` itself |
+| **Row 6** `handleQuickLogStart` | Posts a START **fact** to the capture inbox — one `mer_inbox_<uuid>` key. Builds no record and reads no list |
+| **Row 7** `EndMEREventIntent` | Posts an END **fact**. Its own source comment: *"This extension now has no knowledge of the record list at all"* |
+| **absent** `handleQuickLogEnd`, `endActiveEventFromApp` | Post END facts. **In the code, not in the table** |
+
+⭐ **The distinction is real and load-bearing, not pedantry.** A fact is materialised into a
+record **later, by the Dart main isolate, using whatever the defaults are at drain time** — not
+at the moment the fact is posted. `handleQuickLogStart`'s own comment records that the seven
+defaults it used to invent *"are the drain's business now"*. **So the row's Runtime and Writes
+columns describe a process that never creates a record, under a heading that says it does.**
+
+⛔ **RECORDED AS OPEN. No answer proposed.** What that table should be titled and scoped is a
+structural decision — whether it becomes a write-sites table with a creation column, whether
+fact-posting sites belong in it at all, whether the two absent sites are added — and none of
+that has been decided. **This finding exists so the question is visible, not to settle it.**
+
+⚠️ **The rows themselves are now correct even though the membership is not.** Rows 6 and 7 were
+corrected in place on 8 September 2026 with their superseded wording quoted verbatim beneath the
+table; row 2 was annotated on the same date. **Membership is the residue after the factual
+errors were fixed** — it is not a restatement of them.

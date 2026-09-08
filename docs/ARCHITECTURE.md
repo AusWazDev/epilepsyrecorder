@@ -167,14 +167,66 @@ numbers in this table and three were wrong within days.
 | 3 | `event_wizard_screen.dart` `_capture` / `_build` | Next, Skip to end, or backing out | Main isolate | returns the record, then `_persist()`. ⚠️ **Guarded by `_hasAnyInput`** — an untouched wizard creates nothing |
 | 4 | `notification_service.dart` `_handleStart` | "Log Event Now" | **Android background isolate** | `writeEventPayload`; sets `mer_active_event` |
 | 5 | `notification_service.dart` `_handleEnd` | "Event Ended" | **Android background isolate** | rebuilds the record to set `duration` from elapsed time |
-| 6 | `AppDelegate.swift` `handleQuickLogStart` | "Log Event Now" on iOS | **iOS native, no Dart** | writes `flutter.epilepsy_event_records_v1` in `UserDefaults` directly, mirrors to App Group |
-| 7 | `MERWidget/EndMEREventIntent.swift` | Live Activity "Event Ended" | **iOS widget extension process** | mutates `duration` in the App Group copy only |
+| 6 | `AppDelegate.swift` `handleQuickLogStart` | "Log Event Now" on iOS | **iOS native, no Dart** | posts a START fact: one `mer_inbox_<uuid>` key in the App Group via `writeInboxStart`. ⛔ **Reads and writes nothing else** — corrected 8 Sep 2026, superseded wording quoted below |
+| 7 | `MERWidget/EndMEREventIntent.swift` | Live Activity "Event Ended" | **iOS widget extension process** | posts an END fact, payload built inline because the widget target cannot share `writeInboxInstruction` — corrected 8 Sep 2026, superseded wording quoted below |
 | 8 | `medication_screen.dart` → `MedicationStore.add` | Record a deviation | Main isolate | `insertMedicationNote` — **a different table and record kind** |
 | 9 | `home_screen.dart` restore handler | Restore from a backup | Main isolate | `insertMedicationNote` per note in `RestoreOutcome.notesToAdd` |
 
 Sites 6 and 7 **do not pass through `writeEventPayload`** and know nothing about
 any Dart-side storage convention. Anything added to the Dart write path must be
 assumed absent on iOS quick-log until proven otherwise.
+
+⛔ **ROWS 6 AND 7 WERE FALSE AND ARE CORRECTED IN PLACE, 8 September 2026. THE SUPERSEDED
+WORDING IS QUOTED HERE VERBATIM so the record of what this document said stays true.**
+
+| Row | Superseded `Writes` cell, exactly as it read |
+|---|---|
+| Row 6 | *"writes `flutter.epilepsy_event_records_v1` in `UserDefaults` directly, mirrors to App Group"* |
+| Row 7 | *"mutates `duration` in the App Group copy only"* |
+
+**Both were wrong in more than one way**, checked 8 September 2026 over a denominator of
+**8 Swift files** in `ios/`:
+
+- ⛔ **`epilepsy_event_records_v1` appears 0 times in ANY Swift file.** Control on the same
+  reader: the inbox writers return **13 hits**, so the search apparatus was live.
+- ⛔ **The App Group mirror is `mer_records`** (`AppDelegate.swift:26`), not
+  `flutter.epilepsy_event_records_v1`, and it is **read once and deleted, never written** —
+  its own declaration says so. Swift's only uses are the read-only `readLegacySharedRecords`
+  and `clearLegacySharedRecords` channels.
+- ⛔ **`duration` is not mutated anywhere any more.** `seconds` is posted on the END fact and
+  **`bucketFromSeconds` in `capture_inbox.dart` derives the bucket once** — the
+  `lt1`/`oneToFive`/`gt5` mapping used to be computed in three places.
+
+⚠️ **THE TABLE CARRIES TWO OF FOUR iOS WRITE SITES. The two it does not carry are named here
+rather than added as rows**, because adding them would renumber the table:
+
+| Absent site | Posts |
+|---|---|
+| `AppDelegate.swift` `handleQuickLogEnd` | an END fact via `writeInboxEnd` |
+| `AppDelegate.swift` `endActiveEventFromApp` | an END fact, so no fourth writer of the end instruction exists |
+
+⭐ **FOUR write sites across TWO processes** — `Runner` and the `MERWidget` extension. Derived
+by enumerating every caller of the inbox writers, not from the two names the rows happened to
+carry. `handleQuickLogEnd` appears **0 times in the numbered record-creation table at the
+head of this section**; control, `handleQuickLogStart` appears **1 time** in that same table,
+so that zero is a real absence and not a dead matcher. ⚠️ **Scoped to
+the TABLE deliberately — this read "in this document" when written on 8 Sep 2026, which the
+note itself falsified by naming the function twice. A count of a container must name the
+container, and it must not be one the counting text is inside.**
+
+⚠️ **The transport is NOT restated here — see `docs/DATA-MODEL.md` §7**, which is the
+authority for it: the native writer appends to the inbox and never reads or rewrites the record
+list, and the main isolate drains, verifies, then clears. **This document names the sites; that
+one owns the mechanism.**
+
+⭐ **The sentence above about `writeEventPayload` still STANDS** and is not superseded: sites 6
+and 7 genuinely do not pass through it. **It was accurate about the negative while the cells
+beside it were wrong about the positive.**
+
+⚠️ **The membership question this raises is NOT solved here.** These rows post facts that Dart
+later materialises, so they are not record creation either — the same defect recorded for
+row 2 above. **Recorded as an open structural question in `docs/design-audit/AUDIT.md` §13(n).
+The table is deliberately not retitled or rescoped.**
 
 ⚠️ **ROW 2 IS A TABLE-MEMBERSHIP DEFECT, ANNOTATED 8 September 2026 — the row's own
 wording is ACCURATE and is left standing.** *"Save on the single-page form"* correctly
@@ -193,7 +245,7 @@ incomplete ones to the wizard via `wantsWizard`.
 **Nothing calls it that way.** A reader checking the constructor signature confirms the
 row; a reader enumerating the call sites refutes it.
 
-⭐ **`CLAUDE.md:78` already states the role correctly** — *"the single-page form (edit path
+⭐ **`CLAUDE.md` already states the role correctly**, on the `log_event_screen.dart` line of its Project Structure block — **cited by SYMBOL, because a line number here rotted TWICE IN ONE DAY.** ⚠️ **[this read `CLAUDE.md:78` when written on 8 Sep 2026; the line was at `:82` hours later, and at `:87` after the next edit to that document's own header. This is the failure the top of this section already warns about for code citations, arriving in a cross-document pointer instead. See the sub-correction of 8 Sep 2026 in `CLAUDE.md`.]** — *"the single-page form (edit path
 for a COMPLETE record)"* — **and is not restated here.** See also
 `docs/design-audit/AUDIT.md` §13(a) and §13(m), which treat this screen as the edit path
 throughout.

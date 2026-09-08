@@ -64,13 +64,18 @@ lib/
   constants.dart          — app-wide constants (kDisclaimerVersion, storage keys, URLs)
   main.dart               — entry point; binding, Sentry, NotificationService.init(), runApp()
   models/
-    event_record.dart     — EventRecord model, serialisation, CSV export (16 columns, marker v4)
+    event_record.dart     — EventRecord model, serialisation, CSV export (17 columns, marker v6)
+                            ⚠️ **CORRECTED 8 Sep 2026 — this read *"(16 columns, marker v4)"*.** Both numbers were wrong. Counted from the header block
+                            in `buildCsv` (17 names, all distinct) and read from `kCsvShapeVersion` in `event_record.dart`, not from any document.
     event_store_sqlite.dart — SqliteEventStore, the DDL, and every migration v2..v9
     storage_boot.dart     — picks the store at boot: SQLite, or shared_preferences on a fallback launch
     storage_migration.dart — the one-way drain from the shared_preferences array into SQLite
     capture_inbox.dart    — the cross-process inbox the iOS native path and the Android isolate write into
     capture_instruction.dart — parses what those paths leave behind
-    ios_capture_bridge.dart — the Swift-side handoff
+    (ios_capture_bridge.dart is NOT here — see services/ below)
+                            ⚠️ **CORRECTED 8 Sep 2026 — this block listed *"ios_capture_bridge.dart — the Swift-side handoff"* under `models/`.**
+                            It lives at `lib/services/ios_capture_bridge.dart` and **never existed at the `models/` path** (`git log --diff-filter=D` returns
+                            empty). Reconciled BOTH directions: **13 named here, 12 on disk, 12 matching, 1 misfiled, 0 on disk that this block fails to name.**
     vocabulary.dart       — the DDL, seeds and rules for event types, observations and triggers; isShippedHidden, isMisdecodedTwin, setActive, renameEntry
     vocabulary_store.dart — Vocabularies: the cached lists every picker reads
     medication_note.dart  — the exceptions-only medication stream (missed / late / changed)
@@ -90,6 +95,7 @@ lib/
     disclaimer_screen.dart — versioned disclaimer accept gate
     help_screen.dart      — How to use guide; Quick Log Notification setup with live permission status
   services/
+    ios_capture_bridge.dart   — the Swift-side handoff: the `readCaptureInbox` / `deleteCaptureInbox` method channel. **Moved here in this document 8 Sep 2026; the file never moved**
     notification_service.dart — Android quick-log notification (awesome_notifications); SilentAction buttons; background-isolate SharedPreferences
     backup_service.dart       — backup/restore UI flows, reminder counter
   theme/                  — app theme, colours, typography
@@ -135,6 +141,43 @@ writes the stored record list at all. `AppDelegate.handleQuickLogStart`,
 the App Group), and **Dart's main isolate is the only writer of the record list**. The
 cross-process read-modify-write was removed, not relocated — `AppDelegate.swift`
 carries a DO-NOT-REINTRODUCE note where the record-list key used to be.
+
+⚠️ **SUB-CORRECTION, 8 September 2026 — the 29 August text above is ANNOTATED, NOT REWRITTEN.
+It records what was concluded on that date and stays readable as written.** Two things in it
+are imprecise, both found by reading `ios/` rather than by rereading the correction:
+
+**1. It names THREE write sites. There are FOUR.** `handleQuickLogStart`,
+`handleQuickLogEnd` and `EndMEREventIntent` are named; **`endActiveEventFromApp` is absent**,
+and it posts an END fact through the same `writeInboxEnd`. Derived by enumerating every caller
+of the inbox writers, not from the names already written down. Four sites across two processes
+— `Runner` and the `MERWidget` extension.
+
+**2. "a DO-NOT-REINTRODUCE note" is a PARAPHRASE, not a quotation.** No such phrase exists
+anywhere in `ios/`: `reintroduce`, `never write` and `no longer write` each return **0** across
+all **8** Swift files, and the control on that search — the inbox writers, same reader —
+returns **13**, so the apparatus was live and the zero is real. **The note exists in
+substance**, at `AppDelegate.swift:24-26`, worded:
+
+> *"The pre-inbox record mirror. Read once by Dart's reconciliation and then deleted; never
+> written. Kept only so the fold-in can find it."*
+
+⭐ **A POINTER IS ONLY AS GOOD AS ITS TARGET, AND NOTHING IN THE POINTERS-OVER-RESTATEMENT RULE
+VERIFIES THE TARGET.** Preferring a pointer to a restatement avoids duplication that rots
+independently — and it silently inherits whatever the target gets wrong, so an imprecise target
+propagates to every document that cites it instead of staying in one place. ⛔ **The evidence is
+in this repository, one day old, and it rotted TWICE WHILE BEING FIXED.**
+`ARCHITECTURE.md` cited `CLAUDE.md:78` for the `log_event_screen` role on 8 September 2026.
+Hours later the line was at `:82` and `:78` pointed at `duration_format.dart`, moved by an
+edit to this file's own header. The pointer was corrected to `:82` — and the corrections
+made in the SAME script run, two blocks higher up this file, pushed it to `:87`. ⛔ **Three
+positions in one day, the third caused by the edit that fixed the second.**
+**Do not cite a line number across documents at all. Cite a SYMBOL or a QUOTED PHRASE.**
+Verifying the target at write time is not enough here: the pointer above was verified when
+written and was wrong within the hour, because what invalidates it is an edit somewhere else
+entirely. ⭐ **§3 of `ARCHITECTURE.md` already states this rule for code citations — *"CITED BY
+SYMBOL, NOT LINE NUMBER"*, after three of six line numbers went wrong within days. The rule
+existed and was not applied to cross-document pointers**, which is the local-correctness-does-
+not-propagate class in the workspace rules.
 
 ⚠️ **iOS end-of-event has three surfaces, none reliable cold on every tier.** See
 `docs/ARCHITECTURE.md` §5 for the matrix and the established boundary: `didReceive` is
