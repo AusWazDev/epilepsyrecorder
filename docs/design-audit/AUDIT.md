@@ -270,6 +270,14 @@ At **430** there is roughly **150 px of void above "Record Event"**. At **800** 
 ⭐ **The content is centred rather than anchored.** A small change with a large effect on first
 impression, **and independent of every open decision in this document.**
 
+> ➕ **ADDED 8 September 2026 — a CONSTRAINT on this recommendation, not a replacement of it.**
+> **This section's recommendation stands.** §13(e) measures how far `Record Event` MOVES across
+> occupancy — `btnTop` 311 → 680, a **369-point range** — and confirms the button is never
+> unreachable in any measured state. **This section is about POSITION on an empty screen; §13(e) is
+> about MOVEMENT.** Any anchoring change has to hold across that range.
+> ⚠️ **The figures are not comparable with the "150 px of void" above** — different measurement
+> bases, one a device capture with a status bar, one a widget test without one.
+
 ---
 
 ## 8. Smaller findings
@@ -283,6 +291,10 @@ impression, **and independent of every open decision in this document.**
 - **Seen directly.** **Orange does three jobs** — the "Record Event" block, the form's selected
   card, and the "62" statistic. On home it means *tap this*; **using it on a figure weakens the
   only strong signal the app has.**
+  ➕ **8 Sep 2026 — mechanism now code-verified and the element named: see §13(k).** The "62"
+  is the `This month` statistic, orange because
+  `valueColor: thisMonth > 0 ? MERColours.alert : MERColours.primary`.
+  **This observation stands and gains a cause.**
 - **Seen directly.** **Three app-bar patterns:** title plus "Record · Review · Share", title plus
   "Medical Event Recorder", and title alone.
 - **Seen directly.** **"Days since" has no referent** — a bare `3` between "Total saved" and
@@ -468,3 +480,280 @@ hard things are right.** A redesign that does not know what to preserve will bre
 
 ⛔ **None of these is an accident, and several were re-derived after being broken once. The
 redesign's first job is to not lose them.**
+
+---
+
+## 13. Session findings — 8 September 2026
+
+**Discovery, not repair.** Nothing below was fixed while writing it, per this document's standing
+rule. **Every claim here was CHECKED on 8 September 2026**; the dates are when the check ran, not
+when the thing was introduced.
+
+⚠️ **Three of these correct or qualify earlier text. None replaces it.** Where an earlier section
+is affected, this one points at it and the earlier wording stands.
+
+### (a) 🔴 `LogEventScreen` discards edits silently — a live defect
+
+**Code-verified, 8 Sep 2026.**
+
+```dart
+void _cancel() {
+  FocusScope.of(context).unfocus();
+  Navigator.pop(context);
+}
+```
+
+Wired to the app bar's back arrow — `leading: IconButton(icon: Icons.arrow_back, onPressed: _cancel)`.
+⛔ **No confirmation, and no `PopScope` on the route, so the OS back gesture and the Android
+hardware back do the same thing.**
+
+⚠️ **There IS a confirm dialog, and it fires on the wrong event.** `confirmOnSave && !_isNew` shows
+*"Save the following changes?"* — **it protects against saving, not against losing.**
+
+⛔ **THE AFFECTED POPULATION IS EVERY COMPLETE RECORD.** `wantsWizard` routes incomplete records to
+the wizard and complete ones here, so this is the edit path for every record a user has finished.
+
+**Recorded as a defect, not a design preference.** The screen offers a Cancel affordance and a Save
+affordance; a user who has typed into it and presses back has no signal that the two differ.
+
+### (b) Exit behaviour is not uniform, and the wizard already has the right pattern
+
+**Code-verified, 8 Sep 2026.** Exactly one `PopScope` exists in `lib/` — `event_wizard_screen.dart`:
+
+```dart
+Future<bool> _onWillPop() async {
+  if (_draft != null || _hasAnyInput) _capture();
+  Navigator.pop(context, _draft);
+  return false;
+}
+```
+
+⭐ **IT PRESERVES RATHER THAN BLOCKS. Capture and leave — no dialog, nothing obstructed.** Its own
+comment records why: backing out previously discarded the current step, and *"the 'needs details'
+queue makes it the PRIMARY path rather than an edge."*
+
+⚠️ **And the condition is deliberately narrow:** *"opening the wizard on a NEW event and closing it
+without touching anything must still create NOTHING."*
+
+⭐ **THIS IS THE PRECEDENT, AND IT IS THE CORRECT ONE FOR THIS APP.** It satisfies the standing rule
+that nothing gates capture, the record, or export — a confirm dialog on exit would gate exactly
+that. **Any fix to (a) should follow this pattern rather than introduce a dialog.**
+
+**Seven other top-level screens carry no guard of any kind, checked 8 Sep 2026.** *(A search that
+finds the wizard's guard is the control: this is a real absence, not a search that missed the
+widgets.)*
+
+### (c) There is no shared navigation shell
+
+**Code-verified, 8 Sep 2026.**
+
+| | Count |
+|---|---|
+| Screens in `lib/screens/` | **12** |
+| `Scaffold(` per screen | **1 each** (home has a second, the splash spinner) |
+| `AppBar(` per screen | **1 each** |
+| Shared shell / wrapper / scaffold widget | ⛔ **none** — `lib/widgets/` holds `bounded_chip_wrap`, `mer_icon_widget`, `occurred_at_field` |
+
+*Controlled: three non-screen files return 0 Scaffold / 0 AppBar, so the uniform per-screen count
+discriminates rather than being a matching artefact.*
+
+**Navigation is imperative throughout** — 11 × `Navigator.of(context).push(MaterialPageRoute(...))`.
+**No named routes, no route table, no router package.** The only two `pushReplacement` calls are
+gate transitions (disclaimer → home, splash → disclaimer/home).
+
+⛔ **CONSEQUENCE: any control added to every screen is N separate changes with nothing enforcing
+consistency.** A control present on eleven screens and absent on the twelfth is worse than one
+present only on home, because the absence reads as a dead end rather than as a boundary.
+
+### (d) `_hasUnsavedEvents` is a storage-failure flag — a naming defect
+
+**Code-verified, 8 Sep 2026.**
+
+```dart
+/// Whether a previous write of the event list failed and has not since succeeded.
+Future<bool> hasUnsavedEvents() async { ... }
+/// Records that events are in memory but not in storage.
+Future<void> setUnsavedEventsWarning() async { ... }
+```
+
+Persisted as `mer_unsaved_events`, so it survives a relaunch. ⛔ **It means a WRITE TO DISK FAILED.
+It has nothing to do with unsaved edits in a form or a wizard.**
+
+⭐ **Recorded as a naming defect rather than a code defect, because the code is correct and the word
+is not.** Two unrelated mechanisms share "unsaved", and during this session the flag was read as
+edit-state protection more than once on the strength of the name alone, by someone who had the code
+available. **The behaviour is right; the label invites the wrong inference.**
+
+### (e) Home occupancy — the button MOVES 369 points and is never unreachable
+
+**Code-verified by measurement, 8 Sep 2026. This QUALIFIES §7; it does not replace it.**
+
+⛔ **§7's recommendation stands.** §7 is about the button's POSITION on an empty screen. This is
+about its MOVEMENT across occupancy. **Different claims — this one adds a constraint.**
+
+Eight states, **430×932 logical points, `devicePixelRatio 1.0`, one state per process:**
+
+```
+state                        occupants                  btnTop  btnBottom  maxScroll
+A none                       —                           311.0     424.0      0.0
+B backup reminder            backup                      354.0     467.0      0.0
+G active event               active                      367.0     480.0      0.0
+C storage fallback           storage                     426.5     539.5      0.0
+H unsaved write              unsaved                     441.5     554.5      0.0
+D storage+unsaved            storage+unsaved             568.0     681.0     22.0
+F storage+unsaved+12 recs    storage+unsaved             568.0     681.0    151.0
+E storage+unsaved+active     storage+unsaved+active      680.0     793.0    134.0
+```
+
+⭐ **`btnTop` ranges 311 → 680 — a 369-point range in a 932-point viewport.** At maximum reachable
+occupancy the button ends at **793, leaving 139 points of clearance.**
+
+✅ **THE BUTTON IS NEVER UNREACHABLE AND NEVER REQUIRES SCROLLING, IN ANY MEASURED STATE.** The
+layout is `SingleChildScrollView` → `ConstrainedBox(minHeight: viewport − 40)` → `Center`, so
+centring is computed against `max(viewport − 40, content)` and the column scrolls once content
+exceeds the viewport.
+
+⚠️ **NOT MEASURED, AND NOTHING DEPENDS ON IT.** It was reasoned during this session that centring
+*halves* the movement a top anchor would produce. **No top-anchored layout was ever built or
+measured, so that is unverified reasoning and is recorded here only so it is not later mistaken for
+a result.**
+
+⚠️ **MEASUREMENT GAP.** The harness ran with `Platform.isWindows == true`, which structurally
+suppresses **both** `_SettingsNudgeCard` chain members ("Notifications are off" needs
+`!Platform.isWindows`; "Show Previews" needs `Platform.isIOS`). **The maximum is established only
+among the three chain members reachable on Windows**, and neither nudge card was measured.
+
+⚠️ **The numbers are NOT comparable with §7's "roughly 150 px of void".** §7 measures void above the
+button on a device capture with a status bar; these are absolute window coordinates in a widget test
+without one. **Different bases — do not subtract one from the other.**
+
+⭐ **HARNESS METHOD, recorded because two configurations produced convincing wrong numbers before
+this one.** Seven states in one `testWidgets` reported an identical `btnTop` for all seven. Splitting
+into one test per state fixed only the storage case — the prefs-driven states still reported an
+identical figure, because **`SharedPreferences.setMockInitialValues` does not take effect once an
+instance has been created earlier in the same file.** Only **one state per process** produced
+distinct results. **A uniform set of measurements looked exactly as convincing as a correct one.**
+
+### (f) The unsaved banner and the backup reminder cannot co-occur
+
+**Code-verified, 8 Sep 2026.** `!_hasUnsavedEvents` is one of the six conjuncts of
+`_showBackupReminder`, so a device with a failed write **never** shows the backup reminder.
+Observed in measurement state F above: configured with both, only the unsaved banner rendered.
+
+**Undocumented anywhere as at 8 Sep 2026.** Recorded because the two occupy the same region and a
+reader enumerating that region would otherwise expect them to stack.
+
+### (g) The 2.11 screenful figure lacks provenance
+
+**Code-verified against the documents, 8 Sep 2026.** Recorded at `SESSION-HANDOVER.md:135`
+(*"Single-page form, 15 Pro Max | 3.42 | 2.11"*) and `STATUS.md:591`.
+
+| Attribute | Recorded? |
+|---|---|
+| Platform | ✅ "15 Pro Max" — a device name, implying 430×932 logical points |
+| Picker state | ✅ "After bounded pickers" |
+| **Rescue expanded or collapsed** | ⛔ **not stated** |
+| **Device or widget test** | ⛔ **not stated** |
+
+⛔ **So it cannot be compared against a rescue-expanded figure**, because nobody recorded which one
+it is. **Annotated where recorded; not deleted** — it is the only measurement of that screen's height
+that exists.
+
+### (h) 🔴 The backup banner frames backup as device transfer
+
+**Seen directly, 8 Sep 2026.** The reminder reads: *"Your events are stored only on this device. A
+backup is the only way to get them onto another one."*
+
+⛔ **BACKUP IS THE PRESERVATION PATH, NOT A TRANSFER PATH.** Restore on a fresh install merges
+against an empty list and reconstructs what an uninstall destroys — that is what the file is for.
+
+⭐ **A user with one device reads this and concludes it does not apply to them.** That is precisely
+the user for whom losing the phone means losing every record. **The copy describes the least
+important thing the file does.**
+
+*This corrects an error this document itself made on 31 Aug — see §9's annotation on the
+preservation path, where "export is the only preservation path" was recorded and later withdrawn.
+The banner's copy carries the same misconception the audit did.*
+
+### (h-ii) Four capture-derived vocabulary items, deferred as one
+
+**Seen directly, 8 Sep 2026. Recorded as ONE item because they share a cause** — no component
+vocabulary — **and would be fixed by the same pass rather than four.** They belong with §10's
+component-vocabulary work.
+
+- **Yes/No swaps sides between adjacent questions** on the same screen.
+- **"Other / custom" sits adjacent to "Add your own"** — two affordances, one job.
+- **Three chip vocabularies on one screen.**
+- **Emoji render differently across the three platforms shipped to**, and the simulator misrenders
+  them again — so the same record looks different on iOS, Android and Windows.
+
+### (i) The drawer request — DESIGN-TRACK, not scheduled
+
+**Code-verified, 8 Sep 2026.** The home overflow holds **seven items, none conditional**
+(`itemBuilder` returns a `const` list): History · Medication · What you track · Your lists · Your
+data · About · Help. **It appears on home only** — one `PopupMenuButton` in `lib/`.
+
+⛔ **DEPENDS ON (b) AND (c) BEING RESOLVED FIRST.** A drawer adds an exit to every screen it appears
+on, and seven of those screens have no exit guard; and with no shared shell it is N changes with
+nothing enforcing consistency.
+
+⚠️ **AND TOP-LEVEL RESTRICTION DOES NOT BOUND THE NAVIGATION STACK.** Every destination is
+`Navigator.push`, so reaching Help from History via a drawer leaves Home → History → Help. **The
+current mechanism offers no protection; it is bounded today only because the menu exists on one
+screen.**
+
+### (j) `logged_at` is used where `whenHappened` is arguably meant — one pattern, three sites
+
+**Code-verified, 8 Sep 2026.** The data model defines `whenHappened = occurredAt ?? logged_at`.
+**Each of these silently uses the fallback as though it were the value:**
+
+| Site | What it does |
+|---|---|
+| `eventsSinceLastBackup` | filters on `r.timestamp` — counts by when a record was TYPED |
+| `_thisMonthCount` (`home_screen.dart:504`) | filters on `r.timestamp` — same |
+| the CSV | ⛔ carries **no logged-at column at all**; all three time columns are `whenHappened` |
+
+⭐ **Recorded as ONE pattern rather than three notes.** A backdated record counts in the month it was
+entered, contributes to a backup reminder by entry time, and then exports with only its occurrence
+time — **so the value the app COUNTS by is the one value the export does not carry.**
+
+⚠️ **FORWARD-LOOKING RISK, NOT A CURRENT VIOLATION.** `DATA-MODEL.md` §9 requirement 3 — *"Any
+'events this month' figure must be written so a denominator can be added later without changing its
+meaning"* — **is MET as written**: the figure is a numerator presented as a numerator, and adding
+"of 30 days" would not change what the existing number means. **But that denominator would be
+days-in-month, an occurrence-time frame, against a logging-time numerator.** Recorded so the
+mismatch is visible before the denominator is built, not after.
+
+### (k) "This month" renders in alert colour whenever it is non-zero
+
+**Code-verified, 8 Sep 2026.**
+
+```dart
+valueColor: thisMonth > 0 ? MERColours.alert : MERColours.primary,
+```
+
+⭐ **THIS IDENTIFIES THE "62" IN §8.** That bullet recorded, seen directly, that *"orange does three
+jobs"* and that *"using it on a figure weakens the only strong signal the app has."* **The mechanism
+is now code-verified and the element is named: it is the `This month` statistic, orange because the
+count exceeded zero.** §8's observation stands and gains a cause.
+
+⚠️ **And there is a second reading, which is why this is recorded separately.** The app is positioned
+as a **capture tool and never diagnostic**. A count rendered in alert colour is **an editorial
+reading of a statistic** — the app telling the user that a number is bad. One event this month is
+orange; zero is not.
+
+**Recorded as a positioning finding, not a defect.** Whether a capture-only tool should colour a
+count at all is a claim-wording question of the kind §9 routes to the adviser.
+
+### (l) How a third record kind appears in History is unaddressed — DESIGN-TRACK
+
+**Read from `DATA-MODEL.md` §9, 8 Sep 2026.** Recorded here so the gap is visible from the design
+side rather than only the data-model side. ⛔ **Not restated — see §9 of `DATA-MODEL.md` for the
+column spec and the three requirements it places on the current design.**
+
+The open half, in that document's words: *"nothing addresses how a third record kind appears in,
+filters within, or sorts against the History list"*, and **`medication_note` sets no precedent
+because it has its own screen rather than a row in History.**
+
+⭐ **Belongs with the component vocabulary in §10**, not with the layout work: it is a question about
+what a row means when the list holds more than one kind of thing.
