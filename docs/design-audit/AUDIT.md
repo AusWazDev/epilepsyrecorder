@@ -2637,6 +2637,72 @@ logical client this display allows is about **1216x622**, so **1920-wide cannot 
 measured on this machine at all.** §13(aa)'s 3.6x width split was measured in a widget test at
 1920 rather than on a real window, and that distinction is deliberate.
 
+
+➕ **THE RUNNER-TEMPLATE CONTROL, PRESERVED 9 September 2026 BEFORE D2 SPENDS IT.**
+
+⛔ **§13(al)'s retraction rests in part on `windows/runner/` matching the SDK template, and D2
+(§13(au)) adds a `WM_GETMINMAXINFO` case to `Win32Window::MessageHandler`, which ends that property
+permanently.** ⭐ **Once it lands, a future reader CANNOT re-derive this** — the template it matched
+is the SDK's, the SDK moves, and a diff against a later template would report differences that were
+never MER's. **So it is recorded as a dated fact, with hashes, now.**
+
+**Template:** `C:\Flutter\flutter\packages\flutter_tools\templates\app\windows.tmpl\runner`,
+**Flutter 3.41.3 stable**, framework revision `48c32af034`, **engine hash
+`14e407f99287c74c73a9a055680e7c9341773f6e`**, Dart 3.11.1.
+
+**EIGHT FILES BYTE-IDENTICAL, sha256:**
+
+| File | sha256 |
+|---|---|
+| `flutter_window.cpp` | `d615eedc06ae37321e59c2c00c7687d1887dcd97904eb7225fafd8dcb5b83da6` |
+| `flutter_window.h` | `0252b804f5da380c7709cbe1daff2b8d18daf6c49d7e6dd43e5af3c99c19f56c` |
+| `win32_window.cpp` | `4e4f4dcf8e86ea6e097562cb3476039e693449bd8045367538afee579c017511` |
+| `win32_window.h` | `d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841` |
+| `utils.cpp` | `fbb18524c22593d0ce7869b0733e237be38e668fe045e3023bcf2d0b31784fa3` |
+| `utils.h` | `832e246b6758253f89016fb0374b30791242e97ad950d27fc678b3d9feacfdc4` |
+| `resource.h` | `d0e8bf7835468b4b6b1f8f0747f2e8f25c19841f2df2ac60aaa584ddae3aa7c6` |
+| `runner.exe.manifest` | `639a56233fcd8cbcb8bbefcd93e4680ec2664f32d9acfb3d2ec1d8726a96e090` |
+
+⭐ **AND THE ONE NUMBER TO CHECK IT WITH: those eight concatenated in that order hash to
+`fd318f1e407f73ba5258edbaaa2d9c181677eeffb43bd99e4642e13f70aff754`, repo and template alike.**
+A single figure is harder to half-verify than eight.
+
+✅ **`Win32Window::MessageHandler`'s cases are identical, repo and template — `WM_DESTROY`,
+`WM_DPICHANGED`, `WM_SIZE`, `WM_ACTIVATE`, `WM_DWMCOLORIZATIONCOLORCHANGED`. FIVE. D2's
+`WM_GETMINMAXINFO` would be the SIXTH and the first behavioural divergence MER has ever made in the
+embedder.**
+
+⚠️ **AND THE CLAIM IN §13(al) IS OVERSTATED IN ITS HEADLINE AND UNDERSTATED IN ITS SUBSTANCE.
+BOTH ARE CORRECTED HERE, NOT THERE.**
+
+**Overstated:** that row says *"`windows/runner/` — BYTE-IDENTICAL to the SDK template"* and *"MER
+has not touched the embedder"*. ⛔ **Three files in the directory DO differ** — `CMakeLists.txt`,
+`main.cpp` and `Runner.rc` — plus `resources/app_icon.ico`, which is the branded icon against the
+template's `app_icon.ico.img.tmpl`. **Read as a whole-directory claim it is false.**
+
+**Understated:** the row *enumerates* six files, and **every file it names is byte-identical**, so
+the claim as scoped is TRUE. ⭐ **And the three differences are project-identity substitution and
+nothing else, which is a STRONGER result than the enumeration:**
+
+    CMakeLists.txt   project(runner)  ->  project(MedicalEventRecorder)          1 line
+    main.cpp         L"{{projectName}}"  ->  L"Medical Event Recorder"            1 line
+    Runner.rc        {{organization}} / {{projectName}} / {{year}} substituted    6 lines
+
+⛔ **ZERO BEHAVIOURAL DELTA. Every difference is a name.** So "MER has not touched the embedder" is
+correct in substance across the whole directory, which the enumeration could not establish.
+
+⚠️ **One count in that row is simply wrong: it says *"both headers"*. There are FOUR** —
+`flutter_window.h`, `win32_window.h`, `utils.h`, `resource.h` — **and all four are identical**, so
+the error undercounts its own evidence. ⭐ **This is the declared-scope class again: a list that
+happens to be right, beside a headline that generalises past it, and a count that matches neither.**
+
+⛔ **AND A FACT FOR THIS FINDING ITSELF, WHICH IS WHY THE CONTROL LANDED HERE RATHER THAN IN
+§13(al): `Win32Window::Size size(1280, 720)` IS THE TEMPLATE'S OWN LINE 29, VERBATIM.** Repo and
+`main.cpp.tmpl` agree on it, and `Point origin(10, 10)` too. ⭐ **So this finding is not about a
+decision MER made. It is a property of the Flutter Windows template**, which requests 1280x720
+logical on every generated app — and on a 1536x864 panel at 125% that cannot be granted. **The
+window MER asks for was never chosen; it was inherited.**
+
 ---
 
 ### (al) 🔴 ON WINDOWS THE LAYOUT IS 1.25x WIDER THAN THE WINDOW — CONTENT IS OFFSET RIGHT AND CLIPPED
@@ -2724,6 +2790,8 @@ required.** So the embedder passes the correct physical size, Flutter's logical 
 | the engine / embedder | ⛔ **RULED OUT by the `FLUTTERVIEW` rect above** |
 | Dart-side layout | ⛔ **RULED OUT** — the widget test at DPR 1.25 / 1265x682 centres exactly |
 | Flutter version | **Not implicated.** Recorded because the finding cites it: Flutter **3.41.3** stable, engine `14e407f9`, Dart 3.11.1 |
+
+⚠️ **THE `windows/runner/` ROW ABOVE IS PRESERVED WITH HASHES IN §13(ak), 9 September 2026, BECAUSE §13(au)'s decision D2 ENDS THAT PROPERTY.** ⛔ **It is also corrected there** — read as a whole-directory claim it is false (three files differ, all by project-identity substitution only), *"both headers"* undercounts four, and the claim as ENUMERATED is true. ⭐ **The eight identical files concatenate to sha256 `fd318f1e407f73ba5258edbaaa2d9c181677eeffb43bd99e4642e13f70aff754`, repo and Flutter 3.41.3 template alike.**
 
 ⛔ **SO IT IS THE CAPTURE. THIRD FALSE FINDING FROM THAT PIPELINE**, after the off-screen false
 negative and the Gmail false positive in §13(aj).
@@ -3103,6 +3171,107 @@ claimed.
 same width, are all open.** ⚠️ **Do not assume it is Windows-specific** — the test set
 `TargetPlatform.windows`, but nothing establishes that the platform matters, and §13(ak) found the
 platforms agreeing on the walkthrough layout at every size tested.
+➕ **DIAGNOSED 9 September 2026 — AND THE DIAGNOSIS OVERTURNS THIS FINDING'S OWN FRAMING. The
+finding above stays as written; every claim in it that this corrects is named.**
+
+**(a) THE TYPE AND MESSAGE, VERBATIM.** Read from `FlutterErrorDetails`, not from
+`takeException()`:
+
+    type      : FlutterError
+    library   : rendering library
+    context   : during layout
+    message   : A RenderFlex overflowed by 8.0 pixels on the right.
+
+⚠️ **So *"almost certainly a `RenderFlex` overflow"* was RIGHT** — and it was recorded as inferred,
+correctly, because nobody had looked. **The stack is EMPTY**: `RenderFlex` overflow carries none.
+The owner comes from `informationCollector`, which `takeException()` does not expose.
+
+**(b) THE WIDGET.** `debugCreator: Row ← _AppBarTitleBox ← Semantics ← DefaultTextStyle ←
+MediaQuery ← Builder ← LayoutId-[<_ToolbarSlot.middle>] ← CustomMultiChildLayout ←
+NavigationToolbar` — ⛔ **home's APP-BAR TITLE `Row`**, `home_screen.dart`'s
+`title: const Row(...)`: `MERIconWidget(size: 40)` + `SizedBox(width: 10)` + a `Column` of two
+`Text`s. **It wants a fixed 336 px and it is `const`, so nothing about it is data-dependent.**
+
+**(c) THE 400 AND 94 EXCEPTIONS ARE NOT THE SAME EXCEPTION. ⛔ THE ASSUMPTION THAT THEY WERE ONE
+FINDING WAS WRONG.** At 94 there are **TWO** overflowing flexes, and the one the error reported is
+the second:
+
+    w=400   1 overflow    8.0px   Row < _AppBarTitleBox        (app-bar title)
+    w=94    2 overflows  314.0px  Row < _AppBarTitleBox        (app-bar title)
+                          25.0px  Row < Padding < Listener     (a different widget entirely)
+
+⭐ **The "25 pixels" quoted in this finding's own measurement was the `Listener` Row, not the app
+bar** — the app-bar Row was overflowing by 314 px at that width and went unreported.
+
+⛔ **(d) AND THIS IS THE CORRECTION THAT MATTERS: "the exception fires at 400 and not at wider
+widths" WAS NEVER A FACT ABOUT THE LAYOUT.** Measured at 400 logical, same width, same platform,
+consecutive pumps:
+
+    PASS 1  errors=1  constraint <= 328.0  size=328.0  childrenTotal=336.0
+    PASS 2  errors=0  constraint <= 328.0  size=328.0  childrenTotal=336.0
+
+⭐ **IDENTICAL GEOMETRY. AN 8 px OVERFLOW IN BOTH PASSES.** Only the report differed, because
+**`RenderFlex` reports an overflow ONCE per render-object instance per process** and `pumpWidget`
+reuses the instance. ⛔ **A sweep predicated on "did it throw" reported every width from 1200 down
+to 100 as CLEAN**, because an earlier probe had already consumed the report. **The instrument
+measured a debug flag and was read as measuring the layout.**
+
+⚠️ **THE WARM-UP HYPOTHESIS WAS TESTED AND KILLED, WHICH IS HOW THE REAL CAUSE SURFACED.** Pumping a
+trivial widget first, then home at 400, **still raised the overflow** — so it was not process
+warm-up. That is what forced the geometric measurement. ⭐ **The two hypotheses predicted opposite
+outcomes, per `CLAUDE.md`'s discrimination rule, which is what the DPI-96 test failed to arrange.**
+
+⛔ **THE MEASURED THRESHOLD, from `childrenTotal - constraints.maxWidth` rather than from whether
+anything threw. Predicted from the model BEFORE sweeping, then confirmed at 1 px granularity:**
+
+| Platform | Action width | Available | Overflows below | Confirmed |
+|---|---|---|---|---|
+| **Windows** (`shrinkWrap`) | 40 | `W − 72` | **408** | clean 408, 1 px at 407 |
+| **Android** (`padded`) | 48 | `W − 80` | **416** | clean 416, 1 px at 415 |
+| **iOS** (`padded`) | 48 | `W − 80` | **416** | clean 416, 1 px at 415 |
+
+⭐ **The 8 px platform difference IS §13(y), showing up as geometry** — `MaterialTapTargetSize.padded`
+gives the single `PopupMenuButton` 48 px and `shrinkWrap` gives it 40, so **Windows gets a WIDER
+title box because its tap targets are smaller.** Four independent points fit exactly before the
+boundary was swept: 320→96 px, 360→56 px, 375→41 px on Android, 375→33 px on Windows.
+
+**(e) NOT WINDOWS-SPECIFIC. ⛔ This finding's warning not to assume it was is now settled in the
+negative.** Windows, Android and iOS all overflow, and DPR is irrelevant — 1.0 and 1.25 give
+identical geometry at identical logical widths.
+
+**(f) IT FIRES ON OTHER SCREENS, AND THEY ARE DIFFERENT WIDGETS AT DIFFERENT WIDTHS.** Measured on
+three screens, Windows and Android identical:
+
+| Screen | Flex overflow below | Owner | Text overflow below |
+|---|---|---|---|
+| **home** | **408 / 416** | app-bar title `Row` | ⛔ **never** — 0 at every width |
+| **history** | **300** (11.5 px at 275, ×12) | `Row < DefaultTextStyle < AnimatedDefaultTextStyle` | **350** (2 texts at 325) |
+| **form** | **175** (24 px at 150) | `Row < Padding < Listener` | **325** (2 texts at 300) |
+
+⚠️ **NINE SCREENS ARE STILL UNMEASURED** — the wizard, medication, vocabulary, your-data, about,
+disclaimer, help, walkthrough and conditions. ⛔ **Do not read the three above as the app.**
+
+⛔ **AND A FALSE CLEAN WAS CAUGHT BY INSTRUMENTING FOR IT: history at 100 logical reports NO
+overflow, because it lays out only 5 paragraphs against 54 at 125, with 18 errors swallowed.**
+Nothing overflowed because almost nothing was built. ⭐ **The probe now prints the paragraph count
+and the swallowed-error count beside every verdict, so an empty tree can never again read as a
+clean one.**
+
+⚠️ **IS IT BENIGN? PARTLY, AND THE SPLIT MATTERS.** ⛔ **The EXCEPTION is debug-only** — `RenderFlex`
+overflow reporting does not run in a release build, so no user ever sees an error. ⛔ **The OVERFLOW
+IS NOT.** It is present in every frame at every affected width, in release as in debug, and what a
+user gets is **silent clipping** of the app-bar title. **So §13(as) is not a harness artefact and
+not a defect in the framework: it is a real layout defect whose only diagnostic surface happens to
+be debug-only.** ⭐ **See §13(ay) — the widths this actually affects are shipped phones, not narrow
+windows.**
+
+⛔ **AND THE REPRODUCIBILITY GAP THAT HAD TO BE CLOSED FIRST, RECORDED AS AN §13(r) INSTANCE IN
+SUBSTANCE: the test that produced this finding on 8 September DID NOT EXIST IN THE REPOSITORY.** It
+was a throwaway; only its stdout survived, quoted above. ⭐ **Re-deriving it was the first task of
+the diagnosis.** The instrument now lives in `test/narrow_geometry.dart` with per-screen sweeps in
+`test/narrow_geometry_{home,history,form,home_devices}_test.dart`, and
+`test/narrow_probe.dart` is kept **as the counter-example** — the exception-based probe whose
+verdicts were an artefact.
 
 ---
 
@@ -3206,6 +3375,57 @@ evidence table. **Adding a `WM_GETMINMAXINFO` case to `Win32Window::MessageHandl
 property.** ⚠️ **Not an argument against D2** — the retraction is already independently settled by
 the `FLUTTERVIEW` client rect and the widget test. **But the next session must not reach for
 "byte-identical to the template" as a live control after this lands.**
+➕ **THE TWO THRESHOLDS, MEASURED 9 September 2026. The "UNDECIDED" above stands — this supplies its
+missing input, and does NOT choose the constant.**
+
+⛔ **THE PREREQUISITE THIS ENTRY NAMED IS DISCHARGED: §13(as) IS DIAGNOSED.** It is a `RenderFlex`
+overflow in home's app-bar title `Row`, and the reason it appeared to fire at 400 but not wider was
+that `RenderFlex` reports once per render-object instance per process. **The exception was never a
+width signal.** Geometry is: `childrenTotal − constraints.maxWidth`.
+
+**Measured across three screens, Windows and Android identical at every width:**
+
+| Screen | FRAMEWORK throws / flex overflows below | CONTENT degrades (text past its line budget) below |
+|---|---|---|
+| **home** | **408** Windows · **416** Android/iOS | ⛔ **never** — zero overflowing texts at every width from 1300 to 90 |
+| **history** | **300** | **350** |
+| **form** | **175** | **325** |
+| **⭐ GOVERNING** | **416** | **350** |
+
+⭐ **THE TWO DEFINITIONS DO NOT COINCIDE, AND THE FRAMEWORK ONE IS HIGHER — 416 against 350.** So
+under this entry's own rule, **416 governs**: a minimum has to clear both, and the higher number is
+the one that does.
+
+⚠️ **AND THE GAP IS 66 px OF WIDTH IN WHICH THE FRAMEWORK COMPLAINS AND NO TEXT IS TRUNCATED**,
+which is exactly the divergence this entry predicted. ⛔ **The reason is that they are DIFFERENT
+DETECTORS, not two views of one thing:** a `RenderFlex` overflow is a *row* wider than its slot and
+the parent clips it; a text overflow is a *paragraph* past its `maxLines`. **Home's title clips
+without any text being truncated, because the clipping happens to the Row, not inside the Text.**
+⭐ **§13(am)'s "zero overflowing texts at 400" was TRUE and was read as "nothing overflows at 400",
+which is false.** One detector, two conclusions.
+
+⛔ **BUT THE 416 FIGURE MUST NOT BE USED AS D2's MINIMUM, AND THIS IS THE REASON D2 STAYS
+UNDECIDED.** Home's 408/416 is **§13(ay)** — a defect that affects **shipped phones**, where a
+375-wide iPhone loses 41 px of title. ⛔ **A desktop minimum window size cannot fix a phone.** So
+setting D2's minimum to 416 would **hide the symptom on the one platform where it is least
+important** and leave it live on three others. ⚠️ **The honest reading: home's threshold should be
+REMOVED by fixing §13(ay), not cleared by a window minimum** — and once it is, the governing
+desktop figure drops to **350** (history's content threshold) or **300** (history's flex
+threshold), depending on which definition is chosen.
+
+⭐ **SO D2's CONSTANT DEPENDS ON A DECISION THAT IS NOT D2's: whether §13(ay) is fixed first.**
+Recorded rather than resolved, because choosing the constant is explicitly not this pass's job.
+
+⚠️ **NINE SCREENS UNMEASURED** — wizard, medication, vocabulary, your-data, about, disclaimer, help,
+walkthrough, conditions. ⛔ **Any minimum chosen from three screens is a minimum for three
+screens.** The sweep is one call per screen against `test/narrow_geometry.dart`; the cost is
+knowing the harness each screen needs, not the measuring.
+
+⚠️ **AND ONE FALSE CLEAN IS ON RECORD SO IT IS NOT RE-DISCOVERED: history at 100 logical reports NO
+overflow** because it lays out **5 paragraphs against 54 at 125 logical, with 18 errors
+swallowed.** ⛔ **Nothing overflowed because almost nothing was built.** The probe now prints
+paragraph and swallowed-error counts beside every verdict, and a zero-paragraph width is marked
+`VOID(nothing-laid-out)` rather than clean.
 
 ---
 
@@ -3383,3 +3603,75 @@ figures were carried into this session from a conversation, in the wrong pairing
 surfaced together on the first look. ⭐ **A discrepancy that exists only in a chat transcript is
 exactly what this project's two-tool split says cannot be relied on; the fix is not to distrust it
 but to go and read the file it is about.**
+
+---
+
+### (ay) 🔴 HOME'S APP-BAR TITLE IS CLIPPED ON EVERY PHONE NARROWER THAN 416 LOGICAL — INCLUDING ONE IN THE CAPTURE SET
+
+**Measured in widget tests, 9 September 2026** — `test/narrow_geometry_home_devices_test.dart`, at
+real shipped device metrics, `TargetPlatform.android` and `.iOS`.
+
+⛔ **THIS IS NOT §13(as) AND IT IS NOT §13(am). Both of those were about NARROW WINDOWS on the
+desktop — widths reachable only by dragging. This is about PHONES, at their normal size, shipped,
+today.**
+
+| Logical | Device | Verdict | Clipped |
+|---|---|---|---|
+| **320x568** | iPhone SE 1st gen | ⛔ **OVERFLOW** | **96 px** |
+| **360x800** | common Android phone | ⛔ **OVERFLOW** | **56 px** |
+| **375x667** | iPhone 8 / SE 2nd–3rd gen — ⭐ **IN THE DESIGN-AUDIT CAPTURE SET** | ⛔ **OVERFLOW** | **41 px** |
+| 430x932 | iPhone 15 Pro Max — in the capture set | ✅ clean | — |
+| 800x1280 | tablet proxy — in the capture set | ✅ clean | — |
+| 1012x546 | what Windows is granted (§13(ak)) | ✅ clean | — |
+
+⛔ **THE CAUSE IS ONE FIXED-WIDTH `const Row` AND IT IS EXACT, NOT APPROXIMATE.** Home's
+`title: const Row(...)` is `MERIconWidget(size: 40)` + `SizedBox(width: 10)` + a `Column` whose
+widest child is `Text(kAppName)` at 13 px w600. **It wants 336 px and never negotiates.** Available
+width is `logicalW − actionWidth`, so:
+
+    Android / iOS   avail = W - 80   overflows below 416   (48 px action, MaterialTapTargetSize.padded)
+    Windows         avail = W - 72   overflows below 408   (40 px action, shrinkWrap)
+
+⭐ **Four independent measurements fit that model exactly before the boundary was swept, and the
+boundary then confirmed at 1 px: clean at 416, 1 px at 415 on both Android and iOS; clean at 408,
+1 px at 407 on Windows.** The 8 px platform difference **is §13(y)** — `padded` gives the overflow
+menu 48 px, `shrinkWrap` 40, so **Windows gets a wider title box because its tap targets are
+smaller.**
+
+⛔ **WHAT A USER SEES: NOTHING. `RenderFlex` overflow reporting is DEBUG-ONLY, so no error reaches
+a release build — the title is simply cut off on the right, silently, in every frame.** ⭐ **That is
+why 41 px of clipping has sat in a capture at 375 without being written down.**
+
+⚠️ **AND THE CAPTURE AT 375 IS THE PART THAT SHOULD HAVE CAUGHT IT.** `§7` reads *"At **375** this
+is the best-composed screen in the app"* — ⛔ **assessed from a frame in which the app-bar title was
+clipped by 41 px.** The clipping is at the right-hand edge of a dark navy band, behind an overflow
+menu, in the least-scrutinised part of the screen. **A capture CAN show this; it is appearance. It
+was looked at and not seen.**
+
+⭐ **THIS IS THE COUNTER-EXAMPLE TO THIS SESSION'S OWN CAPTURE RULE, AND IT IS RECORDED AS ONE.**
+`CLAUDE.md` now says captures answer *"how does it look"* and never *"how big is it"* — and it is
+right. **But here the geometric defect WAS visible in a capture and the eye missed it**, while the
+widget test found it immediately and exactly. ⛔ **So the rule's asymmetry is real but its comfort
+is not: a capture may not be able to MEASURE, and the eye cannot be relied on to NOTICE either.**
+**Neither instrument was used; only one was available at the time.**
+
+⚠️ **RELATIONSHIP TO §13(am), STATED BECAUSE IT SHRINKS THAT FINDING FURTHER.** §13(am) as corrected
+reports *"two APP BAR texts overflow"* at **94 logical** and treats 94 as the interesting width.
+⛔ **94 is not a floor phenomenon — it is one far point on a continuum that begins at 416.** The
+same `Row`, overflowing 314 px there and 41 px at 375. **§13(am)'s subject was never the narrow
+window; it was this.**
+
+⚠️ **NOT A D2 CASE, AND THIS IS WHY IT IS SEPARATE.** §13(au)'s decision is PREVENT-by-minimum-window
+on the **desktop**. ⛔ **A minimum window size cannot help a phone.** Fixing this needs the title to
+negotiate — `Flexible`/`Expanded` on the `Column`, ellipsis or a shorter string — which is a
+**layout change on a visual surface**, so by D4's test it is **REBUILT, not SURVIVES**, and it
+belongs with the component vocabulary rather than the fifteen independents.
+
+⛔ **NO FIX PROPOSED HERE. Two shapes exist and neither is chosen: let the title shrink, or drop the
+subtitle below a breakpoint.** §13(aa) records that the app has **no width breakpoints anywhere**,
+so the second shape would be the first one in the codebase.
+
+⭐ **SEVERITY, ARGUED RATHER THAN ASSERTED.** It is 🔴 because it is **live on shipped devices**, on
+the **primary screen**, affecting the **app's own name**, on **three of the six widths measured** —
+and because the smallest common phone loses **96 px**, which is most of the title. ⚠️ **It is not
+data loss and it gates nothing**: capture, the record and the export are untouched.
