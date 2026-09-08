@@ -866,6 +866,23 @@ that. **Any fix to (a) should follow this pattern rather than introduce a dialog
 finds the wizard's guard is the control: this is a real absence, not a search that missed the
 widgets.)*
 
+> ➕ **ANNOTATED 8 September 2026 (evening) — THE RECOMMENDATION ABOVE IS LEFT EXACTLY AS WRITTEN
+> AND WAS DEPARTED FROM. See §13(av), decision D3.**
+>
+> ⛔ **§13(a) shipped a confirmation dialog, which is the one thing the sentence above advises
+> against.** D3 upholds the departure on two grounds — that capture-and-leave would let a change
+> reach storage **without** the confirmation the developer required, and that the dialog sits on the
+> EDIT path rather than the capture path, with 13 tests asserting every tap still records.
+>
+> ⚠️ **AND D3 RECORDS THE UNFLATTERING PART: this recommendation was not considered and set aside.
+> It was never read.** ⭐ **So the departure is sound and its provenance is not** — the reasoning in
+> D3 was constructed afterwards, when the conflict was found by reading this document.
+>
+> ✅ **THE OTHER HALF OF THIS FINDING IS UNTOUCHED AND STILL OPEN: seven top-level screens carry no
+> exit guard of any kind.** D3 decides the shape of one screen's guard and decides nothing about the
+> seven. ⛔ **Whether the app now has TWO exit rules — capture-and-leave on the wizard,
+> confirm-on-dirty on the form — is named in D3 as undecided.**
+
 ### (c) There is no shared navigation shell
 
 **Code-verified, 8 Sep 2026.**
@@ -1467,6 +1484,41 @@ and it is harder to spot, because the summary is exactly the part a reader trust
 whether to read the rest.** ⛔ **Practical form: when a rule states a mechanism and then states a
 countable condition, check that the condition follows from the mechanism.** Here it did not: *"once
 an instance exists"* does not license *"more than one state means more than one file"*.
+
+➕ **INSTANCE 13, 8 September 2026 (evening) — A CLAIM ABOUT THIS ARTEFACT, ASSERTED FROM
+RECOLLECTION IN NEARLY EVERY BRIEF OF THE SESSION, AND NEVER CHECKED AGAINST IT.**
+
+| # | The knowledge | Where it sat | What happened anyway |
+|---|---|---|---|
+| 13 | §10's six fixes carry **no status annotation of any kind** | **this document, §10, since 31 Aug 2026** — the list has never been annotated | *"the five remaining section 10 fixes"* was asserted as a standing figure in brief after brief, and used to scope work, without once being read |
+
+⛔ **THE FIGURE IS UNSUPPORTED.** §10's *"Then six fixes that depend on none of the above"* is
+followed by six numbered items and one parenthetical about a seventh that was withdrawn. **There is
+no ✅, no FIXED, no date, no annotation on any of the six.** The only status statement anywhere is
+inside §13(ae): *"Fix 1A is visible and working in the same capture"* — the History copy reads
+`Add details:` rather than `Needs:`, confirmed on the real device.
+
+⚠️ **AND NO CORRECTED COUNT IS OFFERED HERE, DELIBERATELY.** ⛔ **§10's FIX STATUS IS UNTRACKED.**
+"Five remaining" may even be right; **nothing in the repository says so**, and substituting a
+different number invented the same way would repeat the error with better luck. ⭐ **Establishing
+the status of the six is an OPEN ITEM**, and it is a cheap one: each of the six names a specific
+behaviour, and each can be checked against `lib/` in one pass.
+
+⭐ **THE SUB-SHAPE, AND IT IS DIFFERENT FROM INSTANCE 12's.** Instance 12 was a rule undermined by
+its own summary — the document said the wrong thing about itself. **This is a document that says
+nothing, and a reader who supplied the missing statement from memory and then treated it as read.**
+⛔ **An absent status is not a neutral gap: it is an invitation to fill in, and the filled-in value
+is indistinguishable in a brief from a quoted one.**
+
+⚠️ **AND THE HALF-SHIPPED FIX IS WHY THE FIGURE WAS PLAUSIBLE.** Fix 1 has a **copy half that
+shipped** and a **design half that §5 explicitly leaves unanswered** — *"the counter-argument that
+must be answered, not bypassed."* ⛔ **So "one down, five to go" is not even the right SHAPE for
+fix 1**, let alone a count of the rest. **A partially-shipped item cannot be counted in either
+column, and that is exactly the state that made an unchecked count feel safe.**
+
+⭐ **PRACTICAL FORM, and it is this document's own rule turned on the document: a status is a claim
+about a FILE, and is verified by reading the file.** Where an artefact carries no status field, the
+honest report is **UNTRACKED** — never a number.
 
 ### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
 
@@ -2296,6 +2348,33 @@ alongside the rate tests they returned -1 for the count; run together as a pair,
 returned -1.** ⛔ **The rule is not "one file per concern" — it is ONE PREFS STATE PER PROCESS, and
 a file with two prefs-dependent tests already breaks it.**
 
+
+➕ **CLOSED 8 September 2026 (evening) — THE "UNMEASURED" QUESTION ABOVE IS MOOT, AND THIS IS
+ATTRIBUTED READING RATHER THAN MEASUREMENT.**
+
+⚠️ **The sentence it closes reads *"WHETHER A USER REACHES THAT BAND IS UNMEASURED AND IS NOT
+GUESSED HERE"*, and it stays readable above.** It was written before the fix and was correct when
+written.
+
+⛔ **The fix caps flash ONSETS at 2 per second at every tap interval from 10 to 1000 ms** — the
+sweep above shows 2 at 250 ms, 2 at 300 ms, 2 at 400 ms, and **2 in the worst case at any
+interval**, against a threshold of more than three. ⭐ **So the 200-333 ms exposed band is
+unreachable regardless of how fast anyone taps.** The question *"does a user reach 3 to 5 taps per
+second"* no longer has a consequence attached to it: **both answers now give the same compliant
+result.**
+
+⭐ **AND THAT IS WHY THE CSV EXPORT OF THE 72 RECORDS' MILLISECOND TIMESTAMPS WAS NEVER NEEDED.**
+The export would have answered *"has a real user ever tapped into the band"* — a question whose
+answer stopped mattering the moment the band became unreachable. **A measurement made unnecessary
+by a fix, rather than one skipped.**
+
+⚠️ **ATTRIBUTION, STATED BECAUSE THIS DOCUMENT'S RULE REQUIRES IT: this closure is a READING, taken
+by chat, from figures the CLI measured.** ⛔ **No new measurement was taken, and the CLI declined to
+close it on the ground that the document does not say so.** ⭐ **That refusal was right and this
+closure is not a correction of it** — the two are different acts. The CLI reported what the
+artefact states; the reading draws a conclusion the artefact supports but does not state, and it is
+recorded here as such so a later reader can reject the inference while keeping the sweep.
+
 ---
 
 ### (ai) THE DISCARD DIALOG, ASSESSED ON THE DEVICE
@@ -3026,3 +3105,281 @@ same width, are all open.** ⚠️ **Do not assume it is Windows-specific** — 
 platforms agreeing on the walkthrough layout at every size tested.
 
 ---
+
+---
+
+### (at) ✅ DECISION D1 — THE COMPONENT VOCABULARY'S SCOPE INCLUDES COLOUR TOKENS
+
+**Decided 8 September 2026.** §10 defines the component vocabulary as **seven** things: *one add
+affordance · one selection control per cardinality · one label case · one date control · one
+destructive treatment visually distinct from confirmation · one disclosure · one icon idiom.*
+⭐ **It is now EIGHT. One colour system is added, and it is the vocabulary's FIRST piece.**
+
+⛔ **§10's list is left exactly as written. This entry is the amendment; that list is the record of
+what was scoped on 31 August.**
+
+**THE REASONING, AND IT IS NOT "28 FAILURES NEED FIXING".** §13(w) found three things that are not
+defects in a palette but the absence of one:
+
+| | |
+|---|---|
+| `textPrimary` is **byte-identical** to `primary` | both `#0D4F82` — **two names, one colour** |
+| `success` and `warning` appear in **NO measured pair** | the greens and ambers actually rendered are raw literals — `#2E7D32`, `#1B5E20`, `#E65100`, `#F57C00` |
+| **~40 raw `Color(0x…)` literals sit outside the theme** | in `home_screen.dart`, `history_screen.dart`, `disclaimer_screen.dart`, `help_screen.dart`, `event_record.dart` |
+
+⭐ **A palette with two names for one colour, two names used nowhere, and four times as many
+colours outside it as inside is not a palette with defects. It is a system nobody designed.**
+⛔ **§13(s)'s 28 failures are the SYMPTOM, not the finding.** Fixing 28 ratios without deciding the
+system leaves the next colour added in exactly the position these forty are in.
+
+**WHAT THIS UNBLOCKS: §13(s), §13(t), §13(w).** All three were correction-track and are now
+vocabulary-track, and all three wait on the colour system rather than preceding it.
+
+⛔ **AND THE OPERATIONAL WARNING FROM §13(w) SURVIVES THIS DECISION UNCHANGED, because it is about
+the fix's REACH and not about its track.** The 28 failures split **11 named-token / 17
+raw-literal** — ⭐ **recomputed from §13(s)'s emitted table for this entry rather than read off it,
+per §13(w)'s own countermeasure: rows 1, 3, 4, 5, 11, 21, 22, 24, 25, 26 and 27 are the eleven
+where every colour in the pair is a `MERColours` value or white.** The other seventeen are every
+banner, both info cards including their alpha-composited bodies, the three help-status rows, and
+the two blue info-card titles.
+
+⛔ **SO A FIX APPLIED TO `MERColours` ALONE WOULD LOOK COMPLETE — one file, all named colours
+corrected, a tidy diff — AND LEAVE 17 OF 28 UNTOUCHED.** The raw literals are the larger half.
+⭐ **That is the strongest single argument for D1: a token-level fix is not even sufficient for the
+symptom, let alone the system.**
+
+⚠️ **ONE PROSE AMBIGUITY IN §13(w), NOTED AND NOT CORRECTED HERE.** Its 11-row cell reads *"the
+five `textMuted` text styles, the input label, and the four `border` outlines plus the divider, and
+the SnackBar action label"*, which parses as twelve. **The figure 11 is right**; the ambiguity is
+that the divider is one OF the four `border` failures rather than additional to them, exactly as
+§13(s)'s leverage table states — *"FOUR failures … rows 3, 4, 5 and the divider"*. **Recorded
+because §13(w) is the entry that warns about prose figures drifting from computed ones, and this is
+that, in miniature, inside the warning itself.**
+
+⚠️ **WHAT D1 DOES NOT DECIDE:** what the colours should BE. No value, ramp, contrast target or
+semantic name is chosen here. **Only that choosing them is inside the vocabulary's scope, and
+first.**
+
+---
+
+### (au) ✅ DECISION D2 — PREVENT, NOT SUPPORT, AT NARROW WIDTHS
+
+**Decided 8 September 2026.** §13(am)'s open design question — whether the app should **support**
+arbitrarily narrow windows or **prevent** them — is answered: **PREVENT.** A minimum window size,
+enforced in the Windows runner by handling **`WM_GETMINMAXINFO`**.
+
+**THE REASONING IS THAT THE EVIDENCE SHRANK.** §13(am) was committed as 🔴 on frames from the
+`PrintWindow` pipeline and corrected the same evening when a widget test measured the same widths:
+
+| | claimed | measured |
+|---|---|---|
+| 400 logical | *"the stats card's fourth column is cut mid-word"*, `Recor / d / Event` | **content 360 wide, 20 px padding each side, ZERO overflowing texts** |
+| 94 logical | — | **two APP BAR texts overflow** — the title and the subtitle. Nothing in the content column overflows at either width |
+
+⭐ **So the failure is not at a width anyone reaches. It is at the OS floor, reachable only by
+dragging a window to a sliver.** §13(am) already records that *"a defect at 400 would have made
+'prevent' nearly obvious; a defect only at 94 does not"* — **and the decision goes the other way
+for a different reason: not that prevent is obvious, but that support is not worth building.**
+
+⛔ **RESPONSIVE LAYOUT FOR A 94 px WINDOW IS NOT WORTH BUILDING. A RUNNER CONSTANT IS.** Two
+app-bar strings overflowing at a width no user works at does not justify breakpoints, a compact
+app-bar variant, or a text-scaling rule. **One message handler removes the entire case.**
+
+⚠️ **UNDECIDED, AND DELIBERATELY: WHAT THE MINIMUM SHOULD BE.** ⛔ **Nobody has measured the width
+at which the layout actually begins to degrade.** The two figures that exist are 400 (clean) and 94
+(two overflows), and **the boundary between them is unmeasured across a 306 px range.** ⭐ **A
+number picked now would be a guess dressed as a constant** — and a minimum set too high is worse
+than none, because it forbids window sizes that work. **Measuring it is the prerequisite, and it is
+one widget test sweeping widths for `overflowingTexts > 0` or a non-null `takeException()`.**
+
+⚠️ **AND §13(as) COMPLICATES THAT MEASUREMENT, WHICH IS WHY IT IS NAMED HERE.** A framework
+exception fires at **400 logical as well as 94** — at a width where nothing overflows visually and
+the content column is a healthy 360 px. ⛔ **So "the width at which the layout degrades" has at
+least two candidate definitions — first visible overflow, and first raised exception — and they do
+not coincide.** §13(as) must be diagnosed before the minimum can be chosen, or the sweep measures
+one thing and the constant is set from the other.
+
+⛔ **ONE CONSEQUENCE, RECORDED BECAUSE IT COSTS AN EVIDENCE BASE.** §13(al)'s retraction rests in
+part on `windows/runner/` being **BYTE-IDENTICAL to the SDK template** — stated in §13(al)'s own
+evidence table. **Adding a `WM_GETMINMAXINFO` case to `Win32Window::MessageHandler`
+(`win32_window.cpp:181`, alongside the existing `WM_DPICHANGED` and `WM_SIZE` cases) ends that
+property.** ⚠️ **Not an argument against D2** — the retraction is already independently settled by
+the `FLUTTERVIEW` client rect and the widget test. **But the next session must not reach for
+"byte-identical to the template" as a live control after this lands.**
+
+---
+
+### (av) ✅ DECISION D3 — THE DISCARD DIALOG STANDS, AS A CONSIDERED DEPARTURE FROM §13(b)
+
+**Decided 8 September 2026.** §13(a)'s fix shipped a confirmation dialog. §13(b) recommends against
+exactly that. **The dialog stands, and the departure is recorded rather than left as a
+contradiction between two entries in one document.**
+
+**THE CONFLICT, QUOTED FROM BOTH SIDES:**
+
+> §13(b) — *"It satisfies the standing rule that nothing gates capture, the record, or export — a
+> confirm dialog on exit would gate exactly that. **Any fix to (a) should follow this pattern
+> rather than introduce a dialog.**"*
+
+> §13(a) — *"a clean exit leaves immediately with no prompt on either button and on the OS pop; a
+> dirty exit prompts on all three."*
+
+⛔ **AND §13(ai) THEN ASSESSED THAT DIALOG ON THE DEVICE AT THREE WIDTHS WITHOUT NOTING THE
+TENSION.** Three entries, one document, one session.
+
+⛔ **RECORDED PLAINLY, BECAUSE THE HONEST VERSION IS WORSE THAN THE FLATTERING ONE: THE
+RECOMMENDATION WAS NOT CONSIDERED AND SET ASIDE. IT WAS NEVER READ.** The party that specified the
+fix had not read §13(b) — or any of `AUDIT.md` §§1-12 — at the time. ⚠️ **So this is not a
+documented design trade-off that happened to go the other way. It is §13(r)'s pattern again:
+correct knowledge existing, in the same document, and not travelling.** The decision was reached
+from the developer's stated requirement that **any change must still be confirmed** — a requirement
+that **post-dates §13(b)** and was never tested against it.
+
+⭐ **THE DEPARTURE IS UPHELD ANYWAY, AND ON ITS MERITS RATHER THAN ON THE FIX ALREADY BEING IN.**
+
+1. ⛔ **CAPTURE-AND-LEAVE WOULD DEFEAT THE REQUIREMENT, NOT SATISFY IT.** The wizard's pattern
+   preserves the draft on exit — it lets a change **reach storage without the confirmation**. That
+   is the *opposite* of "any change must still be confirmed". §13(b)'s pattern is right for the
+   wizard, where the alternative was **losing** the step; it is wrong here, where the alternative
+   is **saving unreviewed**.
+2. ✅ **AND THE DIALOG DOES NOT GATE CAPTURE, WHICH IS §13(b)'s ACTUAL OBJECTION.** The standing
+   rule is that nothing gates capture, the record, or export. **13 widget tests in
+   `test/log_event_exit_test.dart` assert every tap still records** — the dialog is on the EDIT
+   path, on exit from a screen reached only with an `existing` record. **Nothing on the capture
+   path meets it.** ⭐ **§13(b) generalised "a confirm dialog on exit" from the wizard, where exit
+   *was* on the capture path, to a screen where it is not.**
+
+⚠️ **§13(b)'s RECOMMENDATION STAYS EXACTLY AS WRITTEN AND IS NOT AMENDED.** It is annotated with a
+pointer to this entry. ⛔ **Its OTHER half is untouched and still open: seven top-level screens
+carry no exit guard of any kind.** D3 settles what shape a guard takes on `LogEventScreen`; **it
+settles nothing about the seven.**
+
+⭐ **THE UNRESOLVED QUESTION D3 CREATES, NAMED SO IT IS NOT INHERITED AS SETTLED: is the app's exit
+rule now TWO rules?** Capture-and-leave on the wizard, confirm-on-dirty on the form. **That may be
+correct — the two screens differ in exactly the way the reasoning above turns on — but nobody has
+decided it as a rule, and the seven unguarded screens will each need one of the two.** ⛔ **That
+belongs with the component vocabulary: an exit rule is interaction vocabulary.**
+
+---
+
+### (aw) ✅ DECISION D4 — THE FIFTEEN INDEPENDENTS FIRST, THEN THE VOCABULARY
+
+**Decided 8 September 2026.** The fifteen items below are fixed before the component vocabulary
+begins. ⛔ **None is provisional, none waits on anything, and several are behaviour or data rather
+than surface.**
+
+**THE STANDING TEST THAT PRODUCED THIS LIST, AND IT IS THE THING TO REUSE:**
+
+> ⭐ **DOES THIS FIX SURVIVE THE REDESIGN, OR WILL IT BE REBUILT?**
+> **SURVIVES** — behaviour, timing, data, logic, documents.
+> **REBUILT** — anything with a visual or interaction surface.
+
+⚠️ **THE COUNTERWEIGHT THE DEVELOPER RAISED, RECORDED BECAUSE IT IS THE REASON THE TEST EXISTS:**
+*fixing little things while a holistic review may require major changes is how work gets done
+twice.* ⭐ **That objection is correct, and it is an argument for the test rather than against
+fixing anything.** ⛔ **The trap is fixing VISUAL things before the framework exists — not fixing
+things at all.** A rename, a data-model correction and a document repair are not made obsolete by a
+colour system.
+
+**THE FIFTEEN, as identified 8 September 2026:**
+
+| | Item | Why it survives |
+|---|---|---|
+| 1 | **§13(d)** `_hasUnsavedEvents` means a disk write failed | pure rename, no surface |
+| 2 | **§13(j)** `logged_at` used as `whenHappened` at three sites | data and logic |
+| 3 | **§13(n)** `ARCHITECTURE.md` §3's table membership | documents |
+| 4 | **§13(o)** whether anything else depends on the rebuild a note edit does not trigger | logic, and **not investigated** |
+| 5 | **§13(as)** read the framework exception's type and message | diagnosis; costs one test run |
+| 6 | **§13(ak)** the runner requests a window the display cannot show | platform constant, no visual surface of its own |
+| 7 | **§13(q)** pass 2b, the disposable-profile captures | process — ⚠️ **UNSCOPED, see below** |
+| 8 | **§13(r)** the knowledge-not-travelling record | documents |
+| 9 | **§13(f)** the unsaved banner and backup reminder cannot co-occur, undocumented | documents |
+| 10 | **§13(g)** the 2.11 screenful figure's provenance | documents; already annotated where recorded |
+| 11 | **§11** whether retired legacy values can be mapped forward | data |
+| 12 | **§13(h)** 🔴 the backup banner frames backup as device transfer | **copy carries a factual error TODAY** |
+| 13 | **§13(z)**'s audit half — semantics across 108 interactive constructions | measurement |
+| 14 | **§13(u)**'s measurement half — render at 200% text scale | measurement |
+| 15 | **§13(y)**'s theme half — the app sets neither `materialTapTargetSize` value | one theme property |
+
+⭐ **ITEM 12 IS THE ONE WITH A USER-VISIBLE COST TODAY.** The banner tells a single-device user that
+backup is *"the only way to get them onto another one"* — so the user for whom losing the phone
+means losing every record reads it and concludes it does not apply to them. **The words are wrong
+whatever the banner is rebuilt to look like.**
+
+⚠️ **ITEMS 13, 14 AND 15 ARE SPLIT DELIBERATELY, AND ONLY THEIR SURVIVING HALVES ARE IN SCOPE.**
+§13(z)'s individual labels, §13(u)'s layout adaptations and §13(y)'s per-control sizing are all
+REBUILT and are **not** in this fifteen. ⭐ **Measuring is what survives; adapting is what does
+not** — and measuring first is what tells the vocabulary what it has to satisfy.
+
+⛔ **ITEM 7 CARRIES A KNOWN UNKNOWN AND IS NOT PRICED.** §13(q) records that 2b *"IS UNSCOPED AND
+ITS COST IS NOT KNOWN"* — a second user account, a second `applicationId`, an emulator or a spare
+handset, with **nothing established about which, or what any of them costs.** ⚠️ **It is in the
+fifteen because it does not wait on anything, not because it is cheap.**
+
+⛔ **WHAT IS NOT IN THE FIFTEEN, AND MUST NOT DRIFT INTO IT:** §10's six fixes (all REBUILT except
+fix 6, which is item 13's territory), §13(s)/(t)/(w) — **now vocabulary-track by D1** — §13(aa),
+(ab), (ac), (ad), (ae), (af), (ag), (ai), (am), (an), (ar), (h-ii), (i), (k), (l), (p), §§3-7 and
+§9's two adviser items.
+
+⭐ **AND THE ORDER AFTER THE FIFTEEN IS SET BY D1: the vocabulary's FIRST piece is the colour
+system.** ⚠️ **One item is upstream of the vocabulary itself and is neither an independent nor part
+of it — §10 decision 1's open half, whether COMPLETENESS is the right axis for two edit paths,
+because §10 records that its answer *"decides how many idioms the vocabulary must cover"*.**
+
+---
+
+### (ax) ⚠️ THE RECORD-COUNT DISCREPANCY — CHAT'S SHAPE IS WRONG, AND A REAL UNRECONCILED DELTA IS UNDERNEATH IT
+
+**Searched 8 September 2026 (evening), across `AUDIT.md` (3,028 lines), `STATUS.md` (1,762 lines)
+and the Change Register (5,810 lines).**
+
+⛔ **NOT IN `AUDIT.md` AT ALL.** Zero hits for a 58- or 59-record count across all 3,028 lines.
+✅ **Positive control: `72 records` returns 5 hits in the same file, searched the same way**, so the
+apparatus works and the null is real.
+
+⭐ **BUT IT IS NOT "NOWHERE", WHICH IS WHAT WAS EXPECTED. IT LIVES IN `STATUS.md`, WITH FOUR
+NUMBERS ACROSS TWO DEVICES — AND THE FRAMING CARRIED INTO THIS SESSION CONFLATES THEM.**
+
+| Count | Device | Where | When | Instrument |
+|---|---|---|---|---|
+| **59** | **iPhone** (iPhone16,2, iOS 26.6) | `STATUS.md:541` | 30 Aug 2026 | `devicectl device copy from --user mobile --domain-type appDataContainer` (`:645-647`) |
+| **58** | **the same iPhone** | `STATUS.md:163` | 7 Sep 2026 | `mer_events.db` copied off and **re-read four times, `sha256 e6366d33…` byte-identical every time** |
+| **66** | **Teclast P30 tablet** | `STATUS.md:915-917` | at the SQLite migration | `sourceEntries 66 / loadable 66 / inserted 66 / distinctIds 66 / skipped 0` |
+| **72** | **the same tablet** | `STATUS.md:227, 281, 344, 385` and throughout | design-audit sessions | the live store, `adb install -r` throughout |
+
+⛔ **SO "59 vs 58 vs 72" IS TWO DEVICES READ AS ONE.** ✅ **The 72 is not part of any discrepancy**
+— it is the Android tablet, and 66 → 72 is ordinary growth between the migration and the audit.
+⭐ **The claim was wrong in its SHAPE while pointing at something real, which is the most expensive
+kind of half-right: the wrong pair invites the wrong investigation.**
+
+⛔ **WHAT IS GENUINELY OPEN: THE iPHONE WENT 59 → 58 IN EIGHT DAYS, AND NOTHING RECONCILES IT.**
+Zero hits for any sentence relating the two figures, in `STATUS.md` or in the Change Register.
+**A one-record decrease on a device holding real medical records, unexplained and unremarked.**
+
+⚠️ **THE MOST LIKELY BENIGN EXPLANATION, STATED AS UNVERIFIED RATHER THAN ADOPTED — see §13(r) and
+`feedback_available_explanation_bias`.** ⛔ **The 59's STORE IS NOT NAMED.** `STATUS.md:541` says
+only *"59 event records on the device"*, and `:645-647` names the method without naming the file.
+The 58 is explicitly `mer_events.db`, the **SQLite** store. **So the two figures may be counts of
+DIFFERENT STORES**, in which case there is no loss at all — the same session measured
+`epilepsy_event_records_v1` holding a partial history, *"iOS, 7 Sep 2026: **42 of 58**"*
+(`:34-35`, `:315`). ⚠️ **That is a hypothesis to TEST, not a resolution.**
+
+⭐ **AND THE OPPOSITE READING HAS EVIDENCE TOO, WHICH IS WHY THIS IS NOT CLOSED EITHER WAY.** The
+migration was designed specifically so a count could not drop — `STATUS.md:906-908`: *"`id` is
+deliberately NOT a primary key. The JSON array permits duplicates; rejecting one would turn 'this
+device has two records sharing an id' into 'the migration lost a record'. Duplicates are carried
+and counted."* ⛔ **So if a record did go missing, a mechanism built expressly to prevent it
+failed** — and the tablet's `skipped 0` shows the design working there.
+
+✅ **IT CLOSES CHEAPLY AND WITHOUT TOUCHING EITHER DEVICE.** `STATUS.md:163` records that **three
+copies of `mer_events.db` now exist off-device**, and the 30 August session copied the iPhone's app
+container. ⭐ **Counting rows in the archived copies, and naming which store each count came from,
+settles it.** ⛔ **Until then: recorded as an OPEN, UNEXPLAINED DELTA on the iOS device. Not a
+finding of data loss, and not dismissed as a measurement artefact.**
+
+⚠️ **AND THE PROCESS POINT, WHICH IS WHY THIS ENTRY EXISTS RATHER THAN A ONE-LINE CORRECTION.** The
+figures were carried into this session from a conversation, in the wrong pairing, with no citation
+— and had they been checked once against `STATUS.md`, both the error and the real delta would have
+surfaced together on the first look. ⭐ **A discrepancy that exists only in a chat transcript is
+exactly what this project's two-tool split says cannot be relied on; the fix is not to distrust it
+but to go and read the file it is about.**
