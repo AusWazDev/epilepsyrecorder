@@ -260,6 +260,38 @@ class _LogEventScreenState extends State<LogEventScreen> {
         '→ ${severityDisplay(_severity) ?? 'not recorded'}',
       );
     }
+    // The three rescue fields. `_hasChanges` has always checked them; this
+    // list covered eight of its eleven and these were the three it missed, so
+    // a rescue-only edit rendered "Save the following changes?" above an EMPTY
+    // list. AUDIT.md 13(m).
+    //
+    // Named from the section labels above, minus the trailing qualifier, which
+    // is what 'Medical referral required?' -> 'Medical referral' already does.
+    //
+    // `yn` and not `? "Yes" : "No"`: these three are bool?, where referral is a
+    // plain bool. NULL IS NOT "No" HERE -- it is "not asked", the distinction
+    // this whole record model is built on, and it uses the same 'not recorded'
+    // vocabulary the rest of this list uses for absence.
+    String yn(bool? v) => v == null ? 'not recorded' : (v ? 'Yes' : 'No');
+
+    if (_rescueGiven != _origRescueGiven) {
+      changes.add(
+        'Rescue medication: ${yn(_origRescueGiven)} → ${yn(_rescueGiven)}',
+      );
+    }
+    // Three-valued, so rendered through its own display helper exactly as
+    // severity and event type are. A bool rendering would drop 'Partly'.
+    if (_rescueHelped != _origRescueHelped) {
+      changes.add(
+        'Did it help: ${rescueResponseDisplay(_origRescueHelped) ?? 'not recorded'} '
+        '→ ${rescueResponseDisplay(_rescueHelped) ?? 'not recorded'}',
+      );
+    }
+    if (_rescueSecondDose != _origRescueSecondDose) {
+      changes.add(
+        'Second dose: ${yn(_origRescueSecondDose)} → ${yn(_rescueSecondDose)}',
+      );
+    }
     if (_referralRequired != _origReferral) {
       changes.add(
         'Medical referral: ${_origReferral ? "Yes" : "No"} → ${_referralRequired ? "Yes" : "No"}',
@@ -368,13 +400,121 @@ class _LogEventScreenState extends State<LogEventScreen> {
     if (mounted) Navigator.pop(context, record);
   }
 
-  void _cancel() {
+  /// Re-entrancy guard. `canPop: false` means the OS back gesture routes
+  /// through here rather than popping, and a fast double-back would otherwise
+  /// stack two identical dialogs.
+  bool _exiting = false;
+
+  /// The ONLY exit that is not Save. The app bar arrow, the Cancel button and
+  /// the OS/hardware back all funnel here, because a fix applied to `_cancel`
+  /// alone would have left the OS path unguarded — there was no `PopScope`
+  /// on this route at all. AUDIT.md 13(a).
+  ///
+  /// ⭐ A CLEAN EXIT MUST NOT PROMPT. This is the fast edit path; the common
+  /// action is opening a record, reading it and leaving. A confirmation on a
+  /// departure that changes nothing is a tax on reading, so `_isDirty` decides,
+  /// and it is read HERE rather than in `build`.
+  Future<void> _cancel() async {
+    if (_exiting) return;
     FocusScope.of(context).unfocus();
-    Navigator.pop(context);
+
+    if (_isDirty) {
+      _exiting = true;
+      final leave = await _confirmDiscard();
+      _exiting = false;
+      if (!leave) return;
+    }
+
+    if (mounted) Navigator.pop(context);
+  }
+
+  /// ⛔ Deliberately NOT `_hasChanges` alone. `_hasChanges` returns true
+  /// unconditionally when `_isNew`, which is correct for SAVING — a new record
+  /// always has something to write — and wrong for EXITING, where it would
+  /// prompt on an untouched blank form.
+  ///
+  /// As at 8 September 2026 `_isNew` is UNREACHABLE IN PRODUCTION: both
+  /// constructions of this screen pass `existing`, and `_openLogScreen()` with
+  /// no argument occurs zero times. It is reached only by
+  /// `bounded_chip_wrap_test.dart`. ⚠️ **If a creation path is ever wired
+  /// here, this gate needs an any-input test rather than `_hasChanges`** — the
+  /// wizard's `_hasAnyInput` is the shape, and it is NOT reused here because it
+  /// answers "is anything non-empty", not "did anything change".
+  bool get _isDirty => !_isNew && _hasChanges;
+
+  /// True to leave and discard. Null and false both mean STAY, matching how
+  /// `confirmOnSave` treats a dismissed dialog.
+  ///
+  /// ⚠️ "Go back", NOT "Keep editing". `confirmOnSave` already owns
+  /// "Keep editing" and the two dialogs have OPPOSITE consequences — one
+  /// returns you to unsaved work, the other to work about to be written. Two
+  /// wordings, deliberately.
+  Future<bool> _confirmDiscard() async {
+    final changes = _buildChangeList();
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard your changes?'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: [
+              const Text('These changes have not been saved and will be lost:'),
+              const SizedBox(height: 12),
+              for (final c in changes)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('• $c'),
+                ),
+            ],
+          ),
+        ),
+        // Go back is the PRIMARY and sits left; Discard is the secondary and
+        // sits right, which is where `confirmOnSave` also puts "proceed". So
+        // the position meaning "leave this dialog and do the consequential
+        // thing" is the same on both dialogs.
+        //
+        // ⛔ Discard is NOT styled destructive-red. Red already carries the
+        // alert meaning on the home statistic and on Record Event; a third red
+        // meaning dilutes all three.
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Go back'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return leave == true;
   }
 
   @override
   Widget build(BuildContext context) {
+    // ⛔ canPop: false UNCONDITIONALLY, not `canPop: !_isDirty`.
+    //
+    // `canPop` is evaluated in build, and the notes TextField has NO onChanged
+    // — typing a note changes `_hasChanges` with no rebuild at all. A
+    // build-time canPop would therefore still read "clean", and the OS back
+    // gesture would discard that note silently, which is the exact defect being
+    // fixed. Evaluating dirtiness at POP time is always current.
+    //
+    // The clean-exit path is unaffected: `_cancel` pops immediately, with no
+    // dialog, when nothing has changed.
+    //
+    // The body is a separate method purely to avoid re-indenting 300 lines.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: _buildForm(context),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(

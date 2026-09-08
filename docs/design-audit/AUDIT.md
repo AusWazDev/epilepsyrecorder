@@ -534,6 +534,35 @@ affordance; a user who has typed into it and presses back has no signal that the
 > **omits the three rescue fields.** Reusing it here inherits that gap. **(m) is fixed before or
 > with (a).**
 
+✅ **FIXED 8 September 2026, after §13(m). 13 widget tests in `test/log_event_exit_test.dart`,
+each mutation-proven.** The finding above stands as written. Shape delivered: a clean exit leaves
+immediately with no prompt on either button and on the OS pop; a dirty exit prompts on all three;
+`confirmOnSave` is untouched. All three exits now funnel through `_cancel`, and a `PopScope` routes
+the OS pop into it.
+
+⭐ **THE FIRST THING THE FIX FOUND, AND IT IS THE DEFECT SURVIVING INSIDE ITS OWN REPAIR.** The
+obvious implementation is `canPop: !_isDirty`. **It would have kept the bug.** `canPop` is
+evaluated in `build`, and the notes `TextField` **has no `onChanged`** — see §13(o) — so typing a
+note changes `_hasChanges` **with no rebuild at all**. A build-time `canPop` would still have read
+"clean", and the OS back gesture would have discarded that note silently. **Implementation is
+`canPop: false` with dirtiness evaluated at POP time**, which is always current. A re-entrancy
+guard came with it, because every OS back now routes through `_cancel`.
+
+⭐ **THE SECOND, AND IT IS AN ARGUMENT ABOUT HOW TO VERIFY, NOT ABOUT THIS SCREEN.** Removing the
+`PopScope` and re-running breaks **only** the OS-back test and the storage test. **Every
+button-based test still passes.** So a fix verified by tapping the back arrow and the Cancel button
+— the natural way to test this — would have reported success with the OS path still completely
+unguarded, which is the half of the finding that mattered most. **The test that proves a fix must
+exercise the path that was broken, not the paths that were merely nearby.**
+
+⚠️ **`_isNew` is UNREACHABLE IN PRODUCTION** — both constructions pass `existing`, and
+`_openLogScreen()` with no argument occurs **0 times**; it is reached only by
+`bounded_chip_wrap_test.dart`. Since `_hasChanges` returns true unconditionally when `_isNew`,
+reusing it for the exit would have prompted on an untouched blank form. The exit therefore gates on
+**`_isDirty = !_isNew && _hasChanges`**. ⛔ **Recorded as a DECISION, not a derivation** — production
+cannot reach that branch, so nothing in the code settles what it should do. `_hasChanges` itself is
+unchanged.
+
 ### (b) Exit behaviour is not uniform, and the wizard already has the right pattern
 
 **Code-verified, 8 Sep 2026.** Exactly one `PopScope` exists in `lib/` — `event_wizard_screen.dart`:
@@ -812,6 +841,36 @@ coverage**, not observed at runtime. The field counts and the zero/three control
 code-verified; the rendered empty dialog is not. **No device reproduction was attempted** — it
 would require editing one of the 72 real records.
 
+✅ **THE MARK ABOVE IS DISCHARGED, NOT DELETED — 8 September 2026. REPRODUCED, then FIXED.**
+The inferred mark stands as written because it records what was known when the finding was made,
+and the distinction between derived and observed is the point of the marks.
+
+**Reproduced in a widget test, on the unpatched code**, in `test/rescue_change_list_test.dart`:
+
+    Actual: _TextContainingWidgetFinder:<Found 0 widgets with text containing
+            Rescue medication: []>
+     Which: means none were found but one was expected
+
+⭐ **The dialog OPENED and the list was EMPTY — exactly the two halves the finding predicted.**
+`Confirm changes` was found, `No changes to save.` was not, so `_hasChanges` saw the edit and the
+no-op guard did not fire. ⛔ **And tests 4 and 5 PASSED on that same unpatched run** — the negative
+control and the regression control — so the three failures were the defect and not a dead harness.
+Whole run: **`+2 -3` before, `+5` after.**
+
+**FIXED 8 September 2026.** Three entries added to `_buildChangeList`, before the referral block,
+matching the form's own order. Coverage now, counted in both functions:
+
+| | fields covered |
+|---|---|
+| `_hasChanges` | **11** |
+| `_buildChangeList` | **11** |
+
+⚠️ **The enum needed its own treatment.** `_rescueHelped` is three-valued, so it renders
+through `rescueResponseDisplay(...) ?? 'not recorded'`, the same shape severity and event type
+already use. **A boolean rendering would have read `Yes → No` and lost `Partly` entirely.** The two
+`bool?` fields use a local `yn` helper rather than `? "Yes" : "No"`, because **null is "not asked"
+here, not "No"** — referral is a plain `bool` and these three are not.
+
 ### (n) `ARCHITECTURE.md` §3's table membership is wrong for more than one row — OPEN STRUCTURAL QUESTION
 
 **Code-verified, 8 Sep 2026.** The table is titled **"Record creation — sites across three
@@ -839,3 +898,57 @@ that has been decided. **This finding exists so the question is visible, not to 
 corrected in place on 8 September 2026 with their superseded wording quoted verbatim beneath the
 table; row 2 was annotated on the same date. **Membership is the residue after the factual
 errors were fixed** — it is not a restatement of them.
+
+### (o) The notes field triggers no rebuild — OPEN, NOT INVESTIGATED
+
+**Code-verified, 8 Sep 2026.** The notes `TextField` in `log_event_screen.dart` has **no
+`onChanged`**, so nothing rebuilds when its content changes. Its two siblings do:
+
+| Field | Rebuilds on typing? |
+|---|---|
+| duration minutes | ✅ `onChanged: () => setState(() {})` |
+| duration seconds | ✅ `onChanged: () => setState(() {})` |
+| **notes** | ⛔ **no `onChanged` at all** |
+
+⭐ **Found only because §13(a)'s fix depended on it.** A build-time `canPop: !_isDirty` would have
+read "clean" while a note sat unsaved, and the OS back gesture would have discarded it — the same
+defect, inside its own repair. **The fix works around this rather than correcting it**, by
+evaluating dirtiness at pop time instead of in `build`.
+
+⚠️ **THE OPEN QUESTION, RECORDED AND NOT ANSWERED: does anything else on this screen depend on a
+rebuild that a note edit does not trigger?** ⛔ **Not investigated.** The `canPop` case is the one
+instance that was looked at, because something else forced it into view. **Nothing here says it is
+the only one**, and the asymmetry with the two duration fields is unexplained rather than known to
+be deliberate.
+
+---
+
+### (p) `Yes` appears four times on one screen, across three different questions — VOCABULARY, DESIGN-TRACK
+
+**Code-verified, 8 Sep 2026.** `rescueResponseLabel` returns **`Yes` / `Partly` / `No`** — the same
+two strings the adjacent boolean rows use. With the rescue children visible, `log_event_screen.dart`
+renders:
+
+| Question | Answer set |
+|---|---|
+| Rescue medication given? | Yes · No |
+| Did it help? | **Yes** · Partly · **No** |
+| Was a second dose needed? | Yes · No |
+| Medical referral required? | Yes · No |
+
+⭐ **So `Yes` is on screen four times, and one of those four sits in a three-valued set.** A user
+scanning a column of Yeses across questions that do not share an answer shape has nothing in the
+labels to tell them apart — and this screen is read under exactly the conditions where scanning
+replaces reading. **The middle question is the one that differs, and it is the one whose answer
+carries the clinical weight** (§13(m)).
+
+⚠️ **Recorded as a vocabulary question, not a defect.** The values are correct and the CSV is
+unaffected — `rescueResponseCsv` writes the same labels and a blank for unanswered. **What is open
+is whether "Did it help?" should answer in its own words** rather than borrowing the yes/no pair.
+⛔ **No wording proposed here.** It belongs with the component vocabulary work in §10.
+
+⚠️ **It also had a testing consequence, which is how it surfaced.** `test/rescue_change_list_test.dart`
+cannot find a rescue control by its text: only `Partly` is unique. Every finder there is scoped to a
+**row** and asserts the expected row count before tapping by index, so a layout change fails loudly
+instead of silently tapping a different field. **A label collision that forces tests to navigate by
+position is a signal about the labels, not only about the tests.**
