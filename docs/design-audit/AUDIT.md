@@ -491,9 +491,59 @@ on which to hand a user two different field orders, two control kinds and two de
 question someone should answer deliberately, because **every field added is currently built twice,
 in two idioms, for one entity.**
 
+> ✅ **HALF RESOLVED, HALF STILL OPEN — 8 September 2026. The recommendation above is left exactly
+> as written; it records what was asked on 31 August.**
+>
+> ⛔ **THE PREMISE WAS FALSE, AND THAT IS WHY IT RESOLVED THE WAY IT DID.** The question rested on
+> *"every field added is currently built twice, in two idioms, for one entity."* **There was never a
+> duplicate CREATION path to retire.** As at 8 September 2026, **no production site constructs
+> `LogEventScreen` without an existing record** — three call sites, all pass one, and
+> `_openLogScreen()` with no argument occurs **0 times**. `_recordWithDetails` routes creation to
+> `_openWizard(existing: null)`. See §13(a), §13(m), §13(n).
+>
+> ✅ **RESOLVED: NOTHING IS RETIRED.** `LogEventScreen` is the deliberate **fast edit path for
+> COMPLETE records**, and the code states the reason: *"Stepping a completed record through screens
+> to change severity would be worse than the form."* The two screens are two EDIT paths, exactly as
+> the text above already says.
+>
+> ⚠️ **THE DECISION'S HISTORY, RECORDED HONESTLY BECAUSE IT WAS REVERSED.** A decision was taken to
+> **RETIRE the form**, on the false premise above. It was **VOIDED — not amended — when the premise
+> was disproved by enumerating the call sites.** ⛔ **A record of a decision that was reversed must
+> show that it was reversed**, or the next reader inherits the conclusion without the correction.
+>
+> ⭐ **STILL OPEN, AND SEPARATED OUT SO IT IS NOT BURIED BY THE HALF THAT CLOSED: whether
+> COMPLETENESS is the right axis** on which to hand a user two different field orders, two control
+> kinds and two densities. **That half was never answered.** It is **DESIGN-TRACK** and belongs with
+> the component vocabulary, because the answer decides how many idioms the vocabulary must cover.
+
 **2. How do episode and daily records coexist?** History, the export and the entry point all assume
 one kind. **`daily_entry` is not a screen to add** — it is a second record shape that every one of
 those surfaces has to accommodate.
+
+> ⏸️ **DEFERRED, NOT OPEN — 8 September 2026. The question above stands as written; only its status
+> changes.**
+>
+> **`daily_entry` is DESIGNED AND DELIBERATELY NOT BUILT**, per `DATA-MODEL.md` §9 — *"Designed for,
+> deliberately not built: daily entries"*, checked there 7 September 2026. That section carries a
+> **seven-column spec** (`id`, `condition_id`, `date`, `logged_at`, `had_event`, `sleep_hours`,
+> `notes`), **three requirements that keep the current design additive**, and the deferral reason:
+> *"Daily logging is the most abandoned feature in health apps. It needs its own thinking about
+> burden — likely an exceptions-and-prompts design rather than a form."*
+>
+> ⭐ **So the coexistence question does not need answering until the feature is built.** Requirement
+> 2 is already **met**: the CSV carries `record_kind` with two values and interleaves both streams on
+> one timeline, so a third value is an addition rather than a break.
+>
+> ⚠️ **THE GAP THAT IS GENUINELY OPEN, and it is narrower than this decision as written.** Nothing
+> addresses **how a third record kind appears in, filters within, or sorts against the History
+> list**, and **`medication_note` sets no precedent** because it has its own screen rather than a row
+> in History. ⛔ **Already recorded as §13(l) — see it there rather than restated here.**
+>
+> ⛔ **AND AN ERROR IN REACHING THIS, RECORDED BECAUSE IT IS THE SAME PATTERN THIS DOCUMENT KEEPS
+> FINDING.** On 8 September 2026 a conclusion was drawn that `daily_entry` **did not exist**, on a
+> single conversational answer, **without checking** — and the opposite error had already been made
+> earlier the same day. **The check was queued in a brief and the conclusion was written before it
+> ran.** `DATA-MODEL.md` §9 had carried the full spec since before either. See §13(r).
 
 **3. Give `seeded_key` a writer.** ⭐ **This is what conditions adoption was for.** It makes
 relevance live, which **fixes cold start and the afterwards list at once**, and it is **smaller
@@ -1110,9 +1160,49 @@ true of some commit. **There is no Windows capture to be wrong.**
 the basis as declared is a decision about how much the visual assessment needs to be trusted, and
 nothing in this document settles it.
 
+✅ **DECIDED 8 September 2026. The open framing above is left as written — it records what was true
+when the finding was made, and the cost table it carries is what the decision was made against.**
+
+⭐ **REFRESH, IN THREE PASSES, IN THIS ORDER. The order is the decision, not the passes.**
+
+**1. WINDOWS DESKTOP FIRST.** Cheapest to run — **this machine builds the target**, so no second
+machine and no device are involved. And it is where the findings pile up: ⛔ **three now converge
+on the Windows build** — **zero** design-audit captures at any width, content capped at
+`maxWidth: 520` with **no width breakpoints** (verified: both `LayoutBuilder`s use `maxHeight`
+only, `MediaQuery...size.width` 0 hits, width-threshold branching 0 hits), and **§13(y)'s missing
+padded tap-target floor**, which applies on Android and iOS and **not** on Windows.
+
+⚠️ **The four Microsoft Store screenshots at ~1103x926, dated 3 May 2026, are NOT an assessment** —
+one window size, taken four months before the audit existed. They lower the cost; they do not
+answer anything.
+
+**2. DISCLAIMER AND WALKTHROUGH, at the widths they lack.** `disclaimer` has **1 capture, 375
+only**; `walkthrough` has **step 1 of 5, 375 only**.
+
+⭐ **These are the two screens with ZERO findings in sections 1 to 12 — checked 8 September 2026.**
+⛔ **Not screens that passed. Screens nobody assessed.** And **both are first-run gates that every
+new user meets before reaching anything else in the app.** The correlation is exact: the two
+least-assessed screens are the two least-captured screens, which is what an unexamined surface
+looks like from both directions at once.
+
+**3. REAL iOS, for the screens where RENDERING matters and only 1x proxies exist.** Needs the Mac.
+Scoped by the rule the amendment already sets: a finding about **layout or wrapping** may rest on
+the proxy set; a finding about **type rendering, spacing as it appears, safe-area behaviour or
+chrome** may not.
+
+⛔ **NOT DOING: recapturing the 66-image 1x proxy set wholesale.** It is **valid for wrapping and
+layout**, which is what most of sections 1 to 8 rest on, and **stale for three screens only**.
+Recapturing it would spend the effort **re-deriving findings that already exist** — and §13(r)
+records what happens when a fact is re-derived instead of read.
+
+⚠️ **THE OBLIGATION THAT REPLACES IT:** any 1x-based finding about **`log_event_screen`,
+`home_screen` or `history_screen`** must **name that it rests on a basis 24 commits old**. Those
+are the three files changed since `715ca95`, and two of them were changed by this session's own
+work.
+
 ---
 
-### (r) Correct knowledge existing, written down, and not travelling — SEVEN INSTANCES, ONE PATTERN
+### (r) Correct knowledge existing, written down, and not travelling — ONE PATTERN, AND THE COUNT KEEPS GROWING
 
 **Checked 8 Sep 2026.** ⛔ **Not a finding about the app. A finding about this audit's own
 reliability**, recorded here because it has now cost real work more than once and because the
@@ -1142,10 +1232,31 @@ not the remedy** — the remedy is a check that runs without being asked, or a c
 cannot rot. The pointer case took the second route: it now cites a symbol, because a symbol has
 nothing to go stale against.
 
-⛔ **NO REMEDY PROPOSED FOR THE PATTERN AS A WHOLE.** Two of the seven have had their specific
-mechanism fixed — pointer-by-symbol for #3 and #5. **The other five were each found by accident,
-by something else forcing the fact into view**, and this document has no mechanism that would
-have found any of them. **That is the finding.**
+⛔ **NO REMEDY PROPOSED FOR THE PATTERN AS A WHOLE.** Exactly TWO instances have had their
+specific mechanism fixed — pointer-by-symbol, for #3 and #5. ⚠️ **[this read "two of the seven"
+and "the other five" when written on 8 Sep 2026; instances 8, 9 and 10 were added the same day,
+so the counts are stated relative to the tables now rather than as totals]** **Every other
+instance was found by accident, by something else forcing the fact into view**, and this document
+has no mechanism that would have found any of them. **That is the finding.**
+
+➕ **THREE FURTHER INSTANCES, 8 September 2026 — the table above stands; these are added
+beneath it because the count is the argument.**
+
+| # | The knowledge | Where it sat | What happened anyway |
+|---|---|---|---|
+| 8 | §10's decisions 1 and 2 were resolved by this session's own work | **this document, §13(a) (m) (n) and `DATA-MODEL.md` §9** | §10 still presented both as **open** until annotated on 8 Sep. ⛔ **In the document that records this pattern** |
+| 9 | 11 of 13 numbered sections already carried visual findings | **this document, §§1-8, 10-12** | the visual assessment was asserted to have *"barely started"*. **Reasoned from the absence of its own knowledge rather than from reading the file** |
+| 10 | `daily_entry` is designed with a 7-column spec and 3 requirements | **`DATA-MODEL.md` §9, since before 7 Sep 2026** | concluded on 8 Sep that it **did not exist**, from one conversational answer, **with the check queued in a brief and the conclusion written before it ran** |
+
+⭐ **INSTANCE 9 IS A NEW SHAPE AND WORTH SEPARATING.** Instances 1 to 8 and 10 are all *the fact
+existed and was not read*. **This one is different: an absence of KNOWLEDGE was treated as evidence
+of an absence of WORK.** Nothing was misread — the file was simply never opened, and the gap in
+one reader's picture became a claim about the artefact. ⛔ **"I do not know of any" and "there are
+none" are different statements**, and the second was made from the first.
+
+⚠️ **AND INSTANCE 10 IS THE SHARPEST ORDERING FAILURE: the check was ALREADY QUEUED.** Not
+absent, not forgotten — **written into a brief, and overtaken by a conclusion drawn before it
+ran.** The same day had already produced the opposite error about the same feature.
 
 ### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
 
@@ -1521,3 +1632,33 @@ content, and there is no desktop capture to measure against. ⛔ **Do not infer 
 on this machine, so it was read instead — and reading it produced **a finding rather than a
 caveat**, because the real default is platform-split and the assumption had been platform-blind.
 **An assumption worth flagging is often an assumption worth checking; the check cost one `sed`.**
+
+### (z) 🔴 SCREEN-READER SEMANTICS WERE NEVER MEASURED — and the checklist that missed them was written today
+
+**Checked 8 Sep 2026.** The part-1 accessibility pass scoped itself to **four criteria**: contrast
+ratios, colour-alone instances, target sizes, and flash content. ⛔ **It omitted screen-reader
+semantics entirely** — and semantics is the criterion under which a defect **already recorded in
+this document** sits.
+
+**§8 has carried it since 31 August 2026:**
+
+> **Code-verified.** **The History delete control has no tooltip, on every row**, so it renders
+> `content-desc=""` and a screen reader announces nothing for a destructive action.
+> `medication_screen` builds the same control **with** `tooltip: 'Delete'`. ⛔ **An inconsistency,
+> not a house style — which is what makes it a defect.**
+
+⭐ **SO THE DEFECT WAS IN THE DOCUMENT AND THE CHECKLIST DID NOT REACH IT.** The four criteria were
+chosen before the document was read end to end, and they were chosen well enough to produce §13(s)
+through §13(y) — **which is what makes the omission worth recording rather than just correcting.**
+A criterion set assembled from what seemed measurable missed the one criterion whose defect was
+already written down. **See §13(r).**
+
+⛔ **RECORDED AS UNMEASURED, NOT AS ONE DEFECT.** The tooltip is a single instance. **Nothing has
+audited `Semantics`, `semanticLabel`, `tooltip` or `excludeSemantics` across the app** — not their
+presence, not their coverage, not whether any icon-only control other than that one announces
+itself, not whether the reading order of any screen makes sense, not whether the two colour-alone
+instances in §13(t) are reachable by a screen reader at all.
+
+⚠️ **Scope for part 2**, and it is a larger surface than the four criteria already measured: 108
+interactive constructions were enumerated for §13(x), and **how many of them announce themselves is
+unknown.** ⛔ **Do not infer a count from the one known instance.**
