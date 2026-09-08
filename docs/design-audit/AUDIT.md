@@ -5,6 +5,119 @@
 
 **Findings are recorded, not repaired. Nothing here was fixed while writing it.**
 
+> ⚠️ **AMENDED 8 September 2026. The statement above is the ORIGINAL and is quoted here
+> verbatim, unchanged — it records what the audit was scoped to when it began, and stays
+> readable as written. What follows widens it. It does not replace it.**
+
+## ⭐ SCOPE, AS AMENDED 8 September 2026
+
+### 1. Visual and interaction assessment IS in scope
+
+**It was never declared either way.** Checked 8 September 2026 across all 759 lines of the
+original: `out of scope` **0 hits**, `in scope` **0 hits**, `aesthetic` **0**, `UX` **0**; the
+three `scope` hits were all `FocusScope` / `PopScope`. **The title said "design audit" and that
+was the only signal.** This closes that gap.
+
+⭐ **EASE OF ENTRY IS THE PRIMARY CRITERION. VISUAL QUALITY IS THE SECOND.** In that order,
+deliberately. The person using this app is often recording minutes after an event — sometimes
+one-handed, sometimes a carer rather than the patient, sometimes under stress. **So "can this be
+completed under those conditions" precedes "does this look good", and where the two conflict the
+first wins.**
+
+### 2. Accessibility conformance is in scope as a MEASURABLE criterion set
+
+**Not as taste.** Four measurable things: **contrast ratios, target sizes, colour-alone
+instances, and flash content.** Each is a number or a count, so a finding about it can be
+checked rather than argued.
+
+⚠️ **WHY IT IS A REQUIREMENT AND NOT A PREFERENCE — AND THIS NEEDS VERIFICATION.** The
+Disability Discrimination Act 1992 has been interpreted as reaching mobile applications, and
+Australian Human Rights Commission guidance references WCAG. ⛔ **THAT IS NOT A LEGAL OPINION AND
+NOT A COMPLIANCE DETERMINATION.** It is recorded as the reason to treat accessibility as a
+requirement rather than a nicety, and **it rests on summaries rather than on the guidance
+itself.** ⛔ **Anything that turns on the legal position routes to the adviser** — see §9 — and
+must not be settled here. **Marked as NEEDING VERIFICATION as at 8 September 2026.**
+
+### 3. ⛔ THE CAPTURE BASIS, STATED HONESTLY — INCLUDING WHAT IT DOES NOT COVER
+
+**Inventoried 8 September 2026. 89 PNGs plus `INDEX.md`. Pixel dimensions read from each file's
+PNG header, never inferred from its filename.**
+
+| | Count | Scale | What it actually is |
+|---|---|---|---|
+| **Width proxies** | **66** | 1x | **Android on a Teclast P30 tablet, display overridden to an iPhone logical size.** 30 Aug 2026 |
+| Real iOS, simulator | 14 | 2x | `ios-se3-sim`, 7 Sep 2026 |
+| Real iOS, device | 9 | 3x | `ios-15promax-device`, 7 Sep 2026 |
+
+⛔ **THE 66 REPRODUCE LOGICAL WIDTH, AND THEREFORE WRAPPING AND LAYOUT. THEY REPRODUCE NOTHING
+ABOUT iOS RENDERING** — not fonts, not safe-area insets, not the Dynamic Island, not chrome.
+**`DESCRIPTION-430.md` has carried that warning in a READ THIS FIRST block since 30 August 2026**;
+it is repeated here because it belongs in the scope statement, not only in the transcription.
+
+⛔ **ZERO WINDOWS DESKTOP CAPTURES. Checked 8 September 2026, both grep controls live** —
+`windows|desktop|msix|win32` in filenames: **0**; captures wider than 800 logical px: **0**;
+widest logical width present: **800**. Control: `ios` in filenames **23**; known-absent probe
+**0**. **The app ships on the Microsoft Store, and content is capped at `maxWidth 520` with no
+breakpoints anywhere, so DESKTOP LAYOUT IS UNASSESSED** and no finding in this document speaks
+to it.
+
+**State-level gaps, all checked 8 September 2026:**
+
+| Gap | |
+|---|---|
+| `disclaimer` | 375 only — no 430, no 800 |
+| `walkthrough` | **step 1 of 5 only** (4 on Windows), 375 only |
+| `wizard-3-beforehand` | no real-iOS capture at any width |
+| the discard dialog | **no capture at all** — it was built on 8 Sep 2026, after every capture |
+
+✅ **All 12 screens in `lib/screens/` have at least one capture. Denominator derived from disk,
+not from a list of expectations.** So there is no screen nobody has photographed; **the gaps are
+at width and state level, and that distinction is deliberate rather than reassuring.**
+
+⭐ **THE CONSEQUENCE, AS A RULE THE ASSESSMENT FOLLOWS, NOT AS A CAVEAT:**
+
+> **A finding about LAYOUT or WRAPPING may rest on the proxy set.**
+> **A finding about TYPE RENDERING, SPACING AS IT APPEARS, SAFE-AREA BEHAVIOUR or CHROME MAY
+> NOT** — it needs a real capture on the platform concerned.
+> **Every visual finding names which basis it rests on.**
+
+⚠️ **The existing evidence marks do not cover this.** `Seen directly` says a capture was read; it
+does not say whether that capture was a proxy or the real platform. **Naming the basis is an
+addition to the marks, not a restatement of them.**
+
+### 4. ⛔ THE BASIS IS 24 COMMITS STALE
+
+**`715ca95`, 30 August 2026 — "Design-audit capture set: 22 layouts at three widths".** Confirmed
+as the captures' origin by `git log --diff-filter=A`, not assumed from the scope line.
+
+**As at 8 September 2026 it sits 24 commits behind origin, with 10 `lib/` files changed since** —
+including **`log_event_screen.dart`, `home_screen.dart` and `history_screen.dart`, the three
+most-captured screens**, two of them changed on 8 September 2026 by the work recorded in §13.
+
+⛔ **So for those three screens the 1x set no longer depicts the current code.** Whether the set
+is refreshed before the visual assessment proceeds is recorded as an open question — **§13(q)** —
+and is not decided here.
+
+### 5. `DESCRIPTION-430.md` is NOT a scope source
+
+The original names it as one. **It is a transcription**: 31,862 bytes, 318 lines, 22 numbered
+per-layout descriptions of the 30 August 1x set, written — in its own words — *"for a reader who
+cannot see the images"*. It also serves as the **provenance record** that carries the width-proxy
+warning quoted above.
+
+⭐ **It contributed nothing to §13, and the document's own marks show it: no §13 finding carries
+the `Described` mark.** Named here as what it is, rather than left standing as an input that
+scopes the audit.
+
+### 6. What is OUT of scope, in content terms
+
+**No document previously said this, which is why a reader consulting one had no signal.**
+
+| Out of scope | Where it goes |
+|---|---|
+| **Diagnosis, prognosis, monitoring, treatment** — anything asserting clinical meaning | **Routes to the adviser** (§9). MER is a data capture tool only, and claim wording is load-bearing |
+| **Store metadata** — pricing, category, keywords, description | **Console state**, not app design. Verified in the platform console, never from a note |
+
 ---
 
 ## ⛔ HOW TO READ THIS: THE EVIDENCE IS NOT ALL THE SAME QUALITY
@@ -952,3 +1065,70 @@ cannot find a rescue control by its text: only `Partly` is unique. Every finder 
 **row** and asserts the expected row count before tapping by index, so a layout change fails loudly
 instead of silently tapping a different field. **A label collision that forces tests to navigate by
 position is a signal about the labels, not only about the tests.**
+
+### (q) Whether the capture set is refreshed before the visual assessment proceeds — OPEN
+
+**Checked 8 Sep 2026.** The amended scope statement admits three separate weaknesses in the
+basis, and this finding exists so the decision about them is visible rather than implicit.
+
+| Weakness | |
+|---|---|
+| **Staleness** | `715ca95` is **24 commits** behind origin; **10 `lib/` files** changed, including the three most-captured screens |
+| **Proxy rendering** | **66 of 89** captures are an Android tablet with a display override, reproducing nothing about iOS rendering |
+| **Desktop absent** | **0** Windows captures; widest logical width present is **800** |
+
+**THE COST, recorded so the decision is priced rather than guessed:**
+
+| Pass | What it needs |
+|---|---|
+| Recapture at three widths | The Teclast P30 with display overrides, plus the rotation discipline that cost six failures on 7 Sep 2026 — `wm size` inherits the rotation in force |
+| Windows desktop | Windows, a desktop build, and a capture convention that does not exist yet: **every current filename encodes a logical width and a mobile DPR** |
+| Real iOS | **The Mac.** Every real-iOS capture in the set is dated 7 Sep 2026 and came from there |
+
+⭐ **THE WINDOWS GAP IS THE CHEAPEST TO CLOSE, AND IT IS THE ONE NOTHING COVERS AT ALL.** The CLI
+runs on Windows and builds the desktop target, so no second machine and no device are involved —
+against the iOS pass, which needs the Mac, and the recapture pass, which needs the tablet. **It is
+also the only one of the three where the current evidence is not weak but ABSENT**: a proxy
+capture is wrong about rendering while still being right about wrapping, and a stale capture was
+true of some commit. **There is no Windows capture to be wrong.**
+
+⛔ **RECORDED AS OPEN. No answer proposed.** Whether to refresh, refresh partially, or proceed on
+the basis as declared is a decision about how much the visual assessment needs to be trusted, and
+nothing in this document settles it.
+
+---
+
+### (r) Correct knowledge existing, written down, and not travelling — SEVEN INSTANCES, ONE PATTERN
+
+**Checked 8 Sep 2026.** ⛔ **Not a finding about the app. A finding about this audit's own
+reliability**, recorded here because it has now cost real work more than once and because the
+count is the argument.
+
+⭐ **THE SHAPE, IN EVERY CASE: the right answer already existed, in writing, and the party who
+needed it did not have it.** Not one instance was caused by the fact being unknown.
+
+| # | The knowledge | Where it sat | What happened anyway |
+|---|---|---|---|
+| 1 | *"both call sites pass an `existing`, so today it is edit-only by call site"* | **this document, §10, since 31 Aug 2026** | `ARCHITECTURE.md` row 2 listed `LogEventScreen` as a record-creation site, and §13(n) re-derived the same fact from scratch on 8 Sep |
+| 2 | Swift posts facts and never writes the record list | `CLAUDE.md`, corrected **29 Aug 2026** | `ARCHITECTURE.md` rows 6 and 7 still claimed the old behaviour on 8 Sep. **The correction reached the deferring document and never reached the authoritative one** |
+| 3 | *"CITED BY SYMBOL, NOT LINE NUMBER … three were wrong within days"* | `ARCHITECTURE.md` §3, **twenty lines above** | A `CLAUDE.md:78` pointer was written in that same section on 8 Sep and had rotted by the same day |
+| 4 | A pointer is only as good as its target | derived while fixing #3 | The 29 Aug correction being pointed AT was itself imprecise — three write sites named where there are four |
+| 5 | The pointer rule | being written, that hour | The repair for #3 cited `:82`, and edits made in the SAME script run pushed the line to `:87`. **Three positions in one day** |
+| 6 | *"WIDTH PROXIES, NOT iOS SCREENSHOTS"* | **`DESCRIPTION-430.md`, line 8, in a READ THIS FIRST block, since 30 Aug 2026** | The set was treated as an iOS basis throughout this session, until the basis was inventoried on 8 Sep |
+| 7 | *"A count of a container must name the container"* | being written, that minute | The sentence stating it claimed a count over "this document" that the sentence itself falsified, and its first repair said "the table above" while sitting below a different table |
+
+⚠️ **INSTANCE 6 IS THE STARKEST AND IT IS WHY THIS IS FILED HERE.** The warning was not buried,
+not stale, and not ambiguous. **It was the first content block of the file, headed `⛔ READ THIS
+FIRST`, and it said exactly the thing that needed knowing.** It did not travel. ⛔ **A prominent
+warning in the right file is not a mechanism.**
+
+⭐ **INSTANCES 5 AND 7 ARE THE ONES THAT DEFEAT THE OBVIOUS FIX.** Both were committed **while the
+rule being violated was being written down**, minutes apart. **So "write it down more clearly" is
+not the remedy** — the remedy is a check that runs without being asked, or a citation form that
+cannot rot. The pointer case took the second route: it now cites a symbol, because a symbol has
+nothing to go stale against.
+
+⛔ **NO REMEDY PROPOSED FOR THE PATTERN AS A WHOLE.** Two of the seven have had their specific
+mechanism fixed — pointer-by-symbol for #3 and #5. **The other five were each found by accident,
+by something else forcing the fact into view**, and this document has no mechanism that would
+have found any of them. **That is the finding.**
