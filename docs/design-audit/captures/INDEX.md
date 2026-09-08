@@ -312,3 +312,134 @@ search WOULD have found `Needs: ` had it been there. **Grepping the bare word "N
 hits on a FIXED build**, and a debug blob also contains the comment
 `"Add details:", not "Needs:"`. Anchor on `'Needs: ${` in a debug blob, and on the emitted
 prefix `Add details: ` in a release binary — **`${` does not survive AOT compilation.**
+
+---
+
+## Added 8 September 2026 — pass 2a, the reachable shots
+
+⛔ **NEITHER THE 30 AUGUST SET NOR THE 7 SEPTEMBER ADDITIONS ARE MODIFIED. This is an ADDITION**,
+following the precedent set by `history__default__430x932__2026-09-07-after-fix-1.png`.
+
+**Why 2a and not "pass 2".** §13(q) of `AUDIT.md` decided a three-pass refresh on 8 Sep 2026 whose
+pass 2 was *"disclaimer and walkthrough at the widths they lack"*. ⭐ **That pass is unrunnable on
+this device, and THIS FILE already said so** — see "Not captured, and why" above, where both
+screens are recorded as **unreachable without `pm clear`**, which destroys the 72 records. The
+decision was made without reading it. Pass 2 therefore split: **2a is what the live device can
+give; 2b is the disposable-profile pass this file already specifies.**
+
+### What was captured — 10 files, all 1x Android at the stated logical width
+
+| File | Logical | Size |
+|---|---|---|
+| `form__discard-dialog__430x932__2026-09-08.png` | 430x932 | 73 KB |
+| `form__discard-dialog__800x1280__2026-09-08.png` | 800x1280 | 97 KB |
+| `form__discard-dialog__375x667__2026-09-08.png` | 375x667 | 47 KB |
+| `form__discard-dialog-rescue__430x932__2026-09-08.png` | 430x932 | 58 KB |
+| `form__confirm-dialog-rescue__430x932__2026-09-08.png` | 430x932 | 57 KB |
+| `form__scroll-1-of-2__430x932__2026-09-08.png` | 430x932 | 73 KB |
+| `history__default__430x932__2026-09-08.png` | 430x932 | 60 KB |
+| `history__default__800x1280__2026-09-08.png` | 800x1280 | 78 KB |
+| `home__default__430x932__2026-09-08.png` | 430x932 | 44 KB |
+| `home__default__800x1280__2026-09-08.png` | 800x1280 | 42 KB |
+
+**10 files, 10 distinct md5s** — checked, because two captures taken while a dialog was still open
+were byte-suspicious and were deleted rather than kept (see below).
+
+⭐ **`form__discard-dialog` is a NEW STATE, and a dialog is named as a state of its parent screen**
+— the convention `form__confirm-dialog` and `medication__delete-dialog` already set.
+
+### Build, and why a version number is not evidence
+
+| | |
+|---|---|
+| Built from | `97dfde0`, release APK, real keystore |
+| Installed with | **`adb install -r`, no uninstall** — a debug signature or an uninstall destroys the 72 records |
+| Version | `1.1.0` / `versionCode 53` — ⛔ **UNCHANGED from the previous install, so the version string cannot tell the two builds apart.** `lastUpdateTime` went `2026-09-07 23:49:09` → `2026-09-08 18:42:08` |
+| Dialog present in the binary | ✅ **verified by scanning `libapp.so` in the APK** for `Discard your changes?`, `These changes have not been saved` and `Rescue medication: `, with `Confirm changes` as a known-present control and a known-absent probe returning nothing |
+
+### Database state at capture time — the control for the whole pass
+
+**Read from the device before and after, from the app's own accessibility tree, not from a note:**
+
+| | Before | After |
+|---|---|---|
+| `Total saved` | **72** | **72** |
+| `LAST EVENT` | **27 Aug 2026 · 16:41** | **27 Aug 2026 · 16:41** |
+| `History` header | `72 events` | `72 events` |
+
+⭐ **The matching TIMESTAMP is the stronger control, because a count can coincide.**
+
+⚠️ **`This month` reads 0, where 30 August recorded 62.** That is the calendar rolling into
+September, not data loss — and the unchanged 72 total is what establishes that.
+
+### Procedure, including the part that was missing from this file
+
+```
+# adb is NOT on PATH and its location was recorded nowhere before today
+export PATH="$PATH:/c/Users/wjl25/AppData/Local/Android/Sdk/platform-tools"
+
+adb shell settings put system accelerometer_rotation 0
+adb shell settings put system user_rotation 0
+adb shell wm size            # MUST already read portrait before the override
+adb shell wm size 430x932    # then 800x1280 (reset, native) then 375x667
+adb shell wm size            # read back, guarded on the Override line
+
+adb shell am start -n au.com.notiva.medicaleventrecorder/au.com.notiva.medical_event_recorder.MainActivity
+adb shell uiautomator dump /sdcard/ui.xml   # Flutter exposes semantics as content-desc, not text
+adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png <name>
+
+adb shell wm size reset
+adb shell settings put system accelerometer_rotation 1
+```
+
+⚠️ **`MSYS_NO_PATHCONV=1` is required on Git Bash for every `/sdcard/...` path**, or the shell
+rewrites it to a Windows path.
+
+**Restore verified rather than assumed:** `Physical size: 800x1280`, `Physical density: 160`, **no
+`Override` line**, `accelerometer_rotation` back to `1` and `user_rotation` at `0` — both their
+pre-pass values.
+
+### Findings from doing the work
+
+⭐ **THE DISCARD FIX IS VERIFIED ON THE REAL DEVICE, THROUGH THE PATH THAT HAD NO GUARD AT ALL.**
+A severity change followed by the **OS back key** produced *"Discard your changes?"* with
+`• Severity: Mild → Severe`. Before 8 Sep 2026 the same gesture popped the screen silently.
+**Discard then left the record reading `1m 45s · Mild`, unchanged.**
+
+⭐ **AND THE RESCUE FIX, on the case that was empty before:** changing only *Rescue medication
+given?* produced `• Rescue medication: not recorded → Yes` in **both** dialogs. ⛔ **`not recorded`
+rather than `No` is the `bool?` null handling being right on a real record** — the three rescue
+fields are nullable where referral is a plain bool, and null means *not asked*.
+
+✅ **Dismissing the discard dialog behaves as Go back — confirmed by accident.** A mis-aimed tap at
+800 hit the dialog barrier; the dialog closed and the form stayed open **with the edit intact**.
+That is the widget test's assertion, reproduced on device without being planned.
+
+⚠️ **`form__discard-dialog__375x667` WAS captured, against a prediction that it would fail.** The
+reasoning had been that `form__confirm-dialog` is missing at 375 because *"the `Save changes`
+button stayed below the fold after two scrolls"*, so the same would happen here. ⭐ **It does not:
+the confirm dialog is reached by SAVE, which can be below the fold, and the discard dialog is
+reached by BACK, which never is.** The prediction transferred a limit from one trigger to another
+without checking that they share the trigger.
+
+⚠️ **Two captures were taken while a dialog was still open and were DELETED, not kept.** A Discard
+tap at 800 missed its target — the bounds were `[490,692][557,740]`, centre `(523,716)`, and the
+tap went to `(620,690)` — so `home__default__800x1280` and `history__default__800x1280` were
+photographs of the dialog. **Caught because the home capture was byte-identical in size to the
+dialog capture.** Both re-taken after the state was confirmed by `uiautomator` rather than assumed.
+⭐ **The general form: confirm the screen from the semantics tree BEFORE the screencap, not after.**
+
+⚠️ **The most recent record does not open the form.** `Edit details` on home's Last Event card
+routes `27 Aug 2026 16:41` to the **wizard**, because that record is incomplete and `wantsWizard`
+is true. Reaching `LogEventScreen` needs a **complete** record from History — here the
+`25 Aug 2026 22:17` row, `Seizure / fit · 1m 45s · Mild`. **Backing out of the wizard wrote
+nothing, verified**, because nothing had been answered.
+
+### ⛔ Not captured, and why — additions to the table above
+
+| Layout | Reason |
+|---|---|
+| **`form__scroll-2-of-2` at 430** | Not attempted. The form's second screen is unchanged by the 8 Sep work, and `scroll-1-of-2` was taken only to date the current build |
+| **`form__discard-dialog-rescue` at 375 and 800** | Not attempted. The 430 capture establishes the change-list content; the two widths add layout information the plain discard dialog already gives at all three |
+| **The 200% text-scale set** | ⛔ **Deliberately out of scope for this pass.** There is no filename convention for text scale — nothing in the existing 99 files encodes one — and it needs its own decision. See `AUDIT.md` §13(u) |
+| **`disclaimer` and `walkthrough` at any width** | ⛔ **Still unreachable — see the original table.** Both are pass 2b, on a disposable profile |

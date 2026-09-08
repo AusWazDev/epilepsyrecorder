@@ -1200,6 +1200,43 @@ records what happens when a fact is re-derived instead of read.
 are the three files changed since `715ca95`, and two of them were changed by this session's own
 work.
 
+⛔ **CORRECTED 8 September 2026, HOURS AFTER THE DECISION ABOVE, WHICH IS LEFT AS WRITTEN.
+PASS 2 AS DECIDED IS UNRUNNABLE ON THE LIVE DEVICE.**
+
+**`captures/INDEX.md` has recorded the reason since 30 August 2026, in its "Not captured, and why"
+table, verbatim:**
+
+> | **`DisclaimerScreen` and `WalkthroughScreen` (5 steps)** | ⛔ **Unreachable without destroying
+> data.** Their gates are `disclaimerAcceptedVersion` and `walkthroughSeenVersion` in
+> SharedPreferences. `run-as` is refused on a release build — *"package not debuggable"* — so the
+> only way to clear them is `pm clear`, which **wipes all app data including the 72 records** |
+
+⭐ **PASS 2 THEREFORE SPLITS IN TWO:**
+
+| | |
+|---|---|
+| **2a** | **Reachable on the live device.** The discard dialog, the rescue confirm dialog, and refreshed captures of the three stale screens. Runnable now, and run on 8 Sep 2026 |
+| **2b** | **The DISPOSABLE-PROFILE pass — and `INDEX.md` already specifies it.** Disclaimer, walkthrough steps 2 to 5, the empty states for History, Conditions and Medication, the heavy-vocabulary case, and **wizard step 2 with a second condition** — the picker that is still unbounded and whose grouped variant a second condition switches on |
+
+**`INDEX.md`'s own words on 2b:** *"Every one of these is reachable on a disposable profile — which
+is also where the heavy-vocabulary case belongs. They should be captured together in that later
+pass, where a fresh install has no records and therefore nothing to lose."*
+
+⚠️ **2b IS UNSCOPED AND ITS COST IS NOT KNOWN.** A disposable profile on this device might be a
+second user account, a second `applicationId`, an emulator, or a spare handset — **nothing has
+established which, or what any of them costs.** ⛔ **Not assumed, not estimated. It is a separate
+decision, and the three-pass order above does not price it.**
+
+⚠️ **AND THE COVERAGE FRAMING ABOVE IS CORRECTED.** The decision reasoned that disclaimer and
+walkthrough have zero findings in §§1-12 because **nobody assessed them**, and treated the match
+with their thin capture coverage as *"what an unexamined surface looks like from both directions at
+once."*
+
+⭐ **THE CORRELATION WAS REAL AND THE CAUSATION WAS BACKWARDS.** They are unassessed **because they
+are uncapturable without destroying the records** — one cause producing both effects, already
+written down, and not a coincidence of two independent omissions. **The observation stands; the
+explanation was invented where a recorded one existed.** See §13(r), instance 11.
+
 ---
 
 ### (r) Correct knowledge existing, written down, and not travelling — ONE PATTERN, AND THE COUNT KEEPS GROWING
@@ -1257,6 +1294,31 @@ none" are different statements**, and the second was made from the first.
 ⚠️ **AND INSTANCE 10 IS THE SHARPEST ORDERING FAILURE: the check was ALREADY QUEUED.** Not
 absent, not forgotten — **written into a brief, and overtaken by a conclusion drawn before it
 ran.** The same day had already produced the opposite error about the same feature.
+
+➕ **INSTANCE 11, 8 September 2026 — and it is the first one recorded the same day the pattern's
+table was written.**
+
+| # | The knowledge | Where it sat | What happened anyway |
+|---|---|---|---|
+| 11 | disclaimer and walkthrough are uncapturable without `pm clear`, which destroys the 72 records — **and a disposable-profile pass is the named answer** | **`captures/INDEX.md`, "Not captured, and why", since 30 Aug 2026** | §13(q)'s decision ordered them as **pass 2** without reading the index of the capture set it was extending. **The one pass that cannot be run on the live device was scheduled second** |
+
+⛔ **THE SAME SHAPE AS INSTANCE 9, AND THE SECOND TIME THAT SHAPE HAS APPEARED IN ONE DAY.** An
+absence of knowledge was treated as evidence about the artefact: *"screens nobody assessed"* was
+inferred from *"screens I found no findings for"*, when a recorded cause explained both the missing
+findings and the missing captures at once.
+
+⭐ **AND THE ANSWER WAS WRITTEN BESIDE THE PROBLEM.** `INDEX.md` does not merely record the
+obstacle — it **names the remedy in the next sentence**, and specifies what else belongs in that
+same pass. **A decision was made about capture coverage without opening the capture set's own
+index**, which is the one file whose whole job is to say what is and is not in it.
+
+⚠️ **TWO FURTHER INSTANCES OF THE SAME FAMILY, both checked 8 September 2026, both about
+procedure rather than content:**
+
+| | |
+|---|---|
+| ⛔ **`adb` is not on `PATH`, and its location is recorded nowhere** | **0 hits** for `platform-tools` or `adb.exe` across `STATUS.md`, `CLAUDE.md` and `captures/INDEX.md`; control `adb shell` present in `INDEX.md`, known-absent probe 0. **Every recorded capture command begins `adb shell …` and none of them runs as written.** It is at `C:\Users\wjl25\AppData\Local\Android\Sdk\platform-tools\adb.exe`. ⭐ **A procedure recorded in full, that cannot be executed from the record** |
+| ⚠️ **A superseded device claim still reads as current** | `STATUS.md:1693`, session of **26 April 2026**: *"MER will not render in portrait on the Teclast P30… Cause unknown and deliberately not guessed."* **Superseded** — the 30 August and 7 September passes both forced portrait successfully, and `INDEX.md` records *"Orientation: Portrait, forced."* ⛔ **Dated, therefore resolvable — but only by someone who checks the date rather than the claim** |
 
 ### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
 
