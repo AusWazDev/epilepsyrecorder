@@ -61,6 +61,20 @@ widest logical width present: **800**. Control: `ios` in filenames **23**; known
 breakpoints anywhere, so DESKTOP LAYOUT IS UNASSESSED** and no finding in this document speaks
 to it.
 
+⚠️ **ANNOTATED 8 September 2026 — the claim above is SCOPED TO
+`docs/design-audit/captures/` and stays true as written. But the desktop evidence is FOUR MONTHS
+OLD rather than absent.** `assets/screenshots/windows/` holds **four PNGs** — `mer-win-1` to
+`mer-win-4`, at **1103x927, 1102x922, 1107x928 and 1106x925**, all dated **3 May 2026**. They are
+Microsoft Store listing screenshots, not design-audit captures, and they predate the 30 August
+capture set by four months and the current code by far more.
+
+⭐ **So a desktop pass does not start from nothing**, which lowers the cost recorded in
+§13(q) — there is a known window size, a known aspect, and a precedent for capturing this
+target. **DESKTOP LAYOUT REMAINS UNASSESSED**: four store screenshots at one size, taken before
+the audit existed, are not an assessment. ⛔ **And §13(x) has since found a
+platform-specific reason it matters** — Flutter's 48x48 tap-target floor does not apply on
+Windows.
+
 **State-level gaps, all checked 8 September 2026:**
 
 | Gap | |
@@ -1132,3 +1146,378 @@ nothing to go stale against.
 mechanism fixed — pointer-by-symbol for #3 and #5. **The other five were each found by accident,
 by something else forcing the fact into view**, and this document has no mechanism that would
 have found any of them. **That is the finding.**
+
+### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
+
+**Code-verified, 8 Sep 2026.** Every pair derived by reading the source and pairing each
+foreground with the background it actually sits on. Ratios computed from the PNG-independent
+sRGB relative-luminance formula, **not rounded toward passing.**
+
+⚠️ **THE THRESHOLD CONVERSION, STATED BECAUSE IT DECIDES SEVERAL ROWS.** WCAG's "large text" is
+**18pt regular / 14pt bold**. Flutter's `fontSize` is **logical pixels**, and 1pt = 4/3 px, so the
+thresholds become **`>= 24` regular** and **`>= 18.67` bold**. `w600` was treated as **bold** —
+⭐ **the GENEROUS reading, which LOWERS the bar, so every failure listed below fails either way.**
+Consequence worth noting: `titleLarge` at **18px w600 is NOT large text** (18 < 18.67). It passes
+anyway at 8.02:1.
+
+⛔ **4.31 against 4.5 IS A FAIL. The threshold is binary and this document does not soften it.**
+The apparatus was controlled on the boundary pair before any real number was computed:
+`#767676` on white = **4.54 PASS**, `#777777` on white = **4.48 FAIL**. A calculator that rounded
+would call both 4.5 and both passing.
+
+**64 pairs · 36 PASS · 28 FAIL. Worst 1.44:1. Best-failing 4.36:1.**
+
+<!-- emitted from the computed values, not retyped -->
+| # | Pair | fg | bg | Ratio | Needs | Size / weight | Location |
+|---|---|---|---|---|---|---|---|
+| 1 | Divider | `#B5D4F4` | `#F5F8FB` | **1.44:1** | 3.0:1 | non-text UI | `dividerTheme` |
+| 2 | Info card (previews) BORDER | `#90CAF9` | `#E3F2FD` | **1.53:1** | 3.0:1 | non-text UI | `home_screen.dart:1070` |
+| 3 | Input BORDER (enabled) | `#B5D4F4` | `#FFFFFF` | **1.53:1** | 3.0:1 | non-text UI | `inputDecorationTheme enabledBorder` |
+| 4 | Chip BORDER | `#B5D4F4` | `#FFFFFF` | **1.53:1** | 3.0:1 | non-text UI | `chipTheme side` |
+| 5 | Card BORDER | `#B5D4F4` | `#FFFFFF` | **1.53:1** | 3.0:1 | non-text UI | `cardTheme side` |
+| 6 | Info card (notif off) BORDER | `#FFB74D` | `#FFF3E0` | **1.58:1** | 3.0:1 | non-text UI | `home_screen.dart:1058` |
+| 7 | Backup reminder BORDER | `#81C784` | `#E8F5E9` | **1.79:1** | 3.0:1 | non-text UI | `home_screen.dart:1577` |
+| 8 | Unsaved banner BORDER | `#EF9A9A` | `#FFEBEE` | **1.88:1** | 3.0:1 | non-text UI | `home_screen.dart:1290` |
+| 9 | Fallback banner BORDER | `#FF9800` | `#FFF3E0` | **1.97:1** | 3.0:1 | non-text UI | `home_screen.dart:1391` |
+| 10 | Info card (notif off) BODY, alpha .85 | `#F68E22` | `#FFF3E0` | **2.17:1** | 4.5:1 | 12px w400 | `_InfoCard body withValues(alpha: 0.85)` |
+| 11 | SnackBar action label | `#1A8FCB` | `#0D4F82` | **2.37:1** | 4.5:1 | 14px w600 | `snackBarTheme actionTextColor` |
+| 12 | Info card (notif off) icon | `#F57C00` | `#FFF3E0` | **2.47:1** | 3.0:1 | non-text UI | `home_screen.dart:1054` |
+| 13 | Info card (notif off) title | `#F57C00` | `#FFF3E0` | **2.47:1** | 4.5:1 | 13px w700 | `_InfoCard title` |
+| 14 | Help status BAD text | `#F57C00` | `#FFFFFF` | **2.70:1** | 4.5:1 | 12px w600 | `help_screen.dart:656` |
+| 15 | Help status dot (bad) | `#F57C00` | `#FFFFFF` | **2.70:1** | 3.0:1 | non-text UI | `help_screen _StatusRow dot` |
+| 16 | Info card (previews) BODY, alpha .85 | `#3789D8` | `#E3F2FD` | **3.21:1** | 4.5:1 | 12px w400 | `_InfoCard body withValues(alpha: 0.85)` |
+| 17 | Fallback banner title | `#E65100` | `#FFF3E0` | **3.46:1** | 4.5:1 | 14px w600 | `home_screen.dart:1408` |
+| 18 | Fallback banner body | `#E65100` | `#FFF3E0` | **3.46:1** | 4.5:1 | 13px w400 | `home_screen.dart:1428` |
+| 19 | Fallback banner button label | `#FFFFFF` | `#E65100` | **3.79:1** | 4.5:1 | 13px w600 | `home_screen.dart:1437` |
+| 20 | Info card (previews) title | `#1976D2` | `#E3F2FD` | **4.03:1** | 4.5:1 | 13px w700 | `_InfoCard title` |
+| 21 | bodyMedium (MUTED) on bg | `#4A7FA5` | `#F5F8FB` | **4.05:1** | 4.5:1 | 13px w400 | `textTheme bodyMedium` |
+| 22 | bodySmall (MUTED) on bg | `#4A7FA5` | `#F5F8FB` | **4.05:1** | 4.5:1 | 11px w400 | `textTheme bodySmall` |
+| 23 | Help status OK text | `#388E3C` | `#FFFFFF` | **4.12:1** | 4.5:1 | 12px w600 | `help_screen.dart:656` |
+| 24 | bodyMedium (MUTED) | `#4A7FA5` | `#FFFFFF` | **4.31:1** | 4.5:1 | 13px w400 | `textTheme bodyMedium` |
+| 25 | bodySmall (MUTED) | `#4A7FA5` | `#FFFFFF` | **4.31:1** | 4.5:1 | 11px w400 | `textTheme bodySmall` |
+| 26 | labelLarge (MUTED) | `#4A7FA5` | `#FFFFFF` | **4.31:1** | 4.5:1 | 11px w600 | `textTheme labelLarge` |
+| 27 | Input label / hint | `#4A7FA5` | `#FFFFFF` | **4.31:1** | 4.5:1 | 13px w400 | `inputDecorationTheme` |
+| 28 | Unsaved banner body | `#D32F2F` | `#FFEBEE` | **4.36:1** | 4.5:1 | 12px w400 | `home_screen.dart:1319` |
+
+⭐ **THREE LEVERAGE POINTS, and they are why this is 28 rows rather than 28 problems:**
+
+| | |
+|---|---|
+| **`textMuted` #4A7FA5 at 4.31:1** | ⭐ **SIX failures from ONE palette value** — counted, not estimated: rows 21, 22, 24, 25, 26, 27. It is `bodyMedium`, `bodySmall`, `labelLarge`, and every input label and hint |
+| **`border` #B5D4F4 at 1.53:1** | **FOUR failures, and it is every card, chip and input outline in the app** — rows 3, 4, 5 and the divider |
+| **`dividerTheme` at 1.44:1** | **The worst ratio measured anywhere**, and the same `border` colour on `background` rather than `surface` |
+
+⛔ **THE FALLBACK BANNER, RECORDED SEPARATELY, BECAUSE IT IS THE MOST INSTRUCTIVE ROW HERE.**
+Built and **device-verified on 7 September 2026** — and it **fails all three of its text pairs**:
+title 3.46:1, body 3.46:1, button label 3.79:1, against 4.5:1.
+
+⭐ **The render was not wrong. It was answering a different question.** It confirmed the copy did
+not overflow, that it wrapped to three clean lines, that spacing against the app bar was right,
+and that amber read as **attention rather than alarm** — with frame brightness measured at 202-207
+and the stacked-green case captured beside it. **Every one of those was correct.** ⛔ **None of
+them could report that the contrast was 3.46:1.**
+
+> **A VISUAL CHECK CANNOT ANSWER A MEASURABLE QUESTION.** The same class as the passing test that
+> could not know a sentence was untrue, and the count that read as assurance while measuring
+> something adjacent. **Looking at it is not measuring it.**
+
+⚠️ **UNDETERMINED FROM SOURCE, and part 2's input:** the two `_InfoCard` bodies are the only alpha
+composites and were computed against their own card fill, which is correct **only if nothing sits
+between**; app icons and the splash are images, not colour pairs; and every system-supplied
+surface — keyboard, share sheet, date picker, the `PopupMenuButton` menu fill — **is not set in
+this codebase at all.**
+
+---
+
+### (t) COLOUR-ALONE — 3 of 14 conditional colours carry meaning by colour alone
+
+**Code-verified, 8 Sep 2026.** WCAG 1.4.1: colour must not be the only visual means of conveying
+information.
+
+**⛔ THE THREE:**
+
+| Instance | What colour signifies | Accompanied by |
+|---|---|---|
+| `home_screen.dart:1762` **"This month"** → `alert` when non-zero | that the count is notable | ⛔ **NOTHING. Already §13(k)** |
+| `walkthrough_screen.dart:303` **page dots**, active vs `alpha 0.25` | which step you are on | ⛔ **NOTHING** — same 8x8 size, same `BoxShape.circle`, **opacity only** |
+| `log_event_screen.dart:1172` **selection row** | which option is chosen | ⚠️ **border width 0.5 → 1.5 only.** Non-colour, but sub-pixel at 0.5 and no icon, no weight change |
+
+**✅ THE COMPLIANT ELEVEN, with what carries the meaning besides colour:**
+
+| Instance | Also conveyed by |
+|---|---|
+| `history_screen.dart:903/906/922` "Needs details" chip | **`Icons.check` appears** (`if (selected)`), weight w400→w600, border 0.5→1.5 |
+| `history_screen.dart:1069` type filter chip | weight w400→w600, border width change |
+| `vocabulary_screen.dart:411` hidden entry | **explanatory text appears** — *"Hidden — still shown on records that use it"* |
+| `help_screen.dart:656` OK / BAD status | **a different glyph** — `ok ? okIcon : badIcon` |
+| `home_screen.dart:1115`, `mer_theme.dart:156` | button and chip fill states, paired with their own labels |
+
+⭐ **RECORD THE APPARATUS FAULT, because the finding would have been wrong without the control the
+brief mandated.** A single-line regex found **4** conditional colours. **The multiline form found
+14.** The conditional at `home_screen.dart:1761-1763` wraps across three lines:
+
+```dart
+valueColor: thisMonth > 0
+    ? MERColours.alert
+    : MERColours.primary,
+```
+
+⛔ **So the first search missed §13(k) itself — the one instance already known to exist.** The
+brief's requirement that the search must find (k) or be considered broken is what caught it. **A
+10-instance miss, reported clean.** Same shape as every filter-and-transform failure already in
+this codebase: plausible output, nothing erroring.
+
+---
+
+### (u) 🔴 TEXT SCALE IS NEVER READ — and this may outrank (s)
+
+**Code-verified, 8 Sep 2026.**
+
+```
+textScaler               0 hits
+textScaleFactor          0 hits
+MediaQuery.textScalerOf  0 hits
+CONTROL, MediaQuery present in lib/ : 4     CONTROL, known-absent probe : 0
+```
+
+**The app never reads the platform's text-size setting.** Nothing scales, nothing re-flows in
+response to it, nothing tests it.
+
+⭐ **WHY THIS MAY MATTER MORE THAN (s), stated as reasoning rather than as a measurement.** A
+contrast failure makes text harder to read. **A text-scale failure can make it unreachable** — the
+platform enlarges type, the layout does not adapt, and content clips or overflows off-screen. WCAG
+2.1.4's resize criterion asks for 200% without loss of content or functionality.
+
+⛔ **AND IT UNDERMINES EVERY LAYOUT MEASUREMENT IN THIS DOCUMENT.** §7's "roughly 150 px of void",
+§13(e)'s `btnTop` range of 311-680, the 2.11-screenful figure, the whole row-bound analysis in §2
+— **every one describes the app at ONE text size, the default.** None of them says so.
+
+⚠️ **UNQUANTIFIED, AND DELIBERATELY LEFT SO. Nobody has rendered this app at 200% text scale.**
+There is no capture at any scale but the default (§13(q)), so the consequence is **unknown rather
+than small**. That is part 2 work. ⛔ **Do not record a severity here; the measurement does not
+exist yet.**
+
+---
+
+### (v) ✅ FLASH CONTENT — CLEAN, and recorded as a positive result
+
+**Code-verified, 8 Sep 2026.** WCAG 2.3.1 Level A: nothing may flash more than three times per
+second. ⭐ **This is an epilepsy app, so a clean pass is worth recording in its own right rather
+than noted as an absence.**
+
+**WHAT THE SEARCH RETURNS — recorded in full so a future session re-runs it instead of
+re-deriving it:**
+
+```
+FOUND (the control that proves the search reached the widgets):
+  AnimatedContainer          5   history:899, history:1045, log_event:1007, :1084, :1164
+                                 ALL Duration(milliseconds: 150), one-shot on tap
+  CircularProgressIndicator  4   main:183, conditions:116, home:2079, medication:129
+  LinearProgressIndicator    1   event_wizard_screen:413
+  TOTAL animation constructs 10
+
+ZERO, each against the AnimatedContainer = 5 control above:
+  .repeat(            0        AnimationController  0        Lottie           0
+  .animate(           0        vsync                0        flutter_animate  0
+  Ticker              0        Curves.bounce        0        SpinKit          0
+  period:             0        Curves.elastic       0        shimmer          0
+  animation packages in pubspec.yaml : 0    (CONTROL: sqflite = 3)
+  .gif files in repo (excl build)    : 0
+  Lottie .json in assets/            : 0
+  known-absent probe 'zzz_absent'    : 0
+```
+
+⛔ **`repeat` returned 11 and `reverse` returned 6, and EVERY ONE WAS ADJUDICATED INDIVIDUALLY
+rather than counted.** All 17 are prose in comments (*"a repeat drain repeats this decision"*,
+*"the reverse direction"*) or `items.reversed` on the CSV export loop. **None is an animation.**
+⭐ **A raw count would have reported 17 repeating constructs in an epilepsy app.**
+
+⭐ **THE ONE THING THAT GENUINELY REPEATS, and the reason a bare zero would have been dishonest:**
+`Timer.periodic(Duration(seconds: 1))` at `home_screen.dart:1266`, rebuilding
+`_ActiveEventBanner` **every second, indefinitely, while an event is running.**
+
+**It is not a flash, on two independent grounds:**
+1. **Nothing visual changes between frames.** The rebuild recomputes `elapsedStr` only; the
+   `#FFEBEE` fill, `#EF9A9A` border and `#D32F2F` dot are all `const`.
+2. **1 Hz is below the three-per-second threshold** even if they did change.
+
+**The five `AnimatedContainer`s are one-shot 150 ms tap transitions — no repeat, no reverse.** The
+progress indicators animate continuously, but **rotation and advance are not luminance flashing**,
+and both are transient boot or load states.
+
+⚠️ **REDUCE-MOTION IS NOT RESPECTED ANYWHERE:**
+
+```
+disableAnimations 0   accessibleNavigation 0   reduceMotion 0   AccessibilityFeatures 0
+CONTROL, MediaQuery present : 4      known-absent probe : 0
+```
+
+⭐ **Recorded here rather than as its own finding because the practical exposure is small: with no
+repeating animation and nothing longer than 150 ms, there is very little motion to reduce.** It is
+a gap in principle, not a gap a user would feel today.
+
+---
+
+### (w) THE PALETTE IS NOT IN THE PALETTE
+
+**Code-verified, 8 Sep 2026.** `MERColours` defines **10** colours. **Roughly 40 further raw
+`Color(0x…)` literals sit outside the theme**, in `home_screen.dart`, `history_screen.dart`,
+`disclaimer_screen.dart`, `help_screen.dart` and `event_record.dart`.
+
+**Two facts about the 10 that are worth having on record:**
+- ⚠️ **`textPrimary` is byte-identical to `primary`** — both `#0D4F82`. Two names, one colour.
+- ⚠️ **`success` and `warning` appear in NO measured pair.** The greens and ambers actually
+  rendered are raw literals (`#2E7D32`, `#1B5E20`, `#E65100`, `#F57C00`), not these.
+
+⭐ **THE CONSEQUENCE, AND IT IS THE POINT OF THE FINDING.** The 28 failures in §13(s) split
+**11 / 17** — computed, not estimated:
+
+| Origin | Failures |
+|---|---|
+| both colours are `MERColours` values (or white) | **11** — the five `textMuted` text styles, the input label, and the four `border` outlines plus the divider, and the SnackBar action label |
+| **at least one RAW literal** | **17** — every banner, both info cards including their alpha-composited bodies, and the three help-status rows |
+
+⛔ **So a palette-level fix applied to `MERColours` alone would LOOK complete** — one file, all
+named colours corrected, a tidy diff — **and would leave 17 of 28 failures untouched**, including
+every banner and every info card. **Any contrast fix must reach BOTH, and the raw literals are the
+larger half.**
+
+⚠️ **This figure was ASSERTED as 8/20 in drafting and computed as 11/17.** Recorded because the
+draft number was plausible and wrong, and nothing but the computation would have caught it.
+**A second draft error in the same pass said "Five failures from ONE palette value" above a list
+of SIX rows** — computed as 6 for `textMuted` and 4 for `border`.
+
+⛔ **THE COUNTERMEASURE BOTH ERRORS POINT AT: SUMMARY FIGURES MUST BE COMPUTED, NOT READ OFF A
+COMPUTED TABLE.** The failure table above was emitted from the calculator precisely to keep 28
+measured ratios out of hand-transcription — and both errors then landed in the PROSE AROUND IT,
+where a number was derived by eye from the very table that could have produced it. **A prose
+figure read off a table is hand-transcription with extra steps**, and ⛔ **no check in this
+repository catches it**: the whole-sentence verifier confirms a sentence survived, never that its
+arithmetic is right.
+
+---
+
+### (x) TARGET SIZES — all pass 24x24; four fall short of 44 and 48
+
+**Code-verified, 8 Sep 2026. 108 interactive constructions, 114 `onTap`/`onPressed`/`onSelected`
+callbacks.**
+
+⭐ **The Flutter default was VERIFIED IN THE SDK rather than assumed, and it is PLATFORM-SPLIT —
+which the brief's framing did not anticipate.** `theme_data.dart:400-407`:
+
+```dart
+case TargetPlatform.android:
+case TargetPlatform.fuchsia:
+case TargetPlatform.iOS:
+  materialTapTargetSize ??= MaterialTapTargetSize.padded;
+case TargetPlatform.linux:
+case TargetPlatform.macOS:
+case TargetPlatform.windows:
+  materialTapTargetSize ??= MaterialTapTargetSize.shrinkWrap;
+```
+
+with `kMinInteractiveDimension = 48.0` in `material/constants.dart:27`. **This app sets neither
+`materialTapTargetSize` (0 hits) nor `platform` (0 hits)** — controls: `useMaterial3` = 1 in the
+same file, known-absent probe = 0.
+
+⛔ **APPARATUS FAULT, RECORDED BECAUSE ONE BROKEN AGGREGATION INVALIDATED TWO NUMBERS AND ONLY
+ONE OF THEM LOOKED WRONG.** The first pass counted with
+`grep -rcF <term> <file> | awk -F: '{s+=$2}'`. With a single explicit file, `grep -c` emits a bare
+count and no `filename:` prefix, so `$2` is empty and the sum is **always 0**. Reproduced side by
+side, 8 Sep 2026:
+
+    broken form   grep -rcF 'useMaterial3' lib/theme/mer_theme.dart | awk -F: '{s+=$2}'  ->  0
+    correct form  grep -cF  'useMaterial3' lib/theme/mer_theme.dart                      ->  1
+
+⭐ **`useMaterial3 = 0` was VISIBLY wrong** — that line had been read directly minutes
+earlier — **and `platform: = 0`, produced by the same pipeline in the same command, was not.**
+It happened to be true. ⛔ **A control that fails tells you nothing about which of the numbers
+beside it are also wrong; every figure from that pipeline had to be re-derived, and was.**
+
+⛔ **SO THE 48x48 FLOOR APPLIES ON ANDROID AND iOS AND DOES NOT APPLY ON WINDOWS** — promoted
+to its own finding, **§13(y)**, because it is a platform difference rather than a detail of this
+table.
+
+⚠️ **THE TABLE BELOW THEREFORE DESCRIBES MOBILE ONLY.** Every "48" in it is the `padded`
+minimum, which the Windows build does not get. **The desktop figures are UNMEASURED — see
+§13(y); do not read them off this table.**
+
+| Element | Effective target | 24 | 44 | 48 |
+|---|---|---|---|---|
+| `TextButton` (20), `FilledButton` (18), `IconButton` (8), `OutlinedButton` (5), `ListTile` (8) | **48** on mobile via `padded` | ✅ | ✅ | ✅ |
+| `SizedBox(height: 52)` — `disclaimer:331`, `log_event:826` | **52** | ✅ | ✅ | ✅ |
+| **Cancel button** — `log_event_screen.dart:838` | **44** | ✅ | ✅ | ⛔ |
+| `history_screen.dart:1381` | **38** | ✅ | ⛔ | ⛔ |
+| `home_screen.dart:1830`, `your_data_screen.dart:200` | **36** | ✅ | ⛔ | ⛔ |
+| chips — `chipTheme` padding v10 + 13px label | **≈ 38** | ✅ | ⛔ | ⛔ |
+| selection rows — `AnimatedContainer` padding v10 | **≈ 38** | ✅ | ⛔ | ⛔ |
+| `GestureDetector` chip — `history:897`, padding v8 + 12px label | **≈ 30** | ✅ | ⛔ | ⛔ |
+
+⛔ **Nothing measured falls below WCAG 2.2 AA's 24x24.**
+
+⚠️ **`VisualDensity.compact` is applied at four sites** — `history:992`, `history:1401`,
+`home:1439`, `home:1602`. **Compact subtracts from the minimum interactive dimension**, so those
+four are smaller than the table implies and **the amount is UNDETERMINED FROM SOURCE.** Two of the
+four are banner buttons.
+
+⚠️ **Chip and button WIDTH depends on rendered label length**, which source cannot give. Both that
+and the `compact` reduction are part 2's input, alongside the 7 `InkWell` sites whose target is
+whatever their child measures.
+
+### (y) 🔴 THE 48x48 TAP-TARGET FLOOR DOES NOT APPLY ON WINDOWS
+
+**Code-verified in the Flutter SDK, 8 Sep 2026.** Promoted out of §13(x) because it is a
+**platform-specific accessibility difference**, not a detail of the target-size table, and it
+needs to be findable on its own.
+
+**`flutter/packages/flutter/lib/src/material/theme_data.dart:399-407`:**
+
+```dart
+platform ??= defaultTargetPlatform;
+switch (platform) {
+  case TargetPlatform.android:
+  case TargetPlatform.fuchsia:
+  case TargetPlatform.iOS:
+    materialTapTargetSize ??= MaterialTapTargetSize.padded;
+  case TargetPlatform.linux:
+  case TargetPlatform.macOS:
+  case TargetPlatform.windows:
+    materialTapTargetSize ??= MaterialTapTargetSize.shrinkWrap;
+```
+
+with **`const double kMinInteractiveDimension = 48.0;`** at `material/constants.dart:27`.
+
+**This app sets NEITHER, re-verified 8 Sep 2026 without the broken aggregation described below:**
+
+```
+materialTapTargetSize  0 hits      platform:  0 hits      TargetPlatform  0 hits
+CONTROLS  useMaterial3 in mer_theme.dart = 1     ThemeData tree-wide = 8 hits
+          zzz_absent tree-wide = 0 hits
+```
+
+⛔ **SO EVERY MATERIAL BUTTON ON THE WINDOWS BUILD FALLS BACK TO `shrinkWrap` AND LOSES THE 48x48
+PADDED MINIMUM.** The same widget, the same code, a smaller target — decided entirely by
+`defaultTargetPlatform`.
+
+⭐ **THREE FINDINGS NOW CONVERGE ON THE WINDOWS BUILD AS THE LEAST-EXAMINED SURFACE OF THIS APP**,
+and none of the three was looking for the other two:
+
+| | |
+|---|---|
+| **No design-audit captures at all** | widest logical width present is 800; the only Windows evidence is four Microsoft Store screenshots from 3 May 2026 — see the scope amendment |
+| **Content capped at `maxWidth: 520`, no width breakpoints** | verified: both `LayoutBuilder`s use `maxHeight` only, `MediaQuery...size.width` 0 hits, width-threshold branching 0 hits |
+| **No padded tap-target minimum** | this finding |
+
+**It ships on the Microsoft Store.**
+
+⚠️ **UNQUANTIFIED. NOBODY HAS MEASURED THE EFFECTIVE TARGET SIZES ON THE DESKTOP BUILD.**
+§13(x)'s table describes **mobile only**. What `shrinkWrap` yields for each of the 108 interactive
+constructions in this app is **unknown**, not estimated — it depends on each widget's intrinsic
+content, and there is no desktop capture to measure against. ⛔ **Do not infer a number from
+(x)'s table; it does not apply here.**
+
+⭐ **HOW IT WAS FOUND, RECORDED BECAUSE THE METHOD IS THE TRANSFERABLE PART.** The brief asked for
+`MaterialTapTargetSize.padded` to be recorded as **an unverified assumption**. The Flutter SDK is
+on this machine, so it was read instead — and reading it produced **a finding rather than a
+caveat**, because the real default is platform-split and the assumption had been platform-blind.
+**An assumption worth flagging is often an assumption worth checking; the check cost one `sed`.**
