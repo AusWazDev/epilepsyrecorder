@@ -1743,6 +1743,45 @@ column, and that is exactly the state that made an unchecked count feel safe.**
 about a FILE, and is verified by reading the file.** Where an artefact carries no status field, the
 honest report is **UNTRACKED** — never a number.
 
+---
+
+**⛔ AND THE COUNT GROWS AGAIN, 9 September 2026 — THIS TIME THE ARTEFACT ITSELF DID NOT TRAVEL.
+A NEW VARIANT: not knowledge that failed to reach a reader, but a TRAVELLING DOCUMENT CITING A
+NON-TRAVELLING ARTEFACT.**
+
+**§13(be) was written on Windows and committed. It cited the evidence for an unrecoverable data loss
+by OneDrive path and sha256 — `MER Device Baselines/EVIDENCE 2026-08-30 session transcript
+(59-record state)`.** ⛔ **`AUDIT.md` travels by `git push`. That file does not.** So the pointer was
+correct, verifiable, and **resolvable only on the one machine that already had the file** — which is
+the one machine that did not need the pointer.
+
+⭐ **THE SHAPE, AND IT IS NEW TO THIS SECTION: every earlier instance here is a fact that was written
+down and not read. This is a fact that was written down, WAS read, and pointed somewhere the reader
+could not follow.** ⚠️ **A citation is only as portable as the artefact it names, and nothing in a
+markdown reference declares its own reachability.**
+
+⛔ **AND THE RULE AGAINST IT WAS ALREADY IN THIS REPOSITORY'S OWN CONTEXT FILES** — *"anything
+recording another artifact's hash, size or version needs a sync step in the same pass that changes
+the artifact"*, recorded after a recovery runbook was found carrying a hash for a payload that had
+moved on. ⭐ **Same failure, one turn later, in the document that records the data loss.** ⚠️ **The
+rule was not missing. It was filed as a documents-and-tooling rule, and this was read as a findings
+document.**
+
+✅ **REPAIRED, not rewritten:** the 8,436-byte extract is now committed at
+`docs/EVIDENCE-2026-08-30-59-record-reading.txt` with its hash stated in §13(be), so the
+load-bearing part of the citation resolves for any reader who has the repository. ⛔ **The
+7,800,641-byte transcript still exists on one machine only and cannot be made to travel by this
+route** — that half is recorded as unresolved rather than repaired, which is the honest end state
+and not a closed one.
+
+⚠️ **PRACTICAL FORM, and it is the section's own rule extended one step: a reference is a claim about
+REACHABILITY, not only about content.** When a document that travels cites an artefact that does
+not, either bring the artefact into the travelling set or **state in the citation that it does not
+travel and where it actually lives.** ⭐ **Never leave a hash as the only evidence of something a
+reader cannot open.**
+
+---
+
 ### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
 
 **Code-verified, 8 Sep 2026.** Every pair derived by reading the source and pairing each
@@ -5052,6 +5091,32 @@ with no user action anywhere in the path.**
 app rests on are an unenforced assumption, and the dedup branch is live code rather than a dead
 guard.**
 
+⛔ **CORRECTED 9 September 2026 — "AN UNENFORCED ASSUMPTION" IS WRONG, AND IT IS THIS DOCUMENT'S OWN
+RECURRING ERROR.** The sentence above stays as written. **The missing constraint is a DOCUMENTED
+DELIBERATE DECISION, stated at `event_store_sqlite.dart:76-85` in its own words:**
+
+> *"`id` is NOT a PRIMARY KEY, and that is deliberate. The old store is a JSON array, which permits
+> duplicate ids. Making id unique here would make a duplicate an INSERT failure — turning 'this
+> device has two records sharing an id' into 'the migration lost records', which is the exact
+> outcome this build exists to rule out. Duplicates are carried across and counted into
+> `migration_distinct_ids` instead, so the question is answered on the device rather than decided
+> here."*
+
+⛔ **SO THE FINDING ABOVE PRESENTED AS AN OVERSIGHT WHAT THE SOURCE PRESENTS AS A DECISION — with the
+alternative named, the failure mode stated, and a measurement put in its place.** ⚠️ **Same class as
+§13(j) on the CSV and `ARCHITECTURE.md` row 2 in §13(n), and this is the third instance.** ⭐ **The
+mechanism survives and the characterisation does not:** the dedup branch **is** live code, a
+duplicate id **would** be dropped rather than merged, and the schema **does** permit the duplicate.
+⛔ **What is retracted is the implication that nobody had considered it.**
+
+⚠️ **AND THE DECISION IS THE STRONGER ARGUMENT AGAINST THE OBVIOUS REPAIR.** ✅ **Windows-verified:
+`batch.insert` at `:447` passes no `conflictAlgorithm`**, so the statement carries no `ON CONFLICT`
+clause and SQLite's default **ABORT** applies. The insert throws, `save()`'s single transaction rolls
+back — including its own `txn.delete('event')` — and `persistEvents` catches, reports to Sentry and
+raises the unsaved-events warning. ⛔ **So adding `UNIQUE` today would convert a silent one-record
+drop into a total failure to save the ENTIRE list.** ⭐ **That is strictly worse, and it is precisely
+the outcome `:76-85` says the absence exists to prevent.**
+
 ⚠️ **THIS IS A CANDIDATE, NOT THE CAUSE, AND IT IS NOT OFFERED AS ONE.** It is recorded because it is
 the first mechanism found that produces a **silent one-record loss with no deliberate act**, and
 because it was absent from the enumeration this finding was briefed from. ⛔ **It leaves no trace
@@ -5117,3 +5182,110 @@ stalled. ⛔ **Until one of those is settled, the only evidence that the 59 stat
 single machine** — which is this workspace's own decoy-backup lesson, on the artefact that documents
 an unrecoverable data loss. **Verify it from the Mac and confirm the upload, rather than assuming the
 path implies it.**
+
+---
+
+**✅ ARRIVAL, MEASURED ON WINDOWS 9 September 2026 — THE EXTRACT NOW TRAVELS BY `git push`. The
+citation above is repaired here rather than rewritten.**
+
+⭐ **THE EXTRACT IS IN THIS REPOSITORY: `docs/EVIDENCE-2026-08-30-59-record-reading.txt`** —
+**8,436 bytes, 116 lines,** sha256
+`185a12703f5c3caec87e69ec35d7a6653dce3ef54bc6e8c2d3b0939094c8f73c`. **All three match the expected
+values exactly.** ✅ **And the OneDrive copy is byte-identical to it** (`cmp` clean, same sha256),
+mtime 9 September 18:58 — so OneDrive did propagate the extract.
+
+⛔ **THE 7,800,641-BYTE TRANSCRIPT DID NOT ARRIVE, AND THIS REMAINS UNRESOLVED.** ✅ **Windows-verified
+null with a positive control:** zero files over 1 MB in that folder, and zero name matches for
+`*session transcript*` anywhere under `OneDrive/Projects/App Dev/Claude`, while the same search shape
+for `*EVIDENCE*` returns **1**. ⭐ **So the apparatus works and the absence is real.**
+
+⛔ **THE FULL TRANSCRIPT THEREFORE EXISTS ON ONE MACHINE, IN TWO LOCATIONS ON IT** — the Mac's
+OneDrive folder and the Mac's `~/Downloads`. ⚠️ **Two copies on one disk is one failure away from
+none.** **The 8,436-byte extract is now genuinely redundant across machines; the 7.8 MB transcript is
+not, and nothing in this repository can make it so.**
+
+**⚠️ THE FOLDER-COUNT DISAGREEMENT, RESOLVED AGAINST THIS DOCUMENT.** The entry above reports
+**"12 files, every one dated 27 August"** at a moment when the Mac reported 11 pre-existing. ⛔ **The
+Mac was right and this document was wrong: there were ELEVEN.** Re-enumerated today with a
+space-safe `find` and an explicit count: **12 files now — the 11 pre-existing plus the arrived
+extract**, 0 subdirectories, 0 hidden entries. ⭐ **There is no unidentifiable extra file, and there
+never was one. It was a miscount here**, and it is recorded rather than quietly corrected because a
+count asserted against another machine's count is exactly the kind of figure this audit has twice
+been wrong about.
+
+⚠️ **AND "THE FOLDER IS IN SYNC" WAS NEVER ESTABLISHED AND STILL IS NOT.** One of two files arrived.
+⛔ **A folder that delivered the small file and not the large one is not a folder that has been shown
+to work** — it is consistent with propagation still in progress, with a size-related stall, or with
+the large file never having been placed inside the synced tree. **None of the three is excluded, and
+the earlier entry's three readings stand unresolved.**
+
+---
+
+**⛔ IS THE DUPLICATE-ID MECHANISM LIVE? TESTED 9 September 2026 — AND THE ANSWER IS NEITHER
+PROMOTED NOR RETIRED, FOR A REASON WORTH RECORDING.**
+
+**What was measurable on Windows: the three 27 August tablet envelopes only.**
+
+    per envelope           72 records, 72 DISTINCT ids, schemaVersion 1
+    duplicates WITHIN      0, in all three
+    ids in all three       72 of 72
+    same id, differing     0
+      content across them
+    CONTROL id non-empty          72/72
+    CONTROL timestamp non-empty   72/72
+    CONTROL mixed-null field      durationSeconds 1 populated / 71 null
+    CONTROL comparator            detects an INJECTED diff: TRUE
+
+⛔ **BUT THE CROSS-ENVELOPE TEST HAD NO POWER, AND THAT IS THE FINDING RATHER THAN THE ZERO.** The
+three envelopes differ **only** in `exportedAt` and `appVersion` (`1.1.0+38`, `+38`, `+40`); their
+`records` arrays are **identical**. ⭐ **So "no duplicate id with differing content across the
+stores" was guaranteed by construction — three exports of one device's unchanged store, taken hours
+apart with no edit between.** ⚠️ **This is the guaranteed-to-pass sample that `C:\dev\CLAUDE.md`
+already records from the melliform backup**, and it was caught only by hashing the three and
+diffing their record arrays rather than trusting that three files meant three states.
+
+**⛔ WHAT IS NOT MEASURABLE FROM WINDOWS, AND WHY — both are MAC ITEMS:**
+
+| question | blocked on |
+|---|---|
+| **(a)** any duplicate id among the current 58 | no SQLite copy on this machine |
+| **(c)** do the 37 shared tablet/iPhone ids differ in any other field | no iPhone id list on this machine — the 58, the prefs 42 and the pre-SQLite 42 are all absent here |
+
+⚠️ **AND THE ZERO THAT WAS MEASURED DOES NOT RETIRE THE CANDIDATE.** A dedup that has already fired
+leaves **no** surviving duplicate, so "none survives now" is exactly what both the innocent and the
+guilty case look like. ⛔ **Recorded as no surviving duplicate in the tablet envelopes, not as
+absence of the mechanism.**
+
+---
+
+**⭐ AND THE TEST FOUND SOMETHING BETTER THAN ITS OWN ANSWER: THE DEVICE ALREADY HOLDS A PERSISTED
+DUPLICATE DETECTOR, AND NOBODY HAS READ IT.** ✅ **Windows-verified from source.**
+
+`schema_meta` (`event_store_sqlite.dart:58-71`) carries, written by
+`storage_migration.dart:247-256`:
+
+    migration_source_count      records in the OLD store at migration
+    migration_inserted_count    rows actually inserted
+    migration_distinct_ids      DISTINCT ids among them
+    migration_absent_<field>    per-field absent counts
+    migration_backup_path       the path of a pre-migration backup
+    migration_state             'migrated' | 'failed_verification'
+
+⛔ **`storage_migration.dart:56-58` states the comparison outright: distinct ids "below
+[insertedCount] means the device" carried duplicates.** ⭐ **So the question "did this device ever
+hold duplicate ids" has a persisted, on-device answer, computed at migration and never overwritten**
+— and it is the **first store-level forensic artefact in this investigation that is not void.**
+⚠️ **It bounds the migration state (42 records), not the 59 state, so it cannot recover the lost
+record** — but it is the difference between the duplicate-id candidate being untestable and being
+merely unread.
+
+🔴 **AND A NEVER-DELETED PRE-MIGRATION BACKUP EXISTS ON THE DEVICE.** `storage_boot.dart:119-125`
+writes it **before anything is touched**, into the application documents directory, and its own
+comment says it **"is never deleted"**; the path is persisted as `migration_backup_path`. ⚠️ **It
+holds the pre-SQLite state, so it is not a copy of the 59 state and will not recover the record.**
+⭐ **It has never been retrieved, and its path is recorded in the database that is already being read
+on the Mac.**
+
+⛔ **NOT RETRIEVED, NOT READ, AND NOT ATTEMPTED FROM HERE.** ⚠️ **Reading `schema_meta` and pulling
+that backup are the two cheapest unrun measurements in this investigation, and both are Mac items
+beside §13(ax)'s reconciliation and the `occurredAt` cluster.**
