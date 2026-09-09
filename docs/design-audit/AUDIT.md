@@ -1782,6 +1782,37 @@ reader cannot open.**
 
 ---
 
+---
+
+**⛔ AND THE STRONGEST INSTANCE OF ALL, 9 September 2026 — A PRACTICE FAILING TO TRAVEL BETWEEN TWO
+FILES IN ONE DIRECTORY. See §13(bh).**
+
+**`storage_migration.dart` counts rows, counts distinct ids, compares them against what the user
+could see, records a `failed_verification` state, and ships `dropForNegativeControl` so a test can
+prove the verification FAILS when a record is lost.** Its own source says why: *"without it, a
+passing verification is unfalsifiable."*
+
+⛔ **`event_store_sqlite.dart`'s `save()` does none of it, and `batch.commit(noResult: true)`
+discards the insert results outright.** Both files sit in `lib/models/`. Both were written for the
+same storage swap, in the same week.
+
+⭐ **EVERY EARLIER ENTRY IN THIS SECTION IS KNOWLEDGE THAT DID NOT TRAVEL BETWEEN DOCUMENTS, OR A
+STANDARD LIVING IN ONE IMPLEMENTATION AND INVISIBLE FROM ANOTHER FILE. THIS IS NEITHER.** The
+practice was implemented, argued for in prose, and given a falsifiability control — **and it did not
+reach the path that runs on every save rather than once per install.**
+
+⚠️ **THE DISTANCE WAS NEVER THE PROBLEM, WHICH IS WHAT THIS INSTANCE SETTLES.** `bump()`'s ordering
+rule was violated while sitting in the docstring of the function being called, and this document
+already concluded from that: *proximity is not propagation.* ⛔ **This is that conclusion at its
+limit — same directory, same author, same week, same subject, and an explicit written argument for
+the practice — and it still did not propagate.**
+
+⭐ **SO THE COUNTER IS NOT "PUT THE RULE CLOSER".** It is that a practice reaches a second
+implementation only when something MAKES it: a shared helper, a test that fails without it, or a
+check that runs unasked. **The three cheap ones this document already recommends elsewhere.**
+
+---
+
 ### (s) 🔴 CONTRAST — 28 of 64 measured pairs fail WCAG 2.2 AA
 
 **Code-verified, 8 Sep 2026.** Every pair derived by reading the source and pairing each
@@ -4864,6 +4895,24 @@ point. ⚠️ **Every consumer inherits it, and they need enumerating BEFORE tha
 after.** ⭐ **The CSV is already immune — it re-sorts on its own key at `event_record.dart:1117` —
 but that is one consumer checked, not all of them.**
 
+⛔ **BLOCKED-ON DISCHARGED 9 September 2026, AND THE FIX THIS FINDING IMPLIED DOES NOT EXIST AS
+DESCRIBED. See §13(bg).** The paragraph above stays exactly as written.
+
+**The enumeration it demanded has been done: 24 consumers, four sweeps, denominator stated.** ⛔ **Its
+result is that changing the two store sorts DOES NOT REACH THE SCREENS.** Five re-sorts sit between
+the store and every surface, and two of them — `ios_capture_bridge.dart:273` and
+`capture_inbox.dart:257` — run on the mandatory foreground path **before `_records` is assigned**. ⭐
+**A change at `:633` and `:432` would be overwritten and appear to do nothing**, which is worse than
+leaving it alone: a fix that looks applied and is inert.
+
+⚠️ **AND THREE `insert(0, …)` SITES WOULD BREAK** — position 0 means "newest" only under `timestamp`.
+
+⛔ **RECORDED AS CHAT'S ERROR.** This finding calls the two store sorts *"the highest-leverage point"*
+with *"the widest blast radius"*. ⭐ **They are upstream of five overrides, so the leverage is in the
+CONSUMERS, not the store.** ⚠️ **"Upstream" and "authoritative" are different properties**, and
+reading the two sort lines alone supports exactly the wrong conclusion — which is why this finding
+was right to require the enumeration first even though it was wrong about the answer.
+
 ⚠️ **PRIORITY DROPPED 9 September 2026: UNEXERCISED on current device data — zero non-null
 `occurred_at` across all 58 records, with `duration_seconds` (13/45) and `event_type` (45/13) as
 discriminating controls. ⛔ NOT CLOSED — untriggered is not fixed. The full annotation is at the end
@@ -4976,6 +5025,23 @@ or History's initial order to disagree with `logged_at`, because on all 58 recor
 first backdated record makes all four visible at once** — and backdating is user-writable on both
 edit paths, so this is a matter of when, not whether. ⛔ **The measurement lowers the priority. It
 does not change the verdict.**
+
+⛔ **BLOCKED-ON DISCHARGED 9 September 2026 — the enumeration §13(bc) required is done, and the
+single-point fix does not exist. See §13(bg).**
+
+⭐ **THIS FINDING'S DIAGNOSIS IS CONFIRMED AND UNCHANGED: rows 12, 13 and 14 of §13(bg)'s table are
+this defect** — `initState`'s unsorted `List.from`, the filter that preserves that order, and
+`_groupByDay` emitting a heading whenever the day changes from the previous row. ⛔ **All three
+"CHANGE VISIBLY" and all three become CORRECT under a `whenHappened` load order.**
+
+⚠️ **What is discharged is the BLOCKER, not the defect.** The enumeration establishes that the change
+cannot be made at the store, because `ios_capture_bridge.dart:273` and `capture_inbox.dart:257`
+re-sort on `timestamp` before `_records` is assigned. ⭐ **The correct-order path for History
+therefore runs through the two drains and home's own re-sorts, not through `:432`** — a larger and
+differently-shaped change than this finding or §13(bc) anticipated.
+
+⛔ **STILL OPEN, STILL UNTRIGGERED, AND STILL NOT FIXED.** The post-edit re-sort at
+`history_screen.dart:633` remains the only `whenHappened` sort in the app.
 
 ---
 
@@ -5379,6 +5445,31 @@ is an error; or a row is genuinely missing. ⭐ **Recorded because "all of them 
 unfalsifiable without its denominator, and the denominator is build-dependent** — which makes this
 the same stale-figure class §13(r) collects, arriving through a count rather than a citation.
 
+✅ **CLOSED 9 September 2026 — SETTLED FROM GIT, AND NO ROW IS MISSING. Both figures are correct.**
+
+    9461f27  "SQLite phase one"                    25 Aug 13:07 +1000   8 KEYS
+             -> the build the device migrated on
+    device migrated                                25 Aug 20:40:07 AEST
+    657aca1  "Duration as a quantity: seconds..."  25 Aug 23:13 +1000   9 keys
+             -> introduced `durationSeconds`
+
+⛔ **THE MIGRATING BUILD HELD EXACTLY EIGHT KEYS, AND THE NINTH IS `durationSeconds` — a field that
+did not exist in the model when the migration ran.** It was introduced by the very commit that closed
+the window, ten hours later. ⭐ **The device could not have counted a field the model did not have,
+so eight rows is the complete and correct set for that device**, and today's source would write nine
+on any device migrating now.
+
+⭐ **THE TIMEZONE WAS CHECKED RATHER THAN ASSUMED, and it is load-bearing:** both commits are authored
+`+1000`, the same offset as the device clock, leaving roughly 2.5 hours of margin to the later commit
+and 7.5 to the earlier. ⚠️ **Had the commit dates been UTC, the migration would have fallen on a
+different build and the conclusion would have reversed** — so the offset was read from `%ai` rather
+than inferred from the formatted date.
+
+⚠️ **THE DEPENDENCY, STATED: the migration timestamp and the count of eight rows are MAC-REPORTED.**
+⛔ **If that timestamp is wrong by more than about 2.5 hours later or 7.5 hours earlier, this closure
+fails and the question reopens.** ⭐ **Nothing else in it rests on Mac data — the build window and
+both key counts were read from this repository.**
+
 **⚠️ `skipped = 0` IS INFERRED, NOT READ.** It follows from `verified = inserted == loadableCount`
 (`storage_migration.dart:245`) together with the persisted `migrated` state — ⛔ **but
 `loadableCount` is NOT stored in `schema_meta`.** ⭐ **So the inference is sound only if the
@@ -5500,3 +5591,187 @@ is the stored `value` that attaches those records to a vocabulary row, and `voca
 states that `value` **"is never touched, by anything, ever — that is what keeps records attached to
 their entry."** ⭐ **So the obvious fix collides with a stated invariant, and belongs in the same
 enumerate-the-consumers queue as §13(bc)'s store-level sorts.**
+
+---
+
+### (bg) 🔴 CHANGING THE STORE LOAD ORDER DOES NOT REACH THE SCREENS — FIVE RE-SORTS SIT BETWEEN, TWO ON THE MANDATORY FOREGROUND PATH
+
+**Enumerated 9 September 2026**, read from source at `73e0598`. ⛔ **This is the enumeration §13(bc)
+demanded BEFORE the store surface is touched, and its conclusion is that the change §13(bc) implied
+DOES NOT WORK.**
+
+⛔ **THE CONCLUSION FIRST.** Changing `event_record.dart:633` and `event_store_sqlite.dart:432` to
+sort on `whenHappened` **would be overwritten before `_records` is ever assigned.**
+`ios_capture_bridge.dart:273` and `capture_inbox.dart:257` both re-sort on `timestamp`, and **both
+run on the mandatory foreground path** between `load()` and `_records`.
+
+⭐ **AND THAT IS WORSE THAN NOT DOING IT: a fix that looks applied and is inert.** The two lines
+would read correctly, the tests over those functions would pass, and every screen would behave
+exactly as before. ⚠️ **This document already has a name for that shape — output that is wrong but
+well-formed, where nothing errors and the reader's own judgement is enlisted against them.** A
+silently overridden sort is the same failure moved from a report into the code.
+
+⛔ **AND THREE `insert(0, …)` SITES WOULD BREAK OUTRIGHT.** "Newest goes first" is true only under
+`timestamp`.
+
+⭐ **THE BLAST RADIUS IS ONE PIPELINE, NOT TWELVE SCREENS: there is exactly ONE `_store.load()` call
+site in the entire app — `home_screen.dart:351`.** Every other consumer is downstream of
+`home_screen._records`.
+
+---
+
+**⭐ THE DENOMINATOR, STATED BEFORE THE TABLE, because a clean enumeration over an unstated
+denominator is indistinguishable from no enumeration.** Four independent sweeps rather than the
+brief's list:
+
+    1. every List<EventRecord> declaration or parameter in lib/    37 occurrences, 8 files
+    2. every load() call site                                       1 for the event store
+    3. every read of _records                                       28 home, 12 History
+    4. every .sort( on an EventRecord list                          8
+
+**A CONSUMER is any site that receives the loaded list, directly or transitively, AND whose behaviour
+or output could depend on element order.** ⭐ **Pure counts, filters and id lookups are LISTED and
+classified UNAFFECTED rather than omitted**, so what was excluded is visible rather than assumed.
+
+**Origin of the order:** `event_record.dart:633` (prefs) and `event_store_sqlite.dart:432` (SQLite),
+both `b.timestamp.compareTo(a.timestamp)`.
+
+| # | consumer | what it does with the order | re-sorts? | if the load order became `whenHappened` |
+|---|---|---|---|---|
+| 1 | `ios_capture_bridge.dart:273` (`reconcileLegacySharedRecords`, home:359) | merges the iOS mirror into the loaded list | **yes — `timestamp` desc** | ⛔ **SILENTLY UNDOES IT** — every foreground, before `_records` is set |
+| 2 | `capture_inbox.dart:257` (`drainInbox`, home:380) | merges inbox instructions | **yes — `timestamp` desc** | ⛔ **SILENTLY UNDOES IT**, and `:117`'s comment *"re-sorted newest-first to match EventStore.load()"* becomes FALSE |
+| 3 | `home_screen.dart:667` | re-sorts after an edit or add | **yes — `timestamp` desc** | ⛔ **SILENTLY UNDOES IT** |
+| 4 | `home_screen.dart:696` | re-sorts, second edit path | **yes — `timestamp` desc** | ⛔ **SILENTLY UNDOES IT** |
+| 5 | `backup.dart:554` (`mergeBackup` result) | orders the merged list | **yes — `timestamp` desc** | ⛔ **SILENTLY UNDOES IT** on every restore |
+| 6 | `home_screen.dart:590` | `_records.insert(0, rec)` — new record at position 0 | no | ⛔ **BREAKS** |
+| 7 | `home_screen.dart:665` | `insert(0, result)` | no | ⛔ **BREAKS** |
+| 8 | `home_screen.dart:691` | `insert(0, result)` | no | ⛔ **BREAKS** |
+| 9 | `home_screen.dart:175 / :225 / :290` | `_openDetails(_records.first)` | no | **CHANGES VISIBLY** — may open a different record |
+| 10 | `home_screen.dart:528` `_daysSinceLastEvent` | `_records.first.timestamp` | no | **CHANGES VISIBLY** — §13(bc); becomes correct |
+| 11 | `home_screen.dart:1235-1236` `_LastEventCard` | `record: _records.first` | no | **CHANGES VISIBLY** — §13(bc); becomes correct |
+| 12 | `history_screen.dart:149` `initState` | `List.from(widget.records)` — **no sort**, inherits | no | **CHANGES VISIBLY** — §13(bd); becomes correct |
+| 13 | `history_screen.dart:159/:166` `_filteredRecords` | `.where(…)` preserves order into the ListView | no | **CHANGES VISIBLY** — inherits row 12 |
+| 14 | `history_screen.dart:316` `_groupByDay` | emits a heading when the day changes from the previous row | no | **CHANGES VISIBLY** — §13(bd)'s repeated headings stop |
+| 15 | `history_screen.dart:633` | post-edit re-sort | **yes — `whenHappened`** | **UNAFFECTED** — already the target order; becomes redundant |
+| 16 | `home_screen.dart:490 / :499 / :669` | `persistEvents`; `ordinal` = list position | no | **UNAFFECTED behaviourally**; the stored `ordinal` changes meaning |
+| 17 | `backup.dart:22` `buildBackupJson` | `records.map(…).toList()` — **preserves order, no sort** | no | **file byte order CHANGES**; behaviour unaffected, restore re-sorts (row 5) |
+| 18 | `event_record.dart:1052 + :1117` `buildCsv` | iterates `items.reversed`, sorts on `at` = `whenHappened` | **yes — `whenHappened` asc** | **UNAFFECTED**, with the tie caveat below |
+| 19 | `event_record.dart:1228 / :1241 / :1284 / :1395` | CSV temp file, share, save-as, options — pass-through | inherits | **UNAFFECTED** |
+| 20 | `backup_service.dart:95` `eventsSinceLastBackup` | `.where(…).length` | n/a | **UNAFFECTED** |
+| 21 | `backup_service.dart:109 / :159 / :239 / :374` | backup and restore entry points, pass-through | inherits | **UNAFFECTED** |
+| 22 | `home_screen.dart:523 / :532 / :776 / :1226` | `.where(…).length`, arithmetic, `.length` | n/a | **UNAFFECTED** |
+| 23 | `home_screen.dart:661 / :693` | `indexWhere` by **id** | n/a | **UNAFFECTED** |
+| 24 | `history_screen.dart:304 / :591 / :766` | counts, `removeWhere` by id | n/a | **UNAFFECTED** |
+
+**24 rows. 5 would silently undo the change · 3 would break · 6 change visibly — and all six of those
+ARE the defects · 10 unaffected.**
+
+---
+
+**⚠️ THE ROW 18 CAVEAT, recorded because the ties are real in this data and not hypothetical.**
+`buildCsv` iterates `items.reversed` (`event_record.dart:1052`) and **Dart's `List.sort` is not
+stable**, so records with **equal `whenHappened`** could emit in a different relative order. ⭐
+**§13(ad) records seven byte-identical rows, which makes it reachable.** ⛔ **Content is unchanged;
+tie order only** — so it is a qualified UNAFFECTED rather than a clean one, and it is stated that way
+rather than rounded off.
+
+---
+
+**⭐ WHERE THE LEVERAGE ACTUALLY IS, AND IT IS THE OPPOSITE OF WHAT WAS RECORDED.** §13(bc) calls the
+two store sorts *"the highest-leverage point"* with *"the widest blast radius"*. ⛔ **They are
+upstream of five overrides, so their leverage is close to zero: the consumers decide the order.** ⚠️
+**Recorded as chat's error** — the store surface looked like the single point of control because it
+is the single point of ORIGIN, and origin is not control when everything downstream re-sorts.
+
+⭐ **THE SHAPE WORTH KEEPING: "upstream" and "authoritative" are different properties, and the
+enumeration is what separated them.** A reading of the two sort lines alone supports the opposite
+conclusion, which is exactly why §13(bc) required the enumeration first. ✅ **The discipline worked
+in the direction it was meant to: the instruction was checked BEFORE execution, and the check
+reversed it.**
+
+⛔ **NO FIX PROPOSED, AND NO DETECTABILITY DESIGN — deliberately out of scope this pass.** ⚠️ **What
+this finding establishes is only that the single-point fix does not exist as described.** Any real
+change touches the two drains, the three insert sites and home's two re-sorts together, and that is a
+larger and differently-shaped piece of work than §13(bc) anticipated.
+
+---
+
+### (bh) 🔴 THE WRITE PATH VERIFIES NOTHING, AND THE VERIFICATION IT NEEDS ALREADY EXISTS TWENTY LINES AWAY
+
+**Code-verified 9 September 2026** at `73e0598`. ⛔ **`save()` cannot detect that it has just written
+a shorter list than the one held in memory. Nothing anywhere compares the two.**
+
+**WHAT THE WRITE PATH VERIFIES TODAY:**
+
+| question | answer |
+|---|---|
+| post-write row count compared against the pre-write list length? | ⛔ **No. Nowhere.** |
+| anything detects a shorter list than memory holds? | ⛔ **No.** |
+| are the insert results even available to check? | ⛔ **No** — `batch.commit(noResult: true)` (`event_store_sqlite.dart:449`) **explicitly discards them** |
+| what does the transaction guarantee? | atomicity — `txn.delete` plus every insert commit together or not at all |
+| what does it NOT guarantee? | ⛔ **anything whatever about the input.** It durably commits the list it is handed |
+
+⭐ **`persistEvents` (`event_record.dart:748-760`) catches EXCEPTIONS ONLY** — on a throw it reports
+to Sentry, raises the unsaved-events warning and returns false. ⛔ **A successful write of a wrong
+list raises nothing, because nothing threw.** ⚠️ **The one signal the storage layer can emit is
+reserved for the failure mode that did not occur.**
+
+---
+
+**⛔ AND THE VERIFICATION ALREADY EXISTS IN THIS CODEBASE. IT IS THOROUGH. IT RUNS ONCE, AT
+MIGRATION.** `storage_migration.dart`:
+
+    :236    SELECT COUNT(*) AS c FROM event
+    :240    SELECT COUNT(DISTINCT id) AS c FROM event
+    :245    final verified = inserted == loadableCount
+    :259    putMeta(kMetaMigrationState, 'failed_verification')
+    :185    dropForNegativeControl exists so a test can prove verification FAILS
+    :186    when a record is lost — "without it, a passing verification is
+            unfalsifiable."
+
+⭐ **THE ONE-TIME PATH COUNTS ROWS, COUNTS DISTINCT IDS, COMPARES AGAINST WHAT THE USER COULD SEE,
+RECORDS A FAILURE STATE, AND SHIPS A DELIBERATE FALSIFIABILITY CONTROL.** ⛔ **The RECURRING path —
+the one that runs on every add, edit, delete, restore and drain — does none of these.**
+
+---
+
+**⭐ THE SHAPE, AND IT IS THE PROPAGATION PATTERN'S STRONGEST INSTANCE YET.** Every earlier instance
+in §13(r) is knowledge failing to travel **between documents**, or a standard living in one
+implementation and invisible from another file. ⛔ **This is a PRACTICE failing to travel between two
+files in ONE DIRECTORY** — `storage_migration.dart` and `event_store_sqlite.dart`, both in
+`lib/models/`, both written for the same storage swap, in the same week.
+
+⚠️ **And the practice is not merely present next door: it is present WITH ITS OWN ARGUMENT FOR WHY
+IT MATTERS.** `:185-186` does not just verify — it states, in the source, that a verification without
+a negative control is unfalsifiable. ⭐ **The reasoning was written down, one file away, and did not
+reach the path that runs ten thousand times instead of once.**
+
+---
+
+**⚠️ THE CONSEQUENCE FOR §13(be), and it is the reason this is recorded as its own finding.** ⛔ **The
+design for detectability does not need inventing.** The pattern exists, in this repository, in the
+adjacent file, with a working falsifiability control and a persisted failure state. ⭐ **§13(be)
+records that the storage model "is incapable of saying afterwards that a record ever existed" — and
+that incapability is a gap in one path, not a property of the model.** ⚠️ **No design is proposed
+here and none should be read into this: the point is only that the precedent is internal, tested and
+twenty lines away.**
+
+---
+
+**⚠️ AND THE ROLLBACK ASYMMETRY, WHICH LANDS ON THE DEVICE THAT LOST THE RECORD.** The old prefs
+store keeps a rollback copy under `kEventRollbackKey` before every write, so an interrupted write
+*"bounds the loss to whatever the in-flight save was adding, rather than the entire history."*
+
+⛔ **iOS DELIBERATELY KEEPS NONE**, and the guard in `writeEventPayload` states why: the quick-log
+capture path is native Swift, `AppDelegate.handleQuickLogStart` and `EndMEREventIntent` write
+`flutter.epilepsy_event_records_v1` in `UserDefaults` directly, **neither goes through that function
+and neither knows the rollback key exists.** So a copy would sit frozen while the primary advances,
+and *"restoring from it later would resurrect deleted events and lose recent ones. An absent copy is
+safe; a silently stale one is a data-loss mechanism."*
+
+⭐ **THAT REASONING IS SOUND AND IS NOT BEING QUESTIONED.** ⛔ **What it means for §13(be) is
+arithmetic: the lost record was in SQLite, so the transaction was the only operative protection, and
+the iPhone had NEITHER a rollback copy NOR a count check.** ⚠️ **The SQLite store's own comment calls
+its transaction *"strictly stronger than the old store's rollback key, which bounded the loss rather
+than preventing it"* — true for interruption, and silent about a wrong list, which is the failure
+that actually occurred.**
