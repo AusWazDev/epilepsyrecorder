@@ -234,6 +234,33 @@ inside the pre-migration 42, with **zero overlap** with the 16 post-migration ad
 were restored across the two devices. The histories share an ancestor; they are one history that
 diverged, not two that never met.**
 
+⛔ **THE RESTORE MECHANISM IS WITHDRAWN, 9 September 2026 — AND THE CONCLUSION ABOVE STILL STANDS.**
+The paragraph above stays as written.
+
+⭐ **WHAT STILL HOLDS, UNCHANGED: the two devices are NOT independent histories.** 37 shared ids with
+identical timestamps establishes that, and nothing here touches it. ⛔ **Only the MECHANISM is
+withdrawn — restore is no longer the explanation for how the records came to be shared.**
+
+**⭐ THE BETTER-SUPPORTED MECHANISM IS THE iOS CAPTURE-INBOX DRAIN.** A native capture posts a fact,
+and Dart writes the row on a later foreground — so **a record timestamped 19:58 can enter SQLite
+after a 20:13 reading**, which is what made the counts look unreconcilable. **Evidence: `06AEBD12`
+at 19:58:42, no duration, iPhone-only, post-migration — and the exact id the 27 to 29 August session
+probed for drain behaviour.**
+
+⚠️ **RECORDED AS CHAT'S ERROR, AND IT IS A DIFFERENT ERROR FROM THE ONE ABOVE.** The arithmetic was
+real: the 51 reading genuinely does not reconcile forward. ⛔ **But the arithmetic was evidence that
+SOMETHING back-dated rows into the store, not evidence of WHICH thing** — and restore was assumed,
+then briefed as established, then written into three documents as the mechanism. ⭐ **A
+non-reconciling count is consistent with restore, with a delayed drain, and with any other
+merge-by-id path that preserves original timestamps. The observation did not distinguish them and
+was not asked to.**
+
+⭐ **THE SHAPE, and it is this corpus's own recurring one: a real measurement carried an assumed
+explanation, and the explanation inherited the measurement's credibility.** ⚠️ **Same class as the
+available-explanation bias already on record — the difference being that here the plausible cause
+was supplied by the same reasoning that found the anomaly, which is harder to notice than borrowing
+someone else's.**
+
 ⚠️ **RECORDED AS CHAT'S ERROR SPECIFICALLY: it was a claim about the relationship between two
 devices, asserted without ever checking whether their records overlapped.** The check was one
 id-set intersection and it was never run. ⭐ **"There is no sync" is true and was never the

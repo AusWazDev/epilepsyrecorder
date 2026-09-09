@@ -5289,3 +5289,214 @@ on the Mac.**
 ⛔ **NOT RETRIEVED, NOT READ, AND NOT ATTEMPTED FROM HERE.** ⚠️ **Reading `schema_meta` and pulling
 that backup are the two cheapest unrun measurements in this investigation, and both are Mac items
 beside §13(ax)'s reconciliation and the `occurredAt` cluster.**
+
+---
+
+**⭐ NARROWED 9 September 2026 — THE LOST RECORD WAS ONE OF THE 17 POST-MIGRATION ADDITIONS.**
+
+**READ, not inferred: all 42 pre-migration ids are present in the current 58 — 0 missing, with a
+discriminating control.** ⚠️ **Mac-measured.**
+
+    42 pre-migration ids       42 of 42 present in the current 58
+    missing                    0
+    so at 30 August            59 = 42 + 17
+    surviving post-migration   16
+    therefore lost             ONE OF THE 17 POST-MIGRATION ADDITIONS
+
+**The 16 survivors are all 27 August, spanning 18:40:09 to 21:19:47.**
+
+⛔ **THIS DOES NOT IDENTIFY THE RECORD, AND THE 17th's TIMESTAMP IS NOT RECOVERABLE.** ⭐ **It removes
+a whole class instead: the pre-migration 42 are all accounted for, so nothing was lost from the
+migrated body of records.** ⚠️ **The narrowing is a set exclusion, not a candidate. Nothing here
+bounds when the 17th was written, what it contained, or which of the five write paths removed it** —
+and §13(be)'s unbounded-timestamp note still governs, because the 16 survivors' range says nothing
+about the one that is gone.
+
+---
+
+**✅ THE PRE-MIGRATION BACKUP IS VERIFIED PRESENT, and `storage_boot.dart`'s "never deleted" HOLDS.**
+⚠️ **Mac-measured.**
+
+    size            8,796 bytes
+    sha256          47dd9a62…a91b
+    records         42  — matching migration_source_count exactly
+    survived        two reinstalls and fifteen days
+
+⭐ **A claim in a comment turned out to be true of a real file on a real device after two reinstalls.**
+⛔ **It is still not a copy of the 59 state and cannot recover the lost record** — it predates the 17
+additions by definition. **What it does is convert §13(be)'s "never retrieved" into "retrieved and
+intact", and confirm that the one deliberately permanent artefact in this storage model behaves as
+documented.**
+
+---
+
+**⛔ AND THE DEAD PROBE — THE FIFTEENTH APPARATUS FAULT IN THIS AUDIT, AND THE HIGHEST-STAKES ONE
+YET.** The first container listing **returned nothing, and its own control ALSO returned 0** — which
+is impossible for a live listing, because the control term is present by construction.
+**`CoreDeviceService` could not locate the device at all.**
+
+⭐ **THE FAILURE MODE IS THE ONE THIS DOCUMENT KEEPS RECORDING: a null that is indistinguishable from
+a real absence.** ⛔ **Trusting it would have reported a file the source documents as NEVER DELETED as
+ABSENT — on a forensic question about data loss.** ⚠️ **The consequence would not have been a wrong
+number. It would have been "the permanent backup is gone too", which is a conclusion about the
+integrity of the storage model itself, drawn from an apparatus that was not connected.**
+
+⭐ **IT WAS CAUGHT BY THE CONTROL AND BY NOTHING ELSE.** The listing looked like a clean empty
+directory. **This is the fifteenth such fault across three days and not one has been a real
+absence** — which is now a strong enough base rate to state as a rule rather than a caution:
+⛔ **in this investigation, an unqualified null is an apparatus report until its control says
+otherwise.**
+
+---
+
+**⭐ `schema_meta` HAS BEEN READ, AND WHAT IT DOES NOT SAY MATTERS MORE THAN WHAT IT DOES.**
+⚠️ **Mac-measured, 9 September 2026.**
+
+    migration_source_count    42
+    migration_inserted_count  42
+    migration_distinct_ids    42
+    migration_state           migrated
+
+⭐ **42 / 42 / 42. Per `storage_migration.dart:56-58`'s own definition — distinct below inserted means
+duplicates — there was NO DUPLICATE id among the inserted rows.**
+
+⛔ **WHAT IT SUPPORTS, STATED PRECISELY: the 42 records present at 25 August 20:40:07 carried 42
+distinct ids. THAT IS ALL.** ⚠️ **It is NOT "no duplicates ever."** It is **silent about the 17
+records added afterwards** and **silent about 30 August**, because ✅ **it is written once at
+migration and never updated** (`storage_migration.dart:247-256`, inside the one-time branch guarded
+by `migration_state == 'migrated'` at `:196`). ⭐ **So the one persisted duplicate detector in this
+storage model stops measuring at exactly the point the interesting period begins.**
+
+**⚠️ ALL `migration_absent_*` COUNTS ARE 0 — AND THE DENOMINATOR DISAGREES WITH TODAY'S SOURCE.** The
+report gives **eight** keys at zero. ✅ **Windows-verified: `kMigratedOptionalKeys`
+(`storage_migration.dart:77-87`) holds NINE — `id`, `duration`, `durationSeconds`, `eventType`,
+`severity`, `feelings`, `triggers`, `notes`, `referralRequired` — and `:250-251` writes one row per
+key in that list.** ⛔ **So today's source would write nine rows and the device reportedly has eight.**
+
+⚠️ **TWO READINGS AND THIS ENTRY PICKS NEITHER:** the list had eight entries in the build that ran the
+migration on 25 August and has since gained one, in which case both figures are correct and neither
+is an error; or a row is genuinely missing. ⭐ **Recorded because "all of them are zero" is
+unfalsifiable without its denominator, and the denominator is build-dependent** — which makes this
+the same stale-figure class §13(r) collects, arriving through a count rather than a citation.
+
+**⚠️ `skipped = 0` IS INFERRED, NOT READ.** It follows from `verified = inserted == loadableCount`
+(`storage_migration.dart:245`) together with the persisted `migrated` state — ⛔ **but
+`loadableCount` is NOT stored in `schema_meta`.** ⭐ **So the inference is sound only if the
+verification's own inputs were what the code says they were, and that cannot be re-checked from the
+persisted rows.** **Flagged rather than promoted.**
+
+---
+
+**⛔ THE DUPLICATE-ID TEST ON THE CURRENT 58: ZERO — AND THE APPARATUS DISCRIMINATES ON THAT EXACT
+DATA.** ⚠️ **Mac-measured.**
+
+    duplicate ids among the 58     0
+    CONTROL event_type             45 -> 1 distinct
+    CONTROL severity               45 -> 2 distinct
+    CONTROL duration_bucket        42 -> 3 distinct
+
+⭐ **Three controls returning small distinct counts over the same 58 rows, so the query can see
+repetition where repetition exists. The zero is a measurement.**
+
+⛔ **AND IT MEANS NO DUPLICATE *SURVIVES*, WHICH IS PRECISELY WHAT A DEDUP THAT ALREADY FIRED LEAVES
+BEHIND.** ⚠️ **The candidate is NOT retired.** ⭐ **Both the innocent and the guilty case predict this
+exact result, so the measurement cannot separate them** — and no measurement taken after the fact
+can, because the mechanism removes its own evidence.
+
+⚠️ **THE POWERLESS CROSS-ENVELOPE TEST IS ALREADY RECORDED ABOVE** — the three tablet envelopes'
+`records` arrays hash identically, so Windows' comparison had zero power and its zero was guaranteed
+by construction. ⛔ **Not restated here, so the finding is not double-counted as two pieces of
+evidence.**
+
+---
+
+### (bf) 🔴 THE SAME id HOLDS DIFFERENT CONTENT ON THE TWO DEVICES, AND RESTORE PICKS A WINNER WITHOUT LOOKING
+
+**Recorded 9 September 2026.** ⛔ **Three of the 37 shared ids differ in `feelings_json`. The iPhone
+holds `['😵 Confused']`; the tablet holds the same emoji's UTF-8 bytes DOUBLE-ENCODED — mis-decoded
+as latin-1, then re-encoded.** The ids: **`1c3acb1b`, `2cba7cd2`, `6712EAD0`.**
+
+✅ **THE TABLET HALF IS WINDOWS-VERIFIED FROM THE 27 AUGUST ENVELOPES, NOT TAKEN ON REPORT.** All
+three ids were located and all three carry the corrupt value:
+
+    stored value        'ð\x9f\x98µ Confused'
+    its UTF-8 bytes     c3 b0 c2 9f c2 98 c2 b5 20 43 6f 6e 66 75 73 65 64
+    latin-1 -> utf-8    REPAIRS TO '😵 Confused'
+    ids matched         3 of 3
+
+⛔ **AND THE FILE IS NOT THE PROBLEM: it decodes as STRICT UTF-8, carries NO BOM, and the difference
+survives an explicit UTF-8 re-read.** ⭐ **The CLI's first reading of this blamed its own decoder and
+was wrong.** The bytes above are the UTF-8 encoding of U+00F0 U+009F U+0098 U+00B5 — which are
+precisely the latin-1 readings of `f0 9f 98 b5`, the real UTF-8 for `😵`. **The corruption is in the
+stored data.**
+
+⚠️ **The iPhone half — that its copy is CLEAN — is Mac-reported and not verified from Windows.** The
+iPhone's 58 records are not on this machine.
+
+---
+
+**⭐ THE MERGE CONSEQUENCE IS LIVE, NOT HYPOTHETICAL — AND ✅ WINDOWS-VERIFIED FROM SOURCE.** Restore
+is **merge-by-id, add-only, existing wins**:
+
+    backup.dart:494    existingIds = existing.map((e) => e.id).toSet()
+    backup.dart:514    if (record.id.isNotEmpty && existingIds.contains(record.id))
+    backup.dart:515      alreadyPresent++            <- counted, NOT compared
+    backup.dart:553    merged = [...existing, ...additions]
+    backup.dart:397    "That is existing-wins working as designed"
+
+⛔ **THE INCOMING RECORD'S CONTENT IS NEVER INSPECTED.** The id matches, a counter increments, and the
+whole record is discarded. ⭐ **So one of the two values is kept and one silently dropped, and which
+one survives is decided ENTIRELY by which device is being restored INTO — never by which value is
+correct.** Restore the tablet from an iPhone backup and the clean value is discarded and the
+corruption persists; restore the other way and the corruption is what gets dropped. **All three ids
+sit in the shared lineage, so both directions are reachable.**
+
+---
+
+**⛔ NOT "CONSISTENT WITH" — CONFIRMED. THE FAMILY WAS ENUMERATED, AND THIS DEPARTS FROM THE BRIEF
+DELIBERATELY.** The brief directed that this be recorded as *consistent with, not confirmed as*,
+`vocabulary.dart:1142`'s `isMisdecodedTwin` family, **because `mangledLegacyObservations()` had not
+been enumerated.** ⭐ **That blocking condition was removable from Windows, so it was removed rather
+than recorded around.**
+
+✅ **The enumeration:** `mangledLegacyObservations()` (`vocabulary.dart:622-634`) derives its seeds
+from `kLegacyObservations` (`:275-287`, eleven entries) by applying `latin1Mangled()`, which encodes
+each rune to UTF-8 and then reads those bytes back as code points — **exactly the transformation
+measured above.** `'😵 Confused'` is entry six of that list (`:282`). ⛔ **So the corrupt value is a
+SEEDED vocabulary row, `isActive: false`, with a clean sibling carrying an identical label.**
+
+⛔ **AND THE SOURCE ALREADY NAMES BOTH THE CASE AND THE COUNT.** `vocabulary.dart:19`:
+*"The three records carrying `😵 Confused` keep that exact string."* `:1315-1317` classifies it
+explicitly as **"LEGACY, MIS-DECODED"**, and `:1419` calls it *"a Latin-1 mis-decode of an emoji."*
+⭐ **Three records is what the source says, three is what the brief reports, and three is what this
+machine found. The count is corroborated from three independent directions.**
+
+⚠️ **SO THE RENDERING IS HANDLED AND THAT IS NOT THE DEFECT.** A twin row exists precisely so a
+corrupt record renders a readable label. ⛔ **WHAT IS NOT HANDLED IS THE MERGE:** nothing in
+`mangledLegacyObservations()` or `isMisdecodedTwin` participates in restore, and `backup.dart:514`
+does not consult them. **The vocabulary layer makes the corruption legible; it does not make the
+merge choose correctly.**
+
+---
+
+**⚠️ THE id-CASE CORROBORATION, recorded as reported.** **30 uppercase (Swift-written) versus 28
+lowercase (Dart-written) on the iPhone, and all 28 Dart-written ids are shared with the tablet.**
+⛔ **Mac-reported: the iPhone id list is not on this machine and this cannot be checked here.**
+
+✅ **What Windows can add, on the tablet's 72: 9 ids contain uppercase, 63 are all-lowercase**, with
+both classes non-empty as the control. ⚠️ **A different device and a different denominator, so it
+neither confirms nor contradicts the 30/28 split** — recorded so the two figures are not later
+mistaken for one measurement.
+
+⭐ **The case split is a provenance marker, and that is why it matters here:** it separates records
+written by the native Swift path from those written by Dart, and `(be)`'s candidate mechanism set
+turns on exactly which writer produced a row.
+
+---
+
+⚠️ **UNRESOLVED AND DELIBERATELY SO — recording only, per the brief. No merge change, no dedup
+change, no repair of the three values.** ⛔ **And a repair is not obviously safe:** the corrupt string
+is the stored `value` that attaches those records to a vocabulary row, and `vocabulary.dart:648`
+states that `value` **"is never touched, by anything, ever — that is what keeps records attached to
+their entry."** ⭐ **So the obvious fix collides with a stated invariant, and belongs in the same
+enumerate-the-consumers queue as §13(bc)'s store-level sorts.**
