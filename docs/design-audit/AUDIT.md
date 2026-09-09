@@ -1250,6 +1250,55 @@ meaning"* — **is MET as written**: the figure is a numerator presented as a nu
 "of 30 days" would not change what the existing number means. **But that denominator would be
 days-in-month, an occurrence-time frame, against a logging-time numerator.** Recorded so the
 mismatch is visible before the denominator is built, not after.
+⛔ **CORRECTED 9 September 2026 — ONE OF THIS FINDING'S THREE SITES IS A DEFECT. The other two are
+not, and the read found TWO MORE that are.** The finding above stays exactly as written.
+
+**SITE BY SITE, each judged against what it is FOR rather than against the definition:**
+
+| site | what it is for | verdict |
+|---|---|---|
+| `eventsSinceLastBackup` | counts what is **unsaved** since the last backup | ✅ **CORRECT AS IS.** `logged_at` is the right value |
+| `_thisMonthCount` (`home_screen.dart:523`) | a clinical count of events | ⛔ **STANDS AS A DEFECT.** Should be `whenHappened` |
+| the CSV | export to a clinician | ✅ **ALREADY CORRECT**, and the omission is a DECIDED TRADE |
+
+**1. ⛔ `eventsSinceLastBackup` IS NOT A DEFECT, AND THE REASON IS THE POINT OF THE WHOLE
+DISTINCTION.** What is unsaved is what was **WRITTEN.** ⭐ **A record backdated to July but typed
+after the last backup genuinely is unbacked-up**, and counting it by its occurrence time would tell
+the user they were covered when they are not. **This site must keep `logged_at`.**
+
+⚠️ **So "each of these silently uses the fallback as though it were the value" is wrong about this
+one.** The fallback IS the value it wants.
+
+**2. ⛔ THE CSV IS ALREADY CORRECT, AND THE CLAIM ABOUT IT IS WRONG TWICE OVER.** This finding says
+the CSV *"carries no logged-at column at all; all three time columns are `whenHappened`"* and files
+that under a heading about misuse.
+
+✅ **Read from `buildCsv`: all three time columns — `timestamp_iso`, `date`, `time` — derive from
+`whenHappened`, and so does the sort key (`rows.sort` on `r.whenHappened`). Of the 17 columns,
+ZERO derive from `logged_at`.** The three agree with each other and with the row order, which is
+the property History's own sort comment calls the defect the CSV used to have.
+
+⛔ **AND THE OMISSION IS A DECISION, NOT AN OVERSIGHT.** `event_record.dart:925-945` records it as
+the deliberate **v6** change, in its own words:
+
+> *"⚠️ CONSEQUENCE, STATED RATHER THAN BURIED: where the two differ, the LOG TIME IS NO LONGER IN
+> THE CSV. It is not lost — it is in the JSON backup and in `event.logged_at` — but a clinician
+> reading only the file cannot see that a record was written three days late. A fourth time column
+> was considered and rejected: the file already carries three, and one consistent meaning is worth
+> more here than a completeness nobody asked for."*
+
+⭐ **THIS FINDING PRESENTED AS A DEFECT WHAT THE SOURCE PRESENTS AS A DECISION — with the trade
+stated, the loss bounded, and the alternative explicitly rejected.** ⚠️ **Same class as
+`ARCHITECTURE.md` row 2 in §13(n): a document describing a deliberate arrangement as an error.**
+⛔ **The FACT survives — the value the app counts by is the one the export omits — and the
+CHARACTERISATION does not.**
+
+**3. ✅ `_thisMonthCount` STANDS UNCHANGED AS A DEFECT.** A count of events in a month is a clinical
+figure and should count by when they happened. The forward-looking risk this finding already records
+— a days-in-month denominator against a logging-time numerator — is the same argument.
+
+⭐ **AND TWO SITES THIS FINDING NEVER HAD, both more visible than the one it got right: see
+§13(bc).** ⛔ **Plus a live defect in no finding at all: §13(bd).**
 
 ### (k) "This month" renders in alert colour whenever it is non-zero
 
@@ -4716,3 +4765,134 @@ or to leave it. ⛔ **All three are decisions, not repairs.**
 ⚠️ **UNMEASURED: whether macOS and Linux behave as Windows does here.** The source names all three
 together, but only Windows is a shipping target and only Windows was reasoned about. ⛔ **Do not
 infer the other two from this entry.**
+
+---
+
+### (bc) 🔴 HOME SHOWS THE LOGGING TIME WHERE HISTORY SHOWS THE EVENT TIME — TWO SITES §13(j) NEVER HAD
+
+**Code-verified, 9 September 2026**, by sweeping every read of `r.timestamp` in `lib/` — **25 of
+them** — and classifying each by purpose. ⭐ **§13(j) named three sites and got one of them right.
+These two are more visible than any of the three.**
+
+| site | what it renders | value used |
+|---|---|---|
+| **`home_screen.dart:528`** `_daysSinceLastEvent` | the **"Days since"** statistic on home | ⛔ `timestamp` — **days since a record was TYPED** |
+| **`home_screen.dart:1915-1919`** `_LastEventCard` | the **"LAST EVENT"** date and time | ⛔ `record.timestamp` — **the logging time** |
+
+⛔ **AND BOTH READ `_records.first`, WHICH IS ORDERED BY `timestamp`.** Home sorts at `:667` and
+`:696` on `b.timestamp.compareTo(a.timestamp)`. ⭐ **So "most recent" on home means most recently
+LOGGED, not latest event** — and for a backdated record home's "LAST EVENT" may not be the latest
+event at all.
+
+⭐ **THE VISIBLE CONSEQUENCE, AND IT IS AN INCONSISTENCY RATHER THAN A DEFINITION QUESTION: the same
+record shows one time on home and a different time in History.** History uses `whenHappened`
+throughout — the row time (`:250`, `:1160`), the date grouping (`:328`, `:346-347`) and the sort
+(`:633`). ⛔ **Two screens, one record, two times.**
+
+⚠️ **History's sort carries the comment that makes this a contradiction rather than an oversight:**
+
+> *"Sorted on the same value the rows display and group by. A list that sorts on one time and
+> prints another is the defect the CSV had."*
+
+⭐ **The CSV was fixed for exactly this. History was fixed for exactly this. Home was not.** Home is
+internally consistent — it sorts and displays the same value — and inconsistent with **both** of the
+other two surfaces that render the same records.
+
+⛔ **THE TWO MUST CHANGE TOGETHER WITH HOME'S SORTS, AND THAT IS NOT A PREFERENCE.** Both read
+`_records.first`. **Changing `_daysSinceLastEvent` or `_LastEventCard` alone would compute the right
+value from the wrong ordering** — the first element of a `logged_at`-ordered list is not the latest
+event. ⚠️ **Three sites, one change.**
+
+⭐ **AND A THIRD, SEPARATE SITE FOUND IN THE SAME SWEEP: `backup.dart:559-560`.** The restore
+dialog's `earliest` and `latest` are computed from `r.timestamp`, so **"this backup covers X to Y"
+describes the backup's LOGGING span, not the span of events inside it.** ⚠️ **Independent of the
+home cluster and independently changeable.**
+
+✅ **WHAT THE SWEEP FOUND CORRECT, recorded so the list is a classification and not a list of
+complaints:** both store load sorts and the capture-inbox and iOS-drain sorts (internal ordering,
+`logged_at` defensible); every construction site that preserves `timestamp`; and
+`event_store_sqlite.dart:322`, which writes `'logged_at': r.timestamp` — **correct by definition.**
+
+⛔ **NO FIX PROPOSED, AND THE HIGHEST-LEVERAGE POINT IS THE ONE NOT TO TOUCH FIRST.** The two
+store-level load sorts (`event_record.dart:633`, `event_store_sqlite.dart:432`) define the canonical
+order handed to **every** screen, so changing them would fix home's ordering and §13(bd) at one
+point. ⚠️ **Every consumer inherits it, and they need enumerating BEFORE that is touched, not
+after.** ⭐ **The CSV is already immune — it re-sorts on its own key at `event_record.dart:1117` —
+but that is one consumer checked, not all of them.**
+
+---
+
+### (bd) 🔴 HISTORY'S INITIAL ORDER IS `logged_at` — IT SORTS BY ONE VALUE AND GROUPS BY ANOTHER UNTIL THE FIRST EDIT
+
+**Code-verified, 9 September 2026.** ⛔ **In no finding in this document, and it is the defect
+History's own comment claims to have fixed.**
+
+**THE THREE READS THAT MAKE IT:**
+
+    initState                        _records = List<EventRecord>.from(widget.records)
+                                     — NO SORT. It inherits whatever order it is handed.
+    event_record.dart:633            ..sort((a, b) => b.timestamp.compareTo(a.timestamp))
+    event_store_sqlite.dart:432      ..sort((a, b) => b.timestamp.compareTo(a.timestamp))
+                                     — BOTH stores hand out `logged_at` order.
+    the grouping loop (:328, :346)   keys every heading on `r.whenHappened`
+    history_screen.dart:633          `whenHappened` — and it runs ONLY after an edit
+
+⭐ **SO ON FIRST OPEN THE LIST IS ORDERED BY `logged_at` AND HEADED BY `whenHappened` DAYS.** The
+grouping emits a new date heading whenever the day changes from the previous row, so out-of-order
+rows produce **repeated or interleaved date headings** — 20 AUG, 27 AUG, 20 AUG again. ⛔ **And the
+order only becomes correct after the user edits something.**
+
+⛔ **THIS IS THE EXACT DEFECT `history_screen.dart:633`'s COMMENT SAYS IT FIXED:**
+
+> *"Sorted on the same value the rows display and group by. A list that sorts on one time and
+> prints another is the defect the CSV had."*
+
+⭐ **THE FIX LANDED ON THE POST-EDIT PATH AND THE COMMENT CLAIMS THE CLASS.** That is the
+propagation pattern of `C:\dev\CLAUDE.md`'s *local correctness does not propagate* — **occurring
+INSIDE ONE FILE, twenty lines from the comment asserting it.** ⚠️ **Not a distant document that was
+not read: the same author, the same screen, the same sitting.** ⛔ **Proximity is not propagation,
+and neither is a correct comment.**
+
+⚠️ **CODE-VERIFIED AND UNEXERCISED — and those are two different claims, so both are stated.**
+Nothing in this repository or in any off-device data has ever triggered it, because no record
+carries a non-null `occurredAt` (see below). ⭐ **It is not hypothetical. It is UNTRIGGERED** — the
+code path is wrong today and the data has not yet asked it the question.
+
+⛔ **NOT TESTED, and deliberately: this pass was read-only.** A test would need a record whose
+`logged_at` and `occurredAt` orders disagree, which is the same fixture the measurement below
+cannot obtain.
+
+---
+
+**⛔ WHY NONE OF THIS CLUSTER IS MEASURABLE YET — this covers §13(j), §13(bc) AND this finding.**
+
+**The only off-device data is the `MER Device Baselines` set: three JSON backups, 27 August 2026,
+72 records each, `schemaVersion 1`, app `1.1.0+40`.** Measured 9 September 2026.
+
+⛔ **`occurredAt` IS ABSENT FROM EVERY RECORD.** The 14 keys present are `detailsCompleted`,
+`duration`, `durationSeconds`, `eventType`, `feelings`, `id`, `notes`, `referralRequired`,
+`rescueMedGiven`, `rescueMedHelped`, `rescueMedSecondDose`, `severity`, `timestamp`, `triggers`.
+✅ **Positive control: `timestamp` non-empty on 72 of 72, so the parse works and the null is real.**
+
+⚠️ **"ABSENT" IS NOT "ZERO", AND THE DISTINCTION DECIDES WHAT CAN BE CLAIMED.** `toMap()` writes
+`'occurredAt'` **including as null** — the same always-written rule as `severity` — so a
+present-but-null field would still appear as a key. ⭐ **It does not appear at all, which means the
+field did not exist in the model on 27 August. The question was never asked of this data**, rather
+than asked and answered zero.
+
+⛔ **AND EVERY MIGRATED RECORD HAS IT NULL BY DESIGN.** `DATA-MODEL.md` on the migration:
+*"`timestamp` → `logged_at`. **`occurred_at` stays NULL** — the old value was log time, and
+pretending otherwise fabricates data."* ⚠️ **`backup.dart:437` says the same forward: "Revisit when
+occurred_at is populated by the expansion."**
+
+✅ **It IS user-writable on both edit paths** — `event_wizard_screen.dart:273` and
+`log_event_screen.dart:380` — so §4's *"backdating exists, is well built, and is buried"* holds.
+
+⭐ **SO EVERY DIVERGENCE IN THIS CLUSTER IS REAL IN CODE AND UNEXERCISED IN ALL OFF-DEVICE DATA.**
+The distribution, the different-month count and the sort-order difference are **UNMEASURABLE from
+what exists**, not measured as nil.
+
+⛔ **MEASURING THEM NEEDS A CURRENT DEVICE READ, WHICH MAKES THIS A MAC ITEM BESIDE §13(ax)'s 59 →
+58 RECONCILIATION.** ⭐ **They share an instrument:** both need a database copied off a device and
+counted, both were blocked in the same way, and one trip answers both. ⚠️ **Neither is a Windows
+item and neither should be attempted from here.**
