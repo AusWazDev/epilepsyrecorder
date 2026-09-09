@@ -2092,6 +2092,167 @@ instances in §13(t) are reachable by a screen reader at all.
 ⚠️ **Scope for part 2**, and it is a larger surface than the four criteria already measured: 108
 interactive constructions were enumerated for §13(x), and **how many of them announce themselves is
 unknown.** ⛔ **Do not infer a count from the one known instance.**
+✅ **MEASURED 9 September 2026 — the measurement half of this finding is closed. The finding above
+stands as written; it is answered, not corrected.** Instruments:
+`test/semantics_tree_home_test.dart` and the sweep recorded below.
+
+**1. THE DENOMINATOR — 117, NOT 108, AND 108 HAS NO STATED DERIVATION.**
+
+⛔ **§13(x)'s figure of *"108 interactive constructions"* is not reproducible, because neither
+§13(x) nor this finding says what was counted.** A re-derivation gives **117**. ⚠️ **Coincidence
+worth naming so it is not read as agreement: 108 is also the number that carry a name below. Two
+different quantities, one number.**
+
+**Method, so the figure can be disagreed with:** every `.dart` under `lib/` (34 files), comments and
+string literals stripped first, counting constructor calls for buttons, tiles, raw gestures, menus,
+toggles, chips and text entry. **13 excluded and itemised, nothing silently dropped:**
+`TextButton.styleFrom` ×5, `ElevatedButton.styleFrom` ×3, `FilledButton.styleFrom` ×3,
+`OutlinedButton.styleFrom` ×2 — **`ButtonStyle` factories, not controls.**
+
+| group | n |
+|---|---|
+| buttons | 58 |
+| raw gestures (`InkWell`, `GestureDetector`) | 18 |
+| menus | 11 |
+| tiles | 10 |
+| chips | 10 |
+| text entry | 9 |
+| toggles | 1 |
+| **TOTAL** | **117** |
+
+⚠️ **FIVE DEFECTS IN THIS PROBE, ALL FOUND BY READING ITS OUTPUT AND ALL FIXED BEFORE THE FIGURES
+BELOW.** Recorded because the brief warned that the last several probe failures were the probe
+encoding an assumption about the answer, and four of these are exactly that:
+
+    1. GENERICS      `PopupMenuButton<_HomeMenuAction>(` never matched -- the pattern
+                     required '(' straight after the name. Every generic control was invisible.
+    2. STYLE FACTORY `TextButton.styleFrom(` counted as a control, which is why
+                     theme/mer_theme.dart appeared with 3 "controls" in it.
+    3. LINE NUMBERS  block comments were replaced with one space, collapsing them and
+                     shifting every line after. Caught because medication's tooltip
+                     printed at :170 where §8 cites :171.
+    4. NESTED NAMES  a parent inherited a child's name -- medication's ListTile was
+                     credited with the `tooltip: 'Delete'` of the IconButton in its
+                     `trailing:`. Caught by a COUNT: 5 tooltip-named controls against
+                     only 4 `tooltip:` in all of lib/.
+    5. OFF BY ONE    the fix for (4) skipped the first nested control, because the span
+                     starts at the opening paren, not the widget name.
+
+**2. COVERAGE — 112 of 117 CARRY A NAME. FIVE DO NOT.**
+
+| name source | n |
+|---|---|
+| its own visible text | 97 |
+| `labelText` / `hintText` on a field | 9 |
+| `tooltip` | 4 |
+| framework default (`PopupMenuButton` → `showMenuTooltip`) | 1 |
+| **⛔ NONE** | **5** |
+
+⭐ **`semanticLabel` is used ZERO times in `lib/`. Every name in this app is a side effect of
+something visible.**
+
+⚠️ **FOUR FALSE POSITIVES WERE ADJUDICATED OUT BY READING EACH SITE, and they are named because a
+static classifier is a candidate generator, not a finding:** `event_wizard:776` and
+`log_event:118` are `TextField`s whose `labelText: prompt` is a **variable**, so the literal-only
+matcher missed a real label; `help_screen:852` is an `InkWell` wrapping a `Row` that contains text;
+and `home_screen:942`'s `PopupMenuButton` gets **`showMenuTooltip`** from the framework — READ at
+`popup_menu.dart:1748` and `:1780`, `widget.tooltip ?? MaterialLocalizations.of(context).showMenuTooltip`.
+
+**THE FIVE WITH NO NAME:**
+
+| file | line | control | what it does | destructive? |
+|---|---|---|---|---|
+| `event_wizard_screen.dart` | 373 | `IconButton` `arrow_back` | wizard back / exit | no — §13(b): captures and leaves |
+| `history_screen.dart` | 460 | `IconButton` `clear` | clears the SEARCH FIELD | no |
+| **`history_screen.dart`** | **1248** | **`IconButton` `delete_outline`** | **deletes a record** | 🔴 **YES, and irreversible** |
+| `log_event_screen.dart` | 522 | `IconButton` `arrow_back` | form back / exit | no — §13(a) prompts when dirty |
+| `vocabulary_screen.dart` | 443 | `Checkbox` | selection in "Your lists" | no — selection only |
+
+⛔ **ONE OF THE FIVE IS DESTRUCTIVE, NOT THREE.** A first pass flagged three by matching
+`clear|remove` in the surrounding code — but `history:460` clears a **search box** and
+`vocabulary:443`'s `remove` is `_selected.remove(k)`, a **selection set**. ⭐ **Neither touches
+data.** `history:1248` does, and §13(ax) records that a delete leaves no row, no flag and no log.
+
+✅ **POSITIVE CONTROL, as the brief required — the sweep finds BOTH sides of §8's observation:**
+`history_screen.dart:1248` `IconButton` → **source NONE, icon-only**, and
+`medication_screen.dart:170` `IconButton` → **source tooltip, "Delete"**. **The inconsistency §8
+recorded is reproduced by an independent instrument.**
+
+⚠️ **AND THE FOUR TOOLTIPS RECONCILE EXACTLY WITH §13(ab)** — `history:670` Filters,
+`history:703` Export CSV, `home:1650` Dismiss, `medication:171` Delete. ⛔ **§13(ab) cites
+`home:1604` for the third, and that citation is now STALE** — the banner rewrite of §13(h) moved it.
+⭐ **The line-number rot this project already warns about, arriving again from an unrelated edit.**
+
+**3. WHAT COVERAGE DOES NOT ANSWER.**
+
+**(a) §13(t)'s THREE COLOUR-ALONE INSTANCES — ONE IS MOOT AND TWO ARE WORSE THAN §13(t) RECORDS.**
+
+| §13(t) instance | reachable by a screen reader? |
+|---|---|
+| **"This month"** in `alert` when non-zero | ⭐ **MOOT.** `_StatCell` renders `Text(value)` then `Text(label)`, so the reader gets *"0"* then *"This month"*. **The number is fully available; only the emphasis is lost — and §13(k) argues that emphasis is editorial and should not exist.** No information is withheld |
+| **walkthrough page dots** | ⛔ **WORSE. Not colour-alone — ABSENT.** They are bare `Container`s with a `BoxDecoration` colour, no text, no `Semantics`. **A non-visual user gets no step indicator at all**, in either state |
+| **`_SelectionRow` selected state** | ⛔ **WORSE.** A `GestureDetector` (`log_event_screen.dart:1082`) wrapping a `Text` (`:1097`), with **no `Semantics(selected:)`**. The label is announced; **which option is chosen is not.** It is carried by fill colour and a 0.5→1.5 border only, both visual |
+
+⚠️ **AND THE THIRD IS THE CLINICAL ONE.** `_SelectionRow` is severity, rescue given, did-it-help,
+second dose and referral — **the fields §13(m) was about.** A reader hears the options and not the
+answer.
+
+**(b) `excludeSemantics` AND `ExcludeSemantics`: ZERO. Nothing is hidden from the tree.**
+✅ **Adjudicated with a control** — `excludeSemantics` 0, `ExcludeSemantics` 0, `MergeSemantics` 0,
+against `setState(` at **74** in the same corpus by the same method.
+⭐ **And the one `Semantics(` in all of `lib/` is GOOD practice, not a gap:**
+`history_screen.dart:961` wraps the filter summary in `liveRegion: true, container: true`, so a
+change to it is announced. **It is the app's only deliberate semantics, and it is correct.**
+
+**(c) READING ORDER ON HOME — REPORTED, NOT JUDGED**, from the traversal-order dump at 430x932,
+28 nodes, count-reconciled against the paint-order walk:
+
+    app bar "Medical Event Recorder / Record · Review · Share"  ->  "Show menu" [tooltip]
+    -> "12 events since your last backup" -> "Dismiss" [tooltip] -> the banner body
+    -> "Back up now" -> "Record Event / Tap to timestamp now" -> "Record with details"
+    -> "0" "This month" -> "12" "Total saved" -> "20" "Days since" -> "0" "Referrals"
+    -> "LAST EVENT" -> "20 Aug 2026 · 03:12" -> "Tap edit to update details"
+    -> "Edit details" -> "All history" -> "Need Help with MER?"
+
+✅ **HOME HAS ZERO TAPPABLE NODES WITH NO NAME.** All 8 of its tap targets announce something.
+⚠️ **Two of them get their name from `tooltip` rather than `label`** — Dismiss and Show menu — and a
+first version of this probe read `label` only and reported both as unlabelled. **Same class as
+§13(az): the probe encoded an assumption about where the answer lives.**
+
+⚠️ **Stated without judgement, as the brief required: each statistic reads as its VALUE and then its
+LABEL** — *"0", "This month"* — and **"0" occurs twice**, for This month and Referrals, with nothing
+between them but the intervening labels.
+
+**(d) ICON-ONLY CONTROLS: EIGHT `IconButton`s. FOUR ANNOUNCE A NAME, FOUR ANNOUNCE NOTHING.**
+
+    NAMED    history:669 "Filters"   history:702 "Export CSV"
+             home:1645 "Dismiss"     medication:170 "Delete"
+    UNNAMED  event_wizard:373 back   history:460 clear search
+             history:1248 DELETE     log_event:522 back
+
+⚠️ **What an unnamed one announces today is NOT "the icon's name" — it is nothing.** Flutter emits a
+node with a tap action and an empty label and tooltip; what a reader then says is the reader's
+fallback, not the app's. ⛔ **Which fallback each reader uses is part of what this audit does not
+establish.**
+
+**4. ⛔ WHAT THIS DOES NOT ESTABLISH, AND IT IS MOST OF WHAT MATTERS.**
+
+**A static audit of the widget tree is not a screen-reader test.** This measured what the app
+*exposes*. TalkBack, VoiceOver and Narrator each apply their own grouping, gesture model, verbosity
+setting and fallback naming **on top of** that tree, and they disagree with each other.
+⛔ **NONE HAS BEEN RUN. Not once, on any platform.**
+
+**What would close it, per platform:**
+
+| | What it needs | Possible from this machine? |
+|---|---|---|
+| **Android / TalkBack** | TalkBack enabled on a device, and a pass through every screen | ⚠️ **Partly.** The Teclast tablet is reachable by `adb` and TalkBack can be toggled without touching app data — ⛔ **but that device holds the 72 records, and this pass did not do it** |
+| **iOS / VoiceOver** | a Mac, a provisioned device, VoiceOver on | ⛔ **No.** Mac-only work |
+| **Windows / Narrator** | the Windows build running, Narrator on | ⚠️ **Yes in principle**, and §13(ap) is the warning: the app exposes nothing a desktop automation tool could navigate by, which is this same absence seen from outside |
+
+⚠️ **AND ONE THING NO READER TEST WOULD CATCH EITHER: whether a name is USEFUL.** *"Dismiss"* and
+*"Delete"* are names; neither says **what** is dismissed or deleted. ⛔ **Coverage is not
+comprehension, and this finding measured coverage.**
 
 ---
 
