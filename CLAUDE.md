@@ -350,6 +350,47 @@ record count on the home screen against the database before trusting the build.*
 
 ## Working Rules — verification
 
+### ⛔ A WIDGET TEST'S TEXT WIDTHS ARE NOT REAL TEXT WIDTHS
+
+⚠️ **The `flutter_test` font is MONOSPACED AT ONE EM PER GLYPH.** `iiiii` and `WWWWW` measure
+**identically** — 66.3 logical at `fontSize: 13` — and every measurement advances exactly
+`fontSize + 0.25` per character, across sizes 10, 13 and 24 and four different strings.
+**12 of 12**, in `test/test_font_width_test.dart`.
+
+⭐ **SO A STRING'S LAID-OUT WIDTH IN A WIDGET TEST IS A FUNCTION OF ITS LENGTH AND NOTHING ELSE.**
+On this project that inflated real widths by roughly **1.8x** at 13 px.
+
+**WHAT IT COST, 9 September 2026.** A 🔴 finding was recorded, committed, pushed, and a fix was
+briefed — home's app-bar title *"clipped on every phone narrower than 416 logical, 41 px lost at
+375"*. ⛔ **The real render at 375 has 127 logical points of CLEAR SPACE.** The whole thing came
+from `kAppName` being 22 characters and 22 x 13 = **286**, which was read as a text width.
+
+⛔ **AND IT SURVIVED EVERY CHECK THE PROJECT HAD**, because none of them was about the input: the
+geometry was measured correctly, the model fitted four independent points exactly, the boundary was
+predicted before sweeping and confirmed at 1 px, and three platforms agreed. **A wrong input
+produces a perfectly self-consistent set of wrong numbers, and consistency is what usually reads as
+proof.**
+
+**1. MUST: treat a widget test as authoritative for POSITION, CONSTRAINT and PROPORTION — and for
+nothing that turns on how wide a glyph is.** Margins, offsets, centring, whether a constraint is
+exceeded, void proportions, tap-target sizes from padding: all sound. ⛔ **Any width, threshold or
+overflow amount that depends on rendered text: not sound.**
+
+**2. MUST: get real text widths from a real render.** Either load the platform font into the
+harness with `FontLoader`, or measure from a **framebuffer** capture at a known DPR — `adb
+screencap` or a simulator screenshot, which are geometry-honest. ⚠️ **NOT `PrintWindow`**, for the
+separate reason in the capture rule above.
+
+**3. MUST: name the font when reporting any width.** A threshold without a font is a number without
+units.
+
+⭐ **THE SHAPE, AND IT IS DISTINCT FROM THE OTHER TWO INSTRUMENT FAILURES HERE.** §13(al) was an
+instrument measuring the wrong pixels. §13(aj)'s frames were the wrong subject. **This was the RIGHT
+instrument measuring the RIGHT property on a SUBSTITUTE INPUT that the harness supplied silently.**
+⛔ **Ask what the harness is standing in for, not only whether the harness is working.**
+
+⚠️ **Full history in `docs/design-audit/AUDIT.md` §13(ay) (retracted), §13(as) and §13(au).**
+
 ### ⛔ CAPTURES ANSWER "HOW DOES IT LOOK". THEY DO NOT ANSWER "WHERE IS IT" OR "HOW BIG IS IT"
 
 ⚠️ **Geometry comes from widget tests. Appearance comes from captures. Do not cross them.**

@@ -3272,6 +3272,43 @@ the diagnosis.** The instrument now lives in `test/narrow_geometry.dart` with pe
 `test/narrow_geometry_{home,history,form,home_devices}_test.dart`, and
 `test/narrow_probe.dart` is kept **as the counter-example** — the exception-based probe whose
 verdicts were an artefact.
+⛔ **EVERY WIDTH IN THE DIAGNOSIS ABOVE IS A `flutter_test` FONT WIDTH AND IS INVALID FOR REAL
+DEVICES — CORRECTED 9 September 2026 (evening). The MECHANISM findings all stand; only the numbers
+go.** See §13(ay), retracted the same evening, for the proof.
+
+**The harness font is monospaced at one em per glyph** — `iiiii` and `WWWWW` both measure 66.3 at
+13 px, and 12 of 12 measurements advance exactly `fontSize + 0.25` per glyph
+(`test/test_font_width_test.dart`). ⛔ **So any threshold that depends on how wide a string renders
+is inflated by roughly 1.8x at this size.**
+
+| Reported above | Status |
+|---|---|
+| home **408** Windows / **416** Android/iOS, confirmed at 1 px | ⛔ **INVALID as a device width.** Real bound ≈ **289**, below every shipping phone |
+| history **300** flex / **350** text | ⛔ **INVALID** |
+| form **175** flex / **325** text | ⛔ **INVALID** |
+| the four points *"fitting the model exactly"* — 320→96, 360→56, 375→41, 375→33 | ⛔ **All four are the same artefact.** ⚠️ **They fit because they share one wrong input, which is exactly how a wrong model looks right** |
+
+✅ **WHAT STANDS, and none of it depends on glyph width:**
+
+- **(a)** the type, library, context and message — `FlutterError`, rendering library, during layout.
+- **(b)** the owner: home's app-bar title `Row`, `const`, fixed-width by construction.
+- **(c)** the 400 and 94 exceptions are **two different widgets**, not one finding.
+- **(d)** ⭐ **the once-per-render-object-instance reporting**, and that a sweep predicated on
+  `threw` reports clean while the layout overflows. **That is the most transferable thing here and
+  it is font-independent.**
+- **(e)** platform- and DPR-independence.
+- **(f)** that other screens overflow at other widths, as different widgets — **the widths are
+  wrong, the fact is not.**
+- The **8 px** `padded`-versus-`shrinkWrap` gap: 48 against 40 is a constant, not a measurement.
+
+⚠️ **AND THE FALSE CLEAN AT HISTORY 100 STANDS AS RECORDED** — 5 paragraphs against 54, 18 errors
+swallowed — because it is a count of what was built, not a width.
+
+⭐ **THE SHAPE, RECORDED BECAUSE IT IS A NEW ONE FOR THIS DOCUMENT: the instrument was correct and
+its INPUT was fake.** §13(al) was an instrument that measured the wrong pixels. §13(aj)'s frames
+were the wrong subject. **This was the right instrument, measuring the right property, on a
+substitute the harness supplied without saying so.** ⛔ **A widget test is authoritative for
+POSITION, CONSTRAINT and PROPORTION — and for nothing that turns on how wide a glyph is.**
 
 ---
 
@@ -3426,6 +3463,41 @@ overflow** because it lays out **5 paragraphs against 54 at 125 logical, with 18
 swallowed.** ⛔ **Nothing overflowed because almost nothing was built.** The probe now prints
 paragraph and swallowed-error counts beside every verdict, and a zero-paragraph width is marked
 `VOID(nothing-laid-out)` rather than clean.
+⛔ **BOTH THRESHOLDS ABOVE ARE WITHDRAWN — 9 September 2026 (evening). D2 STILL HAS NO MEASURED
+INPUT, and this entry's "UNDECIDED" is now undecided for a second, better reason.**
+
+**They were measured with the `flutter_test` font, which is monospaced at one em per glyph** —
+proof in §13(ay) and `test/test_font_width_test.dart`. ⛔ **`416 governs` and `350 content` are
+both inflated, and the reasoning built on their 66 px gap goes with them.**
+
+⚠️ **THE STRUCTURAL POINT THE GAP WAS MAKING SURVIVES, AND IT WAS NEVER ABOUT THE NUMBERS:** a
+`RenderFlex` overflow and a text overflow are **different detectors** — a row wider than its slot
+against a paragraph past its line budget — so they can and do diverge. ⭐ **§13(am)'s "zero
+overflowing texts at 400" was true and was read as "nothing overflows at 400", which is false.**
+**That remains the reason a minimum cannot be chosen from one detector.**
+
+⛔ **AND THE CONCLUSION THIS ENTRY DREW FROM THE NUMBERS IS NOW WRONG IN ITS PREMISE.** It reasoned
+that home's 416 must not become D2's minimum because home's threshold is a **phone** defect that a
+desktop window minimum cannot fix. ⭐ **There is no phone defect** — §13(ay) is retracted. **The
+conclusion "do not set the minimum to 416" still holds, for the simpler reason that 416 was never
+a real width.**
+
+**WHAT D2 WOULD NEED, STATED SO IT IS NOT RE-DERIVED WRONG A THIRD TIME:**
+
+1. ⛔ **A real-font measurement.** A widget test cannot supply it as configured. Either load the
+   platform font into the harness with `FontLoader` and re-sweep, or measure from **framebuffer
+   captures** at known DPR — the method used in §13(ay), which is occlusion- and DPI-honest and is
+   **not** the `PrintWindow` pipeline.
+2. ⚠️ **Per platform, because the fonts differ** — SF Pro, Roboto and Segoe UI are three different
+   width tables, and only iOS has been measured at all.
+3. ⛔ **Nine screens are still unmeasured**, and that was true before this correction.
+
+⭐ **ONE THING IS NOW KNOWN THAT WAS NOT: the real widths are FAR lower than the harness suggested.**
+Home's title needs **≈209 logical** against **295 available at 375**, with **127 points of clear
+space**. ⚠️ **So a minimum window width may not be needed at all for the reasons this decision was
+taken** — §13(am)'s 94-logical case is the only overflow ever demonstrated on a real surface, and
+94 is a width reached only by dragging a window to a sliver. **D2 is not withdrawn; its
+justification is now thinner than when it was decided.**
 
 ---
 
@@ -3675,3 +3747,64 @@ so the second shape would be the first one in the codebase.
 the **primary screen**, affecting the **app's own name**, on **three of the six widths measured** —
 and because the smallest common phone loses **96 px**, which is most of the title. ⚠️ **It is not
 data loss and it gates nothing**: capture, the record and the export are untouched.
+⛔ **RETRACTED 9 September 2026 (evening) — THIS FINDING IS AN ARTEFACT OF THE `flutter_test` FONT.
+THERE IS NO DEFECT. The finding above stands as written and is wrong.**
+
+⭐ **IT WAS RECORDED AS 🔴, PUSHED, AND A FIX WAS BRIEFED BEFORE THE FIRST QUESTION WAS ASKED: does
+a widget test measure text the way a device does?** ⛔ **It does not.**
+
+**1. THE HARNESS FONT IS MONOSPACED AT ONE EM PER GLYPH.** Measured in
+`test/test_font_width_test.dart`:
+
+    iiiii  at 13px = 66.3        WWWWW  at 13px = 66.3        equal
+    12 of 12 measurements advance exactly fontSize + 0.25 per glyph,
+    across sizes 10, 13, 24 and four different strings
+
+⭐ **`iiiii` and `WWWWW` measuring the same is the discriminator, and no proportional font can do
+it.** Length and glyph COUNT are the only inputs; which glyphs they are makes no difference.
+
+**2. THE NUMBER THAT STARTED THIS WAS THAT ARTEFACT, EXACTLY.** `kAppName` is
+**22 characters**, and **22 x 13 = 286** — precisely the `Column` width measured. ⛔ **The
+"wanted 336" was `40 + 10 + 286`, and 286 was never a text width.**
+
+**3. THE REAL RENDER AT 375 IS NOT CLIPPED, AND HAS 127 LOGICAL POINTS TO SPARE.** From
+`captures/home__empty__375x667__2026-09-07-ios-se3-sim.png` — a **framebuffer** capture at DPR 2,
+⭐ **not the `PrintWindow` pipeline**, so a distance in the file is a distance in the layout over a
+known DPR:
+
+    title block (icon + gap + text)   x   7.5 .. 216.0 logical    208.5 wide
+    the ... overflow menu             x 343.0 .. 365.0 logical
+    CLEAR SPACE BETWEEN THEM                             127.0 logical
+
+⚠️ **Apparatus controlled, and its FIRST version failed its own control and was rebuilt.** The
+band detector took `min()`/`max()` over a sparse set of navy rows, folded the navy *"Record with
+details"* button into the app bar, and reported a band of y 0..762. **The midline control returned
+0.000 navy, which is what exposed it.** Corrected to the first contiguous run: navy **0.899** at the
+band midline, **0.000** forty pixels below it. **Both controls required to pass before any figure
+was read.**
+
+⛔ **SO THE REAL THRESHOLD IS ABOUT 289 LOGICAL, NOT 416** — `209 + 80` — and **the narrowest
+shipping phone is 320.** ✅ **No phone overflows. Not the iPhone SE at 320, not a 360 Android, not
+the 375 in the capture set.** ⚠️ **That 289 is derived from ONE capture, SF Pro on iOS; Roboto and
+Segoe UI differ, and the figure is a BOUND rather than a threshold.** ⛔ **It is not offered as a
+new number to build on.**
+
+⛔ **AND THE COUNTER-EXAMPLE FRAMING IN THIS FINDING IS RETRACTED WITH IT, BECAUSE IT WAS THE
+OPPOSITE OF THE TRUTH.** This entry claimed *"the defect WAS visible in a capture and the eye missed
+it"*, and read §7's *"best-composed screen"* as a judgement made from a clipped frame. ⭐ **The
+frame was never clipped. The eye was RIGHT and the widget test was wrong.** ⚠️ **§7 needs no
+annotation and has not been given one** — the brief for this pass asked for one, and it would have
+put a false correction into the document.
+
+⭐ **THE REAL LESSON IS THE INVERSE OF THE ONE RECORDED HERE, AND IT IS THE MORE USEFUL ONE.**
+`CLAUDE.md` says geometry comes from widget tests and appearance from captures. **That rule is still
+right — and it does not say a widget test's geometry is UNCONDITIONALLY true.** ⛔ **A widget test
+measures the LAYOUT ALGORITHM exactly and the INPUTS to it only as well as the harness supplies
+them.** Text width is an input, and the harness supplies a fake one. **So: a widget test is
+authoritative for POSITION, CONSTRAINT and PROPORTION, and NOT for any figure that depends on how
+wide a glyph is.**
+
+⚠️ **WHAT SURVIVES FROM THIS FINDING: nothing about widths.** The `Row` is still fixed-width by
+construction, and it would still overflow at a sufficiently narrow width — ⛔ **but the widths at
+which it does are all below any shipping device**, and §13(am)'s 94-logical case is the only one
+ever demonstrated on a real surface.
