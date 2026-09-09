@@ -371,6 +371,12 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         appBar: AppBar(
           title: Text(onSummary ? 'Check and save' : 'Add details'),
           leading: IconButton(
+            // ⛔ NAMED 9 Sep 2026 — AUDIT.md §13(z). It announced nothing.
+            // "Back" and not "Cancel" or "Discard": at step 0 it leaves
+            // (capturing the draft, per §13(b)) and otherwise it steps
+            // backwards, so "Back" is the only word true of BOTH states. It is
+            // also what MaterialLocalizations gives `BackButton`.
+            tooltip: 'Back',
             icon: const Icon(Icons.arrow_back),
             onPressed: () =>
                 _step == 0 ? _onWillPop() : setState(() => _step--),

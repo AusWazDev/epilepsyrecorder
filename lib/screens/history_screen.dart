@@ -458,6 +458,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           'severity…',
                       suffixIcon: _searchText.isNotEmpty
                           ? IconButton(
+                              // ⛔ NAMED 9 Sep 2026 — AUDIT.md §13(z).
+                              // "Clear search", not "Clear": this sheet also
+                              // carries filter chips, and a bare "Clear" beside
+                              // them would not say what it clears.
+                              tooltip: 'Clear search',
                               icon: const Icon(Icons.clear, size: 18),
                               onPressed: () => update(() {
                                 _searchText = '';
@@ -1246,6 +1251,24 @@ class _EventListTile extends StatelessWidget {
         );
       }),
       trailing: IconButton(
+        // ⛔ NAMED 9 Sep 2026 — AUDIT.md §13(z). It announced NOTHING on every
+        // row, and it is the one irreversible control in the app (§13(ax): a
+        // delete leaves no row, no flag and no log).
+        //
+        // "Delete this event" rather than medication's bare "Delete", because
+        // this one repeats per row. Measured: the row's own content IS the
+        // semantics node immediately BEFORE this button in traversal order, so
+        // forward navigation supplies context — but TalkBack's next-control
+        // gesture and VoiceOver's rotor set to buttons SKIP it, leaving
+        // "Delete, Delete, Delete".
+        //
+        // ⚠️ AND IT IS DELIBERATELY NOT DYNAMIC. A tooltip is VISIBLE on hover
+        // and long-press, so 'Delete ${time}' would surface record data into a
+        // newly-visible element — in an app whose whole property is that
+        // nothing leaves the device unless the user sends it. §13(ad) also
+        // shows seven byte-identical rows, so a timestamp would not
+        // disambiguate. Which-record identification stays UNSOLVED.
+        tooltip:   'Delete this event',
         icon:      const Icon(Icons.delete_outline),
         onPressed: onDelete,
       ),

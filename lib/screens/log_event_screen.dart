@@ -523,6 +523,12 @@ class _LogEventScreenState extends State<LogEventScreen> {
       child: Scaffold(
 appBar: AppBar(
           leading: IconButton(
+            // ⛔ NAMED 9 Sep 2026 — AUDIT.md §13(z). It announced nothing.
+            // "Back" and not "Cancel" or "Discard": since §13(a)'s fix this
+            // PROMPTS when the form is dirty and leaves silently when it is
+            // clean, so it reliably does neither of those. Same string as the
+            // wizard's, which is the point — the two edit paths agree.
+            tooltip:   'Back',
             icon:      const Icon(Icons.arrow_back),
             onPressed: _cancel,
           ),

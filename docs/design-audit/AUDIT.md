@@ -2476,6 +2476,123 @@ Not TalkBack, not VoiceOver, not Narrator. ⭐ **Everything above — including 
 from the widget and semantics trees**, and those three readers apply their own grouping, gesture
 model, verbosity and fallback naming on top and disagree with each other. ⚠️ **`Tristate.isTrue` in
 the tree is not the same claim as "a user hears 'selected'".**
+✅ **ALL FIVE UNNAMED CONTROLS NAMED — 9 September 2026. Nothing visual moved.** Verified in
+`test/named_wizard_back_test.dart`, `named_history_controls_test.dart`, `named_form_back_test.dart`
+and `vocab_checkbox_semantics_test.dart`.
+
+| control | mechanism | string |
+|---|---|---|
+| wizard back | `tooltip:` | **`Back`** |
+| history clear-search | `tooltip:` | **`Clear search`** |
+| **history per-row delete** | `tooltip:` | **`Delete this event`** |
+| form back | `tooltip:` | **`Back`** |
+| "Your lists" checkbox | ⚠️ **`semanticLabel:`** — `Checkbox` has no `tooltip`, and this is the **first use of `semanticLabel` in the codebase** | **`Select ${e.display}`** |
+
+**BEFORE / AFTER, and the control is the same run against unpatched `lib/`:**
+
+    UNPATCHED   0 of 4 announced        "Select …" names: 0
+    PATCHED     4 of 4 announced        "Select …" names: 69, all distinct
+
+⭐ **`tooltip:` in `lib/` went 4 → 8; `semanticLabel:` went 0 → 1.**
+
+**BOTH BACK CONTROLS ARE "Back", AND THAT WAS DECIDED FROM THE CODE.** The wizard's is
+`_step == 0 ? _onWillPop() : _step--` — it steps backwards, or at step 0 leaves. The form's is
+`_cancel`, which since §13(a)'s fix **prompts when dirty and leaves silently when clean.**
+⛔ **So "Cancel" and "Discard" would both be false of both.** `Back` is true of every state and is
+the word `MaterialLocalizations` gives `BackButton`. ⭐ **Same string on both paths, which is the
+point after §10 decision 1.**
+
+---
+
+**(a) ⛔ THE TOOLTIP-VISIBILITY CONSTRAINT — A GENERAL PROPERTY OF THIS APP, NOT A ONE-OFF.**
+
+**A tooltip is VISIBLE on hover and on long-press.** So a tooltip is not a private channel to a
+screen reader: **whatever it says becomes displayable.**
+
+⛔ **THAT RULED OUT `'Delete ${time}'`.** A dynamic tooltip on a record control would surface
+**health data into a newly-visible element** — in an app whose whole property is that nothing leaves
+the device unless the user sends it (§13(ar) constraint 2, §12). ⭐ **The name of a control is
+allowed to describe the ACTION; it is not automatically allowed to describe the RECORD.**
+
+⚠️ **This will come up every time a per-row control needs naming, and there are more of them
+coming** — History's rows already carry one destructive control each (§13(ab)) and a second record
+kind is designed for (§13(l)). **Where a per-item name needs the item's identity, `semanticLabel`
+is the channel and `tooltip` is not.**
+
+---
+
+**(b) ⚠️ THE ASYMMETRY, RECORDED EXPLICITLY BECAUSE TWO DYNAMIC-STRING DECISIONS WENT OPPOSITE WAYS
+ON ONE DAY.** Without this a future reader reads it as inconsistency.
+
+| | per-row DELETE — dynamic REJECTED | "Your lists" CHECKBOX — dynamic ACCEPTED |
+|---|---|---|
+| **is the channel visible?** | ⛔ **yes** — `tooltip` shows on hover and long-press | ✅ **no** — `semanticLabel` is never displayed |
+| **what would the content be?** | ⛔ **record data** — a timestamp from a medical record | ✅ **a vocabulary label** the user already sees on the row |
+| **would it disambiguate?** | ⛔ **no** — §13(ad): seven byte-identical rows | ✅ **yes** — every entry differs |
+
+⭐ **All three factors point the same way within each column and the opposite way between them.**
+**The decision is not a preference; it falls out of three readings.**
+
+---
+
+**(c) ⚠️ THE RENDER TEST'S BOUNDARY, STATED BECAUSE THE PASSING TEST DOES NOT CLAIM WHAT IT LOOKS
+LIKE IT CLAIMS.**
+
+The baselines are rects captured from UNPATCHED code, so each test passes in **both** states — the
+shape that has now caught a real difference three times. ⛔ **But it measures the STATIC render
+only.** Adding a `tooltip` to a control that had none **adds a hover and long-press label that did
+not exist before.** ⭐ **So this change is not literally zero visible change, and the green test is
+not evidence that it is.**
+
+⭐ **RECORDED AS THE TWO-PROPERTIES PATTERN OF §13(aj) APPLIED BEFORE A FAILURE RATHER THAN AFTER
+ONE.** That entry's lesson is that proving one property of an instrument reads as clearing the
+instrument. Here the property proven is *static geometry is unchanged*; the property NOT proven is
+*nothing newly visible exists*. **Both were needed and only one was tested — said in advance this
+time, instead of being discovered by a retraction.**
+
+---
+
+**⛔ STILL OPEN, AND 117 OF 117 MUST NOT BURY ANY OF IT.**
+
+⚠️ **First, the coverage figure itself, honestly.** The re-run sweep reports **117 constructions,
+113 named, 4 unnamed** — and **all four are the FALSE POSITIVES this finding already documented**:
+`event_wizard:782` and `log_event:121` are `TextField`s whose `labelText: prompt` is a **variable**
+rather than a literal; `help_screen:852` is an `InkWell` wrapping a `Row` that contains text; and
+`home_screen:942`'s `PopupMenuButton` takes `showMenuTooltip` from the framework. ⭐ **Adjudicated,
+it is 117 of 117 and zero destructive unnamed.** ⛔ **The sweep was NOT adjusted to print 117** —
+that would be fitting the instrument to the expected answer, and the denominator is only as good as
+its stated method.
+
+1. ⭐ **`semanticLabel` is now used ONCE, not zero — and that changes almost nothing.** 97 of 117
+   names are still the control's own visible text, 8 are tooltips, 7 are field labels, 1 is a
+   framework default. ⛔ **Every name in this app except one remains INCIDENTAL to something
+   visible.** A control that happens to have no visible text still has no name by default, and that
+   is the structural fact the five gaps came from.
+2. ⛔ **COVERAGE IS NOT COMPREHENSION.** *"Back"* does not say back from what. *"Delete this
+   event"* does not say which. **117 of 117 is a count of names, not of names that help.**
+3. ⛔ **WHICH-RECORD IDENTIFICATION ON THE DELETE CONTROL IS UNSOLVED.** Measured: the row's own
+   content **is** the semantics node immediately BEFORE the button in traversal order, so forward
+   navigation supplies context. ⚠️ **But control-only navigation — TalkBack's next-control gesture,
+   VoiceOver's rotor set to buttons — skips the row entirely**, leaving *"Delete this event, Delete
+   this event, Delete this event"*. ⭐ **Adjacency is true and insufficient**, and §13(ad)'s seven
+   byte-identical rows mean the adjacent node would not settle it either.
+4. ⛔ **THE WALKTHROUGH PAGE DOTS: ABSENT, NOT COLOUR-ALONE.** Bare `Container`s with a
+   `BoxDecoration` colour, no text, no `Semantics`. **Untouched by this pass.**
+5. ⛔ **NO SCREEN READER HAS BEEN RUN ON ANY PLATFORM.** ⭐ **`Tristate.isTrue` in a tree is not a
+   user hearing "selected", and a `tooltip` string in a tree is not a user hearing it either.**
+   TalkBack, VoiceOver and Narrator each apply their own grouping, verbosity and fallback naming and
+   disagree with each other.
+6. ⛔ **§13(ab)'s DESIGN QUESTION REMAINS OPEN: does a destructive control belong on every row at
+   all?** ⚠️ **Naming it does not answer that — it makes an unlabelled hazard a labelled one.**
+
+⭐ **AND ONE HARNESS FINDING THIS PASS PRODUCED, RECORDED BECAUSE IT COST TWO FALSE NEGATIVES.**
+Pumping several screens inside ONE `testWidgets` under-reports: "Your lists"' 69 checkboxes rendered
+as **zero** as the fourth pump and 69 alone; the form's `tooltip: 'Back'` reported **SILENT** as the
+third pump and `[Back]` alone — while the wizard's identical tooltip on the FIRST pump was found.
+⚠️ **The cause was not established. The DIRECTION was: a later pump under-reports, so a SILENT
+verdict from a multi-screen test cannot be trusted while an ANNOUNCED one can.** ⛔ **Same
+asymmetry as the prefs-per-process rule, and the same remedy — one screen per file.** Recorded in
+`test/semantics_names.dart` where the next author will meet it.
 
 ---
 

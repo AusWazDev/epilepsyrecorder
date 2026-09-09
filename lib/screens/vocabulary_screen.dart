@@ -441,6 +441,20 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
             )
           else if (_selecting)
             Checkbox(
+              // ⛔ NAMED 9 Sep 2026 — AUDIT.md §13(z). It announced only its
+              // checked state and never WHAT it selects.
+              //
+              // ⚠️ `semanticLabel`, not `tooltip`: `Checkbox` has no tooltip
+              // parameter. This is the FIRST use of `semanticLabel` in this
+              // codebase — there was no existing idiom to match, and that
+              // absence is itself recorded in §13(z).
+              //
+              // ⭐ AND IT IS DYNAMIC, where the delete tooltip deliberately is
+              // not. The three factors point the opposite way here:
+              // `semanticLabel` is NOT visible, `e.display` is a user-facing
+              // vocabulary label rather than record data, and it genuinely
+              // disambiguates one row from the next.
+              semanticLabel: 'Select ${e.display}',
               value: _selected.contains(_key(table, e.value)),
               onChanged: (v) => setState(() {
                 final k = _key(table, e.value);
