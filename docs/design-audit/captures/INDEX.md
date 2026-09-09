@@ -228,6 +228,26 @@ control untouched, every condition-dependent surface renders empty, and History 
 run of incomplete rows. **72 on Android and 58 on iOS are two independent histories, not a
 drift** — there is no sync.
 
+⛔ **RETRACTED 9 September 2026 — "two independent histories" IS WRONG, AND IT WAS CHAT'S ERROR.**
+**37 record IDs are shared between the tablet and the iPhone with identical timestamps.** All 37 sit
+inside the pre-migration 42, with **zero overlap** with the 16 post-migration additions. ⭐ **Records
+were restored across the two devices. The histories share an ancestor; they are one history that
+diverged, not two that never met.**
+
+⚠️ **RECORDED AS CHAT'S ERROR SPECIFICALLY: it was a claim about the relationship between two
+devices, asserted without ever checking whether their records overlapped.** The check was one
+id-set intersection and it was never run. ⭐ **"There is no sync" is true and was never the
+question** — absence of a sync mechanism does not make two record sets independent when a backup
+file can carry records between them.
+
+✅ **INDEPENDENT CORROBORATION, from arithmetic rather than ids:** a reading of **51 records at
+27 August 20:13** does not reconcile with the current state — **52 current records predate that
+reading**, and `51 + 6 = 57`, not 59. ⭐ **Counts that do not reconcile forward are what restore
+behaviour looks like from the outside**, and merge-by-id preserves original timestamps, so restored
+records land dated in the past rather than at the top.
+
+⚠️ **The sentence above stays exactly as written. See §13(be) for the loss this was found beside.**
+
 | File | State |
 |---|---|
 | `home__default` | Backup banner **dismissed**, for comparability with the 30 Aug proxy |

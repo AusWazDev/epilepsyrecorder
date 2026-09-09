@@ -1300,6 +1300,11 @@ figure and should count by when they happened. The forward-looking risk this fin
 ⭐ **AND TWO SITES THIS FINDING NEVER HAD, both more visible than the one it got right: see
 §13(bc).** ⛔ **Plus a live defect in no finding at all: §13(bd).**
 
+⚠️ **PRIORITY DROPPED 9 September 2026: UNEXERCISED on current device data — zero non-null
+`occurred_at` across all 58 records, with `duration_seconds` (13/45) and `event_type` (45/13) as
+discriminating controls. ⛔ NOT CLOSED — untriggered is not fixed. The full annotation is at the end
+of §13(bd).**
+
 ### (k) "This month" renders in alert colour whenever it is non-zero
 
 **Code-verified, 8 Sep 2026.**
@@ -4820,6 +4825,11 @@ point. ⚠️ **Every consumer inherits it, and they need enumerating BEFORE tha
 after.** ⭐ **The CSV is already immune — it re-sorts on its own key at `event_record.dart:1117` —
 but that is one consumer checked, not all of them.**
 
+⚠️ **PRIORITY DROPPED 9 September 2026: UNEXERCISED on current device data — zero non-null
+`occurred_at` across all 58 records, with `duration_seconds` (13/45) and `event_type` (45/13) as
+discriminating controls. ⛔ NOT CLOSED — untriggered is not fixed. The full annotation is at the end
+of §13(bd).**
+
 ---
 
 ### (bd) 🔴 HISTORY'S INITIAL ORDER IS `logged_at` — IT SORTS BY ONE VALUE AND GROUPS BY ANOTHER UNTIL THE FIRST EDIT
@@ -4896,3 +4906,214 @@ what exists**, not measured as nil.
 58 RECONCILIATION.** ⭐ **They share an instrument:** both need a database copied off a device and
 counted, both were blocked in the same way, and one trip answers both. ⚠️ **Neither is a Windows
 item and neither should be attempted from here.**
+
+---
+
+**⛔ PRIORITY DROPPED 9 September 2026 — THE CLUSTER IS NOW MEASURED, AND IT IS UNEXERCISED. This
+covers §13(j) (including `_thisMonthCount`), §13(bc) AND §13(bd).**
+
+⭐ **THIS IS AN UPGRADE IN THE CLAIM, AND THE CHANGE IS THE POINT.** The section above says the
+cluster is **UNMEASURABLE from what exists, not measured as nil** — because on the 27 August
+baselines `occurredAt` was **absent as a key**, so the question had never been asked of that data.
+⚠️ **It has now been asked.** A current device read of the 58 records reports **ZERO non-null
+`occurred_at`.**
+
+✅ **AND IT CARRIES DISCRIMINATING CONTROLS, which is what makes the zero a measurement rather than
+an apparatus failure:**
+
+    duration_seconds     13 populated / 45 null
+    event_type           45 populated / 13 null
+    occurred_at          0 populated / 58 null
+
+⭐ **Two fields in the same read return MIXED distributions, so the query can distinguish populated
+from unpopulated. The zero is real.** ⚠️ **Mac-reported, not verified from Windows.**
+
+⛔ **SO EVERY DIVERGENCE IN THIS CLUSTER IS REAL IN CODE AND UNEXERCISED ON CURRENT DEVICE DATA.**
+Nothing on the device has yet asked home's statistics, the `_LastEventCard` time, `_thisMonthCount`
+or History's initial order to disagree with `logged_at`, because on all 58 records
+`whenHappened == timestamp` by definition of the fallback.
+
+⚠️ **NONE OF THESE IS CLOSED, AND UNTRIGGERED IS NOT FIXED.** The code paths are wrong today. ⭐ **The
+first backdated record makes all four visible at once** — and backdating is user-writable on both
+edit paths, so this is a matter of when, not whether. ⛔ **The measurement lowers the priority. It
+does not change the verdict.**
+
+---
+
+### (be) 🔴 ONE EVENT RECORD WAS LOST ON 30 AUGUST 2026 — UNRECOVERABLE, AND THE STORAGE MODEL CANNOT SAY HOW
+
+⛔ **THE HIGHEST-PRIORITY OPEN ITEM IN THIS DOCUMENT.** Recorded 9 September 2026. ⛔ **ONE EVENT
+RECORD WAS LOST ON 30 AUGUST 2026, IN THE WRITE AT 16:36:41 AEST. UNRECOVERABLE.**
+
+**Nine of the ten tables are identical between the 14:50:33 count and now. `event` alone is minus
+one.** Seven device copies are one state, byte-identical, sha256 `e6366d33`. `mer_last_backup_at`
+(`constants.dart:179`, `kLastBackupKey`) is **24 August**, so **no backup covers the 59 state.**
+
+⭐ **WHAT SETTLED IT WAS THE SESSION TRANSCRIPT, NOT THE DATABASE.** The database cannot answer the
+question at all — see the mechanism below. The count of 59 exists only because a transcript recorded
+it in passing.
+
+---
+
+**⚠️ PROVENANCE, STATED BEFORE ANY OF IT IS RELIED ON.** The device measurements in this finding were
+taken on the **Mac** and are recorded here **as reported, not as verified from Windows.** What is
+marked ✅ **WINDOWS-VERIFIED** below was read from source in this repository on 9 September 2026 and
+is independent of that report. ⛔ **The distinction is load-bearing: this document has twice recorded
+a Mac-reported figure as though Windows had measured it.**
+
+---
+
+**⛔ THE BENIGN READING IS FALSIFIED. No store holds 59.**
+
+| store | count |
+|---|---|
+| SQLite `event` | **58** |
+| `SharedPreferences` (pre-SQLite key) | 42 |
+| iOS App Group mirror | **empty** |
+| pre-SQLite store | 42 |
+| a fresh read, 9 September 2026 | **58** |
+
+⭐ **So the record is not misplaced, unmigrated or stranded in a mirror. It is gone.**
+
+---
+
+**⛔ THE WRITE DID NOT COME FROM THE CLI.** 280 transcript entries cover **14:50:33 to 15:41:49**. A
+**55-minute gap** follows. **16:36:41 falls inside it — 16 seconds before the transcript resumes.**
+The covered window shows **simulator** work: no `devicectl install`, no app launch on the iPhone.
+⭐ **The write came from the app on the phone during a blind period. That is an answer, not a
+shortfall** — it excludes the tooling and locates the actor.
+
+---
+
+**⛔ THE TRACE-ERASING MECHANISM — ✅ WINDOWS-VERIFIED FROM SOURCE, 9 September 2026.**
+
+    event_store_sqlite.dart:441-451   save() is REWRITE-EVERYTHING, in ONE transaction:
+                                        :444   await txn.delete('event')
+                                        :447   batch.insert('event', eventToRow(snapshot[i], i))
+    event_store_sqlite.dart:319-320   eventToRow writes 'ordinal': ordinal — THE LOOP INDEX
+    lib/ grep                         deleteEvent | removeEvent | deleteById | deleteRecord
+                                        — ZERO hits. NO PER-RECORD DELETE EXISTS.
+    event_store_sqlite.dart:461       the only other event delete is clearAll(), the reset path
+
+⭐ **A record leaves this store by not being in the list that gets written.** So a deletion leaves
+**no row, no flag, no log, no Sentry event, no ordinal gap and no freelist residue.** ⛔ **The
+storage model is incapable of saying afterwards that a record ever existed.**
+
+---
+
+**⛔ BOTH FORENSIC TESTS WERE RUN AND BOTH ARE VOID. ✅ Both voidings are WINDOWS-VERIFIED.**
+
+| test | result | why it proves nothing |
+|---|---|---|
+| dense `ordinal` sequence | no gaps | ⛔ `ordinal` is **reassigned from list position** on every write (`:319-320`). A dense sequence is guaranteed, not evidence |
+| `freelist_count` | 0 | ⛔ pages are freed and reused **wholesale** by the delete-and-reinsert, so 0 is the expected value either way |
+
+⭐ **THE GAP QUERY'S CONTROL FIRED ON 997/998/999, SO THE APPARATUS WORKED AND THE QUESTION WAS
+WRONG.** ⚠️ **That is the §13(az) shape again, and it is the second instance: the instrument was
+sound, the input could not carry the answer.** Recorded because a working control on a void test is
+the most persuasive wrong result available.
+
+---
+
+**⛔ THE TIMESTAMP CANNOT BE BOUNDED.** A reading of **51 at 27 August 20:13** does not bracket the
+loss: **52 current records predate that reading**, and `51 + 6 = 57`, not 59. ⭐ **Backdated inserts
+were occurring, and merge-by-id preserves original timestamps** (`ios_capture_bridge.dart:243-247`
+rebuilds with `timestamp: existing.timestamp` — ✅ Windows-verified). **So the lost record may carry
+any timestamp**, and no date-range reasoning about it is admissible.
+
+---
+
+**⭐ THE CANDIDATE MECHANISM SET — ✅ WINDOWS-VERIFIED, AND WIDER THAN A DELETION.**
+
+**Every write to the table funnels through exactly ONE call:** `event_record.dart:750`, inside
+`persistEvents` (`:748`). **It has five call sites in three files:**
+
+| entry point | user action required? |
+|---|---|
+| `home_screen.dart:490`, `:499`, `:669` | the app's own list writes — add, edit, delete, sort |
+| `capture_inbox.dart:369` | ⛔ **NONE.** A drain merge writes `plan.merged` |
+| `ios_capture_bridge.dart:292` | ⛔ **NONE.** The iOS drain writes `merged` |
+
+⛔ **THE DEVICE IS AN iPHONE, SO THE iOS DRAIN IS LIVE ON IT — AND THE App Group MIRROR IS NOW
+EMPTY, WHICH IS WHAT A DRAIN THAT RAN LEAVES BEHIND.**
+
+⛔ **AND BOTH MERGE PATHS SILENTLY DE-DUPLICATE BY id:**
+
+    ios_capture_bridge.dart:211    if (byId.containsKey(r.id)) continue;
+    capture_inbox.dart:121         if (byId.containsKey(record.id)) continue;
+    ios_capture_bridge.dart:272    merged ..addAll([for (final id in order) byId[id]!])
+    capture_inbox.dart:256         final merged = [for (final id in order) byId[id]!]
+
+⭐ **A record whose id already appears is DROPPED, not merged, and the written list is one shorter
+with no user action anywhere in the path.**
+
+⛔ **AND THE SCHEMA PERMITS THE DUPLICATE THAT WOULD TRIGGER IT: `event_store_sqlite.dart:90` declares
+`id TEXT NOT NULL` — NOT `PRIMARY KEY`, NOT `UNIQUE`.** ⚠️ **So the merge-by-id semantics the whole
+app rests on are an unenforced assumption, and the dedup branch is live code rather than a dead
+guard.**
+
+⚠️ **THIS IS A CANDIDATE, NOT THE CAUSE, AND IT IS NOT OFFERED AS ONE.** It is recorded because it is
+the first mechanism found that produces a **silent one-record loss with no deliberate act**, and
+because it was absent from the enumeration this finding was briefed from. ⛔ **It leaves no trace
+either, so it cannot be confirmed or excluded from the device.** ⚠️ **Do NOT let it become the
+explanation** — that is precisely the available-explanation bias already recorded against this
+project, where a known defect was accepted as the cause of three unrelated failures.
+
+⚠️ **One qualifier on the deletion reading, ✅ Windows-verified and cutting both ways:** History's
+delete is **confirmed by a dialog** — `history_screen.dart:589` guards on `confirm != true` — before `removeWhere` at `:591`
+and `onRecordsChanged` at `:592`. **So it is a two-tap sequence, not a single stray tap** — which
+weakens the accidental-tap reading without excluding it, and does not touch §13(ab)'s density
+argument at all.
+
+---
+
+**⚠️ INFERRED RATHER THAN READ, AND FLAGGED AS SUCH:**
+
+  · **which code path removed the record** — five candidate call sites, nothing distinguishing them
+  · **whether a deletion was deliberate**
+  · **the record's identity, timestamp and contents** — ⛔ **unrecoverable.** Transcripts recorded
+    **counts, never ids.**
+
+---
+
+**⚠️ THE CONVERGENCE, RECORDED WITHOUT OVERCLAIMING.** The session that lost a record is the same
+session that recorded History's unlabelled delete control as a finding. ⛔ **That is a coincidence of
+subject matter, not evidence.** A trash tap fits the facts; so do other paths; **nothing
+distinguishes them**, and the storage model guarantees nothing ever will.
+
+---
+
+**⛔ CROSS-REFERENCE §13(ab), WHICH CHANGES CHARACTER TODAY.** §13(ab) records **eleven unlabelled
+destructive controls per screen, 25 px apart, announcing nothing** until the labels landed on
+9 September 2026. ⭐ **It was a question about density. It is now a question about density in a system
+with no audit trail** — where the affordance is dense, was silent, and the storage cannot say
+afterwards whether one was pressed.
+
+---
+
+**⛔ WHAT THIS FINDING DOES NOT LICENSE.** No storage-model change is proposed here and none should be
+attempted from this finding alone. ⚠️ **The obvious repairs — a per-record delete, a tombstone, an
+`id` uniqueness constraint, an audit log — each change the write path that every screen and both
+drains depend on**, and §13(bc) already records why the store-level surface needs its consumers
+enumerated **before** it is touched, not after. ⭐ **The one thing that is safe and not yet done is
+preserving the evidence**, below.
+
+---
+
+**⚠️ THE EVIDENCE, AND IT IS THE ONLY PROOF THE 59 STATE EXISTED. Mac-reported paths and hashes:**
+
+| artefact | detail |
+|---|---|
+| session transcript | `OneDrive/Projects/App Dev/Claude/MER Device Baselines/EVIDENCE 2026-08-30 session transcript (59-record state)` |
+| its hash and size | sha256 `9aac0a4f…aad58`, **7,800,641 bytes** |
+| a separate extract | **8,436 bytes** |
+| second copies | `~/Downloads` on the Mac |
+
+🔴 **AND A LIVE GAP, ✅ WINDOWS-VERIFIED THE SAME DAY: NONE OF IT HAS REACHED WINDOWS.** That folder
+holds **12 files, every one dated 27 August 2026**, and a case-insensitive search for `EVIDENCE`
+returns **zero**. ⚠️ **Three readings and this finding picks none of them:** OneDrive has not yet
+propagated it; it was written to a local path that is not inside the synced folder; or sync is
+stalled. ⛔ **Until one of those is settled, the only evidence that the 59 state ever existed is on a
+single machine** — which is this workspace's own decoy-backup lesson, on the artefact that documents
+an unrecoverable data loss. **Verify it from the Mac and confirm the upload, rather than assuming the
+path implies it.**
