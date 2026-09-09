@@ -1106,6 +1106,64 @@ bound on the font difference, not a measurement of it.**
 available, and iOS is the tighter case** — the current 98 characters already take three lines there
 at 430, so a 126-character string will take more at 306. **A candidate chosen on the Android numbers
 alone will be chosen on the wider of the two margins.**
+✅ **FIXED 9 September 2026. The finding above stands as written; the copy it describes is gone.**
+
+**SHIPPED, quoted from `home_screen.dart`:**
+
+> *A backup is your own copy — the only one that moves to a new device. Save it somewhere lasting.*
+
+**95 characters against 98.** The superseded wording is preserved verbatim in a comment above it, per
+this document's convention.
+
+⭐ **IT IS SHORTER AND ONE LINE SHORTER, not merely not-longer.** Measured in
+`test/backup_banner_copy_measure_test.dart`, Roboto at the theme-resolved style:
+
+| | 375 | 430 | 800 |
+|---|---|---|---|
+| previous, 98 chars | **3 lines · body 54.0 · banner 185** | 2 · 36.0 · 167 | 2 · 36.0 · 167 |
+| **shipped, 95 chars** | ✅ **2 lines · body 36.0 · banner 167** | 2 · 36.0 · 167 | 2 · 36.0 · 167 |
+| the longer candidate, 126 chars | 3 · 54.0 · 185 | **3 · 54.0 · 185** | 2 · 36.0 · 167 |
+
+**Text column READ from the live widget tree: 306 / 361 / 491** — the last being §13(aa)'s
+`maxWidth: 520` cap binding. **Banner height is `131 + body height`.**
+
+**WHY THE SHORTER CANDIDATE BEAT THE LONGER ONE THAT NAMED DESTINATIONS:**
+
+1. ⛔ **The chooser already names them one tap later** — *"Email, cloud storage, spreadsheets"*. A
+   banner that names destinations **pre-empts the chooser rather than complementing it.**
+2. ⛔ **On iOS, "save it" is the one verb the app does not offer.** `file_selector` implements only
+   `openFile`/`openFiles` there, so *"Save to a file"* is compiled out and Share is the only route.
+3. ⭐ **Naming a cloud destination puts the suggestion before the user has chosen to share at all**,
+   in an app whose whole differentiator is that nothing leaves the device unless the user sends it.
+4. ✅ **And it cannot make the banner taller on the platform that could not be measured.** The longer
+   one takes 3 lines at both 375 and 430 in Roboto, and iOS is wider still.
+
+**WHAT THE COPY DELIBERATELY DOES NOT SAY, each ruled out on evidence:**
+
+| Not said | Why |
+|---|---|
+| that an uninstall destroys the events | ⛔ **not reliably true.** `android:allowBackup` absent so Android defaults to allowing Auto Backup, no `dataExtractionRules` or `fullBackupContent`; `isExcludedFromBackup` 0 hits and the database sits in `getApplicationSupportDirectory()`, which device backups include. ⚠️ **Both INFERRED** — platform behaviour, not read from this repo |
+| that a backup is the only way to KEEP events | ⛔ **false**, for the same reason |
+| that it contains everything | ⛔ **false** — §13(ba): no vocabulary, no hide/retire state |
+| that backing up clears this banner | ⛔ **not true on Windows via Share** — §13(bb) |
+
+⚠️ **"device", not "phone", and it is not a style preference.** This app ships on the Microsoft
+Store, so *"phone"* addresses a Windows user as someone they are not — and *"device"* is already the
+word on screen here and in the share sheet. **A third word for one thing is what §1 is about.**
+
+⛔ **iOS REMAINS UNMEASURED AND THAT IS NOT A GAP THIS FIX CLOSES.** Roboto puts the PREVIOUS copy at
+2 lines at 430 while the real iOS device capture shows **3**, so the method is not valid for iOS and
+the figures above are Android's. ⭐ **The shorter string is the safe choice precisely because iOS
+could not be measured** — it is one line shorter than a string already known to fit there.
+
+⚠️ **AND YESTERDAY'S CALIBRATION FIGURE IS CORRECTED: 18.1%, not 23.3%.** The first computation
+omitted the theme's `letterSpacing: 0.25`, which the app's own `TextStyle` does not set and
+therefore inherits. ⛔ **That was the same class of error as §13(ay) — a measurement missing an
+INPUT the harness supplied — caught this time because the rendered paragraph and the calculator
+disagreed on the previous copy's line count at 375, 3 against 2.** ⭐ **Two instruments on one
+quantity is what found it; they now agree to 0.0 at every width.** The 18.1% is still an upper bound
+on the font difference, since the reference capture's Dynamic Type setting is unknown and §13(u)
+records that this app never reads `textScaler`.
 
 ### (h-ii) Four capture-derived vocabulary items, deferred as one
 
@@ -4107,3 +4165,53 @@ picture of the app, when the vocabulary is absent.
 sheet the banner opens. **They are two strings, they can disagree with each other, and fixing one
 does not fix the other** — but any replacement for §13(h) has to be read against this one, because
 a user meets them four seconds apart.
+
+---
+
+### (bb) 🔴 ON WINDOWS THE SHARE PATH DOES NOT CLEAR THE BACKUP COUNTER
+
+**Code-verified, 9 September 2026**, in `services/backup_service.dart`. ⛔ **Behaviour, not copy.
+Found while checking the copy for §13(h), and it is not a copy problem.**
+
+    iOS      Share only ("Save to a file" is compiled out)  ->  Share CLEARS it
+    Android  Save (to Downloads) or Share                   ->  BOTH clear it
+    Windows  Save (file picker) or Share                    ->  ONLY Save clears it
+
+**THE MECHANISM.** `markBackupTaken()` has three call sites. Two are unconditional after a
+successful write — `backupSaveAs`'s Android Downloads branch and its desktop file-picker branch. The
+third is gated:
+
+    bool backupCountsAsTaken(ShareResultStatus status) => status == ShareResultStatus.success;
+
+⛔ **And `share_plus` reports `unavailable` on Windows, macOS and Linux — the source says so:**
+*"Windows, macOS and Linux report `unavailable` — nothing is knowable, so nothing is counted and the
+reminder simply keeps running."*
+
+⭐ **SO A WINDOWS USER CAN COMPLETE A SHARE — email the file to themselves, put it in cloud storage
+— AND STILL BE TOLD THEY HAVE EVENTS SINCE THEIR LAST BACKUP.** The banner reappears at the next
+launch, from the same tenth event, having been actioned.
+
+✅ **THE DESIGN INTENT IS RIGHT AND IS RECORDED IN THE SOURCE**, which is why this is a defect and
+not a mistake: *"Invoking the sheet is not evidence of a backup. A user who opens it and cancels
+must keep their reminder, not be told they are covered."* ⭐ **Erring toward the reminder is the
+correct direction for a safety feature.** The cost is that on desktop it cannot tell a completed
+share from a cancelled one, and treats both as cancelled.
+
+⛔ **AND THIS IS THE ACCURATE VERSION OF A CONCERN THAT WAS PREVIOUSLY ASSERTED WRONG.** It was
+claimed in briefing that *"the desktop backup counter never clears"* — that the banner is permanent
+on Windows from the tenth event. **That was false**, and §13(h) records that it never reached any
+file (0 occurrences across `docs/`, `STATUS.md` and `CLAUDE.md`, against a live control).
+⭐ **`backupSaveAs` clears it, and the source explicitly says desktop users clear it that way.**
+⚠️ **The real defect is narrower and only reachable through one of the two options** — which is why
+the wrong version could not be found by looking, and the right one only surfaced from reading both
+paths.
+
+⚠️ **NO FIX PROPOSED, and the shape is not obvious.** `ShareResultStatus.unavailable` genuinely
+carries no information, so the choices are to count an unavailable status as taken on desktop
+(which would mark a cancelled sheet as a backup, the exact thing the guard exists to prevent), to
+tell the user on desktop that Share will not clear the reminder (copy, and it contradicts nothing),
+or to leave it. ⛔ **All three are decisions, not repairs.**
+
+⚠️ **UNMEASURED: whether macOS and Linux behave as Windows does here.** The source names all three
+together, but only Windows is a shipping target and only Windows was reasoned about. ⛔ **Do not
+infer the other two from this entry.**

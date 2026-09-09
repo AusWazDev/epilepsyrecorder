@@ -33,17 +33,24 @@ import 'package:medical_event_recorder/screens/home_screen.dart';
 /// then reading the body paragraph's own incoming constraint. Candidates are
 /// then laid out at exactly that width.
 
-const String kCurrent =
+/// ⛔ THE SUPERSEDED COPY, KEPT ON PURPOSE AND NOT DELETED. It is the only
+/// string the iOS device capture can be compared against — that frame shows
+/// THIS text at three lines — so the control below depends on it surviving.
+const String kPrevious =
     'Your events are stored only on this device. A backup is the only '
     'way to get them onto another one.';
 
-const String kLong =
+/// ✅ SHIPPED 9 September 2026. Must match `home_screen.dart` exactly; the
+/// assertion at the end of this test is what keeps the two in step.
+const String kShipped =
+    'A backup is your own copy — the only one that moves to a new '
+    'device. Save it somewhere lasting.';
+
+/// The longer candidate, NOT chosen — it named destinations the share sheet
+/// already names one tap later. Kept so the comparison stays reproducible.
+const String kLongRejected =
     'A backup is your own copy — the only one that moves to a new phone. '
     'Save it somewhere lasting, like your cloud drive or email.';
-
-const String kShort =
-    'A backup is your own copy — the only one that moves to a new phone. '
-    'Save it somewhere lasting.';
 
 /// Enough records to clear `kBackupReminderThreshold` with no backup recorded,
 /// so `eventsSinceLastBackup` returns the full count and the banner shows.
@@ -101,10 +108,28 @@ void main() {
       (tester) async {
     addTearDown(tester.view.reset);
 
-    // The banner's real style, read from home_screen.dart.
-    const style = TextStyle(fontSize: 13, height: 1.4, fontFamily: 'Roboto');
+    // ⭐ DRIFT GUARD. `kShipped` is a copy of a string that lives in source, and
+    // a copy nothing re-derives is exactly what this project keeps being caught
+    // by. Read the real one out of the file and compare.
+    final src = File('lib/screens/home_screen.dart').readAsStringSync();
+    final onScreen = RegExp(r"'(A backup is your own copy[^']*)'\s*\n\s*'([^']*)'")
+        .firstMatch(src);
+    expect(onScreen, isNotNull,
+        reason: 'the banner body could not be located in home_screen.dart — '
+            'either it moved or the copy changed shape');
+    expect('${onScreen!.group(1)}${onScreen.group(2)}', kShipped,
+        reason: 'kShipped has drifted from the string actually in the source');
 
-    /// Lines and height for [s] at [maxWidth], using the loaded real font.
+    // ⛔ THE STYLE MUST BE THE RESOLVED ONE, NOT THE ONE WRITTEN IN SOURCE.
+    // home_screen.dart writes `TextStyle(fontSize: 13, height: 1.4, color: ...)`
+    // with no family and no letterSpacing -- but that MERGES with the ambient
+    // DefaultTextStyle from the theme, which supplies both. Measuring with the
+    // source style alone put the PREVIOUS copy at 2 lines where the rendered
+    // widget put it at 3, at the same width and the same font. The rendered
+    // paragraph's own span style is the only honest input.
+    late TextStyle style;
+
+    /// Lines and height for [s] at [maxWidth], in the RESOLVED style.
     (int, double) layout(String s, double maxWidth) {
       final tp = TextPainter(
         text: TextSpan(text: s, style: style),
@@ -121,7 +146,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // The banner must actually be on screen, or nothing below means anything.
-      final body = find.textContaining('stored only on this device');
+      final body = find.textContaining('your own copy');
       expect(body, findsOneWidget,
           reason: 'the backup reminder must be showing at width $w — with 12 '
               'seeded records and no kLastBackupKey it should be');
@@ -141,6 +166,21 @@ void main() {
                       const Color(0xFFE8F5E9)))
           .first);
 
+      // ⭐ WHICH FONT DID THE RENDERED WIDGET ACTUALLY USE? (az)'s rule: name
+      // every input the harness supplied. The app's TextStyle sets no
+      // fontFamily, so the rendered paragraph and the TextPainter below may not
+      // be measuring with the same font -- and if they are not, only one of
+      // them is about the real app.
+      final span = ro.text as TextSpan;
+      style = span.style!;
+      // ignore: avoid_print
+      print('  RENDERED fontFamily=${span.style?.fontFamily} '
+          'letterSpacing=${span.style?.letterSpacing} '
+          'weight=${span.style?.fontWeight} '
+          'fontSize=${span.style?.fontSize} height=${span.style?.height}  '
+          'renderedHeight=${ro.size.height.toStringAsFixed(1)}  '
+          'textPainterHeight=${layout(kShipped, colWidth).$2.toStringAsFixed(1)}');
+
       // ignore: avoid_print
       print('  ── width $w logical ──  text column ${colWidth.toStringAsFixed(1)}  '
           'rendered body ${ro.size.width.toStringAsFixed(1)}x'
@@ -149,20 +189,20 @@ void main() {
           '${bannerBox.height.toStringAsFixed(1)}');
 
       for (final (label, s) in <(String, String)>[
-        ('CURRENT (control)', kCurrent),
-        ('LONG', kLong),
-        ('SHORT', kShort),
+        ('PREVIOUS (baseline)', kPrevious),
+        ('SHIPPED', kShipped),
+        ('LONG (rejected)', kLongRejected),
       ]) {
         final (lines, h) = layout(s, colWidth);
         // ignore: avoid_print
         print('     ${label.padRight(18)} ${s.length.toString().padLeft(3)} chars  '
             '$lines lines  height ${h.toStringAsFixed(1)}  '
-            'delta vs current ${(h - layout(kCurrent, colWidth).$2).toStringAsFixed(1)}');
+            'delta vs previous ${(h - layout(kPrevious, colWidth).$2).toStringAsFixed(1)}');
       }
     }
 
     // ⛔ THE CONTROL FAILED, AND IT IS REPORTED RATHER THAN SUPPRESSED.
-    // Roboto wraps the current copy to TWO lines at 430; the real iOS device
+    // Roboto wraps the PREVIOUS copy to TWO lines at 430; the real iOS device
     // capture shows THREE. So SF Pro is WIDER than Roboto at 13 px w400 by
     // enough to change the line count, and Roboto is NOT a stand-in for iOS.
     //
@@ -171,9 +211,9 @@ void main() {
     tester.view.physicalSize = const Size(430, 932);
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
     await tester.pumpAndSettle();
-    final body2 = find.textContaining('stored only on this device');
+    final body2 = find.textContaining('your own copy');
     final col = tester.renderObject<RenderParagraph>(body2).constraints.maxWidth;
-    final (controlLines, _) = layout(kCurrent, col);
+    final (controlLines, _) = layout(kPrevious, col);
 
     // Calibration: the iOS capture's FIRST rendered line, measured off the
     // frame at 313.3 logical for these 45 characters. Roboto's width for the
@@ -181,13 +221,13 @@ void main() {
     const iosLine1 = 'Your events are stored only on this device. A';
     const iosLine1Measured = 313.3;
     final tp = TextPainter(
-      text: const TextSpan(text: iosLine1, style: style),
+      text: TextSpan(text: iosLine1, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
     // ignore: avoid_print
     print('');
     // ignore: avoid_print
-    print('  CONTROL current copy at 430 in Roboto: $controlLines lines; '
+    print('  CONTROL previous copy at 430 in Roboto: $controlLines lines; '
         'the iOS device capture shows 3 -> CONTROL FAILED, method not valid for iOS');
     // ignore: avoid_print
     print('  CALIBRATION "$iosLine1"');

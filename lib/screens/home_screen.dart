@@ -1652,9 +1652,24 @@ class _BackupReminderBanner extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
+          // ⛔ REWRITTEN 9 Sep 2026. Previously: "Your events are stored only
+          // on this device. A backup is the only way to get them onto another
+          // one." — see AUDIT.md §13(h). That framed backup as DEVICE TRANSFER,
+          // which is the least important thing the file does, so a single-device
+          // user read it and concluded it did not apply to them.
+          //
+          // What it deliberately does NOT say, each ruled out on evidence:
+          // that an uninstall destroys the events (not reliably true on Android
+          // or iOS — see §13(h)); that a backup is the only way to KEEP them
+          // (false); that it contains everything (false — §13(ba): no
+          // vocabulary, no hide/retire state); or that backing up clears this
+          // banner (not true on Windows via Share — §13(bb)).
+          //
+          // "device", not "phone": this app ships on the Microsoft Store, and
+          // the word already on screen here and in the share sheet is "device".
           const Text(
-            'Your events are stored only on this device. A backup is the only '
-            'way to get them onto another one.',
+            'A backup is your own copy — the only one that moves to a new '
+            'device. Save it somewhere lasting.',
             style: TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF2E7D32)),
           ),
           const SizedBox(height: 10),
