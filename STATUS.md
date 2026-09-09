@@ -482,6 +482,15 @@ add-only** — `RestorePlan`: *"There is no replace mode and no 'start afresh' h
 by design."* ⭐ **So on a fresh install, merging against an empty list is a full
 reconstruction: it rebuilds what an uninstall destroys.**
 
+⚠️ **QUALIFIED 9 September 2026 — "what an uninstall destroys" is NOT uniform across
+platforms, and `AUDIT.md` §13(h) carries the evidence.** **READ:** `android:allowBackup` is absent
+from the manifest and there are no `dataExtractionRules` or `fullBackupContent` files, so Android
+defaults to allowing Auto Backup; `isExcludedFromBackup` returns 0 across `ios/` and `lib/`, and the
+database sits in `getApplicationSupportDirectory()`, which device backups include. ⚠️ **INFERRED:**
+what each OS then does with that. ⛔ **The sentence holds on Windows (MSIX) and is unreliable on
+Android and iOS.** ⭐ **The restore claim itself is unaffected — a restore does rebuild the streams
+it carries; what is qualified is the assumption that nothing else would have.**
+
 **Export is the sharing path.** CSV, 17 columns, and the screen says so —
 *"This is a copy to share or work with. **It cannot be read back** into the app."*
 

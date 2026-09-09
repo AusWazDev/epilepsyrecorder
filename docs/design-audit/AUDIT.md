@@ -1032,6 +1032,80 @@ important thing the file does.**
 *This corrects an error this document itself made on 31 Aug — see §9's annotation on the
 preservation path, where "export is the only preservation path" was recorded and later withdrawn.
 The banner's copy carries the same misconception the audit did.*
+➕ **FEASIBILITY READ, 9 September 2026 — THE FINDING STANDS AND ITS DIAGNOSIS IS CORRECTED. The
+banner is pointed at the WRONG RISK, not at a risk that does not exist.**
+
+⛔ **THE CLAIM THIS FINDING RESTS ON IS NOT UNIFORMLY TRUE, AND THE REPLACEMENT COPY CANNOT STATE
+IT FLATLY.** The sentence above — *"restore on a fresh install merges against an empty list and
+reconstructs what an uninstall destroys"* — assumes an uninstall destroys the data on every
+platform. **It does not.**
+
+| Platform | Does uninstall destroy it? | Basis |
+|---|---|---|
+| **Windows** | ✅ **Yes.** MSIX uninstall removes app data and there is no OS cloud backup | ⚠️ **INFERRED** — platform behaviour, not read from this repo |
+| **Android** | ⛔ **NOT RELIABLY.** `android:allowBackup` is **absent from the manifest**, and its documented default is **true**, so Google Auto Backup may capture the app data directory and restore it on reinstall | **READ:** `allowBackup` 0 hits (control `android:label` 2 hits); no `dataExtractionRules` or `fullBackupContent` XML anywhere in `android/` (0 files). ⚠️ **INFERRED:** what Android then does with it |
+| **iOS** | ⛔ **NOT RELIABLY.** The database lives in `getApplicationSupportDirectory()`, which is included in iCloud and Finder device backups, and **nothing excludes it** | **READ:** `isExcludedFromBackup` 0 hits across `ios/` and `lib/` (control: 4 files reference the App Group). ⚠️ **INFERRED:** iOS backup inclusion rules |
+
+⭐ **SO THE FINDING SURVIVES AND ITS ARGUMENT CHANGES.** The banner is still wrong — but not because
+it understates a total-loss risk. **It is wrong because it names DEVICE TRANSFER, which is the least
+important thing the file does, when the real point is that a backup is the only copy under the
+user's own control.** ⚠️ *"A backup is the only way to keep your events"* would have been wrong in
+the other direction, and would have been **the fourth time this app's copy was written from a
+belief rather than from the model.**
+
+⛔ **AND A CLAIM THAT NEVER REACHED A FILE IS RECORDED HERE SO IT CANNOT ARRIVE LATER.** *"The
+desktop backup counter never clears"* was asserted repeatedly in briefing and **is false**.
+`backupCountsAsTaken` gates only the SHARE path; `backupSaveAs` calls `markBackupTaken()` directly
+after a successful write, and the source says so: *"Desktop users still clear it via Save to a file,
+where completion is known."* ✅ **Searched: 0 occurrences in `docs/`, `STATUS.md` or `CLAUDE.md`
+(control: a known phrase returns 2), so there is nothing to retract in place — it never landed.**
+
+⚠️ **THE REAL ASYMMETRY THE COPY MUST SURVIVE, AND IT IS NOT THE ONE THAT WAS FEARED:**
+
+    iOS       Share only  ("Save to a file" is compiled out -- file_selector has no iOS
+                           save implementation)          -> Share DOES clear the counter
+    Android   Save (to Downloads) or Share               -> both clear it
+    Windows   Save (file picker) or Share                -> ONLY Save clears it;
+                                                            Share reports `unavailable`
+
+⛔ **So on Windows a user can complete a share and still be told they have events since their last
+backup.** The copy must not promise that backing up clears the banner.
+
+**MEASURED FOR THE REPLACEMENT, 9 September 2026** — `test/backup_banner_copy_measure_test.dart`.
+⭐ **The text column is READ from the live widget tree, not estimated:**
+
+| Viewport | Banner width | Text column |
+|---|---|---|
+| 375 | 335 | **306** |
+| 430 | 390 | **361** |
+| 800 | 520 | **491** — the `maxWidth: 520` cap of §13(aa) binding |
+
+**Line counts in ROBOTO, which is Android's real font, at 13 px w400:**
+
+| | 375 | 430 | 800 |
+|---|---|---|---|
+| current, 98 chars | 2 | 2 | 2 |
+| LONG candidate, 126 chars | **3** | **3** | 2 |
+| SHORT candidate, 94 chars | 2 | 2 | 2 |
+
+⭐ **Banner height is `131 + body height`, so on Android the LONG candidate makes the banner 18
+logical points TALLER at 375 and 430. The SHORT candidate does not change it at all.**
+
+⛔ **AND THE CONTROL FAILED, WHICH IS REPORTED RATHER THAN WORKED AROUND.** The current copy wraps
+to **2 lines in Roboto at 430** and the real iOS device capture shows **3**. ⚠️ **So Roboto is not a
+stand-in for SF Pro and the iOS line counts above are NOT established.** Calibrated against that
+capture's first line — 45 characters rendered at 313.3 logical — **SF Pro measures 23.3% wider than
+Roboto at the same nominal size.**
+
+⚠️ **AND THAT 23.3% CANNOT BE DECOMPOSED FROM ONE CAPTURE.** It is a real user's device, its Dynamic
+Type setting is unknown, and §13(u) records that this app never reads `textScaler` — so the figure
+combines the font difference with whatever text scale that device was set to. ⛔ **It is an upper
+bound on the font difference, not a measurement of it.**
+
+⭐ **WHAT THIS MEANS FOR THE DECISION: the Android figures are real, the iOS figures are not
+available, and iOS is the tighter case** — the current 98 characters already take three lines there
+at 430, so a 126-character string will take more at 306. **A candidate chosen on the Android numbers
+alone will be chosen on the wider of the two margins.**
 
 ### (h-ii) Four capture-derived vocabulary items, deferred as one
 
@@ -3972,3 +4046,64 @@ until shown otherwise, and a substitute that is never named is never checked.**
 DAYS OF CONFIDENT WRONG NUMBERS: `iiiii` and `WWWWW`.** They measure identically at 66.3, and no
 proportional font can do that. ⛔ **The question was never "is the measurement right" — it was
 "what is this measuring with".**
+
+---
+
+### (ba) 🔴 THE BACKUP DOES NOT CONTAIN THE VOCABULARY — A PRESERVATION GAP, NOT A COPY PROBLEM
+
+**Code-verified, 9 September 2026**, against `models/backup.dart` and `services/backup_service.dart`.
+⛔ **Nothing in this document has recorded it.**
+
+**WHAT THE ENVELOPE CARRIES** (`buildBackupJson`, schema **4**): `format`, `schemaVersion`,
+`appVersion`, `exportedAt`; `recordCount` + `records`; `medicationNoteCount` + `medicationNotes`;
+`conditionCount` + `conditions` (as **names**, with `seededKey`, `isActive`, `sortOrder` — no ids,
+because `condition.id` is AUTOINCREMENT and local); and `eventTypeConditions`, the event-type-value
+to condition-name map.
+
+⛔ **WHAT IT DOES NOT CARRY: the vocabulary tables.** No `event_type`, no `observation`, no
+`trigger_option`. ✅ **And the restore path never touches them** — `Vocabular` returns **0 hits**
+across `backup_service.dart` (control: `MedicationNote` returns 5).
+
+**SO A RESTORE ONTO A FRESH INSTALL LOSES:**
+
+1. ⛔ **Every USER-DEFINED vocabulary entry that no surviving record happens to use.** An
+   observation or trigger the user added and has not yet logged is simply gone.
+2. ⛔ **Every hide / retire decision.** `is_active` is the mechanism §13's D6 rests on — *"entries
+   are hidden, never deleted"* — and **none of that state is in the file.** A user who curated a
+   long seeded list down to the handful they use gets the full list back.
+
+⚠️ **RECORD VALUES DO SURVIVE, WHICH IS WHY THIS IS EASY TO MISS.** `EventRecord.toMap()` carries
+`feelings` and `triggers` as plain strings, and §2 records that `_pinned` exempts *"orphan values a
+record already holds"*, so a restored record still displays what it holds. ⭐ **The DATA is intact
+and the user's CURATION is not.** Nothing is silently wrong on screen, which is exactly the property
+that would keep this unnoticed.
+
+⭐ **THIS IS THE SAME ARGUMENT THAT PUT MEDICATION NOTES IN THE ENVELOPE AT SCHEMA 2 AND CONDITIONS
+AT SCHEMA 3, AND THE FILE SAYS SO IN ITS OWN WORDS** — *"a restore onto a new device silently lost
+every one of them, in the single feature whose stated purpose is that this file is the only copy
+that survives losing the phone"*, and for conditions, *"lost PREFERENCE rather than lost records …
+But SILENT is the property that matters: nobody would know to restate it."* ⛔ **Both arguments
+apply to the vocabulary unchanged, and it was not added.**
+
+⚠️ **NOT PROPOSED AS A FIX HERE, AND THE SHAPE IS NOT OBVIOUS.** Adding vocabulary to the envelope
+is a schema 5 change, and merge semantics need deciding: append-only means a restored `is_active:
+false` must not silently re-hide an entry the target user has since un-hidden. **That is a design
+question, not a serialisation one.**
+
+---
+
+⚠️ **AND A SECOND COPY DEFECT, FOUND IN THE SAME READ AND RECORDED SO IT GETS ITS OWN DECISION
+RATHER THAN BEING SWEPT INTO §13(h).** The backup chooser's blurb (`backup_service.dart`, the sheet
+opened by `Back up now`) reads:
+
+> *"Saves every event to a file you can share or store. Keep it somewhere off this device."*
+
+⛔ **It is wrong in both directions at once.** It **understates** — the file also carries medication
+notes, conditions and the type-to-condition map, which is precisely what schemas 2 and 3 were added
+to fix. And it **overstates** — *"every event"* invites the reading that the file is a complete
+picture of the app, when the vocabulary is absent.
+
+⭐ **Recorded as a SEPARATE defect from §13(h) on purpose.** §13(h) is the home banner; this is the
+sheet the banner opens. **They are two strings, they can disagree with each other, and fixing one
+does not fix the other** — but any replacement for §13(h) has to be read against this one, because
+a user meets them four seconds apart.
