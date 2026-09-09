@@ -389,6 +389,32 @@ instrument measuring the wrong pixels. §13(aj)'s frames were the wrong subject.
 instrument measuring the RIGHT property on a SUBSTITUTE INPUT that the harness supplied silently.**
 ⛔ **Ask what the harness is standing in for, not only whether the harness is working.**
 
+⚠️ **AND THE AMENDMENT THAT MAKES THIS RULE AND THE CAPTURE RULE POINT OPPOSITE WAYS ON PURPOSE,
+added 9 September 2026.**
+
+⛔ **WHERE A CLAIM TURNS ON GLYPH WIDTH, THE REAL RENDER IS AUTHORITATIVE AND THE WIDGET TEST IS
+NOT.** That is the exact inverse of the rule below, which says geometry comes from widget tests and
+appearance from captures — and both are right, because they govern **different properties**:
+
+    PROPERTY                                    AUTHORITY
+    position, offset, centring, margin          widget test   (a capture cannot; see the rule below)
+    constraint, overflow, proportion, void      widget test
+    tap-target size derived from padding        widget test
+    HOW WIDE A RENDERED STRING IS               THE REAL RENDER   <-- inverted
+    colour, type, whether copy reads well       the real render / capture
+
+⭐ **THE TEST THAT TELLS THEM APART: does the number change if the FONT changes?** If yes, a widget
+test cannot answer it as configured. **If no, the widget test is authoritative and a capture is
+not.**
+
+⚠️ **A REAL RENDER HERE MEANS A FRAMEBUFFER — `adb screencap`, a simulator screenshot, or a device
+capture at a known DPR.** ⛔ **NOT `PrintWindow`**, which fails the separate way recorded below.
+
+⛔ **DO NOT READ THIS AS "PREFER CAPTURES WHEN UNSURE".** It is a narrow inversion for one property.
+⭐ **Two rules pointing opposite ways is not a contradiction — it is what it looks like when the
+question is "which instrument is honest about THIS quantity" rather than "which instrument is
+better".**
+
 ⚠️ **Full history in `docs/design-audit/AUDIT.md` §13(ay) (retracted), §13(as) and §13(au).**
 
 ### ⛔ CAPTURES ANSWER "HOW DOES IT LOOK". THEY DO NOT ANSWER "WHERE IS IT" OR "HOW BIG IS IT"

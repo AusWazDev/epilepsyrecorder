@@ -3675,6 +3675,81 @@ figures were carried into this session from a conversation, in the wrong pairing
 surfaced together on the first look. ⭐ **A discrepancy that exists only in a chat transcript is
 exactly what this project's two-tool split says cannot be relied on; the fix is not to distrust it
 but to go and read the file it is about.**
+➕ **RECONCILIATION ATTEMPTED 9 September 2026 AND NOT ACHIEVED. The delta stays OPEN, and this
+records what was established, what was ruled out, and what would close it.**
+
+⛔ **THE OFF-DEVICE COPIES ARE NOT ON THIS MACHINE.** This entry says the reconciliation *"closes
+cheaply"* from the three `mer_events.db` copies. ⚠️ **They were made on the MAC** —
+`STATUS.md`'s *"Session: 7 September 2026 (evening) — Mac"* — and a Windows session cannot reach
+them.
+
+**Searched with live controls, because eleven probe failures this session were apparatus, not
+absence:**
+
+    mer_events / epilepsy*db / mer*.sqlite across C:\dev, OneDrive\Projects,
+    ~/.claude, Documents, Downloads, Desktop        0 hits
+    any .db or .sqlite ever committed to this repo   0
+    POSITIVE CONTROL  AUDIT.md under C:\dev          1 hit
+    POSITIVE CONTROL  *.db under OneDrive\Projects   1 hit
+
+⭐ **THE APPARATUS IS LIVE AND THE NULL IS REAL. The copies exist; they are on the other machine.**
+
+⭐ **AND A BASELINE SET NOBODY HAD RECORDED WAS FOUND, WHICH IS THE WRONG DEVICE AND IS RECORDED SO
+IT IS NOT MISTAKEN FOR THE COPIES.** `OneDrive\Projects\App Dev\Claude\MER Device Baselines` —
+**11 files, all 27 August 2026**: three JSON backups, three CSV exports, three `BASELINE …txt`
+notes, `baseline.py` and `seeds.txt`. ⛔ **Every one is the TECLAST P30 TABLET at 72 records**, and
+the notes say so in their first line. **They bear on the tablet, not the iPhone, and settle nothing
+here.**
+
+⚠️ **They do incidentally confirm the tablet's arithmetic in this entry**: 66 at the SQLite
+migration (25 August, evening) and 72 by 27 August — **six added in two days of ordinary use**, so
+66→72 needs no explanation and remains no part of any discrepancy.
+
+**(d) IS ANSWERED, AND IT IS A FIRM NO. NOTHING RECORDS A DELETION — BY DESIGN.**
+
+    tombstone / deleted_at / is_deleted across lib/    0 hits
+    POSITIVE CONTROL  is_active across lib/            5 files
+
+⛔ **A single-record delete rewrites the ENTIRE event table.** `_deleteAndPersist`
+(`history_screen.dart`) does `removeWhere` then `onRecordsChanged`, which reaches
+`SqliteEventStore.save(List)` — `txn.delete('event')` followed by a re-insert of everything that
+remains, inside one transaction. ⭐ **So a deleted record leaves NO row, NO flag, NO log and NO
+Sentry event, and the surviving rows are renumbered by `eventToRow(record, i)`.**
+
+⚠️ **THAT IS EXACTLY THE SIGNATURE OBSERVED: a count one lower and nothing else changed.** ⛔ **It
+does not make deletion the cause. It means deletion cannot be excluded by looking**, which is a
+different and weaker statement — and §13(ab) is worth reading beside it: **an unlabelled
+destructive control on every History row, eleven on one screen, 25 px apart.**
+
+**(c) WHAT THE 59 COUNTED — INFERRED, NOT READ, AND FLAGGED AS SUCH.** `STATUS.md:541` says only
+*"59 event records on the device"*; `:645-647` names the method — a `devicectl` app-container copy
+— **without naming the file**. ⚠️ **The inference: the same sentence says that copy is how *"the
+59-record count AND the 34/32 active-vocabulary counts were verified"*, and the vocabulary counts
+live in SQLite tables**, so the container read that produced both was almost certainly
+`mer_events.db`. ⛔ **If that holds, the benign reading in this entry — that 59 and 58 count
+DIFFERENT STORES — is substantially weakened, because both would be the same store.** ⚠️ **It is
+an inference from one sentence and is NOT offered as a finding.**
+
+**(a) and (b) CANNOT BE ANSWERED FROM THIS MACHINE.** No per-store row count, and no
+present-in-earlier / absent-in-later comparison by id. ⛔ **A count alone was never going to settle
+it anyway — a count stays level while one row replaces another, which is why (b) was asked for by
+id rather than by total.**
+
+⛔ **NO CAUSE IS SUPPLIED, AND THAT IS DELIBERATE.** The workspace rule is explicit: a false cause
+is worse than no cause, because it closes the question. **Recorded as UNEXPLAINED.** ⚠️ One fact
+narrows it without explaining it: **no session touched the iPhone between 30 August and 7
+September** — the intervening sessions are 7 September Windows (tablet) and 7 September evening Mac
+(where 58 was measured). **So whatever happened was not a recorded development action.**
+
+✅ **WHAT WOULD CLOSE IT, precisely, and it needs the Mac and nothing else:**
+
+1. `SELECT COUNT(*) FROM event` in each of the three off-device `mer_events.db` copies, **naming
+   which copy is which** — they were taken before the first install and re-read four times.
+2. The same count against `epilepsy_event_records_v1` in the container copy, so the two stores are
+   counted separately and the *"different stores"* reading is tested rather than assumed.
+3. ⭐ **The 30 August container copy, if it was kept** — that is the only artefact that can say what
+   the 59 counted, and (c) is inference until it is read.
+4. **An id-level set difference between the earliest and latest copies**, not a count.
 
 ---
 
@@ -3808,3 +3883,92 @@ wide a glyph is.**
 construction, and it would still overflow at a sufficiently narrow width — ⛔ **but the widths at
 which it does are all below any shipping device**, and §13(am)'s 94-logical case is the only one
 ever demonstrated on a real surface.
+➕ **THE PROCESS RECORD, 9 September 2026. The retraction above is the technical fact; this is how
+it came to be written, and it is the more useful half.**
+
+⛔ **THIS FINDING WAS WRONG WHEN IT WAS WRITTEN, PUSHED WHILE WRONG, AND A FIX FOR IT WAS BRIEFED
+AND SPECIFIED BEFORE ANYONE ASKED WHETHER A WIDGET TEST MEASURES TEXT THE WAY A DEVICE DOES.**
+
+**Recorded from the briefing party's own account, and attributed rather than asserted** — the same
+sourcing as §13(av)'s *"it was never read"*: ⚠️ **a fix was pushed through over this entry's own
+`⛔ NO FIX PROPOSED HERE`, by a party that had said in the same breath that a pushback should be
+taken seriously rather than overridden — and it was overridden twice.**
+
+⭐ **WHAT ACTUALLY STOPPED IT WAS THE BRIEF'S OWN ESCAPE CLAUSE, not the pushback.** The fix brief
+carried *"you can read the widget and chat cannot. If the evidence says otherwise, say so"*, and a
+stop condition for the case where no option worked. **Both were used.** ⛔ **A brief that had merely
+instructed the fix would have shipped a change to `home_screen.dart` to satisfy a number that was
+never a text width** — and every one of this document's checks would have passed on it.
+
+⛔ **AND THE COUNTER-EXAMPLE FRAMING IN THIS ENTRY WAS BACKWARDS, WHICH IS THE PART MOST WORTH
+KEEPING.** It reads: *"the defect WAS visible in a capture and the eye missed it"*, and it read §7's
+*"best-composed screen"* as a judgement made from a clipped frame. ⭐ **The frame was never clipped.
+The EYE WAS RIGHT and the WIDGET TEST WAS WRONG.** The capture showed the title rendering in full
+with 127 logical points to spare, which is exactly what a capture is for and exactly what it
+reported.
+
+⚠️ **SO §7 IS DELIBERATELY NOT ANNOTATED, AND THAT REFUSAL IS PART OF THE RECORD.** This pass was
+briefed to annotate §7's *"best-composed screen"* as assessed from a clipped frame. ⛔ **It was
+declined, because the annotation would have inserted a FALSE CORRECTION into a section that was
+right.** ⭐ **A correction is a claim like any other and gets checked like any other** — and an
+audit that only ever adds corrections will eventually correct something that was never wrong.
+
+⭐ **THE ASYMMETRY THIS ENTRY CLAIMED IS REAL BUT POINTS THE OTHER WAY.** `CLAUDE.md`'s capture rule
+— geometry from widget tests, appearance from captures — held for §13(al), where a capture lied
+about geometry. ⛔ **Here the widget test lied about geometry and the capture told the truth**,
+because the quantity at issue was **how wide a glyph is**, which is an INPUT the harness fakes and
+a device renders. **Both rules are right about different properties, and neither is a general
+licence.**
+
+---
+
+### (az) ⛔ THE APPARATUS WAS FLAWLESS AND THE INPUT WAS WRONG — EVERY CHECK THIS SESSION BUILT OPERATES DOWNSTREAM OF THE INPUT
+
+**9 September 2026.** ⭐ **Recorded as its own entry rather than appended to §13(aj), and the reason
+is where a future reader will look.** §13(aj) is titled for the CAPTURE instrument and all four of
+its instances are capture-pipeline failures. **This is a WIDGET TEST failure**, and filing it under
+a capture finding would put it exactly where nobody searching *"why did a widget test lie"* would
+look. ⚠️ §13(aj)'s own thesis — an instrument measuring a PROXY — is also not what happened here.
+
+**WHAT HAPPENED, AND EVERY LINE OF IT PASSED:**
+
+| Check | Result |
+|---|---|
+| the geometry was measured correctly | ✅ `childrenTotal − constraints.maxWidth`, exact |
+| a model was built and fitted | ✅ **four independent points**: 320→96, 360→56, 375→41, 375→33 |
+| the boundary was PREDICTED before sweeping | ✅ stated as 336+80 and 336+72 in advance |
+| the prediction was confirmed at 1 px | ✅ clean 416 / 1 px at 415; clean 408 / 1 px at 407 |
+| three platforms agreed | ✅ Windows, Android, iOS |
+| a rival hypothesis was tested and killed | ✅ the warm-up hypothesis, with opposite predictions |
+
+⛔ **AND THE ANSWER WAS STILL WRONG, BECAUSE NOT ONE OF THOSE CHECKS WAS ABOUT THE INPUT.** The
+harness supplied a monospaced font at one em per glyph; every figure downstream inherited it.
+⭐ **A WRONG INPUT PRODUCES A PERFECTLY SELF-CONSISTENT SET OF WRONG NUMBERS — and consistency is
+what usually reads as proof.** The four points fitted **because** they shared one wrong input.
+**Fit is evidence about a model, never about its inputs.**
+
+⛔ **THIRD TIME THIS SESSION, AND THE THREE ARE NOT THE SAME FAILURE — WHICH IS THE POINT.**
+Collapsing them would repeat the error this document keeps finding:
+
+| | Where it broke | What was checked instead |
+|---|---|---|
+| **`PrintWindow`** (§13(al)) | the instrument's **OUTPUT** — it measured the wrong pixels | occlusion-independence, proven and true |
+| **the DPI-96 test** (§13(al)) | the **INFERENCE** — falsifiable but not discriminating | that the prediction could fail, which it could |
+| **the Ahem font** (§13(ay)) | the **INPUT** — a substitute supplied silently | the geometry, the model, the boundary, the platforms |
+
+⭐ **THE COMMON THREAD IS NOT THE MECHANISM. IT IS THE POSITION: each was verified DOWNSTREAM of
+where it broke.** ⛔ **And every rule added to `CLAUDE.md` this session sits downstream too** — the
+capture rule governs which instrument answers which question, the discrimination rule governs the
+inference, the prefs rule governs harness state, and the annotation rule governs the write. **Not
+one of them asks what the harness is standing in for.**
+
+**PRACTICAL FORM, and it is the one thing this entry is for: before trusting a measurement, name
+every INPUT the harness supplied rather than the system under test, and say which are real.** For a
+widget test that is at least: the font and its metrics, the platform override, the device pixel
+ratio, the view size, the locale, the text scale factor, and the clock. ⭐ **Each is a substitute
+until shown otherwise, and a substitute that is never named is never checked.**
+
+⚠️ **AND THE CHEAPEST CONTROL IS A DISCRIMINATING ONE, WHICH IS WHAT SETTLED IT IN SECONDS AFTER
+DAYS OF CONFIDENT WRONG NUMBERS: `iiiii` and `WWWWW`.** They measure identically at 66.3, and no
+proportional font can do that. ⛔ **The question was never "is the measurement right" — it was
+"what is this measuring with".**
