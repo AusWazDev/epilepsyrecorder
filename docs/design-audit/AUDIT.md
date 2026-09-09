@@ -1772,6 +1772,89 @@ brief's requirement that the search must find (k) or be considered broken is wha
 10-instance miss, reported clean.** Same shape as every filter-and-transform failure already in
 this codebase: plausible output, nothing erroring.
 
+
+✅ **FIXED 9 September 2026 — `_SelectionRow` NOW ANNOUNCES WHICH OPTION IS SELECTED. Nothing
+visual changed.** `lib/screens/log_event_screen.dart`, verified in
+`test/selection_row_semantics_test.dart`.
+
+**BEFORE, from the semantics tree on unpatched code:**
+
+    SELECTED : []
+
+⛔ **Empty. Not one of the five fields announced its answer** — severity, rescue given, did-it-help,
+second dose, referral.
+
+**AFTER, same tree, same record (severity Severe, given Yes, helped Partly, second dose No,
+referral Yes):**
+
+    SELECTED   : [Severe, Yes, Partly, No, Yes]
+    unselected : [... Mild, Moderate ... No, Yes, No, Yes, No ...]
+    node: label="Severe" tap=true isSelected=Tristate.isTrue  isButton=true
+    node: label="Mild"   tap=true isSelected=Tristate.isFalse isButton=true
+
+**THE MECHANISM IS COPIED, NOT INVENTED.** `Semantics(container: true, button: true, selected:
+kIsWeb ? null : isSelected, checked: kIsWeb ? isSelected : null)` — **the exact shape `RawChip`
+uses, READ at `chip.dart:1503-1513`**, including the framework's own reason for the web branch
+(*aria-selected only applies to certain roles*). ⚠️ **Web is not a shipped target, so that branch is
+inert today.**
+
+⭐ **AND THE CHOICE OF `RawChip` OVER `Radio` WAS DECIDED BY THE APP, NOT BY TASTE. The wizard
+already announces these same fields** — `event_wizard_screen.dart` renders them with real
+`ChoiceChip`s (5) and `FilterChip`s (2), which get this for free. **Copying the chip shape makes the
+two edit paths agree instead of giving this screen a third idiom** (§1; §10 decision 1).
+
+⛔ **AND THAT IS THE FINDING THIS FIX UNCOVERED, WHICH IS LARGER THAN THE FIX: THE TWO EDIT PATHS
+DISAGREED ON WHETHER A MEDICAL RECORD IS READABLE NON-VISUALLY.** `wantsWizard` routes an
+INCOMPLETE record to the wizard and a COMPLETE one to the form (§10 decision 1). So before this
+change, **a screen-reader user could read back the severity of a record they had not finished, and
+could not read back the severity of one they had.** ⭐ **The completeness routing axis decided
+accessibility.** That is now closed for `_SelectionRow`; §10 decision 1's open half is unaffected.
+
+**VERIFICATION, each capable of failing, with the control run against unpatched `lib/`:**
+
+| | patched | unpatched control |
+|---|---|---|
+| 1. all five fields announce their answer | ✅ pass | ⛔ **FAILS** — `SELECTED: []` |
+| 2. changing a selection changes the announcement | ✅ pass — after tapping `Severe`: `[Severe, Yes, Yes, No, No]` | ⛔ **FAILS** |
+| 3. **the render is unchanged at 375, 430, 800** | ✅ pass | ✅ pass |
+
+⭐ **TEST 3 IS THE ONE THAT MATTERS FOR "NOTHING VISUAL CHANGED", AND IT PASSES IN BOTH STATES BY
+DESIGN.** Its baseline is **36 rects — 12 option pills × 3 widths — captured from the UNPATCHED
+code and pasted in.** It still matches with the wrapper in place, so the wrapper moved nothing.
+⚠️ **A test that passed only after the change would not have proved this.**
+
+✅ **And the diff itself is the other half of that proof: one import and a `Semantics` wrapper.** No
+colour, fill, border colour, border width, padding, font size, font weight, text or layout property
+appears in it. `flutter analyze` on `log_event_screen.dart`: **13 infos before, 13 after, delta 0.**
+
+⚠️ **ONE CORRECTION TO §13(t)'s DESCRIPTION OF THIS CONTROL, found while reading it.** §13(t) says
+selection is accompanied by *"border width 0.5 → 1.5 only"*. ⛔ **It is five properties, not one:**
+fill colour, border colour, border width, **font weight w500 → w600**, and text colour. **So the
+non-colour differentiation is border width AND font weight** — §13(t) understates it. ⭐ **None of
+the five is reachable non-visually, so the finding stands; its description of the visual cue does
+not.**
+
+⚠️ **AND `_SelectionWrap` HAS THE SAME DEFECT AND IS NOT FIXED.** The multi-select for feelings and
+triggers is also a hand-rolled `GestureDetector` with no semantics, so **which observations are
+selected is still unavailable non-visually.** ⛔ **Out of this pass's scope and recorded as OPEN.**
+
+**WHY THIS WAS FIXED NOW RATHER THAN QUEUED, under §13(aw)'s test:** ⭐ **`Semantics(selected:)` is a
+property of a control, not a design decision.** Whatever the component vocabulary chooses for a
+selection control, it still has to announce its state — so the decision survives even if this
+implementation does not.
+
+⛔ **AND THE HONEST COUNTER-ARGUMENT, RECORDED BECAUSE IT IS REAL: if the vocabulary replaces
+`_SelectionRow` with a standard Flutter chip, selection semantics come free and this work is
+discarded.** It was fixed anyway because **the vocabulary has no date and this is a medical form
+whose severity a user could not read back.**
+
+⛔⛔ **AND THE SURVIVES-THE-REDESIGN ARGUMENT IS NOT SELF-VALIDATING. THE SAME ARGUMENT WAS MADE FOR
+§13(ay) ON 8 SEPTEMBER AND WAS WRONG — THERE WAS NO DEFECT AT ALL.** ⭐ **A future reader should
+treat this paragraph with suspicion, not as a warrant.** What distinguishes this case from that one
+is not the argument's form: it is that **the defect here was demonstrated by an instrument that has
+not lied** — the semantics tree, showing an empty selected set — **before any fix was written**,
+whereas §13(ay) rested on glyph widths from a harness whose font is fake.
+
 ---
 
 ### (u) 🔴 TEXT SCALE IS NEVER READ — and this may outrank (s)
@@ -2253,6 +2336,40 @@ setting and fallback naming **on top of** that tree, and they disagree with each
 ⚠️ **AND ONE THING NO READER TEST WOULD CATCH EITHER: whether a name is USEFUL.** *"Dismiss"* and
 *"Delete"* are names; neither says **what** is dismissed or deleted. ⛔ **Coverage is not
 comprehension, and this finding measured coverage.**
+⚠️ **STILL OPEN AFTER THE 9 September FIX — five things, and the fix closed the smallest of them.**
+`_SelectionRow` now announces selection state; nothing else on this list changed.
+
+1. ⛔ **THE FIVE UNNAMED CONTROLS, ONE OF THEM DESTRUCTIVE.** `event_wizard:373` back,
+   `history:460` clear-search, **`history:1248` the per-row DELETE**, `log_event:522` back,
+   `vocabulary:443` selection checkbox. ⭐ **The delete is the one that matters** — it is
+   irreversible and §13(ax) records that it leaves no row, no flag and no log. **§8 has carried it
+   since 31 August.**
+
+2. ⛔ **THE WALKTHROUGH PAGE DOTS ARE ABSENT, NOT COLOUR-ALONE.** Bare `Container`s with a
+   `BoxDecoration` colour, no text and no `Semantics`, so **a non-visual user gets no step
+   indicator in either state.** §13(t) files this under colour-alone; it is worse than that.
+
+3. ⛔ **`_SelectionWrap` — feelings and triggers — HAS THE SAME DEFECT `_SelectionRow` JUST HAD.**
+   Also a hand-rolled `GestureDetector`, also no semantics, so **which observations are selected is
+   still unavailable non-visually.** ⚠️ **Deliberately out of scope this pass and recorded so it is
+   not assumed fixed by association.**
+
+4. ⭐ **`semanticLabel` IS USED ZERO TIMES IN `lib/`, AND THAT IS THE STRUCTURAL FACT UNDER ALL OF
+   THIS.** Every name in this app is **incidental to something visible** — 97 of 117 controls are
+   named by their own text, 9 by a field label, 4 by a tooltip, 1 by a framework default.
+   ⛔ **Nothing is named on purpose.** So a control that happens to have no visible text has no name
+   by default, which is exactly the shape of the five above.
+
+5. ⚠️ **COVERAGE IS NOT COMPREHENSION.** *"Dismiss"* and *"Delete"* are names that say nothing about
+   **what** is dismissed or deleted — and both sit beside per-row content a reader has to hold in
+   memory to disambiguate. ⛔ **No audit in this document has assessed whether a name is USEFUL, and
+   this fix did not either.**
+
+⛔ **AND THE STANDING LIMIT, UNCHANGED BY THIS FIX: NO SCREEN READER HAS BEEN RUN ON ANY PLATFORM.**
+Not TalkBack, not VoiceOver, not Narrator. ⭐ **Everything above — including the fix — is measured
+from the widget and semantics trees**, and those three readers apply their own grouping, gesture
+model, verbosity and fallback naming on top and disagree with each other. ⚠️ **`Tristate.isTrue` in
+the tree is not the same claim as "a user hears 'selected'".**
 
 ---
 

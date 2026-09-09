@@ -1,3 +1,6 @@
+// `kIsWeb` only — for the `selected` / `checked` split in `_SelectionRow`'s
+// semantics, copied from RawChip. `material.dart` does not re-export it.
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -1079,7 +1082,28 @@ class _SelectionRow<T> extends StatelessWidget {
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
+            // ⛔ ADDED 9 Sep 2026 — SEMANTICS ONLY. Nothing visual changed.
+            // AUDIT.md §13(z)/§13(t): selection was carried by fill colour,
+            // border colour, border width and font weight — all VISUAL — so a
+            // screen reader announced the options and never which one was the
+            // answer, across severity, rescue given, did-it-help, second dose
+            // and referral.
+            //
+            // ⭐ The shape is COPIED FROM `RawChip` (`chip.dart:1503-1513`),
+            // not invented: container + button + selected/checked. The wizard
+            // renders these same fields with real `ChoiceChip`s, which already
+            // announce this way, so the two edit paths now agree rather than
+            // this screen getting a third idiom (§1, §10 decision 1).
+            //
+            // `checked` on web because aria-selected only applies to certain
+            // roles — the framework's own reason, kept verbatim. Web is not a
+            // shipped target, so that branch is inert today.
+            child: Semantics(
+              container: true,
+              button: true,
+              selected: kIsWeb ? null : isSelected,
+              checked: kIsWeb ? isSelected : null,
+              child: GestureDetector(
               onTap: () => onSelected(option),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
@@ -1106,6 +1130,7 @@ class _SelectionRow<T> extends StatelessWidget {
                         ? Colors.white
                         : MERColours.textMuted,
                   ),
+                ),
                 ),
               ),
             ),
