@@ -1,0 +1,116 @@
+MER — EVIDENCE EXTRACT: the 59-record state of mer_events.db
+Extracted 9 September 2026 on the Mac, read-only, from Claude Code session transcripts.
+
+WHY THIS FILE EXISTS
+  The iPhone SQLite store went 59 -> 58 event rows. No 30 August container copy was kept,
+  no JSON backup covers it (last backup 24 Aug 05:15), and the app's write model erases the
+  trace a deletion would leave. The session transcript below is the ONLY artefact that
+  records the 59 state. This extract exists so the evidence survives the 7.8 MB transcript
+  being pruned, misplaced or unreadable.
+
+SOURCE TRANSCRIPT
+  ~/.claude/projects/-Users-warwicklindsay-dev/6f910ac0-c90c-4da0-9a79-58f8b9676a10.jsonl
+  7,800,641 bytes   sha256 9aac0a4fce32866660bf053c116a5aa050c659cd191a3ce0b77f1d3c3c4aad58
+  mtime 2026-09-01 20:51:52 AEST   btime 2026-08-30 14:25:24 AEST
+  Verified copies (identical sha256):
+    OneDrive .../MER Device Baselines/EVIDENCE 2026-08-30 session transcript (59-record state) 6f910ac0.jsonl
+    ~/Downloads/EVIDENCE 2026-08-30 session transcript (59-record state) 6f910ac0.jsonl
+
+SESSION SPAN (this is the 'Session: 30 August 2026 - Mac' of STATUS.md)
+  entries 750
+  first   2026-08-30T14:25:24.140000+10:00   (2026-08-30T04:25:24.140000+00:00)
+  last    2026-09-01T20:48:44.636000+10:00   (2026-09-01T10:48:44.636000+00:00)
+
+THE LOAD-BEARING ENTRIES, VERBATIM
+  --- uuid 8166b3bc-00a4-4f71-bfac-de1e08c41b45   timestamp 2026-08-30T04:50:30.922Z  (2026-08-30 14:50:30 UTC+10:00) ---
+  {"parentUuid": "053a0ace-514f-4035-898a-3d252edbfe9c", "isSidechain": false, "message": {"model": "claude-opus-5", "id": "msg_011CeYL9VtmQbAK6maLUjgM9", "type": "message", "role": "assistant", "content": [{"type": "tool_use", "id": "toolu_01Fd1h2SofN9CJzNbwFyWBMM", "name": "Bash", "input": {"command": "SP=/private/tmp/claude-502/-Users-warwicklindsay-dev/6f910ac0-c90c-4da0-9a79-58f8b9676a10/scratchpad; echo \"=== tables ===\"; sqlite3 \"$SP/mer_events.db\" \".tables\"; echo \"=== counts ===\"; for t in $(sqlite3 \"$SP/mer_events.db\" \"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';\"); do printf \"%-28s %s\\n\" \"$t\" \"$(sqlite3 \"$SP/mer_events.db\" \"SELECT COUNT(*) FROM \\\"$t\\\";\")\"; done", "description": "Count records in device database"}, "caller": {"type": "direct"}}], "stop_reason": "tool_use", "stop_sequence": null, "stop_details": null, "usage": {"input_tokens": 2, "cache_creation_input_tokens": 548, "cache_read_input_tokens": 89228, "output_tokens": 312, "output_tokens_details": {"thinking_tokens": 0}, "server_tool_use": {"web_search_requests": 0, "web_fetch_requests": 0}, "service_tier": "standard", "cache_creation": {"ephemeral_1h_input_tokens": 548, "ephemeral_5m_input_tokens": 0}, "inference_geo": "not_available", "iterations": [{"input_tokens": 2, "output_tokens": 312, "cache_read_input_tokens": 89228, "cache_creation_input_tokens": 548, "cache_creation": {"ephemeral_5m_input_tokens": 0, "ephemeral_1h_input_tokens": 548}, "type": "message"}], "speed": "standard"}, "diagnostics": null}, "requestId": "req_011CeYL9UzSejAA9JEg5nvyE", "type": "assistant", "uuid": "8166b3bc-00a4-4f71-bfac-de1e08c41b45", "timestamp": "2026-08-30T04:50:30.922Z", "effort": "high", "session_id": "6f910ac0-c90c-4da0-9a79-58f8b9676a10", "userTyp
+
+  --- the COUNT(*) OUTPUT   uuid 7de139d7-1a37-48a5-a08a-cd489a51f8ed   2026-08-30T04:50:33.359Z  (14:50:33 UTC+10:00) ---
+      schema_meta                  15
+      event                        59
+      event_type                   4
+      observation                  56
+      medication_note              0
+      event_observation            6
+      condition                    0
+      condition_observation        0
+      trigger_option               32
+      event_trigger                4
+
+THE INSTRUMENT (the command that produced it)
+      for t in $(sqlite3 "$SP/mer_events.db" "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"); do
+        printf "%-28s %s\n" "$t" "$(sqlite3 "$SP/mer_events.db" "SELECT COUNT(*) FROM \"$t\";")"
+      done
+      description: "Count records in device database" 
+
+SIDE BY SIDE — 30 Aug 14:50:33 AEST versus the file now on the device (9 Sep pull)
+  table                     30 Aug      now      
+  schema_meta               15         15
+  event                     59         58  <-- LOST ONE
+  event_type                4          4
+  observation               56         56
+  medication_note           0          0
+  event_observation         6          6
+  condition                 0          0
+  condition_observation     0          0
+  trigger_option            32         32
+  event_trigger             4          4
+  Nine of ten tables identical. 'event' alone differs, by exactly one.
+
+THE DATABASE HAS NOT BEEN WRITTEN SINCE
+  mer_events.db  mtime 2026-08-30 16:36:41 AEST, 94,208 bytes,
+  sha256 e6366d333ee4eb7f944f23425e6f30cdfc356a4558c12f7b16ab36a27c04648a
+  Confirmed byte-identical on 7 September and again on 9 September 2026.
+  So the loss occurred in the write at 30 Aug 16:36:41 - 1h46m after the 59 reading.
+
+THE 1h46m WINDOW 14:50:33 -> 16:36:41 AEST: WHAT THE TRANSCRIPT COVERS
+  280 entries, last at 15:41:49 AEST.
+  ⛔ A 55m07s GAP follows: nothing between 15:41:49 and 16:36:57 AEST.
+  ⛔ The database write at 16:36:41 falls INSIDE that gap, 16 seconds before the
+     transcript resumes. The transcript does NOT cover the moment of the loss.
+  What the covered part shows: work on the iOS SIMULATOR - flutter run, simctl boot/
+  screenshot, layout probe tests and goldens, chip-wall measurement. The only entries
+  touching mer_events.db in the window are the two count commands at 14:50:43 and
+  14:50:50 ('Verify offerable counts from device DB', 'Count active vocabulary on device').
+  ⛔ No devicectl install and no app launch on the iPhone appear in the window.
+
+COUNT TRAJECTORY (second transcript, 441b03ec, 22 Aug 15:54 -> 29 Aug 22:32 AEST)
+  25 Aug 20:44:24   42   (migration completed 25 Aug 20:40, schema_meta agrees)
+  27 Aug 19:36:37   51
+  27 Aug 20:13:38   51
+  30 Aug 14:50:33   59   (6f910ac0, above)
+  30 Aug 16:36:41   58   (last write; unchanged through 9 Sep)
+
+  ⚠️ The 51 reading does NOT reconcile arithmetically with the current file:
+     current rows dated at/before 27 Aug 20:13:38 = 52, i.e. ONE MORE than the reading;
+     current rows dated after that instant = 6;  51 + 6 = 57, not 59.
+     => records were inserted AFTER that reading carrying timestamps BEFORE it.
+     That is restore behaviour (merge-by-id preserves original timestamps).
+  ⚠️ Corroborating: the 27 Aug tablet backup (72 records) shares 37 ids with the iPhone's
+     58, all 37 with IDENTICAL timestamps, and all 37 inside the iPhone's pre-migration 42.
+     Overlap with the 16 post-migration records is 0.
+  ⛔ CONSEQUENCE: the lost record's timestamp CANNOT be bounded. Backdated inserts were
+     occurring, so it may carry any timestamp, not necessarily a recent one.
+
+WHY NOTHING ELSE RECORDED IT (read from source, not inferred)
+  lib/models/event_store_sqlite.dart save(), lines 441-449:
+      await txn.delete('event');                            // whole table, no WHERE
+      for (var i = 0; i < snapshot.length; i++)
+        batch.insert('event', eventToRow(snapshot[i], i));  // ordinal = list index
+  There is NO per-record delete in the file; both delete( calls are unqualified.
+  Therefore a deletion leaves: no row, no flag, no log, no Sentry event,
+  NO ordinal gap (ordinals are renumbered densely on every save) and
+  NO freelist residue (the table is wiped and re-inserted, pages reused).
+  Measured on the current file: ordinal dense 0-57, freelist_count 0, auto_vacuum 0.
+  ⛔ Both of those forensic tests are therefore VOID as evidence, not evidence of absence.
+
+WHAT IS INFERRED RATHER THAN READ
+  - The mechanism. Read: 59 at 14:50, 58 after the 16:36:41 write, nine sibling tables
+    unchanged. NOT established: which code path removed it, or whether a delete was
+    issued deliberately.
+  - The lost record's identity, timestamp and contents. Unrecoverable from anything on
+    this Mac. The transcripts recorded counts, not ids.
+  - That 6f910ac0 is the 'Session: 30 August 2026 - Mac' entry of STATUS.md. Inferred from
+    its 30 Aug start, its device work, and its authoring that entry - not from a label.
+
+NOT WRITTEN BY THIS PASS: AUDIT.md, the Change Register, any source file, the iPhone.
