@@ -5775,3 +5775,202 @@ the iPhone had NEITHER a rollback copy NOR a count check.** ⚠️ **The SQLite 
 its transaction *"strictly stronger than the old store's rollback key, which bounded the loss rather
 than preventing it"* — true for interruption, and silent about a wrong list, which is the failure
 that actually occurred.**
+
+---
+
+### (bi) 🔴 DETECTABILITY BY COUNT IS DISPROVED — A COUNT CHECK INSIDE `save()` WOULD NOT HAVE CAUGHT THE 30 AUGUST LOSS, AND WOULD NOT CATCH THE NEXT ONE
+
+**Scoped 9 September 2026.** ⛔ **The fix proposed from §13(bh) does not address §13(be).** ⭐ **A
+scoping pass disproved it before anything was built, and that is worth more than the fix would have
+been.**
+
+⛔ **THE REASON IS STRUCTURAL, NOT A MATTER OF WHERE THE CHECK GOES: EVERY CANDIDATE PATH SHORTENS
+THE LIST BEFORE `save()` IS CALLED.** ✅ **All four chains read from source:**
+
+    History delete    history_screen.dart:591  removeWhere
+                   -> history_screen.dart:592  onRecordsChanged
+                   -> home_screen.dart:863     _records = updated
+    inbox dedup       capture_inbox.dart:121   continue on a seen id
+                   -> capture_inbox.dart:256   merged
+                   -> capture_inbox.dart:369   persistEvents
+    iOS drain dedup   ios_capture_bridge.dart:211  continue on a seen id
+                   -> ios_capture_bridge.dart:272  merged
+                   -> ios_capture_bridge.dart:292  persistEvents
+    restore merge     backup.dart:514/553      existing-wins concatenation
+                   -> home_screen.dart:777     _records = outcome.merged
+
+⭐ **ALL FOUR REACH `persistEvents(58)`. `save()` WRITES 58. `COUNT(*)` RETURNS 58. THE CHECK
+PASSES.** ⛔ **A check comparing the post-write row count against `snapshot.length` is a FIDELITY
+check — did storage keep what it was handed — and every candidate mechanism is UPSTREAM of the thing
+it compares.**
+
+⚠️ **AND `COUNT(DISTINCT id)` DOES NOT RESCUE IT.** The dedup case **removes a duplicate**, so
+distinct equals count equals 58. The one extra query that looked like it might discriminate does not.
+
+✅ **WHAT SUCH A CHECK WOULD CATCH, stated so the finding is not read as "the check is worthless":
+SQLite failing to insert rows it was handed.** ⚠️ **A storage-layer defect that has never been
+observed on this project.**
+
+⛔ **SO IT CLOSES A HOLE NOTHING HAS FALLEN THROUGH AND LEAVES OPEN THE ONE THAT A RECORD DID.**
+
+---
+
+**⭐ AFFORDABILITY IS SETTLED AND IS NO LONGER A CONSIDERATION — AND THE RIGHT ANSWER IS "BELOW
+MEASUREMENT", NOT A NUMBER.**
+
+**Measured 9 September 2026** against real SQLite (`sqfliteFfiInit`, `inMemoryDatabasePath`, the real
+`createSchema` and `eventToRow`), **synthetic records**, 25 reps plus 5 discarded warmups, a fresh
+database per timed run, four configs interleaved within each rep:
+
+    A  the real SqliteEventStore.save()
+    B  a replica of save()'s body            <- baseline
+    C  replica + SELECT COUNT(*)
+    D  replica + SELECT COUNT(*) + SELECT COUNT(DISTINCT id)
+
+    N       B min      C min      D min     C vs B    D vs B    A vs B (CONTROL)
+    58      1.03 ms    1.14 ms    1.17 ms   +10.08%   +13.08%   0.87%
+    500     6.07 ms    5.77 ms    5.81 ms    -4.88%    -4.25%   0.18%
+    5000   59.00 ms   61.74 ms   60.79 ms    +4.66%    +3.03%   6.50%
+
+    noise floor (B p90 minus B min, over B median):  47.07% | 51.71% | 44.12%
+
+⛔ **THE DELTA IS SMALLER THAN THE INSTRUMENT, AND FOUR SEPARATE SIGNALS SAY SO:** every C and D
+delta falls **below the noise floor** at every size; the **sign flips between runs**, with C
+measuring faster than a baseline doing strictly less work; **monotonicity fails at 5,000**, where D
+must be at least C and is not; and **the A-versus-B control — the same code measured twice — differs
+by as much as the thing being measured.**
+
+⭐ **In absolute terms the worst observation is +2.74 ms on a 59 ms write at 5,000 records, and at
+the real 58 records it is +0.11 to +0.14 ms on a roughly 1 ms write.** ⚠️ **Against a write that
+already deletes and re-inserts every row, cost is not the reason not to do this.**
+
+⛔ **THREE HARNESS REVISIONS WERE NEEDED, AND THE FIRST TWO PRODUCED PLAUSIBLE NUMBERS.**
+
+    revision 1   all four configs against ONE database
+                 -> D measured FASTER than C at 5,000, which is IMPOSSIBLE:
+                    D does strictly more work. Later configs inherited a warm cache.
+    revision 2   fresh db per run, but configs run in BLOCKS
+                 -> drift over the run became a between-config difference.
+                    B's min EXCEEDED A's, although B and A are the same code.
+    revision 3   interleaved, fresh db per run, noise floor printed
+                 -> defensible, and its answer is "below measurement"
+
+⚠️ **Revisions 1 and 2 would each have supported a confident affordability claim.** ⭐ **What caught
+both was an impossibility check rather than a review of the numbers: D cannot beat C, and B cannot
+beat A.** ⛔ **This is the same class as §13(ay) — a self-consistent set of wrong numbers from a
+harness standing in silently for the real thing — and the counter was the same: ask what the harness
+substitutes, not whether it ran.**
+
+⚠️ **The harness was DELETED after the run. No test file was kept, and no source file was touched.**
+
+---
+
+**⭐ TWO THINGS WORTH KEEPING, both established while scoping and neither dependent on the check
+being built.**
+
+**(a) ✅ THE NEGATIVE CONTROL NEEDS NO PRODUCTION SEAM — AND THE MIGRATION'S DOES NOT TRANSFER.**
+`dropForNegativeControl` (`storage_migration.dart:191`, consumed at `:225`) is guarded **by its
+default value alone** — it is NOT `@visibleForTesting`, and the only such annotation in `lib/` is in
+`bounded_chip_wrap.dart`. ⭐ **It is safe because of SHAPE: a one-shot top-level function with ONE
+production caller** (`storage_boot.dart:145`) and **twelve** test call sites.
+
+⛔ **That shape does not transfer.** `save()` is declared on the CONCRETE class `EventStore`
+(`event_record.dart:643`), which doubles as the interface and is itself the prefs store, and is
+overridden by `SqliteEventStore` (`event_store_sqlite.dart:441`, `@override`) — **so a new parameter
+changes two declarations and every one of the five `persistEvents` call sites**, which would put
+an injectable drop-count into the production API of the recurring write path.
+
+⭐ **BUT THE SEAM ALREADY EXISTS: `SqliteEventStore(this.db)` takes its `Database` by constructor
+injection, and `db` is a plain `final Database`.** A test can pass a decorator that swallows one
+insert, and **`save()` compiles unchanged.** ⚠️ **It is UNEXERCISED — zero `implements Database` or
+`extends Database` in `test/`** — so the cost is writing and maintaining the decorator, not changing
+`lib/`.
+
+**(b) ⚠️ THE UNSAVED-EVENTS BANNER CANNOT BE REUSED FOR THIS, AND THAT WAS CAUGHT BEFORE ANYTHING WAS
+BUILT.** `setUnsavedEventsWarning()` (`event_record.dart:716`) persists `kUnsavedEventsKey`, home
+reads it at `:418` and renders `_UnsavedEventsBanner` at `:1088`. Its copy reads:
+
+> *"Some events aren't saved yet"* — *"They're in your list, but this device hasn't stored them. Tap
+> Retry, and avoid closing the app until it succeeds. If it keeps failing, use Back up now to save a
+> copy."*
+
+⛔ **A count mismatch after a SUCCESSFUL commit is a different fact: the records ARE stored, just not
+all of them.** ⭐ **Reusing that banner would tell the user something untrue** — and the Retry it
+offers would re-run the same write from the same short list.
+
+⚠️ **ONLY ONE OF THE FOUR AVAILABLE RESPONSES CAN REFUSE A WRITE.** Rollback can, because `save()` is
+already a single transaction, so a throw inside it reverts the delete and the inserts together.
+⛔ **That breaches the standing rule that nothing gates capture, the record or export**, and the user
+would see an edit that appears not to have happened, with nothing explaining it. **Commit-and-warn,
+Sentry-only and a persisted `schema_meta` counter cannot refuse a write.**
+
+⚠️ **INFERRED-UNKNOWN, and flagged rather than assumed: whether a Sentry-only signal reaches a
+person.** `main.dart:27-41` carries a real DSN, `environment = 'production'`,
+`tracesSampleRate = 0.1`, `sendDefaultPii = false` and a `beforeSend` hook. ⛔ **Alert rules,
+notification channels and whether anyone is subscribed live in the Sentry project, not in this
+repository, and cannot be established from here.**
+
+---
+
+### (bj) 🔴 THE REAL BLOCKER IS THE ABSENCE OF AN INTENT SIGNAL, AND IT IS A DATA-MODEL QUESTION RATHER THAN A VERIFICATION ONE
+
+**Established 9 September 2026** by the scoping pass in §13(bi). ⛔ **A decrease-detector cannot
+distinguish a legitimate delete from a loss, and no check placed at the storage layer can manufacture
+the difference.**
+
+⛔ **BECAUSE THERE IS NO PER-RECORD DELETE, A USER DELETING ONE RECORD AND A RECORD VANISHING PRODUCE
+THE IDENTICAL CALL: `save()` WITH A LIST ONE SHORTER.** ✅ Windows-verified: zero hits for
+`deleteEvent`, `removeEvent`, `deleteById` or `deleteRecord` anywhere in `lib/`, and the only event
+deletes are `save()`'s own `txn.delete('event')` and `clearAll()`'s reset path.
+
+⭐ **THE REWRITE-EVERYTHING MODEL ERASES THE INTENT ALONG WITH THE ROW.**
+
+⚠️ **That sentence is the clearest statement of the problem this investigation has produced, and it
+is recorded here rather than left in a report.** §13(be) established that the model cannot say
+afterwards **that** a record existed. ⛔ **This is the sharper half: it cannot say whether a
+disappearance was ASKED FOR.** A count is a fact about rows; the missing information is a fact about
+intent, and rows are the only thing the storage layer is given.
+
+---
+
+**⛔ SO DETECTABILITY IS BLOCKED ON THE ABSENCE OF AN INTENT SIGNAL — NOT ON COST, AND NOT ON DESIGN.**
+
+| candidate blocker | status |
+|---|---|
+| **cost** | ✅ **SETTLED.** Below measurement at every size — see §13(bi) |
+| **design** | ✅ **NOT THE BLOCKER.** The verification pattern exists in the adjacent file, tested, with a falsifiability control — §13(bh) |
+| **placement** | ⛔ **NOT SUFFICIENT.** Every candidate path shortens the list upstream of any storage-layer check — §13(bi) |
+| **an intent signal** | 🔴 **ABSENT, AND IT IS THE BLOCKER** |
+
+⚠️ **RECORDED AS A DATA-MODEL QUESTION, NOT A VERIFICATION ONE.** What would have to change is what
+the write path is TOLD, not what it measures afterwards. ⛔ **And §13(be) already warns against
+attempting the obvious repairs from that finding alone — "a per-record delete, a tombstone, an `id`
+uniqueness constraint, an audit log" — of which a per-record delete is one.** ⭐ **That warning now
+has a reason attached rather than only caution: the repair is not a verification change, so it does
+not belong to the verification question, and §13(bg) establishes that the write path's consumers move
+together or not at all.**
+
+⛔ **NOTHING IS PROPOSED HERE.** No per-record delete, no tombstone, no intent parameter, no audit
+log. **The finding is that the question has moved, not that an answer has been chosen.**
+
+---
+
+**⛔ AND CHAT'S ERROR, RECORDED PLAINLY.** §13(bh) was called *"the most actionable thing in the
+document"*, and a fix was inferred from it: run the migration's count check on every write.
+
+⭐ **§13(bh) STANDS, UNCHANGED AND UNQUALIFIED. It is a real finding about a real asymmetry** — the
+one-time path verifies thoroughly and ships a negative control, the recurring path verifies nothing,
+and the two files sit in one directory. **That asymmetry is true and worth fixing on its own terms.**
+
+⛔ **WHAT DOES NOT FOLLOW IS THAT CLOSING IT ADDRESSES §13(be).** ⚠️ **A finding that something is
+missing is not evidence that adding it solves the case that drew attention to it.** The inference ran
+from *"verification is absent here"* to *"absent verification is why the record was lost"*, and the
+second does not follow from the first: **the loss happened upstream of everything the verification
+would have measured.**
+
+⭐ **AND THE SCOPING PASS IS WHAT ESTABLISHED THAT, WHICH IS THE POINT WORTH KEEPING.** ⛔ **The fix
+was affordable, the pattern was internal and tested, the negative control transferred, and it still
+would not have caught the thing it was for.** ⚠️ **Every one of those checks passed. Only the question
+"what would this actually have caught" failed** — and it was asked before implementation rather than
+after, which is the same order that saved §13(ay) and the same order §13(bg) reversed the store-sort
+premise in. ⭐ **Three times in two days the answer changed when the last question was asked first.**
