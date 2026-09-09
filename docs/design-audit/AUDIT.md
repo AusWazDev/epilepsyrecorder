@@ -614,6 +614,43 @@ in two idioms, for one entity.**
 > COMPLETENESS is the right axis** on which to hand a user two different field orders, two control
 > kinds and two densities. **That half was never answered.** It is **DESIGN-TRACK** and belongs with
 > the component vocabulary, because the answer decides how many idioms the vocabulary must cover.
+>
+> ➕ **EVIDENCE ADDED 9 September 2026 — THE OPEN HALF IS NOT RESOLVED. This records a consequence
+> of the completeness axis that nobody knew about when the question was framed, and it is not an
+> answer to it.**
+>
+> ⛔ **THE AXIS DECIDED ACCESSIBILITY, AND NOBODY CHOSE THAT.**
+>
+> The two paths did not merely differ in field order, control kind and density — the three things
+> this decision already names. **They differed in whether a medical record could be read back at
+> all by a non-visual user.**
+>
+> | | control kind | announced its selected state? |
+> |---|---|---|
+> | **the wizard** (`event_wizard_screen.dart`) | real Flutter chips — `ChoiceChip` ×5, `FilterChip` ×2, `ActionChip` | ✅ **yes, free**, from `RawChip`'s own `Semantics(selected:)` |
+> | **the form** (`log_event_screen.dart`) | hand-rolled `GestureDetector`s — `_SelectionRow`, `_SelectionWrap` | ⛔ **nothing** |
+>
+> ⛔ **AND `wantsWizard` ROUTES ON COMPLETENESS.** An incomplete record opens the wizard; a complete
+> one opens the form. ⭐ **So a screen-reader user could read back the severity of a record they had
+> NOT finished, and could not read back the severity of one they HAD.** The more complete the
+> record, the less of it was legible.
+>
+> ⚠️ **FIXED 9 September 2026 — see §13(t) — so the consequence no longer holds.** `_SelectionRow`
+> and `_SelectionWrap` now carry the same `RawChip` semantics the wizard's chips carry.
+> ⛔ **BUT IT HELD FROM WHENEVER THE TWO PATHS DIVERGED UNTIL THEN, AND NOBODY KNEW.** No finding
+> in this document records it; §13(z)'s own accessibility pass scoped itself to contrast,
+> colour-alone, target size and flash and would not have found it either.
+>
+> ⭐ **WHY IT BELONGS HERE RATHER THAN ONLY IN §13(t): IT IS EVIDENCE ABOUT THE AXIS, NOT ABOUT THE
+> CONTROLS.** Two independent implementations of one field will diverge on properties nobody is
+> comparing — that is §1's *"every screen was solved; nothing was solved once"* — and **the routing
+> axis then decides which users get which behaviour.** ⚠️ **Accessibility is one property that
+> happened to be measured. The argument does not identify what else diverged, and nothing here
+> establishes that this was the only one.**
+>
+> ⛔ **THE QUESTION STAYS OPEN.** Whether COMPLETENESS is the right axis is design-track and belongs
+> with the component vocabulary, exactly as recorded above. **This adds a cost to the current answer;
+> it does not choose a different one.**
 
 **2. How do episode and daily records coexist?** History, the export and the entry point all assume
 one kind. **`daily_entry` is not a screen to add** — it is a second record shape that every one of
@@ -1747,6 +1784,32 @@ information.
 | `walkthrough_screen.dart:303` **page dots**, active vs `alpha 0.25` | which step you are on | ⛔ **NOTHING** — same 8x8 size, same `BoxShape.circle`, **opacity only** |
 | `log_event_screen.dart:1172` **selection row** | which option is chosen | ⚠️ **border width 0.5 → 1.5 only.** Non-colour, but sub-pixel at 0.5 and no icon, no weight change |
 
+> ⚠️ **DESCRIPTION CORRECTED 9 September 2026 — THE FINDING STANDS AND ITS DESCRIPTION OF THE VISUAL
+> CUE WAS WRONG. Two different things, and the distinction is the point.**
+>
+> ⛔ **WHAT WAS WRONG.** The row above reads *"border width 0.5 → 1.5 only. Non-colour, but s[mall]"*.
+> **Selection changes FIVE properties, not one**, read from `_SelectionRow` and `_SelectionWrap`:
+>
+>     fill colour      MERColours.primary / alert   vs  MERColours.surface
+>     border colour    the same colour              vs  MERColours.border
+>     border width     1.5                          vs  0.5
+>     font WEIGHT      w600                         vs  w500 (Row) / w400 (Wrap)
+>     text colour      white                        vs  textMuted (Row) / textPrimary (Wrap)
+>
+> ⭐ **So the non-colour differentiation is border width AND FONT WEIGHT** — two cues, not one. The
+> row's *"no weight change"* is false.
+>
+> ✅ **WHAT STANDS, UNCHANGED: none of the five is reachable by a screen reader.** All five are
+> visual, so the WCAG 1.4.1 concern and the semantics gap both hold exactly as recorded.
+> ⭐ **The finding was right about the consequence and wrong about the mechanism**, which is the
+> distinction §13(al) exists to teach: a correct conclusion resting on a mis-described cause is
+> still a liability, because the next reader reasons from the cause.
+>
+> ⚠️ **AND IT MATTERED PRACTICALLY.** The fix brief for this control was written from *"border width
+> only"*, and a reader could reasonably have concluded the remedy was to strengthen the non-colour
+> cue — adding an icon or a weight change **that was already there.** ⛔ **The remedy was semantics,
+> and the description pointed away from it.**
+
 **✅ THE COMPLIANT ELEVEN, with what carries the meaning besides colour:**
 
 | Instance | Also conveyed by |
@@ -1854,6 +1917,49 @@ treat this paragraph with suspicion, not as a warrant.** What distinguishes this
 is not the argument's form: it is that **the defect here was demonstrated by an instrument that has
 not lied** — the semantics tree, showing an empty selected set — **before any fix was written**,
 whereas §13(ay) rested on glyph widths from a harness whose font is fake.
+✅ **AND `_SelectionWrap` FIXED 9 September 2026 — THE MATCHED PAIR IS NOW WHOLE.** The multi-select
+for **observations (afterwards)** and **triggers (beforehand)** announces which options the record
+holds. Verified in `test/selection_wrap_semantics_test.dart`.
+
+⭐ **THE DEFECT WAS IDENTICAL IN KIND, AND THE SUSPICION THAT THE MECHANISM WOULD DIFFER WAS
+REFUTED BY READING THE SDK.** It was reasonable to expect a multi-select to need a different shape —
+`FilterChip` rather than `ChoiceChip`. ⛔ **They pass `selected` to `RawChip` identically, and
+`RawChip` has exactly ONE `Semantics(` block.** The only difference between the two chips is
+`showCheckmark`'s default, which is **visual**. **So one form serves both, which is also the right
+answer for consistency.**
+
+**BEFORE / AFTER, from the semantics tree, same blank record, tapping two observations:**
+
+    UNPATCHED   after tapping 😴 Tired and 🪫 Weak:   SELECTED = [Mild, No]
+    PATCHED     after the same two taps:              SELECTED = [Mild, 😴 Tired, 🪫 Weak, No]
+
+⚠️ **`Mild` and `No` in BOTH columns are `_SelectionRow`, fixed earlier the same day** — and their
+presence is what made the *"fixed control beside an unfixed twin"* state visible in the tree.
+⛔ **A first version of this test asserted the whole-tree selected set was empty on a blank record
+and failed on its own sibling's CORRECT output.** Scoped to this widget's chips instead.
+
+**VERIFICATION, with the control run against unpatched `lib/`:**
+
+| | patched | unpatched |
+|---|---|---|
+| 1. nothing announces on a blank record | ✅ | ✅ |
+| 2. **selecting TWO announces BOTH** | ✅ | ⛔ **FAILS** |
+| 3. triggers announce, and de-selecting stops announcing | ✅ | ⛔ **FAILS** |
+| 4. **render unchanged at 375, 430, 800** | ✅ | ✅ |
+
+⭐ **TEST 2 IS THE MULTI-SELECT-SPECIFIC CONTROL: two chips, not one.** A single-selection assertion
+would pass on a broken multi-select that only ever marked the most recent tap. ⭐ **And test 4's
+baseline — 12 rects, 4 chip labels × 3 widths — was captured from the UNPATCHED code, so it passes
+in both states.** That is what makes it a proof rather than a formality.
+
+✅ **`flutter analyze` on `log_event_screen.dart`: 13 infos before, 13 after, delta 0.** The diff
+contains no `color`, `width`, `padding`, `fontSize`, `fontWeight`, `borderRadius`, `duration` or
+`Icon` — checked mechanically, comments excluded.
+
+⚠️ **ONE THING IN THIS WIDGET IS DELIBERATELY UNTOUCHED: the "Add your own" pill.** It is a
+`GestureDetector` wrapping an `Icon` plus a `Text`, so **it already has a name from its visible
+text** — but it is not marked `button: true` and it is an ACTION rather than a selectable. ⛔ **Left
+alone: it is not the selection defect, and marking it would be a separate decision.**
 
 ---
 

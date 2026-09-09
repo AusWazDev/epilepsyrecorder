@@ -1184,7 +1184,24 @@ class _SelectionWrap extends StatelessWidget {
     for (final option in options) {
       final isSelected = selected.contains(option);
       pinned.add(isSelected);
-      chips.add(GestureDetector(
+      // ⛔ ADDED 9 Sep 2026 — SEMANTICS ONLY, nothing visual. The matched pair
+      // to `_SelectionRow`, fixed earlier the same day: selection here was
+      // carried by fill colour, border colour, border width, font weight and
+      // text colour — all VISUAL — so a screen reader announced every
+      // observation and trigger and never which ones the record held.
+      //
+      // ⭐ MULTI-select, and the mechanism is nevertheless the SAME as the
+      // single-select case. That was READ, not assumed: `FilterChip` (which the
+      // wizard uses for these two same fields) and `ChoiceChip` both pass
+      // `selected` straight to `RawChip`, and `RawChip` has exactly ONE
+      // Semantics block (`chip.dart:1503-1513`). They differ only in
+      // `showCheckmark`'s default, which is visual.
+      chips.add(Semantics(
+          container: true,
+          button: true,
+          selected: kIsWeb ? null : isSelected,
+          checked: kIsWeb ? isSelected : null,
+          child: GestureDetector(
           onTap: () => onToggle(option),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
@@ -1217,7 +1234,7 @@ class _SelectionWrap extends StatelessWidget {
               ),
             ),
           ),
-        ));
+        )));
     }
 
     // An ACTION, not an entry: pinned so collapsing never puts it out of
