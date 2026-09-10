@@ -6283,6 +6283,61 @@ recipient and `filtered` says a subset without saying which. Reader-dependent wh
 `event_record.dart` at 85661d0. Numbers and Sheets: not measured. The recipient's identity: not
 established by anyone, recorded as open.
 
+> ⛔ **ANNOTATED 10 September 2026 — THE RECIPIENT QUESTION IS ANSWERED. The entry above is left as
+> written; its conditional framing was correct when written and this records what resolved it.**
+>
+> ⛔ **THE RECIPIENT IS UNKNOWN BY DESIGN.** Developer-stated, 10 September 2026, reported here and
+> not derived from the repository: **the person who owns the data on their phone can give it to
+> anyone they want.** The CSV is how they share it — with a specialist, a practitioner, or
+> themselves.
+>
+> ⭐ **SO THE FILE MUST STAND ALONE — and this is NOT the cautious reading winning by default. It
+> follows from the product's position.** No backend, no account, the device is the only copy, the
+> user controls where it goes (`docs/claude-ai-project-instructions.md`, architectural fact 1). An
+> export that only makes sense to a briefed reader would re-attach a dependency the design removed.
+>
+> ⛔ **THE CONDITIONAL FINDINGS ARE NOW UNCONDITIONAL.** `record_kind`, `observations`, `beforehand`,
+> `medication_kind` and `timestamp_iso` were recorded above as depending on the recipient. **They no
+> longer do.** The "reader-DEPENDENT" table stands as the record of what was conditional on the day;
+> every row in it is now a finding about the file.
+>
+> ⭐ **AND ONE GETS HEAVIER: `beforehand`.** Its wording exists deliberately to avoid claiming
+> causation — the source records the care (`event_record.dart`, the `beforehand` header comment:
+> *"'triggers' asserts that what is listed CAUSED the event"*), `beforehand_wording_test` enforces it,
+> and DATA-MODEL.md §6 records why. ⚠️ **§12 does NOT record it** — checked 10 September 2026, zero
+> hits for beforehand, trigger or causation in §12; the briefing cited it there and the citation is
+> corrected here. **In the file the care is INVISIBLE.** A column headed `beforehand` containing
+> `Stress; Missed medication` reads as a cause to a reader never told otherwise. ⚠️ **The app is
+> careful and the export is not.**
+>
+> ⛔ **AND `referral_required` WRITING `No` GETS WORSE.** An unknown recipient reads an explicit
+> negative on a question nobody asked, **in a file the owner handed them as their medical record.**
+> **Recorded as the clearest defect in the export.** Still claim-adjacent; still may route to the
+> adviser.
+>
+> ⚠️ **AND ONE THE ASSESSMENT MISSED: THE OWNER IS A LEGITIMATE RECIPIENT** — *"or use it
+> themselves."* ⭐ **That makes the `########` date column more than cosmetic.** The person most likely
+> to open this file in a spreadsheet is the owner, and the first thing they see is a column of
+> hashes across every row.
+>
+> ⛔ **WHAT THE ANSWER DOES NOT SETTLE: IT DOES NOT MAKE THESE FIXES.** Every one is an export change
+> and therefore a proposal under `docs/WORKING-AGREEMENT.md`. ⛔ **And they are THREE DIFFERENT KINDS
+> of change, not one:**
+>
+> | Item | Kind of change | Routes to |
+> |---|---|---|
+> | `referral_required` writing `No` | **CLAIM-ADJACENT** — an assertion in a medical record | may route to the adviser (§9) before any design decision |
+> | the header wording (`beforehand`, `observations`, `record_kind`, `medication_kind`, `timestamp_iso`) | **COPY** | a copy proposal; copy is a change under the agreement |
+> | the `date` column's spreadsheet behaviour | **FORMAT** | a format proposal, with Numbers and Sheets still unmeasured |
+>
+> ⭐ **They should not be bundled into one proposal.** A single "fix the export" brief would put an
+> adviser question, a wording decision and a serialisation decision behind one approval, and the
+> agreement's escape clause could only stop all three or none.
+>
+> **Sourcing.** The recipient's identity: developer-stated, 10 September 2026. The product position
+> it rests on: read from the briefing's architectural facts. The §12 correction: read, zero hits.
+> Everything else here re-weights findings already measured or read above; nothing new was measured.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
