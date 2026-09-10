@@ -1318,6 +1318,10 @@ not, and the read found TWO MORE that are.** The finding above stays exactly as 
 | `_thisMonthCount` (`home_screen.dart:523`) | a clinical count of events | ⛔ **STANDS AS A DEFECT.** Should be `whenHappened` |
 | the CSV | export to a clinician | ✅ **ALREADY CORRECT**, and the omission is a DECIDED TRADE |
 
+> ⚠️ **LINE CITATION ROTTED — noted 10 September 2026 (late), at 4a9b0bd.** The table above cites
+> `_thisMonthCount` at `home_screen.dart:523`; at 4a9b0bd the getter is declared on **line 520**. The
+> symbol is unchanged and the finding is unaffected. Cite by symbol.
+
 **1. ⛔ `eventsSinceLastBackup` IS NOT A DEFECT, AND THE REASON IS THE POINT OF THE WHOLE
 DISTINCTION.** What is unsaved is what was **WRITTEN.** ⭐ **A record backdated to July but typed
 after the last backup genuinely is unbacked-up**, and counting it by its occurrence time would tell
