@@ -314,6 +314,37 @@ app.** It also carries the least discoverable capability in the app — see §4.
 > emptiest screen in the app — survives any plausible correction to three figures that are 37, 56
 > and ~75. **The conclusion is a ranking, and the ranking is not close.**
 
+> ⛔ **ANNOTATED 10 September 2026 — "ECHOED NOWHERE BEFORE SAVE" WAS WRONG WHEN IT WAS WRITTEN,
+> AND THE 8 SEPTEMBER ANNOTATION ABOVE REPEATED IT AS CODE-VERIFIED. The original text stays as
+> written; this records what the code held on the day.**
+>
+> **Read from `git show eeeeef8:lib/screens/event_wizard_screen.dart`, the audit's own commit of
+> 31 August 2026.** `_summary()` at that commit already itemised Duration, Event type, Severity,
+> Beforehand, Afterwards, Rescue medication, Did it help, Second dose, Medical referral required and
+> "Notes added", and already rendered `OccurredAtField` above those lines. The itemised lines date
+> from 77adc0b (26 August); the field from e1575b2 (29 August). `_summary()` is byte-identical
+> between eeeeef8 and f9c4f8b: the only change to the file since the audit is six inserted lines at
+> the app bar.
+>
+> ⭐ **THE LIKELY MECHANISM, FLAGGED AS INFERENCE — the code is read; the record state behind the
+> capture is not.** Every line except Duration is emitted only when answered. `wizard-5-summary`
+> shows a quick-log record with nothing yet entered, so the legitimate render of THAT state is a
+> single line, "• Duration: not recorded". **The finding was written from the emptiest legitimate
+> instance of the screen and generalised to the screen.** Nothing in the frame was stale or
+> unfaithful.
+>
+> ⚠️ **THIS IS A NEW FAILURE DIRECTION FOR THE CAPTURE RULE, recorded in §13(aj)** as a third
+> property beside subject and geometry: WHICH STATE the frame shows. A capture of a legitimate
+> state, read as the state.
+>
+> ⛔ **WHAT IS DISPROVED IS "ECHOED NOWHERE". WHAT IS NOT SETTLED IS WHETHER THE SUMMARY IS
+> ADEQUATE.** The double "Check and save" — app bar title and page heading,
+> `event_wizard_screen.dart` lines 372 and 1083 — is still present. Whether an answered record's
+> itemised lines read well at 375 and 800 has never been rendered in a widget test, and the three
+> percentages above remain unmeasured. **§3's underlying concern is not withdrawn. It is narrowed to
+> what the code does not already answer, and the narrowed question is open.** §10 fix 2's status is
+> recorded in §10's status table.
+
 ---
 
 ## 4. Backdating exists, is well built, and is buried
@@ -746,6 +777,32 @@ rather than expensive.**
 
 *(An earlier draft listed seven. "Wrap the filter sheet's chip row" was withdrawn — the row scrolls
 deliberately and nothing is unreachable.)*
+
+> ➕ **STATUS, ADDED 10 September 2026 — read against `lib/` at f9c4f8b. The list above is left
+> exactly as written; this table is the status column it never had (§13(r) instance 13).**
+>
+> | # | Fix | Status | Evidence, 10 Sep 2026 |
+> |---|---|---|---|
+> | 1 | quick-log records not rendered as deficient | **PARTLY SHIPPED** | copy half: the History gap line reads `Add details:` (54df38d, 7 Sep; §13(ae)). Design half: the gap line still renders on every incomplete row, and §5's counter-argument is unanswered |
+> | 2 | real summary, backdating surfaced | **NOT STARTED — and its "real summary" half was already in the code when this list was written** | `_summary()` byte-identical eeeeef8 → f9c4f8b; itemised lines since 26 Aug, `OccurredAtField` on the summary since 29 Aug. See §3's 10 Sep annotation. The double "Check and save" heading is still present |
+> | 3 | raise notes, echo before save | **NOT STARTED** | the notes `TextField` sits at line 81 of a 90-line step-4 body at both eeeeef8 and HEAD; the summary shows the flag "Notes added" (since 26 Aug), not the text |
+> | 4 | anchor home, not centre | **NOT STARTED** | `home_screen.dart` still `Center` + `mainAxisAlignment.center`, unchanged since 0de48d1 (21 Mar). `home_void_430_test` re-run 10 Sep: void above 246.5, below 246.5 |
+> | 5 | bound wizard step 2, plain and grouped | **NOT STARTED** | step 2's `_vocabChips` ungrouped path is a plain `Wrap`; `_groupedVocabChips` is a `Wrap` per group; severity `_chips` is a `Wrap`. `BoundedChipWrap` (c2f6d80, 30 Aug) is used once, in `_vocabMultiChips`, which only steps 3 and 4 call |
+> | 6 | label the delete control | **SHIPPED** | `history_screen.dart` `tooltip: 'Delete this event'` (2516757, 9 Sep); asserted by `named_history_controls_test` |
+>
+> **COUNT: 1 shipped · 1 partly shipped · 4 not started.**
+>
+> ⛔ **CHAT'S ERROR, RECORDED.** *"The five remaining §10 fixes"* was asserted as a standing figure
+> in nearly every brief for a full session and never checked against `lib/`. **It was wrong in shape
+> as well as number**: fix 1 is half-shipped and counts in neither column, fix 2's headline half
+> predates the list, and four are untouched. The figure was supplied from memory into a document
+> that said nothing, then read back as though quoted.
+>
+> ⚠️ **AND THE AXIS CONFUSION, RECORDED SEPARATELY.** §13(aw)'s *"§10's six fixes (all REBUILT
+> except fix 6)"* is a REDESIGN-TRACK classification — D4's test of whether a fix SURVIVES the
+> redesign or is REBUILT by it — **not a shipping status.** Two axes, one number: a count read off
+> the survives/rebuilt axis was carried as though it were the shipped/not-shipped axis. **This table
+> is the shipped axis. It says nothing about which of these survive the redesign.**
 
 ### Then the layout work
 
@@ -3348,6 +3405,38 @@ knowledge existed, in a file that loads every session, phrased generally enough 
 exactly — **and it did not travel from a rule about audit scripts to a rule about a screenshot.**
 ⭐ **That is §13(r)'s pattern precisely: the lesson was not missing, it was not where it would be
 read.**
+
+---
+
+⭐ **A THIRD PROPERTY, ADDED 10 September 2026 — WHICH STATE THE FRAME SHOWS. The eye's row in the
+table above proves SUBJECT and assumes GEOMETRY. §3 supplies a third property, and it is a new
+failure direction rather than a fifth instance of the four above.**
+
+**§3 recorded that the wizard's review step echoes type, severity, observations, beforehand and notes
+"nowhere before save", and its 8 September annotation repeated that as code-verified.** At eeeeef8,
+the audit's own commit, `_summary()` already itemised every one of them. ⚠️ **Flagged as
+inference:** every line except Duration is emitted only when answered, and `wizard-5-summary` shows a
+quick-log record with nothing entered — so the frame's single line, "• Duration: not recorded", is
+the CORRECT render of THAT state. **The frame was not stale (§13(r)'s class), and the instrument was
+not at fault (instances 1 to 4 above). The frame showed a legitimate state, and the state was read
+as the screen.**
+
+| Level | Property proven | Property assumed | Cost |
+|---|---|---|---|
+| **The eye, third row** | the frame's subject and geometry are right | the frame's **STATE is representative** of the screen | §3's "echoed nowhere": wrong for ten days, re-affirmed once as code-verified, and carried into §10 as fix 2 |
+
+⛔ **THE TELL IS THAT NOTHING WAS WRONG.** Instances 1 to 4 were caught because something in the
+frame was false. Here every pixel was true, so no check on the frame could have caught it — **only
+the question "of which state is this a picture?" could, and the answer sits in the record the
+capture was taken from, not in the frame.** A screen whose content is conditional on data has as
+many legitimate appearances as it has data states, and a capture set holds one per screen.
+⚠️ **The asymmetry §13(ay) recorded points here as well: a widget test could have rendered an
+answered record in seconds, and no widget test has ever rendered the review step.**
+
+**Recorded HERE for the same reason the two-properties pattern was:** it is a property of the
+instrument's use, a reader asking "how did a capture mislead" arrives at this entry, and it extends
+this entry's own table rather than §13(r)'s. **There is no §13(r) instance inside it** — the
+knowledge that the lines were conditional was in the code, not in a rule that failed to travel.
 
 ### (ak) THE APP REQUESTS A WINDOW LARGER THAN A COMMON LAPTOP DISPLAY CAN SHOW
 
@@ -5974,3 +6063,84 @@ would not have caught the thing it was for.** ⚠️ **Every one of those checks
 "what would this actually have caught" failed** — and it was asked before implementation rather than
 after, which is the same order that saved §13(ay) and the same order §13(bg) reversed the store-sort
 premise in. ⭐ **Three times in two days the answer changed when the last question was asked first.**
+
+---
+
+### (bk) 🔴 THE DEDUP BRANCHES HAVE NO BRANCH COVERAGE, NO POSSIBLE FAILING TEST, AND LINE COVERAGE WOULD HAVE REPORTED THEM COVERED
+
+**Measured 10 September 2026, against f9c4f8b.** ⛔ **No source change, no test kept, no control
+added.** The probe below was written, run once and deleted.
+
+**THE TWO BRANCHES.** `capture_inbox.dart:121` and `ios_capture_bridge.dart:211` both read
+`if (byId.containsKey(record.id)) continue;` over the LOADED list — the records the store returned —
+before any inbox or mirror content is applied. §13(bi) named both as paths that shorten the list
+before `save()` is called.
+
+**(a) COVERAGE, MEASURED WITH `flutter test --branch-coverage`, both test files, both branches:**
+
+    capture_inbox.dart:121       BRDA taken 0  (capture_inbox_test)   taken 0  (ios_handoff_test)
+    ios_capture_bridge.dart:211  BRDA taken 0  (ios_handoff_test)     taken 0  (capture_inbox_test)
+    CONTROL  capture_inbox.dart:144  the start-replay continue, known exercised by test 4   taken 1
+    1,653 BRDA records per file
+
+⛔ **AND LINE COVERAGE REPORTED `DA:121,2` AND `DA:211,2` — TWO HITS ON EACH LINE.** That is the
+CONDITION being evaluated, not the `continue` being taken. ⭐ **A line-coverage report would have
+shown both branches as COVERED.** This is §13(aj)'s pattern inside a coverage tool: an instrument
+with two properties — "was the line reached" and "was the branch taken" — where proving the first
+reads as proving the second. ⚠️ **Same shape as the `grep -c` that counted lines instead of matches
+and the ancestry test in `ARCHITECTURE.md` that passed by construction.**
+
+**No test exercises either branch.** The nearest are `capture_inbox_test` 4 (replay: exercises line
+144, an INSTRUCTION id against existing — a different branch) and `ios_handoff_test` "id case is
+never folded" (two ids differing in case, asserts `hasLength(2)`). Neither puts a duplicated id INSIDE
+the loaded list. Enumerated: every `applyInbox(` call in `capture_inbox_test` and every `run([` call
+in `ios_handoff_test` was read; none constructs a same-id pair.
+
+**(b) WHAT HAPPENS TODAY — MEASURED BY A THROWAWAY PROBE, NOT REASONED.** Three loaded records, two
+sharing an id with different `notes`, plus one arrival:
+
+    applyInbox, one start arriving       existing=3  merged=3   drainable=1  ids=[new, other, dup]  survivor: first in list order
+    applyInbox, nothing arriving         existing=3  merged=2   drainable=0  -> drainInbox does not persist
+    reconcileLegacySharedRecords,        loaded=3    records=3  wrote=true   addedIds=[MIRROR]      survivor: first in list order
+      one mirror record arriving
+
+⛔ **THREE IN, ONE ADDED, THREE OUT. The second copy of the shared id is gone, and the outcome
+objects report nothing about it** — `wrote=true`, `addedIds=[MIRROR]`, `durationsRecovered=[]`, and
+the removed row appears in no field. ⛔ **AND IT LEAVES PERMANENTLY.** `EventStore.save()`
+(`event_store_sqlite.dart:441`) is delete-all-then-insert inside a transaction, so the row is gone
+from SQLite on the next write triggered by something else — a start draining, a mirror reconciling.
+The drop is not caused by the arrival; it is carried by it.
+
+⚠️ **WHY THE LOADED LIST CAN HOLD A DUPLICATE AT ALL.** `event_store_sqlite.dart:76`: *"`id` is NOT
+a PRIMARY KEY, and that is deliberate."* The migration carries duplicate-id rows across and counts
+them into `migration_distinct_ids` rather than failing an INSERT. **So the migration deliberately
+preserves what the next drain deliberately removes, and neither side knows about the other.**
+
+⚠️ **INFERRED, NOT MEASURED: which copy survives on a device.** The branch keeps the first in list
+order. The DDL comment says `load()` re-applies the old store's newest-first sort, so on a device the
+newer-timestamped copy would survive and the older be dropped. The probe fed its own order and did
+not exercise `load()`.
+
+**(c) ⛔ NO TEST COULD FAIL ON IT.** Neither function compares the list length before against after.
+`dropForNegativeControl` — the mechanism §13(bh) records the migration shipping so that its
+verification is FALSIFIABLE — occurs only in `storage_migration.dart` (185, 191, 225) and
+`sqlite_migration_test.dart` (253, 279). Nothing equivalent exists on either drain. **Same asymmetry
+as §13(bh), on the pathway the developer names as the most used: the one-time migration proves it
+can detect a lost row; the recurring drain cannot, and no test could show that it cannot.**
+
+⚠️ **THE DEVELOPER'S OBSERVATION, AND ITS LIMIT.** The developer reports never having seen a
+duplicate record, on either platform, across extensive testing. ✅ **That rules out the LOUD
+failure** — a duplicate rendering twice in History. ⛔ **It cannot discriminate the QUIET one.** The
+branch's job is to make duplicates invisible, and the probe shows the removal leaves no trace in any
+returned value. "Never seen one" is equally consistent with the branch working and with it having
+dropped something.
+
+⛔ **NO FIX PROPOSED.** §13(be) and §13(bj) record what happened the last time a repair was inferred
+from an absence on this path: it was affordable, tested, internally consistent, and would not have
+caught the loss it was for. **This entry establishes coverage and behaviour. It does not establish
+that the dedup has ever dropped a real record, and the 30 August loss is not attributed to it.**
+What would settle attribution is upstream — §13(bj)'s intent signal — not a check here.
+
+**Sourcing.** Coverage and probe figures: measured. Line numbers: read at f9c4f8b. Survivor on
+device: inferred, marked above. The developer's observation: reported by the developer, not observed
+by the CLI.
