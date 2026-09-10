@@ -6144,3 +6144,25 @@ What would settle attribution is upstream — §13(bj)'s intent signal — not a
 **Sourcing.** Coverage and probe figures: measured. Line numbers: read at f9c4f8b. Survivor on
 device: inferred, marked above. The developer's observation: reported by the developer, not observed
 by the CLI.
+
+> ➕ **ANNOTATED 10 September 2026 — WHAT TESTING DID COVER. The entry above records only the
+> absence. The presence is stronger than the briefing party assumed, and belongs beside it.**
+>
+> ⚠️ **DEVELOPER-REPORTED — reported, not observed by any instrument here.** Notification capture has
+> been tested extensively across ALL THREE app states — force closed, minimised, and FOREGROUND — on
+> both Android and iOS. No duplicate record has ever been observed.
+>
+> ⭐ **WHY FOREGROUND MATTERS.** It is the interleave case: a capture landing while the app is live
+> is where a landing capture and a live write could collide, and it is the state in which the dedup
+> branch would fire. **That state has been exercised in reality, not only reasoned about.**
+>
+> ⛔ **THE TWO FINDINGS ARE NOT IN TENSION.** Real-world testing covers the paths a user can
+> traverse. The dedup branch is reached only when the SAME ID arrives TWICE in the loaded list, which
+> use would not produce unless constructed deliberately — and (a) above records that no test
+> constructs it. ⚠️ **So: heavily exercised delivery, unexercised branch.** Both are true, and each
+> is about a different thing.
+>
+> ⚠️ **WHAT THE OBSERVATION NOW DOES AND DOES NOT DO.** It narrows the window considerably: three
+> states, two platforms, extensive use, no duplicate seen. ⛔ **It still cannot exclude the quiet
+> case**, because (b) above measured that a drop leaves no trace in any outcome object. ⛔ **And it
+> does not touch §13(be)**: one event, one device, a 55-minute unobserved window.
