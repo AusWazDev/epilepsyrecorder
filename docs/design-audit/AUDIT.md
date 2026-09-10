@@ -6445,6 +6445,43 @@ established by anyone, recorded as open.
 > **Sourcing.** Header sites, readers, the shape rule and the test's assertions: read at 17fc5e6.
 > The 7 / 9 counts: measured by grep over `test/`. The April preamble: read from `git show 631b53c`.
 
+> ⛔ **ANNOTATED 10 September 2026 — THE `beforehand` RENAME IS HELD, NOT REJECTED.** Chat drafted
+> `before_the_event` and **does not recommend it.**
+>
+> ⭐ **THE REASON, HONESTLY.** The draft is clearer about the INTERVAL — `beforehand` is an adverb with
+> no noun, so a reader cannot tell what it modifies — **and possibly WORSE about causation**, because
+> naming the event as the reference point invites *"before it, therefore because of it"*. ⚠️ **Chat
+> cannot test that.** It is a judgement about how a stranger reads a word, and chat is the wrong
+> instrument for it. **That is the reason for holding, not a caveat on a recommendation.**
+>
+> ⛔ **AND THE TRADE IS POOR AS IT STANDS:** a `kCsvShapeVersion` bump to `v7`, two header sites, the
+> golden in `csv_delimited_test`, and DATA-MODEL §6's prose — **for a word chat is unsure improves
+> anything.** Test 5 of `beforehand_wording_test` would pass (no `trigger` substring), but test 5
+> does not judge whether a replacement conveys meaning; it only guards the one word it was written
+> against.
+>
+> ⭐ **WHAT WOULD CHANGE THE ANSWER:** if a preamble returns (next annotation), the header stops
+> carrying the whole burden and the wording choice changes with it. **Revisit then, not before.**
+
+> ⭐ **ANNOTATED 10 September 2026 — THE PREAMBLE LEAD, RECORDED AND NOT OPENED.**
+>
+> The April export (631b53c) wrote `#` comment lines above the header. They are gone; the BOM is the
+> only thing before the header now. ⛔ **THIS CHANGES THE SHAPE OF THE QUESTION.** It is not *"should
+> the file gain something it has never had"*. It is *"why was an existing capability removed"* — a
+> smaller, answerable question with a commit behind it.
+>
+> ⭐ **THE PRECEDENT, EXPLICITLY.** The `date` column looked like a defect until the April commit
+> message explained it (reversal above). **This is the same shape, unread**: a present-day absence
+> whose reason, if there is one, sits in `git log`. ⚠️ Chat has now been wrong twice this week by
+> characterising a deliberate decision as a defect without checking git history — the date column
+> here, and §13(ay)'s fix before it. **Before the preamble's absence is called a gap, its removal
+> must be read.**
+>
+> ⚠️ **RECORDED AS A READ TO RUN, NOT A PROPOSAL:** which commit removed the `#` preamble lines, what
+> its message says, and whether anything recorded the reason. ⛔ **NOT this pass.** The preamble
+> question stays closed until that read exists; §13(bl)'s "larger question" annotation above already
+> records why opening it is expensive.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
@@ -6538,3 +6575,45 @@ does not describe them"*):
 column here must handle NULL explicitly — `IS NULL` as its own bucket, and a total that the buckets
 must sum to. **The schema's rule that NULL means NOT ASKED is a data-model virtue and a query
 hazard at once**, and the second follows from the first.
+
+---
+
+### (bo) A CHECKED FACT WAS RE-STATED WRONGLY IN OUTBOUND PROSE — THE ADVISER DRAFT SAID THE CSV IS THE ONLY WAY DATA LEAVES THE DEVICE
+
+**10 September 2026.** Recorded as its own entry rather than under §13(r), and the reason is the
+shape: §13(r) is about correct knowledge that did not REACH a reader. **Here the knowledge reached,
+was used correctly all week, and failed only at RE-STATEMENT** — when the writing was aimed at
+someone outside the project who could not verify it.
+
+⛔ **THE ERROR.** Chat drafted the adviser question for `referral_required` (routed in §13(bl))
+stating that *"the file is the only way data leaves the device."* **FALSE.** The JSON backup envelope
+leaves the device too — `backup_service.dart` shares it through `SharePlus.instance.share` and saves
+it through `getSaveLocation` — and that is what makes it the preservation path. The briefing's
+architectural fact 6 reads *"Export is the only preservation path. No backend means uninstall or a
+lost phone destroys the record."* ⚠️ Its word "export" is generic across CSV and backup; that the
+backup is a JSON envelope that leaves the device is read from the source, not from the briefing.
+
+⭐ **THE DISTINCTION MATTERS TO THE QUESTION ITSELF, WHICH IS WHY THE ERROR IS NOT COSMETIC.** The
+backup is machine-readable and **only MER reads it back** — restore checks `kBackupFormatId` and
+nothing else opens it — so a false value there round-trips harmlessly: `referralRequired: false`
+goes out and comes back as the same `false`. **The CSV is the only form a PERSON reads**, so a false
+value there is INTERPRETED and may be acted on. ⚠️ **The corrected draft carries the distinction
+rather than merely removing the false clause** — "the only form a person reads" is the load-bearing
+claim, and it is true; "the only way data leaves" was a stronger claim that happened to be false and
+would have been the first thing an adviser checked.
+
+⛔ **THE SHAPE, RECORDED.** Chat has cited backup-versus-export correctly all week — §13(be)'s
+backup coverage, §13(bf)'s envelopes, §13(j)'s "it is in the JSON backup" — **and collapsed it when
+writing prose for an EXTERNAL reader.** Same as §13(bl)'s recipient assumption: **a premise adopted
+in the framing rather than checked.** ⭐ **The transferable point: outbound prose is where checked
+facts get re-stated from memory, because the writing is aimed at someone who cannot verify it**, and
+the writer's attention is on persuading rather than on sourcing. Inside the project every claim
+meets a reader who can grep; outside it, none does. ⚠️ **The adviser draft was caught by the
+developer, not by any check.**
+
+**STATUS.** The adviser question remains **UNSENT**. The corrected draft exists **in chat only** —
+nothing in this repository holds it, and nothing here can verify it.
+
+**Sourcing.** The false clause and its correction: reported by the briefing party. The backup's
+share and save paths, and restore's single reader: read from `backup_service.dart` and `backup.dart`
+at f968aba. Architectural fact 6: quoted from `docs/claude-ai-project-instructions.md`.
