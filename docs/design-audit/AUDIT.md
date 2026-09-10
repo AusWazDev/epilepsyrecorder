@@ -6370,6 +6370,81 @@ established by anyone, recorded as open.
 > 10 September 2026. The behaviour being routed: read, `buildCsv` writes
 > `r.referralRequired ? 'Yes' : 'No'` over a non-nullable `bool`. The standing rule: read, D2.
 
+> ⛔ **ANNOTATED 10 September 2026 — THE `date` COLUMN IS NOT A DEFECT. REVERSED. Item 4 above and
+> the two later mentions of the `########` stay as written: they record what was measured, and the
+> measurement was correct. What was wrong is the CHARACTERISATION.**
+>
+> ⭐ **THE HASHES ARE THE COST OF A DELIBERATE DECISION.** Commit **631b53c, 16 April 2026**, which
+> split `timestamp_local` into `date` and `time`, says in its own message: *"ISO date format ensures
+> Excel auto-detects as a date on any locale, enabling reliable filtering and sorting for
+> specialists."* **The autodetection IS the intent.** Excel converting `2026-08-30` to a date serial
+> is the column working as designed; the `########` at default width is what a converted date looks
+> like in a column Excel has not yet widened.
+>
+> ⛔ **AND THERE IS NO FIX.** Measured, Excel 16.0, en-AU, nineteen candidate renderings of the same
+> instant: **every form Excel recognises as a date converts to a serial and shows hashes at default
+> width** — ISO, `30 Aug 2026`, `30 August 2026`, `30/08/2026`, `2026-08-30 16:36`, and the
+> ISO form wrapped in quotes. Quoting does not prevent it. **The only renderings that avoid hashes
+> are the ones Excel treats as TEXT** — `Sun 30 Aug 2026`, a leading apostrophe, a dotted form, the
+> ISO timestamp with a `T` — and text does not sort as a date, which destroys the thing the split
+> exists to provide. ⭐ **Hashes at default width, or text that will not sort.** Recorded as a
+> TRADE-OFF taken deliberately in April, with the losing alternative now measured rather than assumed.
+>
+> ⭐ **AND THE LOCALE RESULT ARGUES FOR ISO, NOT AGAINST IT.** `08/30/2026` stayed text here because
+> 30 is not a valid month in a day-first locale; `30/08/2026` converted for the same reason in
+> reverse. A US locale flips both. **Only the ISO form converts in either.** ⚠️ The recipient's
+> locale is as unknown as the recipient — and the 16 April decision anticipated the exact condition
+> the developer's 10 September answer established: an unknown reader, on an unknown machine, who must
+> be able to sort the file.
+>
+> ⚠️ **WHAT SURVIVES, AND IT IS NOT ABOUT HASHES: `timestamp_iso` CARRIES NO OFFSET AND NO `Z`.**
+> Read from the file: `2026-08-30T16:36:41.000`. It is a local wall-clock time with the ZONE
+> UNSTATED. A reader in another zone, or a record captured while travelling, has no way to know
+> which clock the value is on. **Recorded as a separate, OPEN item.** Not assessed further here.
+>
+> ⛔ **CHAT'S ERROR, RECORDED.** Chat recorded a measured behaviour as a defect without asking whether
+> it was intended, **and the commit message answering that question was in `git log` the whole
+> time.** Same shape as §13(ay): a correct measurement, a wrong characterisation, and the check that
+> would have caught it — *"was this chosen?"* — not asked before the finding was written. The
+> measurement stands; the verdict is reversed.
+
+> ⚠️ **ANNOTATED 10 September 2026 — WHAT `beforehand` ACTUALLY COSTS, AND THE REFRAME.**
+>
+> **CHEAP AND CONSTRAINED:**
+>
+> - **Two places hold the header string** — `buildCsv`'s header list and `kCsvHeaderGolden` in
+>   `csv_delimited_test`. No other literal in `lib/` or `test/`.
+> - ⭐ **NOTHING READS THESE FILES.** No CSV parser in `lib/` (the csv package is not imported), no
+>   `split(',')` over a header, and the one `readAsString` in `lib/` is the JSON backup restore,
+>   which checks a `format` key. Positive control (`buildCsv` definition) fired; known-absent probe 0.
+>   **A rename breaks nothing in the app.** Whatever a recipient built by hand against the old header
+>   is the only consumer, and it is outside the repository.
+> - ⛔ **BUT IT BUMPS `kCsvShapeVersion`.** The docstring's rule names *"renamed"* explicitly among the
+>   changes that move the marker. **7 test files carry a `v6` literal; 9 reference the constant.**
+>   ⚠️ This corrects the earlier *"nine asserting literally"* — it was 7 literal, 9 by reference.
+> - ⚠️ **Test 5 of `beforehand_wording_test` constrains any new wording:** no header cell may contain
+>   `trigger`, with the reason *"column would label the field causally in the export"*. Its positive
+>   control asserts the option values reach the row. **The test will catch a regression toward the
+>   causal word; it does not judge whether a replacement conveys meaning.**
+>
+> ⭐ **THE REFRAME, RECORDED AS THE FINDING: `beforehand` IS NOT BADLY CHOSEN.** It is a heading
+> FORCED by collapsing seven one-hot columns into one — the one-hot form never needed a name — and it
+> was chosen to avoid a causal claim, with a test to hold the line. ⛔ **It succeeded at not asserting
+> causation and failed at conveying meaning** — and the file has no room to explain, because it
+> carries **no header comment and no preamble.** (It once did: 631b53c's export wrote `#` comment
+> lines above the header. They are gone; the BOM is the only thing before the header now.)
+>
+> ⚠️ **THE LARGER QUESTION, RECORDED WITHOUT BEING OPENED.** The screen's own hint is
+> *"Not a cause — just what was going on."* **A header cannot carry that. A preamble row could, and
+> the file has none.** ⛔ That is a bigger change than a rename: it collides with the shape marker
+> (a preamble changes what row 1 is), it changes what every hand-built spreadsheet points at, and it
+> touches the coverage question §9 already routed to the adviser — a preamble that explains one
+> column invites the question of what else it should state. **NOT PROPOSED.** Chat drafts copy, and
+> any wording waits on the model being in hand.
+>
+> **Sourcing.** Header sites, readers, the shape rule and the test's assertions: read at 17fc5e6.
+> The 7 / 9 counts: measured by grep over `test/`. The April preamble: read from `git show 631b53c`.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
