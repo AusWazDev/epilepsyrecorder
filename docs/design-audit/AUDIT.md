@@ -6166,3 +6166,213 @@ by the CLI.
 > states, two platforms, extensive use, no duplicate seen. ⛔ **It still cannot exclude the quiet
 > case**, because (b) above measured that a drop leaves no trace in any outcome object. ⛔ **And it
 > does not touch §13(be)**: one event, one device, a 55-minute unobserved window.
+
+---
+
+### (bl) THE EXPORT, READ AS ITS RECIPIENT WOULD READ IT — AND WHO THAT IS HAS NOT BEEN DECIDED
+
+**10 September 2026.** Nine findings touch History; this is the first to follow the CSV out of the
+app and read it as a file. ⛔ **No change proposed here.** Any change to the export is a proposal
+under `docs/WORKING-AGREEMENT.md`.
+
+⛔ **THE PREMISE FIRST, BECAUSE THE ASSESSMENT RESTS ON IT AND IT WAS NEVER ESTABLISHED: WHO THE
+RECIPIENT IS HAS NOT BEEN DECIDED.** The lens used — *a cold reader who was not there, was not
+taught the app, and reads only this* — was chosen by the briefing party and adopted without being
+established. ⭐ **If the recipient is briefed, most of the readability findings below are noise. If
+the file must stand alone, they are the point.** **RECORDED AS AN OPEN QUESTION.** Every finding
+marked *reader-dependent* below is conditional on its answer; the ones marked *reader-independent*
+hold either way.
+
+**PROVENANCE, STATED.** The three real exports off-device (`MER Device Baselines`) are **v3, v3 and
+v4, all 27 August 2026**. The live marker is **v6**, and the header changed at v5 (`condition`
+added). **No current export exists off-device.** The v6 file assessed here was **GENERATED FROM
+FIXTURES** — `buildCsv` and `csvFilename` called directly from a throwaway test, since deleted — with
+a quick-log, a complete record carrying rescue medication and escaped free text, a backdated record
+and a medication note. Its `condition` column reads `unknown` on every row because the fixture named
+no condition. The real v4 file was used alongside it for the Excel measurement, because its three
+time columns are formatted identically.
+
+**The header, verbatim, after a three-byte UTF-8 BOM:**
+
+    timestamp_iso,date,time,record_kind,condition,event_type,duration,duration_seconds,severity,observations,beforehand,rescue_med_given,rescue_med_helped,rescue_med_second_dose,referral_required,medication_kind,notes
+
+**A quick-log row and a complete row, verbatim:**
+
+    2026-08-30T16:36:41.000,2026-08-30,4:36 PM,event,unknown,unknown,unknown,,unknown,,,,,,No,,
+    2026-09-08T14:05:30.000,2026-09-08,2:05 PM,event,unknown,Seizure / fit,3m 20s,200,Severe,tired; confused,Stress; Missed medication,Yes,Partly,No,Yes,,"Fell, hit head; ""quite bad"", 2nd this week
+    Called GP"
+
+#### Reader-INDEPENDENT — these hold whoever opens the file
+
+⛔ **1. `referral_required` WRITES `No` ON A RECORD THAT WAS NEVER ASKED.** Every other unasked field
+writes `unknown` or blank. This one writes an explicit negative — see the quick-log row above, which
+carries five `unknown`s and one `No`. **The file states something the app does not know.**
+`referralRequired` is a non-nullable `bool` defaulting to `false`, and `buildCsv` writes
+`r.referralRequired ? 'Yes' : 'No'`. ⚠️ **FLAGGED AS CLAIM-ADJACENT:** it is an assertion made on
+the user's behalf in a medical export, and may route to the adviser (§9) rather than to a design
+decision. **Not decided here.**
+
+⛔ **2. THE `Unknown` COLLISION.** `Unknown` is a **seeded beforehand option** (`kTriggerOptions`,
+`constants.dart`). So one row can carry a user's POSITIVE answer — *"I do not know what preceded
+it"* — in `beforehand`, and up to five NOT-ASKED markers in the scalar columns, **using the same word
+in two cases.** Nothing in the file says the cases differ in meaning.
+
+⛔ **3. `condition` READS `unknown` ON EVERY MEDICATION ROW, even when the user has named one.**
+`_medicationCells` writes the literal `'unknown'` because a medication note has no event type to
+derive from. **And on a medication row every event column is blank meaning NOT APPLICABLE**, while
+the same blank on an event row means NOT NOTED. The reader must consult `record_kind` to know a
+blank has changed meaning, **and nothing in the file says so.** (The code's own comment records this
+as the collision `record_kind` was added to resolve; the resolution is legible to a reader of the
+code, not of the file.)
+
+⛔ **4. THE `date` COLUMN OPENS AS `########` IN EXCEL AT DEFAULT WIDTH — EVERY ROW, ON BOTH THE
+GENERATED v6 AND THE REAL v4.** ⭐ **Measured, not reasoned:** Excel 16.0 via COM, culture en-AU,
+`Workbooks.Open` as a double-click would. The file's `2026-08-30` is stored as serial **46264**, format
+`d/mm/yyyy`, and displays as hashes until the column is widened; widened, it shows **`30/08/2026`** —
+a day-first locale date, not the ISO form the file holds. `time` is likewise converted to a serial
+(`0.6917`, format `h:mm AM/PM`) but displays unchanged. `timestamp_iso` stays text. `duration_seconds`
+becomes a number. **No test could catch this: the file is correct, and the reinterpretation happens
+in the reader's application.** ⚠️ **Numbers and Google Sheets NOT MEASURED** — neither is on this
+machine.
+
+✅ **What the file gets right, reader-independent:** the BOM is honoured (A1 reads `timestamp_iso`
+cleanly, the en dash in `1–5 minutes` survives); a notes cell holding a comma, a semicolon, doubled
+quotes and a newline is quoted per RFC 4180 and Excel reconstructs it exactly, newline included;
+the delimited lists read as plain text; and the stored 1/2 severity §13(bf) saw never reaches the
+file — every enum renders as its label (`Mild / Moderate / Severe`, `Yes / Partly / No`,
+`Missed / Late / Changed`).
+
+#### Reader-DEPENDENT — recorded WITH the dependency, not as defects
+
+**If the recipient is unbriefed**, these headers do not carry their meaning:
+
+| Header | What a cold reader cannot infer |
+|---|---|
+| `record_kind` | the values `event` / `medication_note` are clear once seen; the header is not |
+| `observations` | **that these are AFTER the event** is stated nowhere in the file |
+| `beforehand` | its wording exists deliberately to avoid asserting causation (`beforehand_wording_test`) — **care the file cannot convey**; a reader may read the list as triggers regardless |
+| `medication_kind` | the values `Missed / Late / Changed` describe a DEVIATION; the header suggests a drug name |
+| `timestamp_iso` | a technical name beside `date` and `time`, so three columns say one thing |
+
+**Also reader-dependent:** the file states no coverage period — first row to last row is the only
+inference, and §9's adviser item already records that a backdated row is indistinguishable from a
+live one; a month with no rows and a month with no logging read the same; and **nothing in the file
+says what the app cannot record** — that observations and beforehand are drawn from short fixed lists,
+that severity is a three-step self-comparison, or that several columns are closed enums. A file that
+looks comprehensive misrepresents what was captured **only if its reader does not already know.**
+
+⛔ **THE DEVELOPER'S CORRECTION, RECORDED.** The briefing party framed the quick-log row above —
+five `unknown`s — as a defect. **It is EXPECTED FUNCTION**: one tap, details never added, the app
+working as designed, and `unknown` is the honest value for every field it names. ⭐ **The row is
+accurate. Whether the FILE communicates that state to its reader is the open question, and it
+depends on the recipient.** Same shape as the developer's correction in §13(bk): the briefing party
+read an absence as a fault where the record was right.
+
+**Blank-versus-negative, per column, read from `buildCsv`:** distinguishable for the three rescue
+columns (`Yes` / `No` / blank-is-null) and for the scalars that write `unknown`. **Not**
+distinguishable for `duration_seconds` (blank is both "never asked" and "answered as a bucket"),
+`observations` and `beforehand` (blank is both "not asked" and "asked, none chosen"), and
+`referral_required` per item 1.
+
+**Filename:** `medical_event_recorder_all_20260910_213000.v6.csv` from Home,
+`medical_event_recorder_filtered_…` from a narrowed History. It carries the app, a scope word, an
+export timestamp and the shape marker; **no patient identifier, no period.** `v6` means nothing to a
+recipient and `filtered` says a subset without saying which. Reader-dependent whether that matters.
+
+**Sourcing.** Excel figures: measured. Column semantics and enum values: read from
+`event_record.dart` at 85661d0. Numbers and Sheets: not measured. The recipient's identity: not
+established by anyone, recorded as open.
+
+---
+
+### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
+
+**10 September 2026.** The question a reminder rests on — *how long after a quick-log does the user
+come back and add details, and do they come back at all* — **cannot be answered from any data MER
+holds.** Three independent reasons, each read.
+
+**(a) NO COMPLETION TIMESTAMP EXISTS.** Verified on Windows at 85661d0, `lib/`, 34 Dart files:
+
+    modifiedAt | updatedAt | completedAt | editedAt and their snake_case forms    0 hits
+    control  loggedAt   6 (camelCase)   logged_at   12
+    control  occurredAt 41              occurred_at 17
+    across lib/ + test/, 124 files:  0 hits;  controls loggedAt 17, occurredAt 76
+
+The schema's time-bearing columns are `event.logged_at`, `event.occurred_at`,
+`medication_note.occurred_at`, `medication_note.logged_at` — **four, none a modification time** —
+and the backup envelope carries only `exportedAt`. ⚠️ The briefing party's control figures were
+*loggedAt 17, occurredAt 67*; the 17 matches lib+test, the 67 does not match either scope measured
+here (51 / 76). **The null result is the same in every scope; the controls differ and the
+difference is recorded rather than reconciled.**
+
+**(b) `details_completed = 1` CANNOT SEPARATE THE TWO POPULATIONS.** A record captured with details
+in one sitting and a record quick-logged then completed a week later **both end at `1`, with no time
+attached.** ⭐ **Those are exactly the two populations the question needs.** The column is
+deliberately tri-state — `event_store_sqlite.dart:101`: *"Nullable THREE ways: 1 complete, 0
+partial, NULL predates the wizard"* — and none of the three states carries a when.
+
+**(c) THE 58 CANNOT BE SHOWN TO BE REAL USE.** ⚠️ **Reported by the briefing party from the iPhone
+database, which is not on this machine; NOT verified here.** As reported: all 16 post-wizard records
+fall in a 2h39m span on 27 August inside a session actively driving the app; 58 of 58 sit in that
+session's window; a control window captures 0. **Not established as synthetic for any individual
+record — but none can be established as real, and no field separates them.** ⛔ **What IS on this
+machine cannot corroborate it:** the only envelopes here are the TABLET's three 27 August backups
+(72 records, `detailsCompleted` null on 70 and false on 2, none true), and §13(bf) already records
+the tablet and the iPhone as different populations.
+
+⭐ **THE REFUSAL TO BUILD A PROXY, RECORDED.** `ordinal` was tested as a stand-in for edit order and
+**rejected**: it is reassigned from list position on every `save()` (`eventToRow(r, ordinal)`,
+loaded `ORDER BY ordinal ASC`), so it carries CHRONOLOGICAL RANK, not edit order — verified 0 rows out
+of order, reported. ⛔ **"There isn't an honest one" is the report.** A proxy with caveats gets
+quoted later without them; that is the stale-authoritative-label class, and the way to avoid it is
+to not create the label.
+
+⚠️ **THE TRANSCRIPT ZERO'S POWER, NOT JUST THE ZERO.** The 30 August transcript
+(`docs/EVIDENCE-2026-08-30-59-record-reading.txt`) reads the database at two moments 42 minutes apart
+and shows zero completed ids at both. **A 0→1 transition could not have been observed even if it
+happened** — two samples bound nothing between them. The zero is consistent with the population being
+untouched and with any amount of activity between the reads.
+
+⛔ **THE CONSEQUENCE: THE REMINDER'S PREMISE IS UNTESTABLE AGAINST EXISTING DATA.** That does not
+make it wrong — **it makes it unevidenced.** Recorded as an **OPEN PROPOSAL**, not as rejected. ⛔
+**No reminder is designed here and no completion timestamp is specified** — both are proposals under
+the working agreement.
+
+⭐ **AND A COMPLETION TIMESTAMP IS A CANDIDATE FOR THE SAME DATA-MODEL WORK AS §13(bj)'s INTENT
+SIGNAL.** That entry found the write path cannot say whether a shortened list was intended; this one
+finds it cannot say when a record was finished. **Two instances, one shape: the write path lacks a
+signal that a later question needs, and the absence is discovered when the question is asked.**
+
+---
+
+### (bn) SQLite AND DART DISAGREE ABOUT `details_completed` — A LIVE HAZARD FOR ANY QUERY AGAINST A NULLABLE COLUMN
+
+**10 September 2026.** Recorded on its own because it will recur on every nullable column in this
+schema, and it is **not a defect in the app** — the app's Dart side handles it correctly.
+
+⛔ **THE DISAGREEMENT.** In SQLite, `WHERE details_completed = 0` evaluates to NULL — not false — for
+every row whose value is NULL, so **the 42 legacy rows fall out of BOTH `= 0` and `= 1` buckets
+silently.** In Dart, `null == false` is `false`, so the same rows fall through `wantsWizard`'s first
+clause and are classified by `isIncomplete(r)` on their content. **Same column, same rows, two
+different answers, and neither engine reports that it made a choice.**
+
+⭐ **CAUGHT ONLY BY A RECONCILIATION CONTROL.** The first query returned **13 + 3 = 16 against a
+total of 58**; the missing 42 were the NULLs. ⚠️ Reported by the briefing party from the iPhone
+database; the arithmetic is what caught it, and the arithmetic is reproducible from the figures.
+**A count that does not sum to its denominator is the check** — same discipline as §13(bi)'s
+"compare against the total, not against expectation".
+
+**The column is deliberately tri-state**, and the Dart mapping preserves all three states
+(`event_store_sqlite.dart:338` writes NULL / 0 / 1; `:403` reads NULL back as `null`, not `false`,
+with the comment *"`== 1` alone would turn NULL into false and route 71 records into a wizard that
+does not describe them"*):
+
+    NULL   migrated legacy — predates the wizard, never asked
+    0      partial — quick-logged, details not yet added
+    1      walked the flow
+
+⚠️ **RECORDED AS A LIVE HAZARD, NOT A DEFECT.** Any future query against `details_completed`,
+`occurred_at`, `duration_seconds`, `event_type`, `severity`, `condition_id` or any other nullable
+column here must handle NULL explicitly — `IS NULL` as its own bucket, and a total that the buckets
+must sum to. **The schema's rule that NULL means NOT ASKED is a data-model virtue and a query
+hazard at once**, and the second follows from the first.
