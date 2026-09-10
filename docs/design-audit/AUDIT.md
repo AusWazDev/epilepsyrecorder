@@ -3189,6 +3189,12 @@ closure is not a correction of it** — the two are different acts. The CLI repo
 artefact states; the reading draws a conclusion the artefact supports but does not state, and it is
 recorded here as such so a later reader can reject the inference while keeping the sweep.
 
+> ⚠️ **LINE CITATIONS ROTTED — noted 10 September 2026 (late), at 4a9b0bd.** The code block above
+> cites `:1114`, `:563` and `:577`. At 4a9b0bd, `_buttonFlash ? Colors.white` is on **line 1160**
+> and `_buttonFlash = true` on **line 592** (now guarded by `mayOnset`). **The symbols are the
+> citation; the numbers were true on 8 September.** Left as written per `ARCHITECTURE.md`'s rule:
+> cite by symbol, and treat any line number as stale once the file changes.
+
 ---
 
 ### (ai) THE DISCARD DIALOG, ASSESSED ON THE DEVICE
@@ -5999,6 +6005,11 @@ person.** `main.dart:27-41` carries a real DSN, `environment = 'production'`,
 notification channels and whether anyone is subscribed live in the Sentry project, not in this
 repository, and cannot be established from here.**
 
+> ⚠️ **ONE LINE CITATION OFF BY ONE — noted 10 September 2026 (late), at 4a9b0bd.** The chain above
+> cites `ios_capture_bridge.dart:272  merged`; the identifier `merged` is on **line 271** and the
+> `..addAll(...)` cascade on 272. Every other line in the four chains was checked against 4a9b0bd and
+> still points at its cited symbol (11 of 12). The chain's claim is unaffected.
+
 ---
 
 ### (bj) 🔴 THE REAL BLOCKER IS THE ABSENCE OF AN INTENT SIGNAL, AND IT IS A DATA-MODEL QUESTION RATHER THAN A VERIFICATION ONE
@@ -6482,6 +6493,27 @@ established by anyone, recorded as open.
 > question stays closed until that read exists; §13(bl)'s "larger question" annotation above already
 > records why opening it is expensive.
 
+> ⚠️ **CORRECTIONS TO THIS ENTRY'S OWN CITATIONS — 10 September 2026 (late), from a sweep of the
+> document rather than of the app.** Two defects in the annotations above; the claims stand, the
+> sourcing was wrong.
+>
+> **1. Architectural fact 1 was cited for more than it says.** The first annotation reads *"No backend,
+> no account, the device is the only copy, the user controls where it goes (…architectural fact 1)"*.
+> Fact 1 reads *"No backend. Fully local, no account, no sync."* — it supports the first three clauses.
+> **"The user controls where it goes" is the developer's 10 September statement, not the briefing's.**
+> Claim right; source over-attributed.
+>
+> **2. The "nine asserting literally" correction corrected a statement this document never made.**
+> The cost annotation says *"This corrects the earlier 'nine asserting literally'"*. Zero hits for that
+> phrase, or for "nine" beside `v6`, anywhere in this document before that annotation. **The "nine" was
+> in the briefing and in the CLI's report, not here** — so the annotation implies a prior error in the
+> document that does not exist. The measured figures (7 literal, 9 by reference) stand.
+>
+> **Also checked and NOT a defect:** §13(bo)'s citation of architectural fact 6 already carries its
+> qualification in the same paragraph — *"its word 'export' is generic across CSV and backup; that the
+> backup is a JSON envelope that leaves the device is read from the source, not from the briefing."*
+> The briefing party flagged it as the one known defect; it was already qualified as written.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
@@ -6503,6 +6535,14 @@ and the backup envelope carries only `exportedAt`. ⚠️ The briefing party's c
 *loggedAt 17, occurredAt 67*; the 17 matches lib+test, the 67 does not match either scope measured
 here (51 / 76). **The null result is the same in every scope; the controls differ and the
 difference is recorded rather than reconciled.**
+
+> ⚠️ **CORRECTED 10 September 2026 (late) — THIS ENTRY GIVES TWO FIGURES FOR ONE SCOPE WITHOUT SAYING
+> WHY.** The table above states lib/ `occurredAt` as **41**; the prose above states **51**. Both are
+> real and both are from lib/ at 85661d0: **41 is the whole-token count** (`grep -w`), **51 is the
+> substring count**, which also matches `_occurredAt` and similar identifiers. The difference of 10
+> is method, not drift. **The null result — 0 hits for a modification timestamp — holds under both
+> methods.** Found by the document sweep of 10 September; the defect is in this entry's presentation,
+> not in the measurement.
 
 **(b) `details_completed = 1` CANNOT SEPARATE THE TWO POPULATIONS.** A record captured with details
 in one sitting and a record quick-logged then completed a week later **both end at `1`, with no time
