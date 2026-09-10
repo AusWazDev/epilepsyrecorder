@@ -6338,6 +6338,38 @@ established by anyone, recorded as open.
 > it rests on: read from the briefing's architectural facts. The §12 correction: read, zero hits.
 > Everything else here re-weights findings already measured or read above; nothing new was measured.
 
+> ⛔ **ANNOTATED 10 September 2026 — `referral_required` IS ROUTED TO THE ADVISER. Decided
+> 10 September 2026 and agreed by the developer. Status: UNSENT — the routing is decided; the
+> question has not been put to anyone.** Nothing in the source is changed by this; the column waits.
+>
+> ⭐ **THE REASONING, INCLUDING CHAT'S REVERSAL.** Chat first read the `No` as a data-fidelity
+> defect — a null rendered as `false`, the same class as `condition` writing `unknown` on a medication
+> row — and would have treated it as a design decision. It reversed. ⛔ **THAT READING DESCRIBED THE
+> CAUSE, NOT THE ARTEFACT.** The artefact is a medical record, handed to an unknown recipient (the
+> annotation above), stating that a referral was not required. A practitioner does not see a
+> serialisation choice; **they see a clinical fact about care, and may act on it.** ⚠️ And the standing
+> rule (D2, `C:\dev\CLAUDE.md`; §9 here) covers treatment. **A referral is a treatment-pathway
+> decision, and the rule does not carve out "unless the cause is technical".**
+>
+> ⭐ **THE ASYMMETRY THAT DECIDED IT.** If chat is right that this is technical, the adviser costs a
+> short question and confirms it. If chat is wrong, a false clinical statement stays in an export
+> that goes to practitioners, **and the fix was chosen by someone unqualified to judge what the cell
+> means to its reader.** The cost of asking is bounded; the cost of not asking is not.
+>
+> ⛔ **THE QUESTION'S FRAMING, RECORDED BECAUSE IT IS NOT "SHOULD WE FIX THIS":**
+>
+> > **WHAT SHOULD THE EXPORT SAY WHEN A QUESTION WAS NEVER ASKED?**
+>
+> ⚠️ **The obvious fix — blank instead of `No` — is itself a choice with clinical meaning.** A blank,
+> in a file that states nothing about its own coverage (see the entry above), may read as an
+> OMISSION rather than as NOT-ASKED. `unknown`, the scalar convention elsewhere in the file, is a
+> third option with its own reading. **None of the three is neutral, which is why the question is
+> the adviser's and not a serialisation decision.**
+>
+> **Sourcing.** The routing decision and the developer's agreement: reported by the briefing party,
+> 10 September 2026. The behaviour being routed: read, `buildCsv` writes
+> `r.referralRequired ? 'Yes' : 'No'` over a non-nullable `bool`. The standing rule: read, D2.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
