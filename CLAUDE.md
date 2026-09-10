@@ -3,7 +3,7 @@
 > **Auto-loaded by Claude Code on every session start.**
 > This file covers code context only — tech stack, key files, architecture, gotchas.
 >
-> ⭐ **NOT FOR: anything the documents below are authoritative for.** This file is a working index and a gotcha list. **Architecture → `docs/ARCHITECTURE.md`** (already deferred to below, and that deferral is correct — it is the authority, not this file). **Schema → `docs/DATA-MODEL.md`. Design, layout and UX → `docs/design-audit/AUDIT.md`. Session history → `STATUS.md`.**
+> ⭐ **NOT FOR: anything the documents below are authoritative for.** This file is a working index and a gotcha list. **Architecture → `docs/ARCHITECTURE.md`** (already deferred to below, and that deferral is correct — it is the authority, not this file). **Schema → `docs/DATA-MODEL.md`. Design, layout and UX → `docs/design-audit/AUDIT.md`. Session history → `STATUS.md`. How chat, the CLI and the developer divide work, what escalates, and when a brief stops → `docs/WORKING-AGREEMENT.md`** (approved 10 Sep 2026; process, not code context, which is why it is not in this file).
 > ⛔ **Where this file and one of those disagree, THAT document governs and this one is the stale copy.** Several blocks below restate their content; a restatement is a convenience copy that nothing re-derives.
 >
 > **For the full derived architecture — capture model, all five record-creation
