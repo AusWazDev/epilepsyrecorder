@@ -6,9 +6,17 @@ class MERColours {
   static const Color background   = Color(0xFFF5F8FB);
   static const Color surface      = Color(0xFFFFFFFF);
   static const Color alert        = Color(0xFFE05B3A);
-  static const Color border       = Color(0xFFB5D4F4);
+  // ⭐ DARKENED 11 Sep 2026 (AUDIT.md §13(s)) — was #B5D4F4, 1.53:1 on white
+  // and 1.44:1 on `background`, against WCAG 2.2 AA's 3.0:1 for non-text UI.
+  // Now 3.38:1 on white, 3.17:1 on `background`. Same hue, channels scaled
+  // by 0.67. It is every card, chip and input outline and the divider.
+  static const Color border       = Color(0xFF798EA3);
   static const Color textPrimary  = Color(0xFF0D4F82);
-  static const Color textMuted    = Color(0xFF4A7FA5);
+  // ⭐ DARKENED 11 Sep 2026 (AUDIT.md §13(s)) — was #4A7FA5, 4.31:1 on white
+  // and 4.05:1 on `background`, against AA's 4.5:1 for body text. Now 4.95:1
+  // on white, 4.64:1 on `background`. Same hue, channels scaled by 0.92. It
+  // is bodyMedium, bodySmall, labelLarge and every input label and hint.
+  static const Color textMuted    = Color(0xFF447598);
   static const Color success      = Color(0xFF3B6D11);
   static const Color warning      = Color(0xFFBA7517);
 }

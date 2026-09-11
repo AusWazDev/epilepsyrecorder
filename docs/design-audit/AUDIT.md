@@ -1954,6 +1954,23 @@ between**; app icons and the splash are images, not colour pairs; and every syst
 surface — keyboard, share sheet, date picker, the `PopupMenuButton` menu fill — **is not set in
 this codebase at all.**
 
+⭐ **FIXED IN PART, 11 September 2026 — THE TWO PALETTE VALUES. 28 → 18.** `MERColours.textMuted`
+`#4A7FA5` → **`#447598`** (channels × 0.92, same hue): 4.31 → **4.95:1** on `surface`, 4.05 →
+**4.64:1** on `background` — rows 21, 22, 24, 25, 26, 27 now pass 4.5. `MERColours.border`
+`#B5D4F4` → **`#798EA3`** (× 0.67): 1.53 → **3.38:1** on `surface`, 1.44 → **3.17:1** on
+`background` — rows 1, 3, 4, 5 now pass 3.0. Ten rows, two values, computed with the same
+apparatus as the table above (boundary control `#767676` 4.54 PASS / `#777777` 4.48 FAIL
+re-run first). Render comparison under Roboto: no glyph moved on home, History, About or the
+form at 375, 430, 800 (`test/a11y_batch_render_comparison_test.dart`, baseline from the
+unpatched code). ⚠️ One derived pair the table never measured: home's *"Tap edit to update
+details"* is `textMuted.withOpacity(0.7)` on `surface`, 10 px italic — **2.61 → 2.83:1, still
+failing**, not one of the 28, recorded here so it is not mistaken for fixed. ⛔ **WHAT REMAINS,
+SO THIS ENTRY DOES NOT READ AS "CONTRAST FIXED": 18 of 28 still fail** — the 17 with a raw
+literal on at least one side (every banner, both info cards, the three help-status rows; §13(w)'s
+11/17 split) plus row 11, the SnackBar action label, which is two palette values and was not in
+scope. The ~40 raw `Color(0x…)` literals outside the theme are untouched by design — counts per
+file identical before and after — because those surfaces are the vocabulary work's to rebuild.
+
 ---
 
 ### (t) COLOUR-ALONE — 3 of 14 conditional colours carry meaning by colour alone
@@ -7284,6 +7301,23 @@ with §10's layout work; the titles belong nowhere until measured on a device.
 
 **Sourcing.** Measured this date; `_InfoRow`, `_LinkRow` and the gap line read at 187a8a1.
 
+⭐ **FIXED, 11 September 2026 — the two real defects; the two harness artefacts stay as recorded.**
+`_InfoRow`: label and value both `Flexible`, `spaceBetween` kept, so a row that fits sits exactly
+where it did and a row that does not wraps within half. Measured at 375 × 667 in the harness
+font: overflows **[109.0, 69.3] → []** at 1.0, and at 2.0 **[78.8, 525.0, 446.3, 64.5, 18.0,
+117.0, 18.0] → []**. `_LinkRow`: the label is capped at half the row by a `LayoutBuilder`, laid
+out first as before, so at 1.0 the URL keeps the whole remainder; the three https URLs measure
+**0.0 → 127.5** wide at 2.0 (the privacy URL was the zero). ⛔ Not two `Flexible`s there — that
+would have cut the URL's 1.0 width from the remainder to a fixed half. The gap line: `maxLines: 1`
+removed; `didExceedMaxLines` **true → false** at 1.0 and 2.0, and the string wraps (51 px tall
+at 1.0 in the harness font, so an incomplete row at 375 is now taller by the wrapped lines —
+intended, and why the render comparison's History fixture is complete rows only). Render
+comparison under Roboto: About's 29 paragraphs identical at 375, 430, 800 before and after —
+⚠️ after `textAlign: TextAlign.end` was REMOVED from the value: a paragraph box is its glyph
+width rounded up, so end-aligning inside it shifted three values right by 0.1–0.2 px, and the
+comparison caught it. `test/a11y_batch_measure_test.dart`, six assertions, each run unpatched
+first.
+
 ---
 
 ### (bx) 🔴 WHAT IS GENUINELY SCALE-INDUCED — HISTORY'S TITLE ROW FIRST
@@ -7326,6 +7360,21 @@ to a fix here.
 **Sourcing.** Measured this date, twelve screens plus a re-run of conditions and a second pass naming
 each clipped paragraph, all probes deleted. History's title `Row`: read at 187a8a1. The conditions
 explanation: inferred, marked.
+
+⭐ **FIXED, 11 September 2026 — the title row.** The time is now laid out first at its own width
+and the badge is `Flexible`, with `spaceBetween` holding the badge at the right edge; the badge
+label is one line, ellipsised. Measured at 375 × 667 in the harness font, four badged rows of six:
+overflows at 2.0 **[66.5, 111.5, 66.5] → []** (66.5 on each Seizure row — the figure above —
+and 111.5 on the longer Absence label, read structurally from every `RenderFlex` marked
+OVERFLOWING rather than from the once-per-flex error report, which the first probe missed); at
+1.0 **[] → []**. ⛔ **Not two `Flexible`s**: that caps each child at half the row at every size,
+and in the harness font, where "10:30 AM" alone is 124 of the row's 243 px at 375, it trimmed the
+badge at the DEFAULT size — the render comparison caught it before it shipped. Under Roboto, History's 18 paragraphs are
+identical at 375, 430 and 800 before and after (glyph boxes, not paragraph boxes: taking the
+time out of `Expanded` changes its box from the whole slot to its own width while the glyphs do
+not move, and the first fingerprint flagged exactly that). The rest of this entry — disclaimer
+title, duration unit labels, app-bar subtitles, URLs (fixed under §13(bw)) — stands as recorded.
+`test/a11y_batch_measure_test.dart`, run unpatched first.
 
 ---
 

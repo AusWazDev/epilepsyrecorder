@@ -1154,15 +1154,30 @@ class _EventListTile extends StatelessWidget {
 
     return ListTile(
       onTap:  onTap,
+      // ⭐ THE TIME IS FIXED, THE BADGE IS FLEXIBLE. 11 Sep 2026 (AUDIT.md
+      // §13(bx)). This was `Expanded(time)` beside a bare badge, and at 200%
+      // text scale the badge — which could not shrink — pushed the row 66.5 px
+      // past its edge on every typed event. The time is the row's identifier
+      // (§13(bz)) and is laid out first at its own width; the badge, a
+      // CLASSIFICATION, takes what is left and ellipsises when that is not
+      // enough. `spaceBetween` puts the leftover in the middle, so at 1.0 the
+      // time still sits left and the badge still sits right, in exactly the
+      // same place — test/a11y_batch_render_comparison_test.dart holds that
+      // against a baseline from the unpatched code.
+      //
+      // ⛔ NOT two `Flexible`s. That caps each child at HALF the row whether
+      // or not the other needs it; in the harness font, where "10:30 AM" alone
+      // is 124 of the row's 243 px at 375, it trimmed the badge at the
+      // DEFAULT size, and the render comparison caught it.
       title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Text(timeFmt.format(r.whenHappened)),
-          ),
+          Text(timeFmt.format(r.whenHappened)),
           // No badge at all when the type is unknown. A badge is a
           // CLASSIFICATION, and there is nothing to classify — a grey chip
           // reading "unknown" would assert that someone had considered it.
-          if (r.eventType != null) _EventTypeBadge(type: r.eventType!),
+          if (r.eventType != null)
+            Flexible(child: _EventTypeBadge(type: r.eventType!)),
         ],
       ),
       // ⛔ CONTENT FIRST, THE GAP LINE DEMOTED BENEATH IT. 7 Sep 2026.
@@ -1238,10 +1253,15 @@ class _EventListTile extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+            // ⭐ NO maxLines, 11 Sep 2026 (AUDIT.md §13(bw)). `maxLines: 1`
+            // clipped "Add details: duration, type, severity" at 375 wide at
+            // the DEFAULT text size — the row's whole job is to name which
+            // fields are open, and an ellipsis hid the names. The string is
+            // at most three field names, so letting it wrap is bounded: a
+            // second line at 375, and the "maxLines budget" comment above
+            // now describes the content line only.
             Text(
               gaps,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 12,
                 color: MERColours.textMuted,
@@ -1329,6 +1349,12 @@ class _EventTypeBadge extends StatelessWidget {
       ),
       child: Text(
         eventTypeLabel(type),
+        // One line, ellipsised, 11 Sep 2026 (§13(bx)): the badge now sits in
+        // a `Flexible`, so when its slot is narrower than its label it must
+        // trim rather than wrap into a two-line pill.
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize:   11,
           fontWeight: FontWeight.w500,

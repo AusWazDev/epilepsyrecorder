@@ -291,11 +291,27 @@ class _LinkRow extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
+            // ⭐ THE LABEL IS CAPPED AT HALF THE ROW. 11 Sep 2026 (AUDIT.md
+            // §13(bw), §13(bx)). The URL beside it was already `Flexible`,
+            // but the label was not, so at 200% text scale the doubled label
+            // consumed the row and the URL laid out at ZERO width. The label
+            // is still laid out first at its own width — so at 1.0 nothing
+            // moves and the URL keeps the whole remainder — but it may not
+            // take more than half; past that it wraps and the URL keeps at
+            // least the other half.
+            //
+            // ⛔ NOT a `Flexible` on the label. Two flex children split the
+            // row in half at EVERY size, which would have cut the URL's width
+            // at 1.0 from the remainder to a fixed half.
+            child: LayoutBuilder(builder: (context, box) {
+              return Row(
               children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -327,7 +343,8 @@ class _LinkRow extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+              );
+            }),
           ),
         ),
         if (!isLast)
@@ -365,15 +382,34 @@ class _InfoRow extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium,
+              // ⭐ BOTH FLEXIBLE, 11 Sep 2026 (AUDIT.md §13(bw)). The value had
+              // no flex and pushed the row 109 and 69 px past its edge at 375
+              // wide at the DEFAULT text size. Each side may now take up to
+              // half the row and wraps past that; when both fit — every row
+              // here at the default size — `spaceBetween` leaves them exactly
+              // where they were. The label is flexible too so that a label
+              // which alone fills the row at 200% cannot push the gap past
+              // the edge (it did, by the 12 px of the gap).
+              Flexible(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color:      MERColours.textPrimary,
+              const SizedBox(width: 12),
+              // ⛔ NO `textAlign: TextAlign.end`. A paragraph's box is its
+              // glyph width rounded UP to a whole pixel, so end-aligning the
+              // glyphs inside it moves them right by the rounding — 0.1 to
+              // 0.2 px on these rows, measured under Roboto 11 Sep 2026 —
+              // and the render comparison rightly refused it. Start-aligned,
+              // a value that fits sits exactly where it did.
+              Flexible(
+                child: Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color:      MERColours.textPrimary,
+                  ),
                 ),
               ),
             ],
