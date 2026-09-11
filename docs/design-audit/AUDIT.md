@@ -1971,6 +1971,17 @@ literal on at least one side (every banner, both info cards, the three help-stat
 scope. The ~40 raw `Color(0x…)` literals outside the theme are untouched by design — counts per
 file identical before and after — because those surfaces are the vocabulary work's to rebuild.
 
+⚠️ **PRECISION NOTE, 11 September 2026 — row 5 and the leverage note above.** Row 5 cites
+`cardTheme side`. About's cards are `Card` widgets and draw their outline through it. Home's three
+cards — `_StatsRow`, `_LastEventCard`, `_HelpLinkCard` — are `Container`s with
+`Border.all(color: MERColours.border, width: 0.5)` and do not pass through `cardTheme`. The colour is
+the same token either way, resolved `#798EA3` in the rendered tree, so *"every card outline in the
+app"* holds on colour; the mechanism row 5 names covers About and not home. No ratio changes.
+⛔ **And see §13(ck): every one of these outlines is 0.5 logical wide, and on a 1× device the pair as
+PAINTED is roughly half-way between the defined pair and the background — 1.72:1 after the fix,
+not 3.38.** This table's ratios are for the pairs as defined; that is what it says it measures, and
+it is what it measures.
+
 ---
 
 ### (t) COLOUR-ALONE — 3 of 14 conditional colours carry meaning by colour alone
@@ -8340,3 +8351,103 @@ marked as such: the bin tile's rendering, the Your Data export's list, the resto
 be scoped without running the app: whether any drain END replay occurs against a hidden id on the
 device; whether the developer realises a mis-delete later at all (§13(ch)); whether `_countUsage`
 weighting by hidden events is noticeable.
+
+---
+
+### (ck) 🔴 A HALF-PIXEL STROKE PAINTS AT HALF STRENGTH — THE DEFINED PAIR CLEARED 3.0, THE PAINTED OUTLINE DID NOT, AND §13(s) NEVER CONSIDERED STROKE WIDTH
+
+**Measured 11 September 2026 at aec56f0, read-only.** ⭐ **§13(s) measures pairs as DEFINED — a
+foreground colour against the background it is drawn on. For text that is also the pair as PAINTED.
+For a hairline it is not**, on a device where a logical pixel is a physical pixel, and every hairline
+in this app is 0.5 logical wide.
+
+---
+
+**THE CHANGE REACHED THE SCREEN. That is established first, because the question that opened this
+read was whether it had.** Pixel diff of the committed tablet captures at 430×932, 8 against
+11 September, decoded from PNG without a library:
+
+| screen | pixels differing | of | rows touched |
+|---|---|---|---|
+| home | **10,103** | 400,760 (2.52 %) | 304 |
+| History | **8,089** | 400,760 (2.02 %) | 94 |
+
+Every card outline row on home, every row divider on History and every run of muted text changed.
+The muted text went `#4A7FA5 → #447598` — the token values exactly. **The outline rows went
+`#DAEAFA → #BCC7D1` on home and `#D5E6F8 → #B7C3CF` on History — neither the old token nor the new.**
+
+**WHAT `MERColours.border` PAINTS, resolved from the rendered tree at 430×932 (`RenderDecoratedBox`
+and `RenderPhysicalShape`, default state, a scratch probe since deleted):**
+
+| screen | element | class | painted colour | stroke | on |
+|---|---|---|---|---|---|
+| home | stats card outline, 390×83 | `_StatsRow` | `#798EA3` = `border` | 0.5 | `#FFFFFF` |
+| home | LAST EVENT card outline, 390×129 | `_LastEventCard` | `#798EA3` = `border` | 0.5 | `#FFFFFF` |
+| home | Edit details pill, 179×35 | `_LastEventCard` | `#798EA3` = `border` | 0.5 | `#F5F8FB` |
+| home | help-link card outline, 390×48 | `_HelpLinkCard` | `#798EA3` = `border` | 0.5 | `#FFFFFF` |
+| History | row dividers ×3, 386×1 | `Divider` via `dividerTheme` | `#798EA3` = `border` | 0.5 | none |
+| History | type badge outline ×3 | `_EventTypeBadge` | `#993C1D` at alpha 0.40 — a raw literal | 0.5 | `#FAECE7`, raw |
+
+Seven elements carry the token on these two screens. No card outline or divider on either is a raw
+literal.
+
+---
+
+**⛔ THE MECHANISM.** The tablet is 160 dpi: 1 dp = 1 px (`captures/INDEX.md`). A `BorderSide` of
+width **0.5** logical is half a physical pixel, and the rasteriser paints it at half coverage. **A 50 %
+blend of the token over its background predicts the captured pixel: `#DAEAFA` exactly before, and
+`#BCC6D1` after — one unit from the captured `#BCC7D1`.** Same sRGB apparatus as §13(s), boundary
+control re-run (`#767676` 4.54 PASS, `#777777` 4.48 FAIL).
+
+| the same pair | as DEFINED (§13(s) rows 3, 4, 5, 1) | as PAINTED on this device |
+|---|---|---|
+| card outline on `surface`, before | 1.53:1 | **1.23:1** |
+| card outline on `surface`, after | **3.38:1 PASS** | **1.72:1 FAIL** |
+| divider on `surface` (History rows), before | 1.53:1 | **1.27:1** |
+| divider on `surface`, after | **3.38:1 PASS** | **1.79:1 FAIL** |
+
+⭐ **The colour cleared the ratio; the stroke did not deliver it.** That is why the 11 September
+capture reads as unchanged to the eye: the outlines went from a quarter of the way to the background
+to not quite halfway, on a hairline.
+
+---
+
+**WHERE THE HAIRLINES ARE.** Every non-text stroke this theme defines is 0.5: `cardTheme` side,
+`chipTheme` side, `inputDecorationTheme` enabled and focused borders, `dividerTheme` thickness. On
+home, five `Border.all(width: 0.5)` on the token and three on raw literals (`0xFF81C784` at 0.5,
+`0xFFFF9800` twice at 0.5). Three outlines are drawn at the default 1.0 — the unsaved banner's
+`0xFFEF9A9A` and both `_InfoCard` borders through `bdColor` — and at 1× those paint at full strength.
+
+**⛔ CONSEQUENCE FOR §13(s), stated without re-running it.** Its 64 pairs and its 28 failures stand as
+what it says they are: defined pairs, with the threshold conversion, the boundary control and the
+undetermined-from-source list all stated. **Ten of the 28 cleared as defined on 11 September; the
+seven elements above show that clearing a defined non-text pair drawn at 0.5 does not clear the
+surface at 1×.** Of the 18 that remain, five are outlines: two at 0.5 (rows 7 and 9, `0xFF81C784` and
+`0xFFFF9800`) which carry this finding, and three at the default 1.0 (rows 2, 6 and 8 — both
+`_InfoCard` borders through `bdColor`, and the unsaved banner's `0xFFEF9A9A`) which do not. The text rows are unaffected — glyphs paint at
+full coverage. ⚠️ **On a 3× device the same 0.5 logical stroke is 1.5 physical pixels and paints far
+closer to the token. This is a 1×-device result, measured on one tablet; the iPhone captures have not
+been diffed.** Inferred and marked.
+
+**Recorded as its own entry rather than an annotation on §13(s)**, because it is not a correction to
+that table — no ratio in it is wrong — but a limit of its method that reaches every hairline pair in
+it and every hairline drawn since, and because the annotation on §13(s) that points here is one
+sentence. ⛔ **Not proposed.** Stroke width, density and colour are three variables and the developer
+has decided one of them today.
+
+---
+
+**⚠️ PROVENANCE OF THIS READ, recorded because it is the subject of the working agreement.** Two
+briefs on this subject carried three colour literals — `0xFFE8EEF4`, `0xFFE3EAF0`, `0xFFEEF2F6` —
+said to paint the card outlines. **They are absent from the repository**: 0 hits by grep of `lib/`,
+`test/` and `docs/`, and `git log --all -S` finds no commit on any branch that ever contained any of
+them; the same history search on the banner literal `0xFFEF9A9A` finds its introducing commit
+a42594f, so the apparatus was live. The first brief was refused with all three checks reported; the
+second reissued the figures unchanged and was refused again. Where the figures came from is not
+recorded here, because it is not known. ⭐ **The framing those briefs carried — that the border change
+had NOT reached the screen — was also wrong, and the pixel diff above is what corrects it.** This
+entry was written by the CLI from its own measurements at the developer's instruction.
+
+**Sourcing.** Rendered tree: scratch probe at 430×932, deleted. Pixel diff: the committed captures.
+Blend prediction and ratios: the §13(s) apparatus. Stroke widths: `mer_theme.dart` and
+`home_screen.dart`, read. Density: `captures/INDEX.md`. Inferred and marked: the 3× behaviour.
