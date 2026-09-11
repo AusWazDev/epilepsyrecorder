@@ -6768,3 +6768,21 @@ skip the answer.
 column and the preamble: recorded in §13(bl) and its annotations. Chat's readings of each as a
 defect: reported by the briefing party and, for the date column, recorded in §13(bl) as chat's own
 error.
+
+> ⚠️ **CORRECTED 11 September 2026 — THE COUNT IS TWO DOCUMENTED INSTANCES, NOT THREE.** The entry
+> above says three for three. **§13(bk) records the non-unique `id` as deliberate FROM THE START** —
+> it quotes the DDL comment in the same paragraph that introduces the column — so that instance rests
+> on the briefing party's account of chat's private reading, and the document's own record contradicts
+> it. **The pattern stands on TWO documented instances**: the `date` column (§13(bl), reversed the same
+> day) and the removed preamble (§13(bl), lead closed above). The third row of the table above is
+> attributed, not documented, and should be read that way.
+>
+> ⭐ **AND THE SHAPE OF THIS CORRECTION IS THE SAME ONE, WHICH IS WHY IT IS WORTH RECORDING:** chat
+> asserted a count about its OWN errors from memory. Same class as *"five remaining"* (§10's status
+> table), *"one of fifteen"* (reported by the briefing party as an earlier miscount), and the phantom
+> *"nine"* (§13(bl)'s sweep corrections). **A count of one's own mistakes is a live figure like any
+> other, and is verified against the document, not recalled.**
+>
+> ⚠️ **THE RULE THE ENTRY STATES STILL HOLDS ON TWO.** Two absences read as gaps, two decisions with
+> their reasons in git, two reversals within the day. The default question — *"who removed this, and
+> what did they say?"* — is not withdrawn. Only the count is corrected.

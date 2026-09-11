@@ -152,3 +152,70 @@ questions — not by merging the roles.
 
 **Where this document and the audit disagree about an event, the audit governs.** This document
 summarises; the audit is the record.
+
+---
+
+## 6. Citations — approved 11 September 2026
+
+⛔ **CITE BY SYMBOL. LINE NUMBERS ARE NOT CITATIONS.** `file.dart:symbolName`, not `file.dart:412`.
+
+⭐ **The evidence, so this is not read as preference.** The 10 September 2026 sweep of AUDIT.md for
+defects of the document found seven defect instances across four categories. **Four of the seven
+were stale line numbers** — two in §13(ah), one in §13(j), one in §13(bi) — every one of them a
+correct finding pointing at a line that had since moved. `docs/ARCHITECTURE.md` already carries this
+rule for itself and records why: an earlier revision had six line citations in the very table
+warning about line rot, and three of the six were wrong within days.
+
+⚠️ **The objection, and its answer.** A symbol appearing twice in a file is ambiguous; a line number
+is precise. ⭐ **But in the 10 September sweep the CLI resolved every stale citation by symbol** — the
+symbol was sufficient in all four cases, and the line number was the part that had rotted. Precision
+that decays is not precision.
+
+⛔ **Where a line number genuinely adds something** — a specific line inside a long function, a
+particular row of a table — **cite the symbol AND the line, symbol first**, so the citation survives
+the line rotting: `home_screen.dart:_thisMonthCount (line 520 at 4a9b0bd)`. A bare line number
+without a commit is never enough; a line number with a commit is a measurement, and the symbol beside
+it is what lets the next reader find the thing after the measurement has aged.
+
+⚠️ **Scope.** New writes to `AUDIT.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`, `STATUS.md` and the
+Change Register. **Existing citations are not retro-fixed under this rule** — they are the sweep's
+problem (§7), and a retro-fix pass would itself be a substantial write into a document that is
+mostly historical record.
+
+---
+
+## 7. The citation sweep — a cadence, not a mechanism
+
+⭐ **A CITATION SWEEP IS RUN PERIODICALLY, NOT CONTINUOUSLY.** The 10 September sweep cost one pass
+and found seven defect instances across four categories — **including two a mechanical checker could
+never catch**: an external citation that supported three of the four clauses it was attached to, and
+a "correction" of a statement the document had never made.
+
+⛔ **WHY A CHECKER WAS CONSIDERED AND REJECTED.** A verifier for `file.dart:NNN` citations would build
+machinery for exactly the class the symbol rule in §6 eliminates outright, and would miss the class
+the sweep actually catches. **Clause-level over-attribution and phantom corrections are judgements
+about what a sentence claims, not broken pointers.** No tool reads a sentence and asks whether its
+source says all of it. The cost of the machinery would buy the cheap half of the problem.
+
+**The sweep's categories, from the 10 September run, with what that run found:**
+
+| | Category | 10 Sep result |
+|---|---|---|
+| a | citations pointing at a source that does not say what is claimed | 1 (architectural fact 1, over-attributed by one clause) |
+| b | internal cross-references to a letter or section not carrying what is claimed | 0 of 57 letters and 12 sections |
+| c | prose counts disagreeing with an adjacent table or list | 1 (§13(bm), 41 whole-token vs 51 substring, method unstated) |
+| d | line-number citations that no longer point at the cited symbol | 4 of a 13-citation sample |
+| e | figures superseded by a later annotation but still stated unqualified earlier, or corrections of statements never made | 1 (the phantom "nine") |
+
+⭐ **Category (d) should shrink to zero under §6, and its size at each sweep is the rule's own
+measure.** If it does not shrink, the rule is not being followed, and the sweep is where that shows.
+
+⚠️ **THE COVERAGE LIMIT, HONESTLY.** That sweep sampled **13 of 118 distinct line citations** and
+found 4 stale. ⛔ **The unsampled 105 are unmeasured, and the sampled rate suggests more.** The
+categories (a), (c) and (e) were checked only for the writes made on 10 September; older text was
+not read for them. A sweep reports its denominator or it reports nothing.
+
+**When to run it:** after any substantial writing pass, and before the document is handed to anyone
+or taken as context by a fresh session. ⚠️ **Not on a clock.** A sweep on a schedule runs when nothing
+has changed and is skipped when everything has; a sweep tied to writing runs when there is something
+to find.
