@@ -7366,6 +7366,69 @@ recipient on the other end (§13(bl)). Recorded as a fact about the code.
 `notes` default read. The developer's four reasons: developer-stated, reported by the briefing
 party.
 
+> ⛔ **CORRECTED 11 September 2026 — FROM OMISSION TO LABELLING. The observation above stands: the
+> two exports produce two different files. The characterisation does not. "Silently drops" is
+> wrong.**
+>
+> **THE CODE STATES IT THREE TIMES.** History's call site: *"⛔ EVENTS ONLY, DELIBERATELY, and
+> `notes` is left at its default rather than omitted by accident. This export is SCOPED - it emits
+> what the filters are showing, and the sheet header says so. Medication notes are not filtered by any
+> of them, so including them would mean a file whose scope statement is false: 'Export 1 of 71
+> events' beside a file containing every deviation ever recorded. The whole-record export lives in
+> Your data and carries both."* Your Data's call site: *"THE MULTI-STREAM EXPORT, and it is the ONLY
+> one … History's export does NOT - see the note at that call site."* `buildCsv`'s own doc:
+> *"[notes] defaults to empty, so every existing caller is unchanged and single-stream … one of those
+> callers is the FILTERED export, and a filter that narrows events must not silently start emitting
+> every medication note."*
+>
+> **AND GIT RECORDS THE REASON.** `e82ae31`, 27 August 2026, the commit that added the `notes`
+> parameter and wired Your Data, verbatim:
+>
+> > *History's export stays events-only, deliberately, and `notes` defaults to empty so that is what
+> > a caller gets unless it asks. That export is SCOPED - including notes would make its own scope
+> > statement false: "Export 1 of 71 events" beside a file holding every deviation.*
+>
+> ⚠️ **The accompanying reason, same commit, for why notes are not in History at all:** *"everything
+> there assumes an event (the haystack, five filters, the Needs details queue, the export scope
+> statement, rows reading '1m 45s · Mild'), so a dose would need a 'unless it is a dose' clause in
+> five places where a wrong answer is silent."*
+>
+> ⭐ **AND THE TYPE SYSTEM RULES IT OUT.** `HistoryScreen.records` and `_records` are
+> `List<EventRecord>`; `MedicationNote` appears zero times in `history_screen.dart`. Exporting notes
+> from History would export something the screen cannot show. The omission is coherent with the
+> screen, not accidental to it.
+>
+> ⛔ **CHAT'S WITHDRAWN PROPOSAL, RECORDED.** Chat proposed passing `loadMedicationNotes` from
+> History's export. It would have broken a decision the code states three times, by making the scope
+> statement false in exactly the way the decision exists to prevent. Withdrawn before any brief.
+> ⭐ **Fourth time this week a recorded reason decided the question — §13(bp)'s pattern, now four for
+> four where it was tested.** (Two documented instances plus this one; the `id` case remains
+> attributed — §13(bp)'s correction.)
+>
+> 🔴 **WHAT SURVIVES IS A LABELLING PROBLEM, AND IT IS REAL.** History's unfiltered file is named
+> `medical_event_recorder_all`, carries every event, and omits every deviation. **Your Data uses the
+> SAME prefix.** There is no third. Both files carry `v6` and the same seventeen columns, so **an
+> events-only file from a user with no recorded deviations is byte-identical in shape to a
+> whole-record one**, and a recipient holding both cannot tell which is which or that one omits a
+> record kind.
+>
+> ⭐ **`aa48eb2`'s OWN REASONING ALREADY COVERS THIS WITHOUT HAVING BEEN APPLIED TO IT.** That
+> commit, 26 August, bound the filename to the scope statement because *"a file called _all_ holding
+> a filtered set is worse than no statement at all - a positive assertion of completeness over an
+> incomplete export."* **The argument was made about FILTERS and never extended to STREAMS.** The
+> scope statement the code protects so carefully — the sheet title and the filename's filter word —
+> covers which events are in the file and says nothing about which record kinds are.
+>
+> ⚠️ **Under §13(bl)'s answer** — recipient unknown by design, the file must stand alone — a file
+> named `all` that omits a record kind without saying so cannot stand alone. The labelling problem is
+> the finding; the omission is a decision.
+>
+> ⛔ **NOT A PROPOSAL.** Chat has withdrawn one fix on this finding today and does not offer a second
+> in the same pass.
+>
+> **Sourcing.** The three comments and the two commit messages: quoted from source and `git show` at
+> 24a8923. The list type: read. The prefixes: read at both call sites and `exportFilenamePrefix`.
+
 ---
 
 ### (bz) 🔴 THE DELETE PATH IDENTIFIES NOTHING, AT ANY STEP — INDISTINGUISHABLE ROWS, THEN A CONFIRM THAT DOES NOT SAY WHICH
@@ -7472,3 +7535,50 @@ filter sheet meets at least one of them.
 
 **Sourcing.** Everything read at b9f6a97 except the developer's four uses, which are developer-stated.
 No design, no proposal.
+
+---
+
+### (cb) THE REASON NEVER LEFT THE SOURCE — §13(r)'S SHAPE WITH THE DIRECTION REVERSED
+
+**11 September 2026.** Recorded as its own entry rather than under §13(bp), and the distinction is the
+finding: **§13(bp) is a reader's default being wrong about an artefact that preserved its reasoning
+where a reader would look. This is a reason that was preserved — in code and in git — and reached
+none of the four documents a reader consults.** Different failure, different fix.
+
+⭐ **THE FACT.** History's events-only export (§13(by), corrected) has its reason stated in three code
+comments and one commit message. **In the documents: zero.** The Change Register's row for `e82ae31`
+reads *"Interleaved with events in the CSV by `record_kind`"* and does not say which export; the
+Register's multi-stream decision passage says *"put both streams in the export"* as if there were one.
+`STATUS.md` has no 27 August entry. `DATA-MODEL.md` §6 describes one CSV and names neither entry
+point. No test pins the events-only scope — `csv_delimited_test` calls `buildCsv` fifteen times and
+none of them is History's call. Controls: the Register row and passage were found; the test apparatus
+exists and is pointed elsewhere; known-absent probe 0.
+
+⛔ **THIS IS §13(r)'S SHAPE WITH THE DIRECTION REVERSED.** §13(r)'s instances are knowledge that was
+written down in the corpus and failed to reach the reader who needed it — filed in the wrong place,
+one section away, pointing off-machine. **Here the knowledge never entered the corpus.** It exists,
+it is precise, it is repeated, and every copy is inside `lib/` or `git log`. ⚠️ **The three prior
+instances of §13(bp) — the date column, the non-unique `id`, the preamble — each had the reason in a
+commit AND somewhere a document reader would find it** (the Register's row 20, the DDL comment
+quoted in §13(bk)). **This one does not, so a reader who does not open the source has nothing to
+find.**
+
+⚠️ **WHAT IT COST, RECORDED.** Chat read the documents, found nothing, and proposed a fix against a
+decision stated three times in code — a fix that would have made the export's scope statement false
+in exactly the way the decision prevents. It was withdrawn on the read, not on a review. ⭐ **The
+documents were not wrong. They were silent, and silence read as absence.** That is the same misread
+§13(bp) records, arrived at by a different route: there the reader did not look; here the reader
+looked in the right places and the reason was not in them.
+
+**WHY IT MATTERS BEYOND THIS CASE.** The working agreement's premise (§4) is that chat cannot read
+the repository and that this is the mechanism, not a limitation. **That premise only holds if what
+chat CAN read carries the decisions.** A decision that lives only in source is invisible to the half
+of the project that proposes changes, and every such decision is a proposal waiting to be made
+against it. The Register is where decisions are meant to land; this one landed in a comment.
+
+⛔ **NOT A PROPOSAL.** Whether the Register should carry a decision row for the events-only scope, or
+DATA-MODEL §6 should name two entry points, is recording work for the pass that owns those documents.
+This entry records that the gap exists and how it was found.
+
+**Sourcing.** Register rows and passage: read. STATUS.md and DATA-MODEL §6: zero hits with controls.
+Tests: enumerated. The code comments and commit: quoted in §13(by)'s correction.
