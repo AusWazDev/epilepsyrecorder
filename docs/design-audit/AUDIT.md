@@ -1982,6 +1982,12 @@ PAINTED is roughly half-way between the defined pair and the background — 1.72
 not 3.38.** This table's ratios are for the pairs as defined; that is what it says it measures, and
 it is what it measures.
 
+⚠️ **CITATION, 11 September 2026 (§7 sweep):** the five `_InfoCard` references in this entry — rows 10,
+13, 16, 20 and the undetermined-from-source note — name a class that does not exist and never has
+(`git log -S'_InfoCard'` over `lib/` returns nothing). The widget is **`_SettingsNudgeCard`** in
+`home_screen.dart`; its `bdColor`, title and body are the elements those rows measure. The ratios are
+unaffected. Copied once into §13(ck) before the sweep caught it, and corrected there the same hour.
+
 ---
 
 ### (t) COLOUR-ALONE — 3 of 14 conditional colours carry meaning by colour alone
@@ -8416,7 +8422,7 @@ to not quite halfway, on a hairline.
 `chipTheme` side, `inputDecorationTheme` enabled and focused borders, `dividerTheme` thickness. On
 home, five `Border.all(width: 0.5)` on the token and three on raw literals (`0xFF81C784` at 0.5,
 `0xFFFF9800` twice at 0.5). Three outlines are drawn at the default 1.0 — the unsaved banner's
-`0xFFEF9A9A` and both `_InfoCard` borders through `bdColor` — and at 1× those paint at full strength.
+`0xFFEF9A9A` and both `_SettingsNudgeCard` borders through `bdColor` — and at 1× those paint at full strength.
 
 **⛔ CONSEQUENCE FOR §13(s), stated without re-running it.** Its 64 pairs and its 28 failures stand as
 what it says they are: defined pairs, with the threshold conversion, the boundary control and the
@@ -8424,7 +8430,7 @@ undetermined-from-source list all stated. **Ten of the 28 cleared as defined on 
 seven elements above show that clearing a defined non-text pair drawn at 0.5 does not clear the
 surface at 1×.** Of the 18 that remain, five are outlines: two at 0.5 (rows 7 and 9, `0xFF81C784` and
 `0xFFFF9800`) which carry this finding, and three at the default 1.0 (rows 2, 6 and 8 — both
-`_InfoCard` borders through `bdColor`, and the unsaved banner's `0xFFEF9A9A`) which do not. The text rows are unaffected — glyphs paint at
+`_SettingsNudgeCard` borders through `bdColor`, and the unsaved banner's `0xFFEF9A9A`) which do not. The text rows are unaffected — glyphs paint at
 full coverage. ⚠️ **On a 3× device the same 0.5 logical stroke is 1.5 physical pixels and paints far
 closer to the token. This is a 1×-device result, measured on one tablet; the iPhone captures have not
 been diffed.** Inferred and marked.
