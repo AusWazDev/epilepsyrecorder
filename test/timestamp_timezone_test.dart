@@ -106,7 +106,15 @@ void main() {
       final expected = DateTime.utc(2026, 8, 22, 16, 0, 0).toLocal();
       final csv = buildCsv([r]);
 
-      expect(csv, contains(DateFormat('yyyy-MM-dd').format(expected)));
+      // ⛔ ANCHORED TO THE DATE CELL, 11 Sep 2026 — AUDIT.md §13(ce). This
+      // read `expect(csv, contains(<local date>))` over the WHOLE OUTPUT until
+      // then, and `timestamp_iso` carries the same local date string — so a
+      // date column computed in UTC would still have passed it on column 1.
+      // A test for a timezone bug that could not detect the timezone bug.
+      final header = csv.trim().split('\n').first.replaceFirst('﻿', '');
+      final dateCol = header.split(',').indexOf('date');
+      final dateCell = csv.trim().split('\n').last.split(',')[dateCol];
+      expect(dateCell, DateFormat('yyyy-MM-dd').format(expected));
 
       // Where the local date differs from the UTC date, the UTC date must not
       // appear in the date column. Only meaningful when the offset shifts it.

@@ -4,6 +4,17 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/event_store_sqlite.dart';
 
+import 'csv_no_blank_test.dart' show cells, header;
+
+/// The named cell of the FIRST data row. Quote-aware, so the fixture's notes
+/// — a comma and quotes — do not shift the columns.
+String cellOf(String csv, String column) {
+  final h = header(csv);
+  final i = h.indexOf(column);
+  if (i < 0) throw StateError('no "$column" column: $h');
+  return cells(csv.trim().split('\n')[1])[i];
+}
+
 /// Does the STORAGE ENGINE change the export?
 ///
 /// The question behind a proposal to keep one CSV fixture per platform, on the
@@ -83,8 +94,16 @@ void main() {
 
     expect(a, isNot(b),
         reason: 'the comparison in test 1 must be capable of failing');
-    expect(a, contains('> 5 minutes'));
-    expect(b, contains('unknown'));
+    // ⛔ ANCHORED TO THE DURATION CELL, 11 Sep 2026 — AUDIT.md §13(ce).
+    // These two lines read `expect(a, contains('> 5 minutes'))` and
+    // `expect(b, contains('unknown'))` until then: substring matches over the
+    // WHOLE ROW. After 8e1bc96 moved the duration cell to `Not Captured`, the
+    // second kept passing because the CONDITION cell of this typed,
+    // unattributed fixture happened to say `unknown` — the assertion was
+    // satisfied by a cell it did not mean, while the thing it tests had
+    // changed. A whole-row contains cannot say which cell it means.
+    expect(cellOf(a, 'duration'), '> 5 minutes');
+    expect(cellOf(b, 'duration'), kCsvNotCaptured);
   });
 
   test('3. an unknown duration survives the round trip as unknown', () async {
@@ -96,7 +115,10 @@ void main() {
 
     expect(back.duration, isNull,
         reason: 'not coerced to a bucket by the engine or the row mapping');
-    expect(buildCsv([back]), contains('unknown'));
+    // Anchored to the duration cell, 11 Sep 2026 — see test 2's note. This
+    // read `contains('unknown')` over the whole row and was satisfied by the
+    // condition cell after 8e1bc96.
+    expect(cellOf(buildCsv([back]), 'duration'), kCsvNotCaptured);
     await db.close();
   });
 }

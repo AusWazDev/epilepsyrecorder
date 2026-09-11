@@ -249,6 +249,42 @@ void main() {
     expect(rows(buildCsv(<EventRecord>[quickLog()])).single[col], _nc);
   });
 
+  test('7. ⛔ no cell in the file renders the literal `unknown` — with a '
+      'control proving the search would find it', () {
+    // After the condition decision of 11 Sep 2026 (§13(cd)), `unknown` left
+    // the last scalar column. A fixture reaching every branch must contain
+    // none. Case-sensitive: the seeded beforehand option is `Unknown`, a
+    // user's value, and must stay findable as itself (test 3).
+    final csv = fixtureCsv();
+    final hits = <String>[];
+    final h = header(csv);
+    final rs = rows(csv);
+    for (var r = 0; r < rs.length; r++) {
+      for (var c = 0; c < h.length; c++) {
+        if (rs[r][c] == 'unknown') hits.add('row $r ${h[c]}');
+      }
+    }
+    expect(hits, isEmpty, reason: '${hits.length} cell(s): ${hits.join(', ')}');
+
+    // POSITIVE CONTROL: a record whose NOTES are literally "unknown" puts the
+    // word in a cell, and the same search finds it. Without this, the zero
+    // above would also be produced by a search that could find nothing.
+    final control = buildCsv(<EventRecord>[
+      EventRecord(
+        id: 'k',
+        timestamp: t0,
+        duration: DurationCategory.lt1,
+        eventType: 'seizure',
+        severity: EventSeverity.mild,
+        feelings: const <String>[],
+        referralRequired: false,
+        notes: 'unknown',
+      ),
+    ]);
+    final found = rows(control).single.where((v) => v == 'unknown').length;
+    expect(found, 1, reason: 'the search apparatus can find the literal');
+  });
+
   test('6. a medication row: event-only columns Not Applicable, condition '
       'Not Captured, empty notes Not Captured', () {
     final csv = buildCsv(const <EventRecord>[], notes: [note()]);

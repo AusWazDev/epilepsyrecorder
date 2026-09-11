@@ -109,7 +109,7 @@ void main() {
       await db.close();
     });
 
-    test('3. the three UNATTRIBUTED cases all export `unknown`', () async {
+    test('3. the three UNATTRIBUTED cases all export Not Captured', () async {
       // ⚠️ `unknown`, not blank, and the precedent is split so this is a
       // decision. Duration, event type and severity write `unknown` because a
       // blank SCALAR cannot distinguish "not asked" from "not recorded" from a
@@ -127,23 +127,24 @@ void main() {
 
       // (a) NO TYPE — the quick-record path writes none. This is the device's
       //     72nd record.
-      //     §13(cc): type null -> Not Captured. Cases (b) and (c) below — type
-      //     PRESENT, no condition named — stay `unknown` DELIBERATELY, pending
-      //     the developer's call recorded in §13(cd); this test pins that the
-      //     renderer has not chosen for them.
+      //     §13(cc): all three unattributed cases read Not Captured. (a) was
+      //     decided with the rule; (b) and (c) — type PRESENT, no condition
+      //     named — were decided by the developer on 11 Sep 2026 (§13(cd)),
+      //     with the acknowledged imperfection that nothing was asked per
+      //     record. After this, no cell in the file renders `unknown`.
       expect(cell(buildCsv(<EventRecord>[rec('a', null)]), 'condition'),
           kCsvNotCaptured,
           reason: 'an untyped record must NOT inherit the primary condition');
 
       // (b) A TYPE ASSIGNED TO NO CONDITION.
       expect(cell(buildCsv(<EventRecord>[rec('b', 'absence')]), 'condition'),
-          'unknown');
+          kCsvNotCaptured);
 
       // (c) A TYPE THIS VOCABULARY HAS NEVER SEEN — restored from another
       //     device. Resolves to unknown rather than throwing.
       expect(cell(buildCsv(<EventRecord>[rec('c', 'cluster-headache')]),
               'condition'),
-          'unknown');
+          kCsvNotCaptured);
       await db.close();
     });
 
@@ -258,8 +259,15 @@ void main() {
       expect(Vocabularies.conditionIdForEventType('seizure'), 7);
       expect(Vocabularies.conditionNameForEventType('seizure'), isNull,
           reason: 'an id with no name is not a name — never print the number');
-      expect(cell(buildCsv(<EventRecord>[rec('a', 'seizure')]), 'condition'),
-          'unknown');
+      // Anchored 11 Sep 2026 (§13(ce)): the CONDITION cell reads Not Captured
+      // (§13(cd)'s decision replaced `unknown`), AND no cell in the row is the
+      // raw id — asserted per cell, not as a substring of the row, because a
+      // digit can appear inside a timestamp.
+      final csv = buildCsv(<EventRecord>[rec('a', 'seizure')]);
+      expect(cell(csv, 'condition'), kCsvNotCaptured);
+      final rowCells = csv.trim().split('\n')[1].split(',');
+      expect(rowCells, isNot(contains('7')),
+          reason: 'the intent survives the literal: never print the id');
     });
   });
 

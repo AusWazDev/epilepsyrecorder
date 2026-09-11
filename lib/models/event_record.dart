@@ -1079,14 +1079,17 @@ String buildCsv(
       kRecordKindEvent,
       // The derivation, through the same static `buildCsv` already uses for
       // labels. No database, no new parameter, no field on EventRecord.
-      // ⛔ §13(cc)/(cd): type null -> Not Captured. Type PRESENT but no
-      // condition named -> still `unknown`, DELIBERATELY LEFT: §13(cd) records
-      // that as a vocabulary state rather than a record state, and whether it
-      // is Not Captured or Not Applicable is the developer's call, not this
-      // renderer's. The one cell outside the rule, pending that decision.
-      r.eventType == null
-          ? kCsvNotCaptured
-          : Vocabularies.conditionNameForEventType(r.eventType) ?? 'unknown',
+      // ⛔ §13(cc)/(cd): Not Captured when the type is null AND when the type
+      // exists but names no condition. The second was decided by the developer
+      // on 11 Sep 2026, and NEITHER of the rule's states fits it cleanly:
+      // Not Applicable is wrong (the field applies to event rows and is
+      // populated whenever the type maps to a condition), and Not Captured is
+      // imperfect (nothing was asked PER RECORD — the condition is derived from
+      // the type through the vocabulary, so the user did not decline; there was
+      // no question). Chosen because a reader cannot distinguish
+      // derived-and-unresolved from never-answered and does not need to. The
+      // one cell where the rule's two states genuinely do not cover the case.
+      Vocabularies.conditionNameForEventType(r.eventType) ?? kCsvNotCaptured,
       eventTypeCsv(r.eventType),
       durationCsv(r.duration, r.durationSeconds),
       // THREE STATES, §13(cd). A number when measured. Bucket present but no
@@ -1270,8 +1273,14 @@ List<String> _medicationCells(
 ///          cells gets a different answer, and nothing in the header
 ///          would have told them. Developer decision, 11 Sep 2026,
 ///          AUDIT.md §13(cc); the one exception (`referral_required`
-///          still writes `No`) and the one open cell (a named condition
-///          absent for a present type) are §13(cd).
+///          still writes `No`) is §13(cd). The condition cell for a
+///          present type that names no condition was decided the same
+///          day: Not Captured, with neither state a clean fit — the
+///          field applies (so not Not Applicable) and nothing was asked
+///          per record (so Not Captured is imperfect). Chosen because a
+///          reader cannot distinguish derived-and-unresolved from
+///          never-answered and does not need to. After it, no cell in
+///          the file renders `unknown`.
 const String kCsvShapeVersion = 'v7';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.

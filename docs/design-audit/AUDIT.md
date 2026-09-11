@@ -7780,3 +7780,87 @@ classifications themselves, which are stated with their reasons.
 > **The four non-nullable fields remain the third instance of the write path lacking a signal.** The
 > renderer now says Not Captured where it cannot know; the model still cannot tell it whether that is
 > true. Not proposed here; the entry above stands.
+
+> ✅ **THE CONDITION CELL, DECIDED 11 September 2026 (later the same day).** Developer-approved: an
+> event row whose type exists but names no condition renders **Not Captured**. Neither state fits
+> cleanly — Not Applicable is wrong because the field applies and is populated whenever the type maps;
+> Not Captured is imperfect because nothing was asked per record, the condition being derived through
+> the vocabulary. Chosen because a reader cannot distinguish derived-and-unresolved from
+> never-answered and does not need to. **The one cell where the rule's two states genuinely do not
+> cover the case.** After it, **no cell in the file renders `unknown`**: 0 cells by the acceptance test
+> with a control that finds a planted literal, 0 by grep with 24 `Not Captured` as the control, and
+> Excel's condition filter list reads `Not Captured` alone. The v7 docstring records the decision.
+> Committed separately from the rule so it stays revisable.
+
+---
+
+### (ce) 🔴 AN ASSERTION CAN STOP TESTING WITHOUT FAILING, AND NOTHING ANNOUNCES IT — FOUR WHOLE-ROW `contains` CHECKS WERE SATISFIED BY CELLS THEY DID NOT MEAN
+
+**11 September 2026.** Found because the brief that removed the last `unknown` from the export said
+*stop and report* if an unnamed test broke, and two did.
+
+⭐ **LEAD WITH THE HISTORY, NOT THE COUNT.** `csv_engine_independence_test` was written on 25 August
+(`ea1d7b6`) with two assertions that the export of a null-duration record `contains('unknown')`. On
+that day the literal could come only from the duration cell, so the assertion meant what it said.
+**On 29 August the condition column arrived** (`608036a`, v5). The test's fixture names no condition,
+so from that day every row it built carried `unknown` in the condition cell as well. ⛔ **From
+29 August the two assertions were satisfied by a cell they did not mean, and for thirteen days
+test 2's negative control asserted that `b` contains `unknown` while `a` contained it too — it
+discriminated nothing.** `8e1bc96` on 11 September moved the duration cell to `Not Captured` and the
+assertions kept passing on the condition cell; only when the condition cell moved too did they fail.
+**`8e1bc96` is not when they broke. It is when the intended cell stopped supplying the literal.**
+Measured: the anchored duration read applied to a real v6 export shows every row containing `unknown`
+somewhere, five of five, whatever its duration cell held.
+
+**THE CENSUS, WITH ITS DENOMINATOR.** 18 test files call `buildCsv`. 63 matcher sites across them
+(`contains`, `isNot(contains`, `matches`, `startsWith`, `endsWith`) were read for their subject:
+
+| Class | Count | Verdict |
+|---|---|---|
+| not over CSV output — vocabulary lists, class bodies, headers, filenames | 49 | out of class |
+| negatives over the whole output | 4 | correctly shaped; a negative wants whole-output scope |
+| **positive substring assertions over a whole CSV row or output** | **14 sites, 9 files** | **the class** |
+| of those, **at risk today** — another cell satisfies the assertion with the current renderer | **4** | anchored this pass |
+| of those, **latent** — unanchored, no other cell carries the literal yet | **7** | ⛔ **recorded, NOT fixed** |
+| of those, low risk — the delimited `"…; …"` form or an ISO `T` fragment, specific to one cell | 3 | left |
+
+**THE FOUR AT RISK, NOW ANCHORED TO A CELL BY HEADER:**
+
+| Test | Was | Is | Right-reason control |
+|---|---|---|---|
+| `csv_engine_independence_test` 2 | `a contains '> 5 minutes'`, `b contains 'unknown'` | the duration cell of each | on a real v6 export the duration cell reads `unknown`, so the anchored read would fail there on that cell |
+| `csv_engine_independence_test` 3 | `buildCsv([back]) contains 'unknown'` | the duration cell | same |
+| `condition_export_test` 7 | the condition cell is `unknown` | the condition cell is `Not Captured`, and no cell equals the raw id | against the pre-decision renderer: `Expected: 'Not Captured'  Actual: 'unknown'` |
+| **`timestamp_timezone_test`** "CSV carries the local date" | `csv contains <local yyyy-MM-dd>` | the `date` cell by header | ⭐ **against a renderer variant writing the date cell in UTC: the anchored test fails `Expected: '2026-08-23'  Actual: '2026-08-22'`, and the OLD form still PASSES** — `wholeOutputContains=true`, because `timestamp_iso` reads `2026-08-23T02:00:00.000`. **A test for a timezone bug that could not detect the timezone bug.** |
+
+**THE SEVEN LATENT, BY SITE, WITH THE TRIGGER THAT TURNS EACH:**
+
+| Site | Asserts, over the whole row or output | Becomes at risk the day… |
+|---|---|---|
+| `beforehand_wording_test` 185 | `row contains option`, ten seeded options in a loop | a note, observation or type label contains one of them — `Unknown` is already a seeded option, and a lower-case `unknown` once sat one cell away |
+| `nullable_type_severity_test` 251 | `row contains 'Absence episode'` | a note contains the type label |
+| `nullable_type_severity_test` 252 | `row contains 'Severe'` | a note or a user observation contains it |
+| `vocabulary_test` 750 | `csv contains 'Dizzy'` | any other cell carries the user's word |
+| `vocabulary_test` 765 | `csv contains 'Tired; Confused'` | low, the delimited form is specific — listed because the subject is the whole output |
+| `your_data_copy_test` 305 | `csv contains 'Confused'` | a note contains it, which on this fixture's device it once did (§13(bf)) |
+| `occurred_at_export_test` 109, 110 | `lines[n] contains '2026-08-27T08:00'` | low, only one cell holds a `T` time — listed for the same reason |
+
+⛔ **NOT FIXED, DELIBERATELY.** Anchoring them is cheap and would hide the count. They are here so the
+next writer who adds a cell that can carry a label knows which assertions will silently stop testing.
+
+⭐ **THE CLASS.** A check passing for a reason other than the intended one, and reporting nothing:
+line coverage showing §13(bk)'s dedup branches green because the condition line was reached; the
+verifier in §13(bl)'s history that counted pipes; and now assertions whose subject is a row and whose
+meaning is a cell. **A `contains` over a whole CSV row cannot say which cell it means, so it cannot
+tell when that cell has changed.** The two engine tests survived a change that broke the thing they
+test, inside a commit chat approved.
+
+⚠️ **WHAT SURFACED IT.** The brief's stop-and-report. Updating the two tests to `Not Captured` would
+have replaced an accidental pass with a correct one and taught nobody that the assertion was
+unanchored — and with 24 `Not Captured` cells on the row it would have re-created the defect on the
+new literal. ⛔ Chat then told the CLI to cut the sweep short; the CLI had already run it and found
+the fourth, which is the one whose control is decisive.
+
+**Sourcing.** Commit dates: `git log`. The 63 sites: read. Both controls: measured by renderer swap
+with hash-verified restore. Suite after anchoring: 692 passed, 0 failed; analyzer 52, the baseline
+set.
