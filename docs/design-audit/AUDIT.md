@@ -7582,3 +7582,123 @@ This entry records that the gap exists and how it was found.
 
 **Sourcing.** Register rows and passage: read. STATUS.md and DATA-MODEL §6: zero hits with controls.
 Tests: enumerated. The code comments and commit: quoted in §13(by)'s correction.
+
+---
+
+### (cc) ⭐ DEVELOPER DECISION, 11 September 2026 — A CSV FIELD IS NEVER BLANK. RENDERED AT EXPORT, NEVER MIGRATED. COSTED, NOT YET BUILT
+
+**Decided by the developer on 11 September 2026.** ⛔ **Not a chat proposal and not open.** Recorded
+here so the decision sits in the document a reader consults (§13(cb)), and costed so the proposal that
+implements it is written against measured figures.
+
+**THE RULE, AS STATED.** A CSV field is never blank. Every cell is a positive statement of the record's
+true state:
+
+    a value          captured
+    Not Captured     the field APPLIES to this record and was never answered
+    Not Applicable   the field does not EXIST for this record kind
+
+⭐ **What it achieves.** Every cell becomes a positive statement; a reader can tell the three apart
+without knowing the app; and no column produces a `<blank>` entry in a spreadsheet's filter list.
+**That is §13(bl)'s stand-alone requirement met at the cell level** — the file says, per cell, what the
+reader would otherwise have to infer from an absence.
+
+⛔ **THE IMPLEMENTATION DECISION, ALSO THE DEVELOPER'S: RENDER AT EXPORT, NEVER MIGRATE.** Stored
+records are not rewritten. A migration would write strings into integer, JSON and nullable-bool fields,
+break every screen that reads them, and be irreversible. Same class as the `occurred_at` migration,
+which deliberately left nulls — `storage_migration.dart`: *"The source is log time. Pretending it is
+event time fabricates data."* The rule is a property of `buildCsv`'s renderers and nothing upstream.
+
+**THE COSTS, MEASURED 11 September 2026** (probe deleted; conditions in §13(cd)):
+
+| | Figure | Caveat |
+|---|---|---|
+| cells that change | **640 of 1,224, 52.3%** — 564 blank, 76 `unknown` | on the 72-record TABLET envelope; the iPhone's 58 are not reachable from Windows. The 72 `unknown` conditions reflect the probe's seeded vocabulary, not a device's |
+| file size | **7,572 → 14,864 bytes, +96%** | upper bound — the rescue conditional (§13(cd)) was not applied in the substitution |
+| tests asserting blank | 4 sites in `csv_delimited_test`, observations and beforehand for the empty set | plus `isNot(isEmpty)` on a populated cell |
+| tests asserting `unknown` | 10 sites in 6 files | `condition_export_test`, `csv_engine_independence_test`, `medication_note_test`, `nullable_duration_test`, `nullable_type_severity_test`, and the `durationCsv` / `eventTypeCsv` unit checks |
+| golden header | unchanged | no column moves |
+| readers of the file | **none** — zero CSV parsers in `lib/`, restore reads JSON only; control `buildCsv` definition found | the tests above are the only dependents |
+
+⭐ **`kCsvShapeVersion`.** The docstring's rule tracks the HEADER ROW: *"ANY change to the column set
+bumps it - added, removed, renamed or reordered."* A value change with an unchanged header is not
+covered by that sentence. ⛔ **But v6's own precedent reads:** *"No column added or removed - a MEANING
+change, which is exactly what a shape marker is for: a reader computing on column 1 gets a different
+answer, and nothing in the header would have told them."* A reader filtering on blanks gets a different
+answer after this rule. **The precedent argues for a bump to v7; the rule's text does not require
+one.** Recorded as a decision the proposal must make explicitly.
+
+⭐ **THE FIFTH RECORDED DECISION THIS WEEK, AND THE COLLISION IT ALREADY ANTICIPATED.** `buildCsv`'s
+own comment on why an empty set renders blank: *"'none' would also be a VALUE, indistinguishable from
+a user-defined observation literally called 'None' - which is a thing someone may reasonably add."*
+⛔ **The existing blank was CHOSEN for collision reasons, not left by omission** — after the date
+column, the non-unique `id`, the preamble and the events-only export, the fifth absence this week with
+its reason in the source. ⭐ **And the developer's two-word phrases avoid the same collision by
+construction:** zero hits for "Not Captured", "Not Applicable" or "N/A" in any seed, label or renderer
+in `lib/`; the three hits are comments. The fixed labels the CSV can emit are Mild, Moderate, Severe,
+Yes, Partly, No, Missed, Late, Changed and the three duration ranges. ⚠️ The one neighbour is
+`Unknown`, a seeded beforehand option, which stays a user's answer once `unknown` leaves the scalar
+columns — §13(bl)'s collision dissolves as a side effect.
+
+⛔ **NOT BUILT.** Chat drafts the change against these figures; it goes to the developer as a proposal
+under the working agreement. §13(cd) records what the rule cannot classify, which the proposal has to
+answer first.
+
+**Sourcing.** The rule and the implementation decision: developer-stated, 11 September 2026. Every
+figure: measured this date through `buildCsv` on the envelope. The migration comment, the collision
+comment, the marker docstring and the v6 note: quoted from source at d0a9b95. Tests: enumerated.
+
+---
+
+### (cd) 🔴 THE RULE COVERS 7 OF 17 COLUMNS CLEANLY, AND THE REASON IS THE MODEL — THIRD INSTANCE OF THE WRITE PATH LACKING A SIGNAL IT NEEDS
+
+**Costed 11 September 2026, every column of `buildCsv` classified under §13(cc)'s rule, both record
+kinds.** Recorded as its own entry because the finding is not about the renderer: **four non-nullable
+types hold a state the app needs and cannot express.**
+
+**THE CENSUS, EVENT ROWS.** 7 columns classify cleanly: the three times, `record_kind`, `event_type`,
+`duration`, `severity` (`unknown` becomes Not Captured), plus `rescue_med_given` (null becomes Not
+Captured) and `medication_kind` (Not Applicable). **2 are conditional on another cell. 4 cannot be
+answered from the data. 1 is derived rather than stored.** **The medication row is covered completely**:
+times and kind captured, `condition` Not Captured (the `condition_id` column exists since v8 with zero
+writes), the ten event-only columns Not Applicable.
+
+⛔ **THE FOUR THE MODEL CANNOT EXPRESS.**
+
+| Column | Type | Why the rule cannot classify it |
+|---|---|---|
+| `observations` | `List<String>`, non-nullable | `isIncomplete`'s doc: *"An empty list is an ANSWER: 'nothing afterwards' is data, not a gap."* ⚠️ But a quick-log record was never shown the picker. **Empty means both "asked, none" and "never asked", and nothing in the record separates them** |
+| `beforehand` | `List<String>`, non-nullable | same |
+| `referral_required` | `bool`, non-nullable | `isIncomplete`'s table: *"A non-nullable bool has no absent state at all."* ⭐ **So the `No` §13(bl) flagged is not a bad rendering choice — it is the ONLY value the type can hold.** The rule cannot write Not Captured into a field that has no state for it |
+| `notes` | `String`, non-nullable | free text; empty is both "left blank" and "never shown" |
+
+⚠️ **THE TWO CONDITIONALS.** `rescue_med_helped` and `rescue_med_second_dose` are Not Applicable when
+`rescue_med_given` is No, because the screen hides the children, and Not Captured when given is null or
+Yes with the child unanswered. ⛔ **Their classification depends on ANOTHER CELL**, which the rule as
+stated — one cell, three states — does not anticipate. The proposal has to say whether a cell may look
+sideways.
+
+⚠️ **THE DERIVED ONE.** `condition` is not a field on the record; it is `conditionNameForEventType`
+over the vocabulary. When the type is null it is Not Captured. When the type exists and no condition
+has been named, the user was never asked anything per record, so "applies and was never answered"
+describes the vocabulary's state, not the record's. Reported, not resolved.
+
+⚠️ **THE LEGACY CASE, REPORTED NOT RESOLVED.** On a record with `details_completed` NULL, a null
+severity would write Not Captured, asserting the field applied and was never answered. ⭐ **The first
+half is true; the second is** — the field doc's own phrase — **"a claim about work nobody did."** The
+rule's middle state carries an assertion about history that a pre-wizard record cannot support.
+
+⛔ **THE CONSEQUENCE, RECORDED AS THE FINDING.** The rule is not wrong. **It is incomplete for a reason
+outside the renderer**: `feelings`, `triggers`, `referralRequired` and `notes` are non-nullable, so the
+state "never asked" — which the app needs in order to say Not Captured honestly — does not exist for
+them anywhere in the model. ⭐ **THIRD INSTANCE of the write path lacking a signal a later question
+needs**, after §13(bj)'s intent signal and §13(bm)'s completion timestamp. All three were found the
+same way: a question was asked of the data, and the data had no field to answer from.
+
+⛔ **NOT PROPOSED.** Whether the four become nullable, whether the renderer reads `details_completed`
+or `isIncomplete` as a proxy for "never asked", or whether Not Captured on those four is accepted as an
+approximation, are the proposal's decisions. This entry records that they exist.
+
+**Sourcing.** Every classification: read from `buildCsv`, `_medicationCells`, the renderers, the field
+docs and `isIncomplete` at d0a9b95. The census counts: measured, §13(cc). Nothing inferred beyond the
+classifications themselves, which are stated with their reasons.
