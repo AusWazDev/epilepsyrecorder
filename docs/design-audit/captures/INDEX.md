@@ -655,3 +655,71 @@ geometry-faithful at scaled DPI.** Both properties were needed; only one was tes
 rule is now in the repo `CLAUDE.md`: captures answer "how does it look", never "where is it".**
 
 | **DPI-96 test frames (continued)** | — | Two frames were captured at `GetDpiForWindow = 96`, via a per-process `__COMPAT_LAYER=DPIUNAWARE` launch, to settle §13(al). **They are evidence about a DEFECT, not records of how the app looks** — the app does not run at 96 DPI on this machine. Their measurements are in §13(al) |
+
+---
+
+## Added 11 September 2026 — the accessibility batch, so the fixes can be SEEN
+
+⛔ **NOTHING ABOVE IS MODIFIED. This is an ADDITION**, following the pass-2a precedent. Six files,
+all 1x Android on the Teclast P30 at the stated logical size, captured after commit `c4220f2` — the
+five fixes of `AUDIT.md` §13(s), §13(bw) and §13(bx): `MERColours.border` `#B5D4F4` → `#798EA3`
+(every card, chip and input outline, and the divider), `MERColours.textMuted` `#4A7FA5` → `#447598`
+(every muted label and hint), History's badged title row, About's rows, History's gap line.
+
+### What was captured — 6 files
+
+| File | Logical | Size | md5 |
+|---|---|---|---|
+| `home__default__430x932__2026-09-11.png` | 430x932 | 44,373 | `787e8622` |
+| `home__default__375x667__2026-09-11.png` | 375x667 | 37,559 | `88b0ca49` |
+| `history__default__430x932__2026-09-11.png` | 430x932 | 60,676 | `27516fe8` |
+| `history__default__375x667__2026-09-11.png` | 375x667 | 41,180 | `890eb977` |
+| `about__default__430x932__2026-09-11.png` | 430x932 | 68,379 | `d020cf24` |
+| `about__default__375x667__2026-09-11.png` | 375x667 | 42,156 | `49b972d7` |
+
+**6 files, 6 distinct md5s, every PNG header read back at the stated width × height.** Compare
+against `home__default__430x932__2026-09-08.png` (45,690 bytes) and `history__default__430x932__2026-09-08.png`
+(62,137 bytes) for the outline change, and against `about__default__430x932.png` (30 August) for About.
+
+### Build
+
+| | |
+|---|---|
+| Built from | `c4220f2`, release APK, real keystore, `flutter build apk --release`, 73,440,186 bytes, md5 `c80f4ca27289` |
+| Installed with | **`adb install -r`, no uninstall** — `Success`; `lastUpdateTime` went `2026-09-08 18:42:08` → `2026-09-11 20:44:35` |
+| Version | `1.1.0` / `versionCode 53` — ⛔ **unchanged again**, so the version string cannot tell this build from the 8 September one; `lastUpdateTime` and the outline colour can |
+
+### Database state at capture time
+
+| | Before | After |
+|---|---|---|
+| `Total saved` | **72** — ⚠️ **from the 8 September block above, not re-read tonight**: the first read of the tree captured the labels and not the values, and `lastUpdateTime` shows no install between that block and this one | **72**, read from the tree |
+| `LAST EVENT` | **27 Aug 2026 · 16:41** (same caveat) | **27 Aug 2026 · 16:41**, read from the tree |
+| `History` header | `72 events` (8 Sep) | `72 events`, read from the tree at 430 |
+
+### Procedure, and the two things that went wrong first
+
+The pass-2a procedure above, with one addition: ⛔ **`settings put system user_rotation 0` DID NOT
+TAKE on this device tonight** — read back `1` after the write, and the first three shots rendered
+the 430x932 override in LANDSCAPE (root bounds `[0,0][932,430]`, screencap 932 wide). All three were
+deleted. **`adb shell wm user-rotation lock 0`** did take (Android 15), and every kept file was read
+back portrait from its PNG header. Restore verified: `Physical size: 800x1280`, no `Override` line,
+`wm user-rotation free`, `accelerometer_rotation` 1 and `user_rotation` 1 — both their pre-pass
+values tonight (⚠️ `user_rotation` was `0` before the 8 September pass and `1` before this one).
+
+⭐ **Every shot was confirmed from the semantics tree BEFORE the screencap**, by name: `Total saved`
+for home, `Filters` / `Export CSV` / `72 events` for History, `Developer` / `Privacy Policy` /
+`Local device only` for About — and refused on dialog words. Two more wrong shots were caught by the
+confirmation and by the file size before it was in place: a bounds parser that merged `][` into one
+number tapped off-screen, the back key then left the app, and the "About" file was the launcher at
+601,481 bytes. Deleted, parser fixed, re-taken. ⚠️ The confirmation's first dialog filter refused
+History for carrying `Delete this event` — the per-row tooltip, not a dialog — and was narrowed to
+`Discard your` / `Are you sure`.
+
+### Not captured, and why
+
+| Layout | Reason |
+|---|---|
+| **800x1280** | Not in the brief for this pass; the 375 and 430 sets carry the change |
+| **History at 200% text scale** | ⛔ Still no filename convention for text scale, as the 8 September block records. The badge-row fix is held by `test/a11y_batch_measure_test.dart` at 2.0 instead |
+| **The gap line WRAPPING** | ⭐ The gap line IS in the set — row 1 of `history__default__430x932__2026-09-11.png`, the 27 Aug 4:41 PM record, reads *"Add details: duration, type, severity"* on ONE line at 430 in the device font. The fix only shows as a second line where the string does not fit, which at 375 in Roboto it does; the wrap is asserted in `test/a11y_batch_measure_test.dart` in the harness font |
