@@ -6766,6 +6766,30 @@ established by anyone, recorded as open.
 > no 16 April entry (earliest April session recorded is 26 April) and DATA-MODEL §6 does not mention
 > the rows — both zero results, with the same patterns hitting the parent's export code as control.
 
+⛔ **THE ADVISER ROUTING IN ITEM 1 IS WITHDRAWN — developer decision, 11 September 2026, and the
+reasoning is his.** Two advisers could return two answers to a question with no fact of the matter,
+and this is not a medical device — the positioning this entry itself records. ⭐ **And §13(cc)'s rule
+had already answered it:** a field that was not captured says so. The question stopped being "what
+should this cell say" the moment the no-blank rule was decided. ⚠️ **Chat's error, recorded:** chat
+routed the cell on 10 September (this entry's date), the developer decided the rule on 11 September
+(§13(cc)), and chat kept the routing alive through a further brief and a drafted adviser question. A
+decision that covers an open question closes it, and chat did not notice.
+
+**THE DEVELOPER'S PREFERENCE** is `Not Captured` on an undetailed record, matching every other cell in
+that row — not `Not Applicable`, which means the field does not exist for the record kind. ⛔ **It
+cannot currently be implemented honestly**, for the reason narrowed in §13(cd)'s annotation of this
+date: the condition that would make the cell honest is *"was this question asked"*, and the record
+does not carry it.
+
+**⛔ LAUNCH POSITION, stated plainly:** `referral_required` ships as `No`, alone in a row of
+`Not Captured`, on every undetailed record — **more conspicuous than before §13(cc), not less.**
+What would enable the preference is a nullable `referralRequired`: the SQLite column is already
+nullable (`referral_required INTEGER`), but `eventToRow` writes `? 1 : 0`, `eventFromRow` reads
+`== 1`, and the symbol is referenced at **36 sites in 9 files** — the model and its two maps, the
+store, the migration drain, both quick-log constructors (home and the inbox), the wizard, the form,
+History's filter and the home count. ⚠️ **Not before launch**, by the developer's decision. Recorded
+so the next cycle has it costed rather than rediscovered.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
@@ -7873,6 +7897,41 @@ classifications themselves, which are stated with their reasons.
 > with a control that finds a planted literal, 0 by grep with 24 `Not Captured` as the control, and
 > Excel's condition filter list reads `Not Captured` alone. The v7 docstring records the decision.
 > Committed separately from the rule so it stays revisable.
+
+⭐ **THE CONCLUSION STANDS, 11 September 2026: `referral_required` remains a column the model cannot
+express, and the count stays at FOUR.** But the cause is narrower than the row above gives, and the
+reads of this date locate it in one of `detailsCompleted`'s three states rather than in the type
+alone. Read from source and from every envelope on this machine; no device touched.
+
+| `detailsCompleted` | what the reads establish | can the cell be honest? |
+|---|---|---|
+| **true** | written only by the form's Save and the wizard's `_finish`. The form always shows the referral switch; the wizard's referral question is on steps that *"can never be skipped"* (its own docstring — Skip covers steps 0 and 1 only). The question was on screen | **yes** — `Yes` or `No` is the user's |
+| **false** | a one-tap capture (home, inbox) or a wizard partial. A partial can carry a stored `true`: `_capture` builds with `referralRequired: _referral` on Back or Next, so a user who answers Yes and backs out leaves `false` + `true` | **yes, if a stored `true` always wins** — the only writer of `true` is a user toggle |
+| **NULL** | every record migrated on 26 August (77adc0b). ⛔ **A MIXED POPULATION.** The referral switch entered the form on 21 March 2026 (0de48d1) — two weeks after the v1.0.0 tag (7 March, c7fc127, where the field does not exist) and five months before the wizard. So NULL holds records written before the field existed (never asked), form saves after 21 March (asked, defaulted No), and quick-logs of every date (not asked), with no stored signal between them | **no** |
+
+**THE DATA, for the record.** Tablet envelopes, 27 August, 72 records: **70 NULL, 2 false, 0 true;
+`referralRequired` false on all 72.** The two `false` records are the 27 August 16:41 one-tap capture
+(every detail field null) and a 25 August 22:03 wizard partial carrying type and severity but no
+duration — so both shapes the `false` state can take are on the device, and both read referral false. The seven 22–24 August test envelopes (1.1.0+5, schema 1, 4 to
+37 records) carry no `detailsCompleted` key at all — every record reads NULL — and referral false on
+every one. ⛔ **No record on this machine, in any state, has `referralRequired` true**, so the data can
+neither show that a legacy record was ever answered Yes nor that one was never asked. The tablet's home
+tree read `Referrals 0` on this date. Nothing on this machine holds the iPhone's 58. ⚠️ Inferred and
+marked: that the 37-record 24 August envelope is the iPhone's (INDEX.md's *"37 record IDs are shared"*).
+
+⭐ **THE ONE-LINE BLOCKER:** the condition that would make the cell honest is *"was this question
+asked"*, and the record does not carry it. `detailsCompleted` answers *"was the flow completed"*;
+`isIncomplete` answers *"does the record hold duration, type and severity"*; neither is that question.
+⚠️ **The mechanism, stated because it has been misread:** the flag means the flow was COMPLETED — Save
+or `_finish` — **not that every field was filled**. The wizard's own docstring gives the case: *"a record
+can be `detailsCompleted == true` with every field null — open the wizard, Skip to end, Save"*.
+
+**So a renderer of the form "Yes if true; Not Captured if `detailsCompleted == false`; otherwise No"
+would be correct on every record written since 26 August and would leave the 70 legacy records exactly
+as they are today.** Whether that partial honesty is worth a renderer change is the developer's call,
+and the decision of this date is that it is not before launch (§13(bl), annotation of this date). ⛔ Not
+proposed. The other three columns — `notes`, `observations`, `beforehand` — keep the genuine ambiguity
+the row above describes; theirs is in the type, this one's is in one state of a neighbouring column.
 
 ---
 
