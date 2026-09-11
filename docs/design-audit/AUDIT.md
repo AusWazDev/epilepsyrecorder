@@ -2379,6 +2379,22 @@ four are banner buttons.
 and the `compact` reduction are part 2's input, alongside the 7 `InkWell` sites whose target is
 whatever their child measures.
 
+> ⛔ **CORRECTED 11 September 2026 — TWO FIGURES IN THE TABLE ABOVE WERE ESTIMATED FROM SOURCE
+> DEFAULTS AND ARE WRONG AGAINST THE RENDERED TREE.** Measured in widget tests at 1012x546 logical,
+> DPR 1.0, `TargetPlatform.windows` and `.android`, unclipped at a 3000-high control viewport:
+>
+> | Row above | Recorded | Measured, both platforms |
+> |---|---|---|
+> | "selection rows — `AnimatedContainer` padding v10 ≈ 38" | ≈ 38 | **44 to 46** (`log_event_screen.dart:_SelectionRow`, vertical padding is 12, not 10) |
+> | "chips — `chipTheme` padding v10 + 13px label ≈ 38" | ≈ 38 | **40** across all 68 instances of `log_event_screen.dart:_SelectionWrap` |
+>
+> ⭐ **THE CAUSE:** both were derived from padding constants read in source, plus an assumed text
+> height, rather than from the rendered tree. `_SelectionRow`'s padding was misread as 10 (it is 12),
+> and the 13 px label renders taller than 13 once line height applies. ⚠️ **That is §13(az)'s
+> shape** — a measurement taken from the wrong surface, where every check downstream still passes.
+> The table's verdicts (below 44, below 48) are unchanged for the chips; the selection rows move from
+> "⛔ 44" to "✅ 44 / ⛔ 48". **The desktop column this table says does not exist is now in §13(y).**
+
 ### (y) 🔴 THE 48x48 TAP-TARGET FLOOR DOES NOT APPLY ON WINDOWS
 
 **Code-verified in the Flutter SDK, 8 Sep 2026.** Promoted out of §13(x) because it is a
@@ -2436,6 +2452,59 @@ content, and there is no desktop capture to measure against. ⛔ **Do not infer 
 on this machine, so it was read instead — and reading it produced **a finding rather than a
 caveat**, because the real default is platform-split and the assumption had been platform-blind.
 **An assumption worth flagging is often an assumption worth checking; the check cost one `sed`.**
+
+> ✅ **MEASURED 11 September 2026 — THE DESKTOP COLUMN, AND TWO CORRECTIONS. This entry's premise
+> HOLDS: the columns differ, and only where a Material button or `ListTile` is involved.**
+>
+> **Method.** Widget tests at **1012x546 logical, DPR 1.0**, `MERTheme.light`, `TargetPlatform.windows`
+> then `.android` in one test, one screen per process per `CLAUDE.md`'s harness rule. Every semantics
+> node carrying a tap action was measured, plus every instance of each interactive widget type from
+> its render box. ⚠️ **At 546 high, nodes below the fold reported CLIPPED rects** — the severity rows
+> read 6 to 14 px, History's last row 40 — so the form and History were re-measured at a 3000-high
+> control and **the figures below are unclipped.** ⭐ **The control that matters: node counts were
+> IDENTICAL across platforms and heights** (Home 4, History 14, form 87), so the platform override
+> changed sizes and not the tree.
+>
+> | Screen | Element | Windows | Android | ≥ 24 | ≥ 44 (Win) | ≥ 48 (Win) |
+> |---|---|---|---|---|---|---|
+> | Home | Record Event (`ElevatedButton`) | 97 | 113 | ✅ | ✅ | ✅ |
+> | Home | **Record with details** (`ElevatedButton`) | **42** | 58 | ✅ | ⛔ | ⛔ |
+> | Home | Need Help card (`InkWell`) | 47 | 47 | ✅ | ✅ | ⛔ both |
+> | Home | Show menu (`IconButton`) | **40** | 48 | ✅ | ⛔ | ⛔ |
+> | History | rows (`ListTile`), 6 | 59 / 64 | 72 | ✅ | ✅ | ✅ |
+> | History | Delete this event (`IconButton`), 6 | **40** | 48 | ✅ | ⛔ | ⛔ |
+> | History | Filters, Export CSV (`IconButton`) | **40** | 48 | ✅ | ⛔ | ⛔ |
+> | Form | Back (`IconButton`) | **40** | 48 | ✅ | ⛔ | ⛔ |
+> | Form | Set / Change (`TextButton`, `occurred_at_field.dart`) | **32** | 48 | ✅ | ⛔ | ⛔ |
+> | Form | severity rows (`_SelectionRow`) | 44 / 46 | 44 / 46 | ✅ | ✅ | ⛔ both |
+> | Form | selection chips (`_SelectionWrap`), 68 | **40** | **40** | ✅ | ⛔ both | ⛔ both |
+> | Form | Cancel (`OutlinedButton`) | 44 | 44 | ✅ | ✅ | ⛔ both |
+> | Form | Save changes (`FilledButton`) | 52 | 52 | ✅ | ✅ | ✅ |
+>
+> **Census, form, unclipped:** 87 tap nodes on each platform. **Below 48: Windows 78, Android 76.
+> Below 44: Windows 70, Android 68. Below 24: 0 on both.**
+>
+> ⛔ **CORRECTION 1 — THE 8 px GAP IS NOT A CONSTANT.** §13(ay) cites this entry for *"the 8 px platform
+> difference"* and §13(az) builds the app-bar boundary arithmetic on it (336 + 80 Android, 336 + 72
+> Windows). Measured per widget class: **`IconButton` 8, across all ten instances. `TextButton` 16
+> (32 to 48). `ElevatedButton` 16 (42 to 58; 97 to 113). `ListTile` 8 or 13 (64 and 59 to 72).
+> `InkWell`, `OutlinedButton`, `FilledButton` and the app's own `GestureDetector` widgets: 0.** ⭐ The
+> constant was derived from the one class the walkthrough test happened to measure — the app-bar
+> action, an `IconButton` — and asserted across all of them. **The 408 / 416 boundary stands, because
+> it depends on the IconButton alone. The generalisation does not.** ⚠️ This entry as written does not
+> itself state "8 px"; the constant lives in §13(ay) citing here, and is corrected here so the source
+> of the citation carries the correction.
+>
+> ⛔ **CORRECTION 2 — THE SCALE.** Windows 78 nodes below 48 on the form; Android 76. ⭐ **TWO.** The
+> desktop-versus-mobile difference this entry records is real and it is a **two-node difference on a
+> base of seventy-six**. It has been treated as THE desktop finding; **it is a rounding error beside
+> the app-wide floor in §13(bv)**, which is where the seventy-six live.
+>
+> **Unmeasured, recorded:** Material chips (`ChoiceChip`, `FilterChip`) appear on the WIZARD, not on
+> these three screens. On `padded` the SDK extends a chip's hit area through
+> `_ChipRedirectingHitDetectionWidget`, a constrained render box around the painted pill — so a future
+> wizard measurement must read the OUTER box, not the pill, or it will under-report exactly the way
+> the clipped 546 run did.
 
 ### (z) 🔴 SCREEN-READER SEMANTICS WERE NEVER MEASURED — and the checklist that missed them was written today
 
@@ -7072,3 +7141,54 @@ buildable, the single-slot form would not have helped here, and the reading prob
 
 **Sourcing.** `putMeta`, `SqliteEventStore.save`, `_loadRecords`, the single-writer tests: read at
 58ae59c. The size: inferred, marked. The write count: unknown, marked. The 30 August facts: §13(be).
+
+---
+
+### (bv) 🔴 THE APP'S OWN SELECTION WIDGETS ARE BELOW 44 ON EVERY PLATFORM — A VOCABULARY CONSTRAINT, NOT A DESKTOP FINDING
+
+**Measured 11 September 2026**, both platforms, 1012x546 logical with a 3000-high unclipped control,
+one screen per process. Method and full table in §13(y)'s annotation of the same date.
+
+⛔ **THE FIGURES.** `log_event_screen.dart:_SelectionWrap` chips: **40 px across all 68 instances**,
+Windows and Android alike. `_SelectionRow` (severity, rescue, referral): **44 to 46**. The Need Help
+card on Home (`InkWell`): **47**. Cancel (`OutlinedButton` with an explicit height): **44**. **None is a
+Material button, so no `materialTapTargetSize` setting reaches any of them** — a `GestureDetector`
+around an `AnimatedContainer` has whatever height its padding and text give it, on every platform. **All
+are below 48 on Android as well as Windows, and the 68 chips are below 44 everywhere.**
+
+⭐ **RECORDED AS A VOCABULARY CONSTRAINT, NOT A DEFECT LIST.** §10 names *one selection control per
+cardinality* as a piece of the component vocabulary, and §13(h-ii) deferred four capture-derived
+vocabulary items as one. **Whatever the redesign defines for a selection control has a floor to clear
+— 44 at least, 48 if the mobile convention is kept — and that floor is currently cleared nowhere the
+app draws its own.** The Material buttons clear it on mobile by default and on desktop by a theme
+line; the app's own widgets clear it only if they are built to. **This is the number the vocabulary
+work inherits, and it applies before any colour, shape or label decision.**
+
+⚠️ **THE ONE ELEMENT THAT IS NOT A VOCABULARY ITEM.** Home's **Record with details** measures **42 on
+desktop** (58 on Android): an `ElevatedButton` below 44 on the primary capture screen, on a pathway the
+developer named as key use. ⛔ **Single, concrete, and Material** — so it is reachable by the theme
+setting §13(y) describes, or by an explicit minimum on the one button. **It may warrant separate
+treatment rather than waiting on a theme decision that does not serve the seventy-six.** Not proposed
+here; named so it is not lost inside the class finding.
+
+⛔ **THE DISPROOF, RECORDED SO IT IS NOT RE-PROPOSED: SETTING `materialTapTargetSize` ON WINDOWS IS
+NOT PROPOSED, and this is why.** Per `docs/WORKING-AGREEMENT.md` §2(b):
+
+- **What it would clear:** exactly eleven nodes on the three screens — ten `IconButton`s 40 to 48
+  (Home's menu, History's six deletes plus Filters and Export CSV, the form's Back), one `TextButton`
+  32 to 48 (Set / Change), and Record with details 42 to 58. Plus `ListTile` rows 59 / 64 to 72, which
+  already clear 48.
+- **What it would NOT touch:** the 68 chips, the severity and rescue rows, Cancel, the help card — the
+  bulk of the shortfall, on every platform.
+- **Cost, as measured:** one line in `mer_theme.dart:MERTheme.light`; four test files whose expectations
+  depend on the current Windows behaviour (`windows_tap_targets_test` asserts the Windows IconButton
+  differs from Android; `narrow_geometry_home_test`, `narrow_geometry_home_devices_test` and
+  `narrow_exception_home_test` predict the app-bar boundary at 408 on Windows, which would move to
+  416); and two audit annotations, §13(ay) and §13(az), which record 408.
+- ⭐ **It fixes the wrong thing.** The desktop-versus-mobile difference is two nodes. The app-wide
+  floor is seventy-six. A theme line that moves eleven Material targets and leaves sixty-eight custom
+  ones where they are would read as the accessibility fix having shipped.
+
+**Sourcing.** Every figure: measured, this date, probes deleted. `_SelectionRow` and `_SelectionWrap`:
+read. The SDK's `_InputPadding` (buttons) and `_ChipRedirectingHitDetectionWidget` (chips): read at
+`/c/Flutter/flutter`. The four dependent tests: read. `mer_theme.dart` unchanged at 64bc09e8.
