@@ -8096,3 +8096,135 @@ that it should be targeted, and once that it should be neither. Whether three mo
 an accumulation is for that work to say.
 
 **Sourcing.** All three paths: read at 69df959. D6: `C:\dev\CLAUDE.md`. Nothing inferred.
+
+---
+
+### (cj) 🔴 THE RECYCLE BIN DOES NOT ADDRESS §13(be) — AND D6'S REASON DOES NOT TRANSFER TO EVENTS
+
+**Read 11 September 2026 at a40a216.** ⭐ **The developer decided, 11 September 2026, that deleting
+an event HIDES it into a recycle bin** — a separate surface, never in History, search, filter or CSV;
+medication notes the same model. **The decision stands.** This entry records what the scoping found,
+disproof first per `docs/WORKING-AGREEMENT.md` §2(b), including what the model does NOT address.
+⛔ **Nothing built. No column, no screen, no filter.**
+
+---
+
+**⛔ THE BIN PROTECTS AGAINST ZERO OF §13(be)'S CANDIDATE MECHANISMS.** §13(be)'s loss was a write
+with no user action in the path: the drains build a map by id, `continue` past any id already present,
+and hand the merged list to `persistEvents`, which calls `SqliteEventStore.save` — `txn.delete('event')`
+then a batch insert of the list it was handed, one transaction. **A hidden flag is a column on a row.
+A record dropped from the in-memory list is dropped WHOLE, flag and all, and `save()` cannot preserve a
+row it never receives.** The drains bypass every user surface today and would bypass the bin
+identically. ✅ Read from `save()` and both drains, not inferred.
+
+⭐ **WHAT IT DOES ADDRESS IS REAL.** `_deleteAndPersist` in `history_screen.dart` is the only event
+delete path in `lib/screens/` — `removeWhere` by id, then persist — on the developer's stated primary
+reason for opening History, and irreversible today per §13(bz). That risk is genuine. The bin covers
+it.
+
+⚠️ **AND THE IDENTIFICATION PROBLEM TRANSFERS WHOLE.** §13(ad)'s seven byte-identical rows become seven
+byte-identical rows in the bin, rendered from the same records. The user restoring "the one" cannot
+tell which, for the same reason they could not tell which to delete. ⭐ **Hiding makes the delete
+REVERSIBLE; it does not make it IDENTIFIABLE.** What changes is that identification stops being
+load-bearing: a wrong restore is itself recoverable, where a wrong delete was not. *(The bin's own tile
+does not exist and cannot be read; the transfer is inferred from the records, which are the same.)*
+
+⛔ **FOURTH TIME TODAY an obvious repair was assumed to reach a problem it does not** — after §13(bi)'s
+count check, §13(bq)'s intent signal and §13(ch)'s undo.
+
+---
+
+**⛔ D6'S REASON DOES NOT TRANSFER.** D6 hides vocabulary because a delete ORPHANS every record
+referencing the entry — referential integrity. **Events are referenced by nothing live.** The two
+junction tables (`createEventObservationSql`, `createEventTriggerSql`) carry `event_id`, and they are
+written only by `migrateObservationsToTable` and `migrateTriggersToTable`; `kEventObservationTable`
+and `kEventTriggerTable` are read by nothing else in `lib/` — **0 hits** outside their own
+definitions and those two functions (control: the same grep finds the DDL and both migrators).
+`save()` and `clearAll()` do not touch them.
+
+⭐ **So the precedent §13(ci) named is a precedent for a DIFFERENT PROBLEM.** The reason to hide
+events is recoverability alone — a fair reason, and not D6's. ⚠️ **Chat leaned on the precedent
+without reading why D6 exists.** Recorded against chat.
+
+---
+
+**🔴 THE THREE FAILURE MODES THE IMPLEMENTATION MUST GUARD.** ⭐ **These are the finding.** They are
+recorded here so that no implementation brief can omit them.
+
+**a) ⛔ THE BIN WOULD EMPTY ITSELF.** If hidden rows are filtered at `_load` with a SQL `WHERE`, the
+in-memory list lacks them, and the next `persistEvents` write — five call sites, §13(be) — deletes
+them from the table permanently. The user deletes something, sees it in the bin, closes the app,
+reopens: gone. ⚠️ **WORSE THAN TODAY**, because today deletion is honest about being final. ✅ Read from
+`save()` and `_load`, not inferred. **The filter must be in memory, at every read, and the hidden rows
+must stay in the list that gets written.**
+
+**b) ⛔ A HIDDEN RECORD COULD SILENTLY UNHIDE.** Both drain END-update sites — `applyInbox` in
+`capture_inbox.dart` and `reconcileLegacySharedRecords` in `ios_capture_bridge.dart` — rebuild the
+record with an explicit `EventRecord(…)` constructor listing every field. A new field omitted at either
+site is silently reset to its default by the next drain. ⚠️ On the notification pathway, which the
+developer names as the most used. ✅ Read; both constructors enumerate fields explicitly.
+
+**c) ⚠️ NO RETENTION IS POSSIBLE WITHOUT A TIMESTAMP.** A boolean cannot support "empty after thirty
+days", and D6 stores no hide time either — `createVocabularySql` has no timestamp column. ⛔ **And any
+automatic purge would be a non-user write through `save()` — §13(be)'s exact class.**
+
+⭐ **DEVELOPER DECISION ON RETENTION, 11 September 2026: FOREVER is the default**, revisited if it
+becomes a problem. Deciding retention before anyone has used a bin is deciding without evidence.
+
+---
+
+**⛔ THE COST, AND WHY IT IS LARGER THAN D6'S: FOURTEEN SITES AGAINST VOCABULARY'S ONE.** Vocabulary
+exposes its lists through a class with a single filtering seam — `offerable(table, all, …)` in
+`vocabulary.dart`, `all.where((e) => e.isActive)`, behind three getters, twelve call sites, and
+`loadVocabulary` has no `WHERE`. Events pass a raw `List<EventRecord>` from home's `_records` to
+everything. ⭐ **That asymmetry IS the cost, and it is invisible from the decision.**
+
+§13(bg)'s 24 consumers, classified:
+
+| must FILTER hidden (10) | must NOT filter (5) | neutral (9) |
+|---|---|---|
+| 9, 10, 11 — home's `_records.first` reads, `_daysSinceLastEvent`, `_LastEventCard` | 1, 2 — the two drains | 3, 4, 6, 7, 8 — re-sorts and inserts |
+| 12, 13, 14 — History `initState`, `_filteredRecords`, `_groupByDay` | 5 — restore's `planRestore` merge | 15 — History post-edit sort |
+| 18 — `buildCsv` | 16 — `persistEvents` | 19, 21 — pass-throughs |
+| 20 — `eventsSinceLastBackup` | 17 — `buildBackupJson` (carries hidden; `recordCount` includes them) | 23 — `indexWhere` by id |
+| 22 — home's four `.where(…).length` counts | | |
+| 24 — History counts | | |
+
+⚠️ **Plus:** a schema step to version 10 — one `ALTER TABLE event ADD COLUMN` inside `upgradeSchema`
+guarded `from < 10 && to >= 10`, the v5 step's shape; four serialisers (`eventToRow`, `eventFromRow`,
+`toMap`, `fromMap` — `toMap` covers both the prefs fallback store and the backup envelope); an
+absent-key default for old backups and old prefs JSON, following `detailsCompleted`'s pattern; three
+direct table reads that bypass any in-memory filter (`_countUsage` in `vocabulary_store.dart`, and
+the two migrators above — a hidden event would still weight trigger and observation ordering,
+decision needed); and the export scope statement, `_exportSheetTitle`, which computes total from
+`_records.length` and would title *"Export all N events"* with N counting binned rows while the file
+omits them, under `exportFilenamePrefix`'s `_all`. Your Data's export at home passes `_records` too
+*(inferred from the call site, not traced through)*.
+
+⭐ **AND ONE THING GETS BETTER:** restore-by-flag beats §13(ch)'s delete-then-reinsert. The row never
+leaves the list, `ordinal` is its list index and is preserved on every save, unhide is a flip, and
+there is no second write. §13(bd) applies unchanged either way.
+
+**Backup and restore, enumerated, all decidable, none designed:** hidden existing plus a backup copy of
+the same id → `alreadyPresent`, stays hidden (existing wins); a post-hide backup on a fresh device →
+arrives hidden; a pre-hide backup restored after a reset → arrives visible, resurrected from the bin;
+an old backup with no key → the default. *(Consequences of `planRestore`'s existing-wins-by-id, read;
+the outcomes are inferred from it.)*
+
+---
+
+**⛔ CHAT'S ERROR.** Chat reported this cost to the developer as though it were a decision to weigh. It
+is implementation effort, and the developer had already approved the model. ⭐ **Fourth
+permission-asking of the day against `docs/WORKING-AGREEMENT.md`'s own tiers.**
+
+**Sourcing.** `save()`, `_load`, `createEventSql`, `upgradeSchema`: `event_store_sqlite.dart`.
+`offerable`, `loadVocabulary`, `labelForValue`, `createVocabularySql`, the junction DDL and both
+migrators: `vocabulary.dart`. `setVisible`, `_countUsage`: `vocabulary_store.dart`. `applyInbox`:
+`capture_inbox.dart`. `reconcileLegacySharedRecords`: `ios_capture_bridge.dart`. `planRestore`,
+`buildBackupJson`: `backup.dart`. `_deleteAndPersist`, `_filteredRecords`, `_isNarrowed`,
+`_exportSheetTitle`, `exportFilenamePrefix`: `history_screen.dart`. `eventsSinceLastBackup`:
+`backup_service.dart`. `toMap`, `fromMap`: `event_record.dart`. D6: `C:\dev\CLAUDE.md`. Inferred and
+marked as such: the bin tile's rendering, the Your Data export's list, the restore outcomes. Cannot
+be scoped without running the app: whether any drain END replay occurs against a hidden id on the
+device; whether the developer realises a mis-delete later at all (§13(ch)); whether `_countUsage`
+weighting by hidden events is noticeable.
