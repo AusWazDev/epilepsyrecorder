@@ -6518,6 +6518,57 @@ established by anyone, recorded as open.
 > backup is a JSON envelope that leaves the device is read from the source, not from the briefing."*
 > The briefing party flagged it as the one known defect; it was already qualified as written.
 
+> ✅ **ANNOTATED 11 September 2026 — THE PREAMBLE LEAD IS CLOSED. THE REMOVAL WAS DELIBERATE,
+> REASONED AND RECORDED.**
+>
+> **The commit:** `f50f36f`, 16 April 2026 17:26 AEST, one file, three deletions. Its message,
+> verbatim:
+>
+> > *Remove CSV comment rows to fix Excel filter interference*
+> >
+> > *Comment lines containing 'Yes' were being picked up by Excel's auto-filter, causing false values
+> > to appear in filter dropdowns. Column headers are self-documenting — comments not needed.*
+>
+> **And the Change Register, row 20, same day:** *"CSV export overhauled — UTF-8 BOM, ISO date
+> (yyyy-MM-dd), separate date/time columns, per-option feelings/triggers columns (Yes/blank), comment
+> rows removed. Confirmed clean on Windows, Android, and iOS."* Two records, one reason.
+>
+> **The lines removed, verbatim as the file rendered them:**
+>
+>     # Medical Event Recorder export
+>     # referral_required: Yes = medical referral was required
+>     # Feeling / trigger columns: Yes = selected, blank = not selected
+>
+> ⚠️ The second legend described the one-hot columns, which ceased to exist at v2. Had the preamble
+> survived, it would today be explaining columns the file no longer has. The third line carries an
+> unquoted comma and splits across two cells.
+>
+> ⭐ **THE MEASUREMENT WIDENS THE STATED REASON.** Excel 16.0 via COM, en-AU, a file with the three
+> lines above an eight-column header: **AutoFilter takes row 1 as the header**, so the REAL header
+> becomes a data row and every dropdown carries the comment text and the header names as values —
+> not only `Yes`. **One sort by the date column scatters the three comment lines and the real header
+> among the data rows.** The file is unreadable after a single sort. The BOM was consumed correctly;
+> A1 begins `# M`. ⚠️ **en-AU only was measured.**
+>
+> ⭐ **THE SAME-DAY SEQUENCE IS THE POINT.** `631b53c`, hours earlier, split the date column so
+> specialists could filter and sort. The preamble broke both. **Removing it saved the feature it
+> shipped beside.**
+>
+> ⛔ **SO THIS ENTRY'S "LARGER QUESTION" IS ANSWERED AND CLOSED.** A preamble row cannot carry the
+> beforehand hint, or anything else. **Any row above the header breaks filter and sort in the default
+> open path, whatever it says.** ⚠️ **Consequence for the held rename:** the header must carry its own
+> meaning or lose it. **The rename is now the ONLY lever, not one of two** — the hold above stands,
+> and the "what would change the answer" clause is void.
+>
+> ⭐ **THE ACCIDENTAL GUARD.** `csv_delimited_test`'s golden compares the FIRST output line to the
+> header, and `beforehand_wording_test` 5 scans the first line for the causal word. **A preamble
+> returning fails both.** ⚠️ Not designed — it fell out of testing something else. In April no test
+> asserted the preamble, so its removal was not test-guarded; today its return would be.
+>
+> **Sourcing.** Commit, diff and Register row: read. The Excel behaviour: measured. STATUS.md carries
+> no 16 April entry (earliest April session recorded is 26 April) and DATA-MODEL §6 does not mention
+> the rows — both zero results, with the same patterns hitting the parent's export code as control.
+
 ---
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
@@ -6661,3 +6712,59 @@ nothing in this repository holds it, and nothing here can verify it.
 **Sourcing.** The false clause and its correction: reported by the briefing party. The backup's
 share and save paths, and restore's single reader: read from `backup_service.dart` and `backup.dart`
 at f968aba. Architectural fact 6: quoted from `docs/claude-ai-project-instructions.md`.
+
+---
+
+### (bp) THREE FOR THREE — EVERY ABSENCE CHAT READ AS A GAP THIS WEEK WAS A DECISION WITH ITS REASON IN GIT
+
+**11 September 2026.** Recorded as its own entry rather than under §13(r), and the distinction is
+the finding: **§13(r) records knowledge that failed to TRAVEL to a reader. This records a READER'S
+DEFAULT being wrong about an artefact that preserved its reasoning perfectly well.** The knowledge
+travelled. It sat in `git log` and in the Register, reachable in one command, and the reader did not
+look because the reader's prior said there would be nothing to find.
+
+⛔ **THE THREE.**
+
+| Absence, as chat read it | What it was | Where the reason sat |
+|---|---|---|
+| the `date` column opens as `########` — a defect | **a decision**: ISO so Excel auto-detects a date on any locale, for filtering and sorting | `631b53c`, 16 April 2026, commit message |
+| `id` has no `UNIQUE` / `PRIMARY KEY` — a gap | **a decision**: uniqueness would turn a duplicate into an INSERT failure and make the migration "lose" records | `event_store_sqlite.dart`, the DDL comment, and §13(bk) |
+| the `#` preamble is gone — a lost capability | **a decision**: comment rows polluted Excel's filter dropdowns; measured, they also break sort | `f50f36f`, 16 April 2026, commit message, and Change Register row 20 |
+
+**Each was read as a defect or a gap. Each was a deliberate decision. Each had its reason recorded
+where this repository records reasons.** Two of the three were reversed within the day they were
+written (§13(bl)'s date-column reversal; the preamble lead's closure above it); the third was caught
+before it was written down as a finding, because the DDL comment was in the same screenful as the
+column.
+
+⭐ **THE TRANSFERABLE FORM.** Chat's default reading of an absence in this codebase is *"nobody
+thought of it."* **It has been wrong every time it was tested.** The correct default is *"it was
+considered"* — and this repository KEEPS the reason, in the commit message or the Register, which is
+what makes checking cheap: `git log -S'<the thing that is absent>'` returns the decision in seconds.
+⚠️ **A default that is wrong three for three is not a default; it is a bias with a name.**
+
+⛔ **WHY IT IS NOT §13(r).** §13(r)'s instances are correct knowledge that was written down and did
+not reach the reader who needed it — a rule in the wrong file, a fact one section away, a citation
+pointing off-machine. **In every one of these three the knowledge was exactly where a reader would
+look for the reason for a code decision, and the reader did not look for a reason because they had
+already decided there was none.** The artefact did its job. The failure is upstream of retrieval:
+it is in the question the reader asked. §13(r) is fixed by moving knowledge; this is fixed by
+changing the default question from *"why is this missing?"* to *"who removed this, and what did
+they say?"*
+
+⭐ **THE COST OF THE CHECK, STATED, BECAUSE IT IS THE ARGUMENT.** Each of the three took one command
+to resolve — `git log -S`, or reading the comment beside the column. Each of the three, unchecked,
+produced or nearly produced a written finding that would have proposed reversing a decision made
+for a measured reason. **The asymmetry is the same as §13(bl)'s adviser routing: the check is
+cheap and bounded; the error is a change that undoes something that was right.**
+
+⚠️ **WHAT THIS DOES NOT SAY.** It does not say every absence is deliberate. §13(bm)'s missing
+completion timestamp was checked the same way and no reason was found — that absence is real, and it
+was recorded as real only after the check. **The rule is to ask, not to assume the opposite
+answer.** Three for three is the evidence that the question is worth asking; it is not a licence to
+skip the answer.
+
+**Sourcing.** The three commit messages and the DDL comment: read. The measurements behind the date
+column and the preamble: recorded in §13(bl) and its annotations. Chat's readings of each as a
+defect: reported by the briefing party and, for the date column, recorded in §13(bl) as chat's own
+error.
