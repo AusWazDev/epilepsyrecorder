@@ -7326,3 +7326,149 @@ to a fix here.
 **Sourcing.** Measured this date, twelve screens plus a re-run of conditions and a second pass naming
 each clipped paragraph, all probes deleted. History's title `Row`: read at 187a8a1. The conditions
 explanation: inferred, marked.
+
+---
+
+### (by) 🔴 HISTORY'S EXPORT OMITS MEDICATION NOTES — TWO ENTRY POINTS, TWO DIFFERENT FILES FOR THE SAME EVENTS
+
+**Read 11 September 2026 at b9f6a97, during the History feasibility read (§13(ca)).** ⭐ **Found while
+answering a different question, and it appears in no prior finding.**
+
+⛔ **THE FACT.** `history_screen.dart`'s Export action calls `showExportOptions(context, shown,
+filenamePrefix: …, sheetTitle: …)` — **with no `notes` argument**, so `buildCsv` receives its default
+`const <MedicationNote>[]`. `home_screen.dart`'s Your Data route calls the same function with
+`notes: await loadMedicationNotes(StorageBoot.database!)`. **Same events, same builder, same shape
+marker `v6` — and only one of the two files carries the `medication_note` rows the multi-stream
+format was built to carry.**
+
+⭐ **TWO EXPORT ENTRY POINTS PRODUCE TWO DIFFERENT FILES FOR THE SAME EVENTS.** A file from Your Data
+interleaves missed, late and changed doses among the events on one timeline, which `buildCsv`'s own
+comment calls *"what lets a specialist see a missed dose sitting three days before a cluster."* A file
+from History has the same seventeen columns and no such rows. Nothing in either file says which entry
+point produced it; the filename prefix distinguishes `all` from `filtered`, not Your Data from
+History.
+
+⚠️ **THE PATHWAY WEIGHT.** The developer named CSV extraction from History as one of the four reasons
+for opening the screen. ⛔ **So the export route actually used is the one that silently drops a
+record kind.** The route that carries everything is two screens away, under Your Data.
+
+⚠️ **WHAT IT MEANS FOR §13(bl).** That assessment read a v6 file generated from fixtures with one
+medication note in it, and assessed `record_kind`, `medication_kind` and the blank-means-not-applicable
+rule on medication rows. **A file exported from History would contain none of that.** The readability
+assessment did not know there were two files, and its medication-row findings describe the Your Data
+file only.
+
+⛔ **NOT A PROPOSAL.** Whether History's export should carry notes, whether Your Data's should be the
+only export, or whether a filtered export should ever carry notes at all, are decisions with a
+recipient on the other end (§13(bl)). Recorded as a fact about the code.
+
+**Sourcing.** Both call sites read at b9f6a97; `showExportOptions`'s signature and `buildCsv`'s
+`notes` default read. The developer's four reasons: developer-stated, reported by the briefing
+party.
+
+---
+
+### (bz) 🔴 THE DELETE PATH IDENTIFIES NOTHING, AT ANY STEP — INDISTINGUISHABLE ROWS, THEN A CONFIRM THAT DOES NOT SAY WHICH
+
+**Read 11 September 2026 at b9f6a97.** The action is the one §13(be) established as irreversible and
+trace-free; the developer names deleting a recent mis-capture as a primary reason for opening
+History.
+
+⛔ **THE ROW DOES NOT DISTINGUISH IDENTICAL RECORDS.** `history_screen.dart:_EventListTile` renders:
+the time to the minute (`h:mm a` of `whenHappened`), a type badge, and one content line of up to six
+facts — duration, severity, observations, beforehand, referral, the first 60 characters of notes —
+each omitted when absent. For §13(ad)'s seven byte-identical records the time matches to the minute,
+the badge, bucket and severity are identical, and none of the other four facts is set. ⭐ **The fields
+that would distinguish them — seconds, `logged_at`, the id — are not rendered.** Position in the list
+is the only cue. The row's own trailing-button comment records: *"Which-record identification stays
+UNSOLVED."*
+
+⛔ **AND THE CONFIRM NAMES NOTHING.** `_deleteAndPersist`'s dialog, verbatim:
+
+> **Delete this event?**
+>
+> This action cannot be undone.
+>
+> Are you sure you want to delete this event?
+
+Buttons: Cancel, Delete. ⚠️ **The title asks; the body says it cannot be undone; the third line asks
+the same question again. Two sentences putting one question, and neither identifies the record.** Not
+the time, not the type, not the position. A user choosing between two similar rows learns nothing from
+the dialog that the row did not already fail to tell them.
+
+⭐ **THE COMBINATION IS THE FINDING.** Indistinguishable rows, then a confirm that does not say which,
+on an action that §13(be) established leaves no row, no flag and no log. Each half is tolerable alone:
+identical rows are fine when nothing destructive is a tap away, and an unnamed confirm is fine when
+the row already told you. **Together, on the developer's own primary use of the screen, "delete the
+right one" has no step at which the right one is established.**
+
+⛔ **CHAT'S MODEL, CORRECTED.** Chat came in believing the row was overloaded and doing four jobs
+badly. **It is not.** The row summarises adequately — six facts, absence read as absence, a demoted
+gap line. **The delete PATH is unsafe, and that is a different finding from the one chat expected to
+write.**
+
+**Sourcing.** The row and the dialog: read at b9f6a97, dialog quoted from source. §13(ad)'s seven
+rows: read from that entry. The developer's use: developer-stated.
+
+---
+
+### (ca) THE HISTORY FEASIBILITY READ — CHAT'S MODEL CORRECTED, AND WHAT DESIGN MUST KNOW
+
+**11 September 2026, `history_screen.dart` read in full at b9f6a97, 1,432 lines.** Recorded as one
+entry rather than as annotations, because chat's model of this screen was never written into this
+document — it lived in briefs, built from two 1x captures and fragments quoted in findings — so there is
+nowhere to annotate. This is the first time the whole screen has been read before a design question
+was put to it.
+
+⛔ **CHAT BELIEVED, AND SOURCE CONTRADICTS:**
+
+| Chat's model | Source |
+|---|---|
+| the row omits notes, observations and beforehand | it shows all three when present, on ONE content line carrying up to six facts joined by " · ", two lines when complete and one when the gap line is present |
+| a "duration-and-severity line" exists | it does not; duration and severity are the first two of the six facts |
+| the capture set has no History state but default | `history__filter-sheet` at 375, 430 and 800; `history__empty`; `history__one-partial`; `history__one-complete` all exist. ⚠️ **Missing:** the narrowed banner, empty-filtered, search active, the delete dialog, the export sheet |
+| History's export matches Your Data's | it omits medication notes — §13(by) |
+| §13(bk) touches this screen | §13(bk) is the dedup branches in the drain. The delete path is §13(be) and §13(bi). ⛔ **Sixth mislocated citation this week** |
+
+⭐ **WHAT THE ROW DOES NOT SHOW, recorded because design needs it:** the rescue fields entirely
+(`rescueMedGiven`, `rescueMedHelped`, `rescueMedSecondDose` appear nowhere in the row); the date,
+except via the day header; seconds; `occurredAt` against `logged_at` (only `whenHappened` renders —
+§9); notes past 60 characters; the condition; the id.
+
+**THE STATES, ENUMERATED FROM SOURCE:** default with a count label; empty with no records; empty
+because filters match nothing; narrowed, with `_AppliedFiltersBanner` "Showing X of Y — filtered by …"
+and a count badge on the Filters icon; the filter sheet, a `DraggableScrollableSheet` at 0.75 holding
+search, the Needs details chip, one chip per offerable type, four date ranges and a referral switch;
+the delete dialog; the export sheet; and navigation into the wizard or the form. **No selection mode
+and no bulk action** — the `__selection-mode` captures are vocabulary's.
+
+**THE FOUR USES, AS ROUTED TODAY:** check a record — two taps to the row, a third to the full record;
+extract a CSV — four taps to the OS, and see §13(by); delete — four taps, and see §13(bz); filter —
+the sheet's five controls, with search matching type, duration and severity labels, observation and
+trigger values and labels, referral, notes and the formatted date, and a bare number matching duration
+minutes.
+
+**TWO THINGS TO CARRY, NOT ACT ON:**
+
+(a) ✅ **`_groupByDay` does not sort** — it walks the list as given and emits a header when the
+`whenHappened` day changes, while the list arrives in Home's `timestamp` order until an in-History
+edit re-sorts it by `whenHappened`. ⭐ **This was reported from the read as an inference and IS
+ALREADY §13(bd)**, which records exactly this: History sorts by one value and groups by another until
+the first edit. The read confirms §13(bd) from source; the out-of-sequence day header remains
+unobserved, and the fixture had no backdated record.
+
+(b) **Filter state lives in the widget** and is lost when History closes. **Filtering changes the
+export**: the list passed is the filtered one and the filename prefix becomes `filtered`. Recorded as
+behaviour, not defect.
+
+**STRUCTURALLY FIXED, for design:** `ListView.builder` over a flattened list of day headers and
+records, lazy; `ListTile` rows with a trailing `IconButton`; divider indent 16, padding 14, no width
+cap; a two-line app bar whose 10 px subtitle truncates at 2.0 (§13(bx)); Filters and Export as app-bar
+actions. **Tests that assert the current shape:** filter_sheet_test, history_delete_geometry_test,
+named_history_controls_test, history_row_semantics_probe_test, narrow_geometry_history_test,
+needs_details_filter_test, search_matches_labels_test, legacy_observation_search_test,
+type_filter_scale_test, windows_tap_targets_test. Any change to the row, the delete control or the
+filter sheet meets at least one of them.
+
+**Sourcing.** Everything read at b9f6a97 except the developer's four uses, which are developer-stated.
+No design, no proposal.
