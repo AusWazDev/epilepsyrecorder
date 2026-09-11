@@ -7864,3 +7864,116 @@ the fourth, which is the one whose control is decisive.
 **Sourcing.** Commit dates: `git log`. The 63 sites: read. Both controls: measured by renderer swap
 with hash-verified restore. Suite after anchoring: 692 passed, 0 failed; analyzer 52, the baseline
 set.
+
+> ⚠️ **ANNOTATED 11 September 2026 — `timestamp_timezone_test` ASSERTS LOCAL DELIBERATELY, AND THE
+> CONDITION CHAT ATTACHED TO IT WAS ON AN INTENT THAT DOES NOT EXIST.** While the fourth assertion was
+> being anchored, chat wrote that if UTC were the CSV's intent, the test would be asserting the wrong
+> thing and would have been since it was written. It is not. The test was written in `e48d91b` itself
+> — the commit that chose local-on-read — its header states the reasoning (*"a Z timestamp and the same
+> instant expressed locally are indistinguishable once parsed"*), and the commit records it verified
+> under UTC, Australia/Melbourne, America/New_York, Asia/Kolkata, Pacific/Kiritimati and
+> Pacific/Midway. **No UTC intent exists anywhere in the record** — §13(cf). The anchoring stands as
+> the right test of the right convention.
+
+---
+
+### (cf) ✅ THE CSV HAS NEVER BEEN UTC — AND THE RECOLLECTION THAT IT WAS HAS A REAL SOURCE
+
+**11 September 2026, settled from source and git.** The developer stated the CSV was opted to UTC in
+v1.0.0 so a spreadsheet would display local time; the day's measurement said `timestamp_iso` carries
+no offset and no `Z`. Both cannot describe the current renderer, and neither account was taken.
+
+⛔ **THE CSV HAS NEVER BEEN UTC. Not in v1.0.0, not at any shape version.** `git log -S'toUtc()' --
+lib/` returns nothing across the whole history: **no UTC conversion has ever existed in the export
+path, or anywhere in `lib/`.**
+
+| Commit | Date | Time columns | The ISO cell |
+|---|---|---|---|
+| `3117d05`, v1.0.0 | 7 Mar | `timestamp_iso`, `timestamp_local`, in `lib/main.dart` | `r.timestamp.toIso8601String()`, with `timestamp: DateTime.now()` at creation — local, no `Z` |
+| `0de48d1` | 21 Mar | same two, moved to `event_record.dart` | unchanged |
+| `631b53c` | 16 Apr | `timestamp_local` split into `date` and `time` | unchanged |
+| v2 to v5 | Aug | columns added around them | unchanged |
+| `e1575b2`, v6 | 29 Aug | the three mean when it happened | source becomes `whenHappened`, still local |
+
+⚠️ **`timestamp_local` was never a UTC counterpart.** It was `DateFormat.yMMMd().add_jm()` of the
+SAME local value — a human-readable rendering beside the ISO one. **Both columns were local from the
+first commit.**
+
+⭐ **AND THE RECOLLECTION HAS A REAL SOURCE, so it is recorded as explained, not as wrong.** iOS
+native capture writes timestamps with `ISO8601DateFormatter`, which emits UTC with a `Z`, from CR-42
+on 3 May (`285bb74`). Until 22 August those strings were parsed into UTC `DateTime`s and rendered
+as-is. ⛔ **BETWEEN 3 MAY AND 22 AUGUST THE EXPORT'S ISO COLUMN GENUINELY MIXED TWO CONVENTIONS** —
+Dart records naive-local, iOS records with `Z` — **for three and a half months, on the capture pathway
+the developer names as most used.** `Z` strings were in the exports. ⚠️ **It was a defect, not a
+decision.** `e48d91b` on 22 August fixed it at the single parse site, and its own words record the
+symptom: *"an event logged from the Lock Screen or the Live Activity displayed ten hours early in
+AEST, year-round"* — sorting concealed it, because `compareTo` compares instants while the times
+beside them were wrong.
+
+**Where it was checked and found silent:** the Register carries one UTC mention, about migration
+offsets, none about the CSV; STATUS.md none; DATA-MODEL §6 none; no comment at any of the three
+columns, then or now. Controls: the migration mention was found; `git log -S` found `timestamp_local`
+at three commits.
+
+⭐ **THE FIRST TIME THIS WEEK AN ACCOUNT AND THE CODE DISAGREED AND THE ACCOUNT DESCRIBED A REAL PAST
+STATE.** The prior pattern (§13(bp)) was chat asserting an absence and being wrong; §13(cb) was the
+documents silent and read as absence. **This is the inverse: a memory of something that genuinely
+happened — `Z` in the file — attached to the wrong cause and the wrong date.** Worth distinguishing,
+because the check that resolves it is the same (`git log`, then read) and the verdict is different:
+not "no such decision", but "a defect you saw, since fixed".
+
+**Sourcing.** Every expression and parse site: read at 41c26f9. Every commit: `git log` and `git
+show`. The `Z` behaviour of `toIso8601String`: demonstrated on this machine, §13(cg). The developer's
+account: developer-stated, reported by the briefing party. **Inferred, and marked:** that the mixed
+period or v1.0.0's ISO-beside-local pairing is the source of the recollection.
+
+---
+
+### (cg) 🔴 THE ZONE IS UNSTATED, EVERYWHERE — STORE, BACKUP AND EXPORT AGREE, AND NONE OF THEM SAYS WHICH CLOCK
+
+**11 September 2026.** The finding that survives §13(cf).
+
+⭐ **STORE, BACKUP AND EXPORT ARE INTERNALLY CONSISTENT — all local wall-clock. Nothing disagrees with
+anything.** Recorded plainly first, because it is the better half of the answer:
+
+| Artefact | What it holds | How it gets there |
+|---|---|---|
+| SQLite `event.logged_at`, `occurred_at` | naive-local ISO | `eventToRow` writes `toIso8601String()` of local values; the JSON→SQLite migration parsed every legacy timestamp with `toLocal()` before writing; `SqliteEventStore` reads `ts.toLocal()` |
+| the inbox drain | local | `at` parsed with `toLocal()` |
+| new records | local | `DateTime.now()` |
+| JSON backup | naive-local ISO | `toMap` serialises the in-memory local values; `parseBackup` routes through `fromMap`, whose `_parseTimestamp` is `tryParse(raw)?.toLocal()` |
+| CSV, all three time columns | local | one `DateTime`, `whenHappened`, rendered three ways |
+| the retired prefs store and pre-22-Aug backups | may hold `Z` strings for iOS records | deliberately not rewritten (`e48d91b`); normalised on every read |
+
+⛔ **AND THE ZONE IS STATED NOWHERE.** `timestamp_iso` carries no `Z` and no offset, **because Dart
+emits `Z` only for a UTC `DateTime` and every value reaches the renderer local.** Demonstrated on this
+machine, 11 September:
+
+    local  isUtc=false  2026-08-30T16:36:41.000
+    utc    isUtc=true   2026-08-30T06:36:41.000Z
+    parse('2026-08-22T16:00:00.000Z')          isUtc=true   …T16:00:00.000Z
+    parse('2026-08-22T16:00:00.000Z').toLocal  isUtc=false  2026-08-23T02:00:00.000
+
+A real row from today's export: `2026-08-30T16:36:41.000,2026-08-30,4:36 PM`. Three renderings of
+one instant, and no field in the file, the header or the filename says what clock it is on.
+
+⚠️ **WHAT IT COSTS, AGAINST §13(bl)'s STANDARD.** The recipient is unknown by design and the file must
+stand alone. ⛔ **A reader in another zone cannot convert the times, cannot compare them against
+anything zoned — a hospital record, a device log, a pharmacy timestamp — and cannot tell that they
+should ask.** A local wall-clock time is the right thing for a person to read; it is the wrong thing
+for a file to carry unlabelled, because the label is what makes it convertible.
+
+⭐ **THE MEASUREMENT THAT NARROWS IT.** At en-AU in Excel, an ISO value with no zone, one with
+`+10:00` and one with `Z` all stayed TEXT — none was reinterpreted. **So the zone does not change what
+a spreadsheet displays. It changes what a reader can KNOW.** The defect is informational, not
+presentational, and its fix would be too.
+
+⛔ **NOT PROPOSED, and why.** `e48d91b`'s own reasoning — *"A UTC timestamp is not wrong, it is
+unambiguous, and a migration rewriting timestamps would risk far more than a parse-time conversion"*
+— is a considered position on zone representation that any proposal has to read first: it argues for
+leaving stored data alone and for treating unambiguity as the property that matters, which points at
+the file's LABEL rather than its values. ⚠️ And chat has proposed and withdrawn twice on this file
+today. This entry records the gap; the shape of any change is a proposal under the working agreement.
+
+**Sourcing.** Every write and parse site: read at 41c26f9. The `Z` demonstration: run on this
+machine. The Excel behaviour: measured earlier this date, §13(bl). Nothing inferred.
