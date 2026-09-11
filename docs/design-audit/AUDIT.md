@@ -2176,6 +2176,66 @@ There is no capture at any scale but the default (§13(q)), so the consequence i
 than small**. That is part 2 work. ⛔ **Do not record a severity here; the measurement does not
 exist yet.**
 
+> ✅ **MEASURED 11 September 2026 — CLOSED AS MEASURED, NOT AS PASSED.**
+>
+> ⛔ **THE FINDING IS "THESE OBSERVED FAILURES AT 2.0 IN A WIDGET TEST, AS AT 11 SEPTEMBER 2026". It
+> is NOT "handles text scale correctly".** The app still never reads `textScaler` — the zero hits
+> above stand, re-checked this date. ⭐ **Surviving is not responding.** Nothing re-flows; what did not
+> break at 2.0 did not break because its layout happened to have room.
+>
+> **Conditions.** 375x667 logical, DPR 1.0, `TargetPlatform.android`, `MERTheme.light`, text scale set
+> through the test platform dispatcher (`textScaleFactorTestValue`), one screen per process per
+> `CLAUDE.md`'s harness rule, every `FlutterError` during the pump collected, `RenderFlex` checked on
+> both axes, `RenderParagraph.didExceedMaxLines` counted, interactive rects checked for out-of-viewport
+> and overlap. **Twelve screens, each at 1.0 as control and at 2.0.** Overlapping controls: 0 on every
+> screen at both scales. Every control outside the viewport was inside a scrollable.
+>
+> | Screen | 1.0: overflow errors / clipped text | 2.0: overflow errors / clipped text | scroll extent 1.0 → 2.0 |
+> |---|---|---|---|
+> | about | 2 / URLs clipped | 5 / URLs at zero width | 389 → 1257 |
+> | conditions | 0 / 0 | 0 / 0 | 0 → 2253 |
+> | disclaimer | 0 / 0 | 1 / 0 | 1833 → 8572 |
+> | form | 0 / 0 | 0 / unit labels, subtitle | 1009 → 2621 |
+> | help | 0 / 0 | 0 / 0 | 0 → 473 |
+> | history | 0 / gap line | 2 / gap line, subtitle | 0 → 973 |
+> | home | 1 / 0 | 1 / 0 | 0 → 105 |
+> | medication | 0 / 0 | 0 / 0 | no scrollable, empty state |
+> | vocabulary | 0 / 0 | 0 / two titles | 7017 → 47871 |
+> | walkthrough | 0 / 0 | 0 / title | PageView, unchanged |
+> | wizard | 0 / title | 0 / unit labels, title | 0 → 110 |
+> | your_data | 0 / 0 | 0 / 0 | 488 → 2762 |
+>
+> What is pre-existing and what is scale-induced is separated in **§13(bw)** and **§13(bx)**; the
+> table is the raw result and the two entries are its reading.
+>
+> ⛔ **THE LIMIT, IN FULL.** `TextScaler.linear(2.0)` scales every text by the same factor. **iOS
+> Dynamic Type is non-linear per text style, and Android's font-size setting is capped per OEM.** The
+> harness font is not a device font — §13(ay) and §13(az) record that a widget test's text width is an
+> input the harness fakes. ⚠️ **So every absolute pixel figure above carries the font caveat, and this
+> pass measures Flutter's layout engine with the test font at a linear 2.0 — not what either OS
+> renders at its own 200%.** ⭐ **What it DOES measure reliably: direction and structure** — which
+> `Row`s have no flexible child, which titles are set single-line, which extents double or more than
+> double. Those depend on the layout, not the font, and hold on any device.
+>
+> **THE FORM'S EXTENT, WITH ITS CONDITIONS.** `LogEventScreen` with an existing complete record,
+> `confirmOnSave: true`, seeded vocabulary, widget test, screenfuls = (max scroll extent + viewport)
+> / viewport:
+>
+> | Conditions | 1.0 | 2.0 |
+> |---|---|---|
+> | 375x667, rescue collapsed | **2.65** | **5.29** |
+> | 430x932, rescue collapsed (`rescueMedGiven` null) | 1.76 | 3.26 |
+> | 430x932, rescue expanded (given, partly helped, no second dose) | 1.97 | 3.62 |
+>
+> ⛔ **NOT COMPARED AGAINST §13(g)'s 2.11, and here is why:** that figure records neither rescue state
+> nor method. ⭐ **A new measurement with conditions placed beside an old one without them would look
+> like a comparison and be nothing.** The three rows above are the first extent figures for this
+> screen that state what they measured.
+>
+> **Sourcing.** Every figure: measured this date, thirteen probe files, one screen per process, all
+> deleted. The textScaler zero hits: re-run this date. The Dynamic Type and OEM statements: general
+> platform knowledge, not measured here.
+
 ---
 
 ### (v) ✅ FLASH CONTENT — CLEAN, and recorded as a positive result
@@ -7192,3 +7252,77 @@ NOT PROPOSED, and this is why.** Per `docs/WORKING-AGREEMENT.md` §2(b):
 **Sourcing.** Every figure: measured, this date, probes deleted. `_SelectionRow` and `_SelectionWrap`:
 read. The SDK's `_InputPadding` (buttons) and `_ChipRedirectingHitDetectionWidget` (chips): read at
 `/c/Flutter/flutter`. The four dependent tests: read. `mer_theme.dart` unchanged at 64bc09e8.
+
+---
+
+### (bw) FOUR FAILURES ALREADY PRESENT AT 1.0 — DIFFERENT WORK FROM TEXT SCALE, SEPARATED BY THE CONTROL COLUMN
+
+**11 September 2026.** The §13(u) sweep ran every screen at 1.0 before 2.0. ⭐ **Four failures are
+present at 1.0**, and without the control column each would have been recorded as a text-scale
+finding and the scale work would have inherited repairs that belong elsewhere.
+
+| Failure at 1.0, 375x667 | Where | What it is |
+|---|---|---|
+| two `RenderFlex` overflows, 109 and 69 px | `about_screen.dart:_InfoRow` | a `Row` of label and value with `spaceBetween` and **no `Flexible` on the value**; long values push past the edge |
+| URLs clipped | `about_screen.dart:_LinkRow` | the URL `Text` is `Flexible` but the label beside it is not, so the URL takes what is left — 100 px for the privacy URL, 73 for terms |
+| "Add details: duration, type, severity" truncated | `history_screen.dart`, the gap line | `maxLines: 1` on a string that does not fit 243 px at default size |
+| app-bar title overflow, 41 px | `home_screen.dart`, the title `Row` | **§13(ay)'s retracted artefact** — see below |
+| app-bar title "Add details" past its box | `event_wizard_screen.dart` | same class |
+
+⚠️ **THE LAST TWO CARRY THE §13(ay) CAVEAT AND ARE NOT DEVICE RESULTS.** The test font is wider than
+a device font, so an app-bar title overflow at 1.0 in this harness is what §13(ay) measured and
+retracted — the real render at 375 had 127 points to spare. **The 2.0 figure for the same element
+inherits the caveat** (Home 138 px, wizard title at 17 px wide): it says the title is the first thing
+to give at scale, and it does not say by how much on a device. ⭐ **Third finding in which that caveat
+is load-bearing**, after §13(ay) itself and §13(bl)'s date column.
+
+⛔ **THE CONTROL COLUMN IS WHAT DISTINGUISHES THESE, AND THAT IS THE ENTRY'S POINT.** A sweep at 2.0
+alone would have returned About overflowing, History truncating and two titles clipping, and every
+one would have read as "breaks at 200%". Two of the four are real defects at the default size; two are
+harness artefacts at any size. **None is text-scale work.** The About rows and the gap line belong
+with §10's layout work; the titles belong nowhere until measured on a device.
+
+**Sourcing.** Measured this date; `_InfoRow`, `_LinkRow` and the gap line read at 187a8a1.
+
+---
+
+### (bx) 🔴 WHAT IS GENUINELY SCALE-INDUCED — HISTORY'S TITLE ROW FIRST
+
+**11 September 2026.** Failures present at 2.0 and absent at 1.0, in the §13(u) sweep. ⛔ **Every
+pixel figure carries the font caveat stated in §13(u)'s annotation; the structural facts do not.**
+
+⛔ **HISTORY'S TITLE ROW OVERFLOWS BY 66.5 px ON EVERY ROW CARRYING A TYPE BADGE.**
+`history_screen.dart`, the `ListTile` title: `Row([Expanded(Text(time)), if (eventType != null)
+_EventTypeBadge(...)])`. **The badge does not shrink** — it has no `Flexible`, so at 2.0 its own
+doubled label claims the width and the row overflows, four rows out of six in the fixture, two
+`RenderFlex` exceptions after de-duplication. ⭐ **History is half the pathway the developer named as
+key use, and this is the worst of the scale failures**: a red overflow stripe on every typed event in
+the list, at any width where the badge and the time no longer fit.
+
+**Then, in order of consequence:**
+
+| Element | At 2.0 | Structure behind it |
+|---|---|---|
+| About's URLs (`_LinkRow`) | **zero width** — clipped at 1.0, gone at 2.0 | the non-flexible label doubles and consumes the row |
+| disclaimer app-bar title | `RenderFlex` overflow, 90 px | title `Row` with no flexible child |
+| form and wizard duration unit labels, "minutes" and "seconds" | exceed their boxes | fixed-width labels beside the number fields |
+| app-bar subtitle "Medical Event Recorder" | truncated on the form, History and Your lists | `softWrap: false`, single line, in a two-line title `Column` |
+| "Welcome to MER" (walkthrough), "Your lists" (vocabulary) | truncated | same single-line app-bar mechanism |
+| conditions | half the paragraphs, no add control | ⭐ **INFERRED, not a defect:** re-run with a long settle, same result, so not timing; the list is lazy and at 2.0 the first item fills the viewport, so the add control is built only on scroll. **Reachable, not lost.** Recorded as inference |
+
+**Scroll extents** double or more on every scrolling screen; the form goes from 2.65 to 5.29
+screenfuls at 375x667 (conditions in §13(u)'s annotation). None of that is a failure; it is what
+200% costs and it is recorded so the layout work knows the number.
+
+⚠️ **COUNTING CORRECTION, recorded so the raw logs are not misread.** The clipped-text counts in the
+sweep's first tabulation are element VISITS, not unique paragraphs: `Text` and `RichText` both resolve
+to one `RenderParagraph`, and a `Flexible` wrapper adds a third visit. **The named list above is the
+reliable form**; the counts are roughly double.
+
+⛔ **NOTHING PROPOSED.** The structural facts — a badge without `Flexible`, a title `Row` without one,
+single-line subtitles — are the input to §10's layout work and the vocabulary's app-bar decision, not
+to a fix here.
+
+**Sourcing.** Measured this date, twelve screens plus a re-run of conditions and a second pass naming
+each clipped paragraph, all probes deleted. History's title `Row`: read at 187a8a1. The conditions
+explanation: inferred, marked.
