@@ -7473,6 +7473,22 @@ write.**
 **Sourcing.** The row and the dialog: read at b9f6a97, dialog quoted from source. §13(ad)'s seven
 rows: read from that entry. The developer's use: developer-stated.
 
+> ⛔ **ANNOTATED 11 September 2026 — THREE SHAPES EXAMINED, NONE FIXES IT. THE DELETE PATH REMAINS
+> UNSAFE AND UNDESIGNED.**
+>
+> | Shape | Why it does not reach the problem |
+> |---|---|
+> | name the record in the confirm dialog | names all seven of §13(ad)'s identical rows equally — the dialog would say "4:41 PM, Seizure / fit" seven times over |
+> | show seconds on the row | costs every row a field to serve the rare case, and §13(ad)'s seven may still collide to the second (§13(be) records one write within a single second) |
+> | undo | **narrows rather than dissolves** — §13(ch). Covers a visible mis-delete, cannot reach an invisible one, and the identical-row case is the invisible kind |
+>
+> ⭐ **The THIRD finding today where the obvious repair does not reach the problem**, after §13(bi)'s
+> count check and §13(bq)'s intent signal. Each was disproved by the same question asked before
+> anything was built: what would this actually have caught?
+>
+> ⚠️ **Recorded plainly rather than as progress: the delete path is unsafe and undesigned.** Nothing
+> in this annotation is a proposal.
+
 ---
 
 ### (ca) THE HISTORY FEASIBILITY READ — CHAT'S MODEL CORRECTED, AND WHAT DESIGN MUST KNOW
@@ -7977,3 +7993,106 @@ today. This entry records the gap; the shape of any change is a proposal under t
 
 **Sourcing.** Every write and parse site: read at 41c26f9. The `Z` demonstration: run on this
 machine. The Excel behaviour: measured earlier this date, §13(bl). Nothing inferred.
+
+---
+
+### (ch) 🔴 UNDO NARROWS THE IDENTIFICATION PROBLEM; IT DOES NOT DISSOLVE IT — SCOPED, TWO SHAPES, ONE RULED OUT
+
+**Scoped 11 September 2026, read-only at 69df959.** ⛔ **Nothing built.** Chat's position was that undo
+on delete dissolves §13(bz)'s identification problem, because the seven identical records cannot be
+told apart from any data a row could carry, so a way back matters more than a way to tell.
+
+⛔ **THE DISPROOF, FIRST.** Undo covers realisation from a **VISIBLE** mistake, not from an
+**INVISIBLE** one, and the identical-row case is the invisible kind. With §13(ad)'s seven
+byte-identical rows a user cannot tell which they deleted, before or after, so undo restores *"the
+row I just removed"* without anyone knowing which row that was. **A user who deleted the wrong one of
+seven identical rows has no cue that could make them realise, in the snackbar's lifetime or ever.**
+⛔ **The case undo exists to cover is the case it cannot reach.** What it does cover is the mistake the
+user can see: a row with distinguishing content vanishing beside the intended target.
+
+⚠️ **WHETHER THE REALISE-LATER CASE HAPPENS IS UNESTABLISHED.** The developer's stated use — deleting
+a recent mis-capture, which sits at the top of the list under TODAY — argues for immediate
+realisation. §13(be) is a loss unnoticed for ten days, but its cause is unknown and it is not
+established as a user delete. ⛔ **No measurement separates the two populations, and none is
+inferred.** ⭐ What survives: undo would help a visible mis-delete and not an invisible one. ⚠️ Chat's
+view that most mis-deletes are probably visible is REASONING, not measurement — recorded as chat's,
+with the record that nothing establishes the split.
+
+**THE TWO SHAPES.**
+
+**(a) DELETE THEN RESTORE.** Today's path unchanged — `history_screen.dart:_deleteRecord`,
+`onRecordsChanged`, `home_screen.dart:_persist` — and Undo re-inserts the same `EventRecord` at its
+former index and persists again. ⭐ **The record returns byte-identical if re-inserted at its index**:
+`ordinal` is list position at save (`eventToRow(r, i)`) and `save` is delete-all-then-insert, so the
+store ends identical to before the delete. **Nothing downstream can tell it left** — no field records
+the write, `logged_at` is untouched, `persistEvents` reports only failures. History's list has no sort
+on entry (§13(bd)), so the index is exact there; History hands Home its own list object on the first
+change, so both screens hold one list. **It does not change the write path. It invokes it twice** —
+two rewrite-everything writes, each the trace-erasing mechanism §13(be) names. ⚠️ **Its one new
+failure:** killed mid-undo, after the in-memory re-insert and before the second write, the store
+holds the deleted state and **the record is gone though the user pressed Undo. A FALSE UNDO** —
+sub-second, and the one state worse than today's floor. Every other interruption point is today's
+behaviour.
+
+**(b) DEFER THE WRITE — ruled out on measurement, not preference.** The row leaves the list and the
+write fires when the snackbar clears. ⛔ **Four sites reload the list from the store** —
+`home_screen.dart:_openLatestEvent`, `_handleResume`, and `_endActiveEvent` twice — **and
+`_handleResume` runs on app resume. So BACKGROUNDING THE APP, the ordinary way a snackbar expires,
+resurrects the row from a store that still holds it.** The user sees a record they believe they
+deleted, and what the deferred write then persists depends on which list the closure captured. The
+launch drains write `plan.merged` from `loaded`, which includes the row, with no user action. ⚠️
+**(b)'s failure state lasts the whole window and is entered by the commonest gesture; (a)'s lasts
+sub-second.**
+
+⭐ **CHAT'S BELIEF WAS HALF RIGHT.** Chat thought (a) does not touch the write path and (b) does.
+**Both go through it; only (b) changes its behaviour.** (a) doubles the invocations of an unchanged
+`save`.
+
+**WHAT EXISTS ALREADY.** One snackbar action in the app — `event_record.dart`, "CSV saved" with an
+"Open" action, `ScaffoldMessenger`. `kEventRollbackKey` holds the pre-delete list exactly, written
+just before the delete write, **on the prefs fallback store only** — absent on iOS (§13(bt)) and never
+written by the SQLite store the iPhone runs (§13(bs)); right state, wrong store. The wizard's exit
+paths — *"Every exit path returns the draft, so abandoning saves what exists"* — are the same
+principle, preserve rather than block, applied to entry rather than deletion.
+
+⚠️ **WHAT CANNOT BE SCOPED FROM HERE:** the exact OS-kill behaviour at each interruption point. The
+states above are read from the code paths, not observed on a device.
+
+⛔ **NOT PROPOSED.** §13(be) warns against write-path changes from that finding alone, and chat has
+proposed and withdrawn twice on the export today. This entry records the shapes and the disproof.
+
+**Sourcing.** Every site: read at 69df959. The realise-later question: unestablished, stated.
+Chat's reasoning about visible mis-deletes: chat's, marked.
+
+---
+
+### (ci) ⭐ THREE REMOVAL MODELS ACROSS THREE RECORD KINDS — AND A REVERSIBLE ONE ALREADY EXISTS
+
+**Read 11 September 2026, while scoping §13(ch).** Recorded as its own entry because it is a fact
+about the app's model that the vocabulary work will look for under its own heading, not a sub-point
+of the undo question.
+
+| Record kind | Removal model | Where | Reversible? |
+|---|---|---|---|
+| vocabulary entry | **hidden, never deleted** — `Vocabularies.setVisible`, decision D6, `kWhyNoDelete` | `vocabulary_screen.dart`, `vocabulary_store.dart` | **yes**, by design |
+| medication note | **targeted delete** — `MedicationStore.remove(id)` issuing `DELETE … WHERE id = ?`, behind *"This action cannot be undone."* | `medication_screen.dart:_delete`, `medication_note.dart` | no |
+| event | **rewrite-everything** — `removeWhere` on the list, then `save` deletes every row and reinserts the rest, behind the same wording (§13(bz)) | `history_screen.dart`, `event_store_sqlite.dart` | no |
+
+⛔ **A REVERSIBLE REMOVAL ALREADY EXISTS AS A DESIGN PRINCIPLE IN THIS APP, FOR ONE RECORD KIND.** D6's
+reasoning — a delete orphans every record referencing the entry, and `is_active` covers every reason
+to want one — is about references, not about regret. But the mechanism it produced, a flag that
+hides without destroying, is exactly the shape §13(bz) and §13(ch) found missing on events.
+
+⚠️ **AND `MedicationStore.remove` TARGETS A ROW BY ID UNAMBIGUOUSLY, WHICH §13(br) FOUND THE EVENT
+STORE CANNOT DO.** `medication_note.id` is addressed directly; `event.id` is deliberately non-unique
+(§13(bk), §13(br)). Two stores in one database, two capabilities, and §13(br) did not know the other
+existed when it costed the per-record delete.
+
+⛔ **NOT PROPOSED.** Soft delete on medical records is a substantial model change — a flag on the
+event table, a filter at every read, a decision about export and backup — and would be a fourth
+proposal in one day. ⭐ **Recorded as the precedent it is, and as a question for the vocabulary work
+rather than for now:** the app has already decided once that removal should be reversible, and once
+that it should be targeted, and once that it should be neither. Whether three models is a design or
+an accumulation is for that work to say.
+
+**Sourcing.** All three paths: read at 69df959. D6: `C:\dev\CLAUDE.md`. Nothing inferred.
