@@ -5,6 +5,8 @@ import 'package:medical_event_recorder/models/duration_format.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/medication_note.dart';
 
+import 'csv_no_blank_test.dart' show cells, header;
+
 /// `occurred_at`, and the two things a header golden cannot check.
 ///
 /// ## ⛔ WHY THIS FILE EXISTS SEPARATELY FROM `csv_delimited_test`
@@ -106,8 +108,11 @@ void main() {
       // Sorted together on one timeline: the 08:00 note precedes the 16:41
       // event. Under the old behaviour the event carried 29 Aug and sorted
       // after it on a different day entirely.
-      expect(lines[1], contains('2026-08-27T08:00'));
-      expect(lines[2], contains('2026-08-27T16:41'));
+      // Anchored to the timestamp_iso CELL, 11 Sep 2026 (§13(ce)). The
+      // whole-line form would pass with the time in any cell.
+      final iso = header(csv).indexOf('timestamp_iso');
+      expect(cells(lines[1])[iso], startsWith('2026-08-27T08:00'));
+      expect(cells(lines[2])[iso], startsWith('2026-08-27T16:41'));
     });
   });
 

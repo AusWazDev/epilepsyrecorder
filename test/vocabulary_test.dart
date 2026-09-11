@@ -9,6 +9,8 @@ import 'package:medical_event_recorder/models/event_store_sqlite.dart';
 import 'package:medical_event_recorder/models/vocabulary.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 
+import 'csv_no_blank_test.dart' show cells, header;
+
 /// User-defined vocabularies.
 ///
 /// The one property everything else hangs off: **`value` is what a record
@@ -747,8 +749,11 @@ void main() {
         ),
       ]);
 
-      expect(csv, contains('Dizzy'));
+      // Anchored to the CELL, 11 Sep 2026 (§13(ce)): the observations cell,
+      // by header, IS the user's word - not "the word is somewhere in the file".
       expect(csv.split('\n').first, contains('observations'));
+      expect(cells(csv.split('\n')[1])[header(csv).indexOf('observations')],
+          'Dizzy');
     });
 
     test('24. several observations are delimited, not concatenated', () {
@@ -762,7 +767,9 @@ void main() {
           notes: '',
         ),
       ]);
-      expect(csv, contains('Tired; Confused'));
+      // Anchored to the CELL, 11 Sep 2026 (§13(ce)).
+      expect(cells(csv.split('\n')[1])[header(csv).indexOf('observations')],
+          'Tired; Confused');
     });
   });
 }

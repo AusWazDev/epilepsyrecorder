@@ -13,6 +13,8 @@ import 'package:medical_event_recorder/models/event_store_sqlite.dart';
 import 'package:medical_event_recorder/models/vocabulary.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 
+import 'csv_no_blank_test.dart' show cells, header;
+
 /// `eventType` and `severity` become nullable at construction.
 ///
 /// The last two fields that still FABRICATED. Both defaulted to the first enum
@@ -235,7 +237,7 @@ void main() {
 
     test('13. NEGATIVE CONTROL: a supplied value is NOT written as unknown',
         () {
-      final row = buildCsv(<EventRecord>[
+      final csv = buildCsv(<EventRecord>[
         EventRecord(
           id: 'a',
           timestamp: t0,
@@ -246,10 +248,15 @@ void main() {
           eventType: 'absence',
           severity: EventSeverity.severe,
         ),
-      ]).split('\n')[1];
+      ]);
+      final h = header(csv);
+      final vals = cells(csv.split('\n')[1]);
 
-      expect(row, contains('Absence episode'));
-      expect(row, contains('Severe'));
+      // Anchored to the CELL, 11 Sep 2026 (§13(ce)). `row contains 'Severe'`
+      // would pass on a note or an observation carrying the word; this asks
+      // the event_type and severity cells, by header, for the exact label.
+      expect(vals[h.indexOf('event_type')], 'Absence episode');
+      expect(vals[h.indexOf('severity')], 'Severe');
     });
 
     test('14. a SCREEN gets null and omits, rather than a word', () {

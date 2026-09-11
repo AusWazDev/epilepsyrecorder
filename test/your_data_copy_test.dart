@@ -9,6 +9,8 @@ import 'package:medical_event_recorder/models/backup.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/services/backup_service.dart';
 
+import 'csv_no_blank_test.dart' show cells, header;
+
 /// The claims the Your data screen makes about the two files.
 ///
 /// This copy tells someone which file will bring their history back, so a wrong
@@ -301,8 +303,12 @@ void main() {
             reason: 'no raw emoji-bearing string may reach the file');
       }
       // POSITIVE CONTROL: the value IS exported, stripped - so the absence
-      // above is a naming fact and not a dropped field.
-      expect(csv, contains('Confused'));
+      // above is a naming fact and not a dropped field. Anchored to the
+      // observations CELL, 11 Sep 2026 (§13(ce)): on this fixture's device a
+      // note once carried the same word (§13(bf)), and the whole-file form
+      // would have passed on it.
+      expect(cells(csv.split('\n')[1])[header(csv).indexOf('observations')],
+          'Confused');
 
       // Triggers carry no emoji and pass through untouched. Only the ones
       // this record HOLDS now - the seven names no longer appear as headers.

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'afterwards_wording_test.dart' show kAfterwardsHeading;
+// Prefixed: this file already has a local `header` String in the export test.
+import 'csv_no_blank_test.dart' as csvcells show cells, header;
 
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
@@ -169,7 +171,7 @@ void main() {
     // nothing, because `containsAll` over a list that no longer holds them
     // fails loudly, but the version of this that checked only the header for
     // ABSENCE would not have.
-    final row = buildCsv(<EventRecord>[
+    final csv = buildCsv(<EventRecord>[
       EventRecord(
         id: 'r',
         timestamp: DateTime(2026, 8, 26, 9, 0),
@@ -179,10 +181,19 @@ void main() {
         notes: '',
         referralRequired: false,
       )
-    ]).trim().split('\n').last;
+    ]);
+    final row = csv.trim().split('\n').last;
 
+    // Anchored to the CELL, 11 Sep 2026 (§13(ce)). The whole-row form passed
+    // as long as an option appeared ANYWHERE in the row - the day a note or a
+    // label carried one of these words, it would have gone on passing while
+    // measuring nothing. Read the beforehand cell by header and split it on
+    // the list delimiter, so each option must be a VALUE of that cell.
+    final col = csvcells.header(csv).indexOf('beforehand');
+    expect(col, isNonNegative, reason: 'the beforehand column must exist');
+    final values = csvcells.cells(row)[col].split('; ');
     for (final option in kTriggerOptionsForTest) {
-      expect(row, contains(option), reason: 'the options are the values');
+      expect(values, contains(option), reason: 'the options are the values');
     }
   });
 }

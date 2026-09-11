@@ -7893,6 +7893,69 @@ set.
 
 ---
 
+⭐ **ANNOTATION, 11 September 2026 — THE SEVEN LATENT ARE ANCHORED. Recorded at 8d9c5f3, tests only,
+no renderer change.** The trigger recorded above was never hypothetical: the two engine assertions
+turned on 29 August because a COLUMN WAS ADDED, and this project added cells twice today. So the
+"deliberately not fixed" position above is withdrawn, and the count it was protecting is preserved
+here instead.
+
+**Each of the seven now asserts the SPECIFIC CELL by header**, through the quote-aware `cells` and
+`header` readers in `csv_no_blank_test.dart`, imported `show cells, header` (prefixed `csvcells` in
+`beforehand_wording_test.dart`, which has a local `header` String in the same test — the unprefixed
+import compiled against the String and failed to load; caught on the first variant run, not by
+reading). ⛔ **No literal was swapped for another literal.** Every anchored form is an equality or a
+`startsWith` on ONE cell, or membership in that cell's `; `-split values — a `Not Captured` in any of
+the other 24 cells cannot satisfy it.
+
+**And each was made to FAIL FOR THE RIGHT REASON, by the variant technique from the timezone fix:**
+a scratch copy of `event_record.dart` with the target cell rendered as `kCsvNotCaptured` and the
+literal it used to carry moved into the `notes` cell, swapped in, tests run, the original restored
+and its sha256 confirmed after every swap (`lib/` dirty count 0 throughout). Four variants, each
+run twice — against the OLD assertions before anchoring, and against the NEW ones after:
+
+| Site | Anchored to | Variant | OLD assertion on the variant | NEW assertion on the variant |
+|---|---|---|---|---|
+| `beforehand_wording_test` "5. the CSV never labels the field at all" | `beforehand` cell, split on `; `, each option a member | `trig` — beforehand → Not Captured, options into notes | ✅ PASSED (5 of 5) — **latent, demonstrated** | ⛔ FAILED: `Expected: contains 'Stress'  Actual: ['Not Captured']` |
+| `nullable_type_severity_test` "13. NEGATIVE CONTROL" (was 251) | `event_type` cell == `Absence episode` | `typesev` — type and severity → Not Captured, both into notes | ✅ PASSED (16 of 16) — **latent, demonstrated** | ⛔ FAILED, that test alone (15 of 16) |
+| `nullable_type_severity_test` "13." (was 252) | `severity` cell == `Severe` | same variant | same run | same failure |
+| `vocabulary_test` "23. a user-defined observation reaches the export" | `observations` cell == `Dizzy` | `obs` — observations → Not Captured, labels into notes | ✅ PASSED (45 of 45 across both files) — **latent, demonstrated** | ⛔ FAILED |
+| `vocabulary_test` "24. several observations are delimited" | `observations` cell == `Tired; Confused` | same variant | same run | ⛔ FAILED |
+| `your_data_copy_test` "no emoji reaches the header OR the values" | `observations` cell == `Confused` | same variant | same run | ⛔ FAILED (3 of 45 fail, exactly the three anchored) |
+| `occurred_at_export_test` "5. events and medication notes now agree on what column 1 means" (was 109, 110) | `timestamp_iso` cell `startsWith` on rows 1 and 2 | `iso` — both rows' iso → `x`, iso into notes | ✅ PASSED — **latent, demonstrated**; the variant WAS caught, but by tests 2 and 3 in the same file, which were already anchored to the cell (`Expected: '2026-08-27T16:41:00.000'  Actual: 'x'`) | ⛔ FAILED, joining 2 and 3 (10 of 13) |
+
+⭐ **The `iso` row is the instructive one.** On the old assertions the variant produced a RED run —
+and the red came from two neighbours that were already anchored to the cell, while the latent test
+sat green beside them. **A file can be red for the right reason and still contain an assertion
+that is passing for the wrong one.** That is why the control had to be per-assertion, not per-file.
+
+**Census check, per the brief: WAS THE DENOMINATOR RIGHT?** The 63-site count above was over the 18
+files that call `buildCsv` directly. Enumerated the complement: **8 test files mention CSV without
+calling `buildCsv`** — `backup_medication_notes`, `bounded_chip_wrap`, `catch_all_last`,
+`condition`, `dizziness_split`, `export_options`, `filter_sheet`, `share_failure`. Every hit read:
+five are doc-comments, `condition_test` asserts `kCsvShapeVersion` (a constant, not output),
+`filter_sheet_test` asserts the FILENAME via `exportFilenamePrefix` and `csvFilename`, and
+`share_failure_test` asserts the failure SnackBar text. **None asserts on CSV content.** No golden
+CSV exists in `test/` (the only non-Dart file is `MER_Test_Plan_v1.0.0.docx`), and no test reads
+the temp file `_buildCsvTempFile` writes. ✅ **The denominator holds; the seven were seven.**
+
+✅ **Full suite 692 passed, 0 failed, with the original renderer. Analyzer identical to the 0b4861b
+baseline (52 lines, diff empty), measured in a throwaway worktree.**
+
+⛔ **THE BOUNDARY, STATED.** The class is now closed for **CSV assertions specifically**, against the
+census above: 63 sites — 49 out of class, 4 negatives correctly whole-output, and 14 in the class, of
+which 4 were anchored earlier today, 7 are anchored here, and **3 "low risk" sites remain
+unanchored exactly as the census recorded them** (the delimited `"…; …"` form or an ISO `T`
+fragment, specific to one cell). Those three are not touched by this pass; the brief named the
+seven. **Nothing establishes whether the same shape — a `contains` over a whole rendered output
+whose meaning is one part of it — exists elsewhere in the suite:** over a backup JSON string, a
+screen's text tree, a SnackBar, a filename. **Not swept, deliberately.** Recorded so the next
+reader knows the closure is scoped, not general.
+
+*Sourcing: the variant builder and driver are scratch scripts, not committed; their logs are in the
+session scratchpad. Nothing in this annotation is inferred — every row is a test run.*
+
+---
+
 ### (cf) ✅ THE CSV HAS NEVER BEEN UTC — AND THE RECOLLECTION THAT IT WAS HAS A REAL SOURCE
 
 **11 September 2026, settled from source and git.** The developer stated the CSV was opted to UTC in
