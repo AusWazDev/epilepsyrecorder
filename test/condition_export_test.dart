@@ -89,7 +89,9 @@ void main() {
       // v6 for a LATER change that added no column at all — the time columns
       // changed meaning. This test's own title is about the condition column
       // and stays true; the constant simply is not owned by this file.
-      expect(kCsvShapeVersion, 'v6');
+      // v5 for this column. v7 on 11 Sep 2026 for the no-blank value
+      // convention (AUDIT.md §13(cc)) — a convention change bumps too.
+      expect(kCsvShapeVersion, 'v7');
     });
 
     test('2. an ATTRIBUTED record exports its condition NAME', () async {
@@ -125,8 +127,12 @@ void main() {
 
       // (a) NO TYPE — the quick-record path writes none. This is the device's
       //     72nd record.
+      //     §13(cc): type null -> Not Captured. Cases (b) and (c) below — type
+      //     PRESENT, no condition named — stay `unknown` DELIBERATELY, pending
+      //     the developer's call recorded in §13(cd); this test pins that the
+      //     renderer has not chosen for them.
       expect(cell(buildCsv(<EventRecord>[rec('a', null)]), 'condition'),
-          'unknown',
+          kCsvNotCaptured,
           reason: 'an untyped record must NOT inherit the primary condition');
 
       // (b) A TYPE ASSIGNED TO NO CONDITION.
@@ -141,7 +147,8 @@ void main() {
       await db.close();
     });
 
-    test('4. a MEDICATION row exports unknown, not blank', () async {
+    test('4. a MEDICATION row exports Not Captured, and event-only columns '
+        'Not Applicable', () async {
       // Not derivable: a note has no event type. That is "not known", which is
       // a different fact from the blanks beside it, which are "not applicable".
       final csv = buildCsv(
@@ -155,9 +162,10 @@ void main() {
           ),
         ],
       );
-      expect(cell(csv, 'condition'), 'unknown');
-      expect(cell(csv, 'event_type'), '',
-          reason: 'not applicable stays blank — the two facts differ');
+      expect(cell(csv, 'condition'), kCsvNotCaptured,
+          reason: 'condition_id exists on the note and nothing writes it');
+      expect(cell(csv, 'event_type'), kCsvNotApplicable,
+          reason: 'the two facts differ, and §13(cc) names both');
     });
   });
 
@@ -256,19 +264,20 @@ void main() {
   });
 
   group('NOTHING ELSE MOVED', () {
-    test('8. observations and beforehand still blank when empty', () async {
-      // The delimited columns keep the OPPOSITE rule, and adding a scalar that
-      // writes `unknown` beside them must not drag them along.
+    test('8. observations and beforehand read Not Captured when empty', () async {
+      // Until 11 Sep 2026 the delimited columns wrote blank for the empty set.
+      // §13(cc) made every cell a positive statement; the empty set is now
+      // `Not Captured`, and the scalar beside it must not drag it to `unknown`.
       final csv = buildCsv(<EventRecord>[rec('a', 'seizure')]);
-      expect(cell(csv, 'observations'), '');
-      expect(cell(csv, 'beforehand'), '');
+      expect(cell(csv, 'observations'), kCsvNotCaptured);
+      expect(cell(csv, 'beforehand'), kCsvNotCaptured);
     });
 
     test('9. the event_type column is unchanged by the column beside it', () {
       expect(cell(buildCsv(<EventRecord>[rec('a', 'seizure')]), 'event_type'),
           'Seizure / fit');
       expect(cell(buildCsv(<EventRecord>[rec('a', null)]), 'event_type'),
-          'unknown');
+          kCsvNotCaptured);
     });
   });
 }

@@ -255,17 +255,17 @@ void main() {
       // Not because of this pass: v5 was the condition column, v6 the time
       // columns changing meaning. The COUNT above is what this file depends
       // on, and seventeen is still right — v6 added no column.
-      expect(kCsvShapeVersion, 'v6');
+      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
       expect(csvFilename(when: DateTime(2026, 8, 28, 9, 0, 0)),
-          'medical_event_recorder_20260828_090000.v6.csv');
+          'medical_event_recorder_20260828_090000.v7.csv');
     });
 
     test('8. an events-only export marks every row as an event', () {
       final rows = dataRows(
           buildCsv(<EventRecord>[event('e', DateTime(2026, 8, 1))]));
       expect(rows.single[3], kRecordKindEvent);
-      expect(rows.single[15], '',
-          reason: 'medication_kind is not applicable');
+      expect(rows.single[15], kCsvNotApplicable,
+          reason: 'medication_kind does not exist for an event — §13(cc)');
     });
 
     test('9. ⛔ ONE TIMELINE: the two streams interleave by date', () {
@@ -286,7 +286,8 @@ void main() {
           <String>[kRecordKindEvent, kRecordKindMedication, kRecordKindEvent]);
     });
 
-    test('10. a medication row blanks every event-only column', () {
+    test('10. a medication row marks every event-only column Not Applicable',
+        () {
       final row = dataRows(buildCsv(
         const <EventRecord>[],
         notes: <MedicationNote>[
@@ -305,10 +306,14 @@ void main() {
       // that is "not known", not "not applicable", and the two are different
       // facts. `medication_note.condition_id` exists and is unpopulated; when
       // it is populated this reads it instead.
-      expect(row[4], 'unknown', reason: 'condition is not derivable for a dose');
+      // §13(cd): "not known" became `Not Captured` on 11 Sep 2026 — the field
+      // applies (condition_id exists since v8) and nothing writes it.
+      expect(row[4], kCsvNotCaptured,
+          reason: 'condition applies to a dose and was never answered');
 
       for (final i in <int>[5, 6, 7, 8, 9, 10, 11, 12, 13, 14]) {
-        expect(row[i], '', reason: 'column $i is not applicable to a dose');
+        expect(row[i], kCsvNotApplicable,
+            reason: 'column $i does not exist for a dose — §13(cc)');
       }
     });
 

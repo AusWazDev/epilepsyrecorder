@@ -273,8 +273,9 @@ void main() {
     test('14. the CSV cell is EXPLICIT, never blank', () {
       // A clinician reading a blank cannot tell "unknown" from "not recorded"
       // from a broken export.
-      expect(durationCsv(null, null), 'unknown',
-          reason: 'a NEW value in a column that has only ever held three bucket strings');
+      expect(durationCsv(null, null), kCsvNotCaptured,
+          reason: 'was `unknown` until 11 Sep 2026; the no-blank rule '
+              '(§13(cc)) names the state in two words');
       expect(durationCsv(DurationCategory.lt1, null), '< 1 minute');
       expect(durationCsv(null, 187), '3m 7s',
           reason: 'a measured quantity, not a raw second count');

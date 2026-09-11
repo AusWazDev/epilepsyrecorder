@@ -238,7 +238,7 @@ void main() {
       // This pass added no column. The marker is v6 because LATER passes did:
       // v5 added `condition`, v6 changed what the time columns mean. The rule
       // working, not a regression.
-      expect(kCsvShapeVersion, 'v6');
+      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
     });
   });
 

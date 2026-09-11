@@ -191,7 +191,7 @@ void main() {
               'the one artefact a clinician reads');
       // Hiding changed no column. v5 was the later condition column and v6 the
       // time columns changing meaning.
-      expect(kCsvShapeVersion, 'v6');
+      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
       await db.close();
     });
 

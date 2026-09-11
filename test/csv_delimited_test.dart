@@ -313,11 +313,15 @@ void main() {
     });
   });
 
-  group('THE EMPTY SET IS BLANK', () {
-    test('15. no observations and no triggers give empty cells', () {
+  // Until 11 Sep 2026 this group was "THE EMPTY SET IS BLANK". The no-blank
+  // rule (AUDIT.md §13(cc), developer decision) replaced the blank with
+  // `Not Captured` — two words, so it still cannot collide with a user value
+  // the way "none" could (test 16 still holds).
+  group('THE EMPTY SET IS NOT CAPTURED', () {
+    test('15. no observations and no triggers read Not Captured', () {
       final c = cells(buildCsv(<EventRecord>[rec()]));
-      expect(c[kObservationsCell], isEmpty);
-      expect(c[kTriggersCell], isEmpty);
+      expect(c[kObservationsCell], kCsvNotCaptured);
+      expect(c[kTriggersCell], kCsvNotCaptured);
     });
 
     test('16. not the word "none", which would be a VALUE', () {
@@ -328,14 +332,16 @@ void main() {
       expect(csv.toLowerCase(), isNot(contains('none')));
     });
 
-    test('17. and a blank here means what it has always meant', () {
+    test('17. and the empty set is distinguishable from a value', () {
       // The seven one-hot columns wrote blank for "not noted" in every export
-      // this app has ever produced. The cell is new; the convention is not.
+      // until 11 Sep 2026. §13(cc) replaced the blank with `Not Captured`; the
+      // property that matters here — a chosen value reads as itself and the
+      // empty set reads as something else — is unchanged.
       final none = cells(buildCsv(<EventRecord>[rec()]))[kTriggersCell];
       final some = cells(
           buildCsv(<EventRecord>[rec(triggers: const <String>['Stress'])]))[
           kTriggersCell];
-      expect(none, isEmpty);
+      expect(none, kCsvNotCaptured);
       expect(some, 'Stress');
     });
   });

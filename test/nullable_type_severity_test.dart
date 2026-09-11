@@ -226,9 +226,10 @@ void main() {
 
       final cols = header.replaceFirst('﻿', '').trim().split(',');
       final vals = row.trim().split(',');
-      expect(vals[cols.indexOf('event_type')], 'unknown');
-      expect(vals[cols.indexOf('severity')], 'unknown');
-      expect(vals[cols.indexOf('duration')], 'unknown',
+      // `unknown` until 11 Sep 2026; §13(cc) renamed the state, not the rule.
+      expect(vals[cols.indexOf('event_type')], kCsvNotCaptured);
+      expect(vals[cols.indexOf('severity')], kCsvNotCaptured);
+      expect(vals[cols.indexOf('duration')], kCsvNotCaptured,
           reason: 'the precedent this follows');
     });
 
@@ -257,8 +258,8 @@ void main() {
       // in a column where blank is ambiguous.
       expect(eventTypeDisplay(null), isNull);
       expect(severityDisplay(null), isNull);
-      expect(eventTypeCsv(null), 'unknown');
-      expect(severityCsv(null), 'unknown');
+      expect(eventTypeCsv(null), kCsvNotCaptured);
+      expect(severityCsv(null), kCsvNotCaptured);
     });
   });
 

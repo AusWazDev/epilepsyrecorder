@@ -7648,6 +7648,65 @@ answer first.
 figure: measured this date through `buildCsv` on the envelope. The migration comment, the collision
 comment, the marker docstring and the v6 note: quoted from source at d0a9b95. Tests: enumerated.
 
+> ✅ **IMPLEMENTED 11 September 2026, in `buildCsv` and `_medicationCells` only. `kCsvShapeVersion`
+> is `v7`. No stored record, no schema, no screen, no migration.** Approved by the developer; awaiting
+> chat's read of the rows before commit.
+>
+> **THE QUICK-LOG ROW, BEFORE (v6) AND AFTER (v7), generated not composed:**
+>
+>     2026-08-30T16:36:41.000,2026-08-30,4:36 PM,event,unknown,unknown,unknown,,unknown,,,,,,No,,
+>     2026-08-30T16:36:41.000,2026-08-30,4:36 PM,event,Not Captured,Not Captured,Not Captured,Not Captured,Not Captured,Not Captured,Not Captured,Not Captured,Not Captured,Not Captured,No,Not Applicable,Not Captured
+>
+> **THE ACCEPTANCE TEST IS THE WHOLE RULE.** `test/csv_no_blank_test.dart` test 1 walks every cell of
+> every row over a fixture that reaches every branch — quick-log, complete, rescue given=No, backdated,
+> medication note — and fails on any empty string. ⭐ **Control: against the unpatched v6 builder it
+> failed with 34 empty cells across 5 rows. Against v7: 0.** Tests 2 to 6 pin the edges §13(cd) named:
+> `referral_required` still `No`; a user's `Unknown` in beforehand distinguishable from `Not Captured`;
+> the rescue conditional; `duration_seconds`'s three states; the medication row.
+>
+> ⭐ **EXCEL, en-AU, same instrument as the date-column measurement: every column's filter list, 0 of 17
+> with a `<blank>` entry.** The lists as Excel shows them — `condition`: Not Captured, unknown;
+> `event_type`: Not Captured, Seizure / fit, Not Applicable; `rescue_med_given`: Not Captured, No, Not
+> Applicable, Yes; `referral_required`: No, Not Applicable, Yes; `notes`: Not Captured and the two
+> texts. That is the rule's actual claim, and no unit test could make it.
+>
+> **Full suite 691 passed, 0 failed; analyzer 52 issues, the identical set to the unpatched baseline
+> measured on a worktree at 0b4861b** — the one issue in `event_record.dart` is a pre-existing
+> `withOpacity` deprecation whose line moved from 1563 to 1642 under the insertions; nothing new in any
+> touched file. **Baseline at 0b4861b on an unpatched worktree: all passed, so every failure the change produced
+> was its own — 21 tests in 10 files, all UPDATED, none deleted:** `condition_export_test` 1, 3, 4, 8, 9;
+> `condition_test` 10; `csv_delimited_test` 15, 17 and the group title; `medication_note_test` 7, 8, 10;
+> `nullable_duration_test` 14; `nullable_type_severity_test` 12, 14; `occurred_at_export_test` 4;
+> `rescue_medication_test` 8, 10, 12; `trigger_vocabulary_test` 10; `vocabulary_hide_test` 4. Seven
+> `v6` literals became `v7`; no `v6` literal remains in `test/`.
+>
+> ⛔ **THE ACCEPTED COST, RECORDED EXPLICITLY.** `observations`, `beforehand` and `notes` may render
+> `Not Captured` on a record where the field WAS shown and left empty — a wrong value rather than an
+> ambiguous blank, because the three types are non-nullable and cannot say which (§13(cd)). ⭐ **The
+> developer accepted it: a file with no blanks beats a file whose blanks mean four different things.**
+> The cost is stated at each of the three sites in `buildCsv`.
+>
+> ⚠️ **`referral_required` IS NOW ISOLATED, NOT RESOLVED.** On the quick-log row above, thirteen cells
+> say `Not Captured` or `Not Applicable` and one says `No`. **The `No` is more conspicuous, not less.**
+> The adviser question stands, reframed: *the model cannot represent Not Captured for this field —
+> what should it say?*
+>
+> **TWO CALLS MADE IN THE IMPLEMENTATION, BOTH ACCEPTED BY THE DEVELOPER 11 September 2026:**
+> 1. ⛔ **A CORRECTION TO CHAT'S BRIEF, not a deviation from it.** The brief said Not Applicable when
+>    given is No, unconditionally. **That would have HIDDEN A STORED VALUE**: `rescue_medication_test` 9
+>    pins an inconsistent record — given=No with children answered — exporting its children. ⚠️ Chat
+>    derived the rule from the SCREEN's behaviour, where the children are hidden when given is No, and
+>    applied it to the FILE. ⭐ **The screen hides; the file must not.** A stored value appears in the
+>    export, and that is the premise of a true record. The renderer writes the child if present, Not
+>    Applicable only when the child is ALSO null and given is No, Not Captured otherwise. Test 9 passes
+>    unchanged.
+> 2. **The one cell outside the rule, at this commit.** `condition` on an event row whose type EXISTS
+>    but names no condition still writes `unknown`, per the brief's stop-and-report;
+>    `condition_export_test` 3 pins that the renderer has not chosen. Decided the same day — see the
+>    next note.
+
+---
+
 ---
 
 ### (cd) 🔴 THE RULE COVERS 7 OF 17 COLUMNS CLEANLY, AND THE REASON IS THE MODEL — THIRD INSTANCE OF THE WRITE PATH LACKING A SIGNAL IT NEEDS
@@ -7702,3 +7761,22 @@ approximation, are the proposal's decisions. This entry records that they exist.
 **Sourcing.** Every classification: read from `buildCsv`, `_medicationCells`, the renderers, the field
 docs and `isIncomplete` at d0a9b95. The census counts: measured, §13(cc). Nothing inferred beyond the
 classifications themselves, which are stated with their reasons.
+
+> ✅ **IMPLEMENTED 11 September 2026 — see §13(cc)'s implementation note for the rows, the control
+> and the verification.** What this entry's census decided in the code:
+>
+> | Cell | Decision taken |
+> |---|---|
+> | `duration_seconds`, bucket present, no seconds | **Not Applicable** — "a legacy range, no number" |
+> | `duration_seconds`, both null | Not Captured |
+> | `rescue_med_helped`, `rescue_med_second_dose` | stored value if present; **Not Applicable** when null and given is No; Not Captured otherwise |
+> | `observations`, `beforehand`, `notes` when empty | Not Captured, **with the accepted cost** stated at each site |
+> | `condition`, type null | Not Captured |
+> | `condition`, type present, no condition named | **`unknown`, unchanged — the one cell outside the rule, pending the developer** |
+> | `condition` on a medication row | Not Captured |
+> | `referral_required` | **unchanged, `No`** — the one known exception; isolated, not resolved |
+> | the legacy NULL record | its null fields write Not Captured; the strain this entry records is accepted with the cost above |
+>
+> **The four non-nullable fields remain the third instance of the write path lacking a signal.** The
+> renderer now says Not Captured where it cannot know; the model still cannot tell it whether that is
+> true. Not proposed here; the entry above stands.

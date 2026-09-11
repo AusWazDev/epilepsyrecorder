@@ -115,12 +115,14 @@ void main() {
       expect(h[14], 'referral_required');
     });
 
-    test('8. unanswered exports BLANK, not "unknown"', () {
-      // Different from severity deliberately. These are asked of almost no
-      // event, so a column of the word "unknown" would be noise standing in for
-      // a question that was never applicable.
+    test('8. unanswered exports Not Captured, not blank and not "unknown"',
+        () {
+      // Blank until 11 Sep 2026, on the argument that a column of "unknown"
+      // would be noise. §13(cc) made every cell a positive statement instead:
+      // null given is `Not Captured`, and the children follow it (§13(cd)).
       final c = cells(buildCsv(<EventRecord>[rec()]));
-      expect(c.sublist(11, 14), <String>['', '', '']);
+      expect(c.sublist(11, 14),
+          <String>[kCsvNotCaptured, kCsvNotCaptured, kCsvNotCaptured]);
     });
 
     test('9. an inconsistent record exports its children anyway', () {
@@ -136,7 +138,7 @@ void main() {
       expect(rescueResponseCsv(RescueResponse.helped), 'Yes');
       expect(rescueResponseCsv(RescueResponse.partly), 'Partly');
       expect(rescueResponseCsv(RescueResponse.didNotHelp), 'No');
-      expect(rescueResponseCsv(null), '');
+      expect(rescueResponseCsv(null), kCsvNotCaptured);
     });
   });
 
@@ -155,7 +157,7 @@ void main() {
       // the whole rule: v6 bumped with the column set untouched, because the
       // three time columns changed what they MEAN. A count cannot catch that.
       // Not because of this pass: v5 was the condition column.
-      expect(kCsvShapeVersion, 'v6');
+      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
       expect(header(buildCsv(<EventRecord>[rec()])).length, 17,
           reason: 'the marker is DEFINED as this header. Changing one without '
               'the other is the drift the rule exists to prevent');

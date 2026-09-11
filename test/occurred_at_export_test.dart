@@ -81,7 +81,9 @@ void main() {
           reason: 'the column set is identical either way — so a header test '
               'could never have caught this, and the marker had to move on a '
               'meaning change');
-      expect(kCsvShapeVersion, 'v6');
+      // v6 moved for this meaning change; v7 moved for the value convention
+      // (§13(cc)) — the same test, applied twice.
+      expect(kCsvShapeVersion, 'v7');
     });
 
     test('5. events and medication notes now agree on what column 1 means',

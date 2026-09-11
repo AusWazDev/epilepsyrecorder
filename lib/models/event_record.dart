@@ -96,8 +96,25 @@ String? durationDisplay(DurationCategory? bucket, int? seconds) {
   return null;
 }
 
+/// ⛔ A CSV FIELD IS NEVER BLANK — developer decision, 11 September 2026,
+/// AUDIT.md §13(cc). Every cell is a positive statement of the record's true
+/// state: a value, [kCsvNotCaptured], or [kCsvNotApplicable].
+///
+///   Not Captured    the field APPLIES to this record and was never answered
+///   Not Applicable  the field does not EXIST for this record kind
+///
+/// RENDERED AT EXPORT, NEVER MIGRATED. No stored record changes. Two words
+/// each, so neither can collide with a user-defined vocabulary value the way a
+/// bare "none" or "unknown" could — the reason the empty set was blank before.
+///
+/// ⚠️ THE ONE KNOWN EXCEPTION is `referral_required`: a non-nullable bool with
+/// no absent state, so it writes `No` on a record that was never asked. Routed
+/// to the adviser (§13(bl)); not changed here (§13(cd)).
+const String kCsvNotCaptured = 'Not Captured';
+const String kCsvNotApplicable = 'Not Applicable';
+
 String durationCsv(DurationCategory? bucket, int? seconds) =>
-    durationDisplay(bucket, seconds) ?? 'unknown';
+    durationDisplay(bucket, seconds) ?? kCsvNotCaptured;
 
 /// The event type is a **STRING**, not an enum, and that is the whole change.
 ///
@@ -188,13 +205,14 @@ String? eventTypeDisplay(String? value) =>
 /// A clinician reading a blank cell cannot tell "not asked" from "not recorded"
 /// from a broken export. `duration` writes `unknown` for exactly this reason
 /// and these two columns are the same kind of text column.
-String eventTypeCsv(String? value) => eventTypeDisplay(value) ?? 'unknown';
+String eventTypeCsv(String? value) =>
+    eventTypeDisplay(value) ?? kCsvNotCaptured;
 
 /// See [eventTypeDisplay].
 String? severityDisplay(EventSeverity? s) => s == null ? null : severityLabel(s);
 
 /// See [eventTypeCsv].
-String severityCsv(EventSeverity? s) => severityDisplay(s) ?? 'unknown';
+String severityCsv(EventSeverity? s) => severityDisplay(s) ?? kCsvNotCaptured;
 
 /// ⛔ **STORED DATA. See [DurationCategory] for why these names must not be
 /// renamed** — the same `.name` persistence and the same silent `orElse`
@@ -240,10 +258,11 @@ String? rescueResponseDisplay(RescueResponse? r) =>
 /// given", which is itself usually no - so a column of the word "unknown" on
 /// every row would be noise standing in for a question that was never
 /// applicable.
-String rescueResponseCsv(RescueResponse? r) => rescueResponseDisplay(r) ?? '';
+String rescueResponseCsv(RescueResponse? r) =>
+    rescueResponseDisplay(r) ?? kCsvNotCaptured;
 
 /// A nullable yes/no, rendered for the CSV. Blank when unanswered.
-String yesNoCsv(bool? v) => v == null ? '' : (v ? 'Yes' : 'No');
+String yesNoCsv(bool? v) => v == null ? kCsvNotCaptured : (v ? 'Yes' : 'No');
 
 /// Whether the two follow-up questions should be RENDERED for this record.
 ///
@@ -1060,20 +1079,39 @@ String buildCsv(
       kRecordKindEvent,
       // The derivation, through the same static `buildCsv` already uses for
       // labels. No database, no new parameter, no field on EventRecord.
-      Vocabularies.conditionNameForEventType(r.eventType) ?? 'unknown',
+      // ⛔ §13(cc)/(cd): type null -> Not Captured. Type PRESENT but no
+      // condition named -> still `unknown`, DELIBERATELY LEFT: §13(cd) records
+      // that as a vocabulary state rather than a record state, and whether it
+      // is Not Captured or Not Applicable is the developer's call, not this
+      // renderer's. The one cell outside the rule, pending that decision.
+      r.eventType == null
+          ? kCsvNotCaptured
+          : Vocabularies.conditionNameForEventType(r.eventType) ?? 'unknown',
       eventTypeCsv(r.eventType),
       durationCsv(r.duration, r.durationSeconds),
-      // EMPTY, not `unknown`, when there is no number. A word in a numeric
-      // column breaks every formula that touches it; a blank there is
-      // unambiguous in a way a blank in a text column is not.
-      r.durationSeconds?.toString() ?? '',
+      // THREE STATES, §13(cd). A number when measured. Bucket present but no
+      // seconds -> Not Applicable: the field doc reads "a legacy range, no
+      // number" — the number does not exist for that record. Both null ->
+      // Not Captured. (The earlier blank was kept so formulas would not meet
+      // a word in a numeric column; the no-blank rule supersedes that, and a
+      // reader summing this column now filters the two phrases first.)
+      r.durationSeconds?.toString() ??
+          (r.duration != null ? kCsvNotApplicable : kCsvNotCaptured),
       severityCsv(r.severity),
       // LABELS, not stored values - which strips the emoji for free, because a
       // legacy entry's label is its value without one. DATA-MODEL.md §6 requires
       // emoji stripped from values as well as headers, and the raw strings
       // already render as mojibake in History rows on the tablet.
-      csvJoinList(
-          r.feelings.map((v) => Vocabularies.labelFor(kObservationTable, v))),
+      // ⚠️ ACCEPTED COST, §13(cc): `feelings` is a non-nullable list, so an
+      // empty set here is BOTH "asked, none chosen" and "never asked", and the
+      // record cannot say which. Not Captured may therefore be written on a
+      // record where the picker WAS shown and left empty — a wrong value
+      // rather than an ambiguous blank. The developer accepted that: a file
+      // with no blanks beats a file whose blanks mean four different things.
+      r.feelings.isEmpty
+          ? kCsvNotCaptured
+          : csvJoinList(r.feelings
+              .map((v) => Vocabularies.labelFor(kObservationTable, v))),
       // BLANK when nothing was recorded, not the word "none".
       //
       // Deliberate, and the opposite of the duration and severity rule three
@@ -1097,20 +1135,41 @@ String buildCsv(
       // The divergence is latent, not live, which is exactly why it would have
       // been missed — the first rename would have made History and the CSV
       // disagree about the same record.
-      csvJoinList(csvOrderedTriggers(r.triggers)
-          .map((v) => Vocabularies.labelFor(kTriggerTable, v))),
-      // WHATEVER IS STORED, never what the UI would have shown. The screen
-      // hides the two children when rescue medication was not given; the
-      // export does not, because a value that exists in the record must appear
-      // in the file. If the two ever disagree, the file is the one a clinician
-      // reads.
+      // Same accepted cost as observations. A user's seeded "Unknown" is a
+      // VALUE and renders as itself; only the empty set says Not Captured.
+      r.triggers.isEmpty
+          ? kCsvNotCaptured
+          : csvJoinList(csvOrderedTriggers(r.triggers)
+              .map((v) => Vocabularies.labelFor(kTriggerTable, v))),
+      // WHATEVER IS STORED, never what the UI would have shown — a value that
+      // exists in the record appears in the file. If the two ever disagree,
+      // the file is the one a clinician reads.
       yesNoCsv(r.rescueMedGiven),
-      rescueResponseCsv(r.rescueMedHelped),
-      yesNoCsv(r.rescueMedSecondDose),
+      // ⚠️ THE TWO CONDITIONALS, §13(cd). The screen hides these children when
+      // rescue medication was NOT given, so on that record they do not exist:
+      // Not Applicable. When given is null (never asked) or Yes with the child
+      // unanswered, Not Captured. The one place a cell looks sideways at
+      // another, and it does so because the screen does.
+      //
+      // ⛔ BUT A STORED VALUE ALWAYS WINS. An inconsistent record — given=No
+      // with a child answered — exports the child, because the rule two
+      // comments up still holds: a value that exists in the record appears in
+      // the file. Not Applicable is written only where the child is ALSO null.
+      r.rescueMedHelped != null
+          ? rescueResponseCsv(r.rescueMedHelped)
+          : (r.rescueMedGiven == false ? kCsvNotApplicable : kCsvNotCaptured),
+      r.rescueMedSecondDose != null
+          ? yesNoCsv(r.rescueMedSecondDose)
+          : (r.rescueMedGiven == false ? kCsvNotApplicable : kCsvNotCaptured),
+      // ⛔ THE ONE KNOWN EXCEPTION. A non-nullable bool: `No` is the only
+      // value the type can hold for a record that was never asked. Routed to
+      // the adviser, §13(bl). Not changed by the no-blank rule — §13(cd).
       r.referralRequired ? 'Yes' : 'No',
-      // Blank on an event row. Not applicable, and `record_kind` says which.
-      '',
-      r.notes,
+      // Not Applicable on an event row, and `record_kind` says which.
+      kCsvNotApplicable,
+      // Non-nullable free text: empty is both "left blank" and "never shown".
+      // Same accepted cost as observations.
+      r.notes.isEmpty ? kCsvNotCaptured : r.notes,
     ]));
   }
 
@@ -1138,23 +1197,25 @@ List<String> _medicationCells(
       fmtDate.format(n.occurredAt),
       fmtTime.format(n.occurredAt).replaceAll(String.fromCharCode(0x202F), ' '),
       kRecordKindMedication,
-      // ⚠️ NOT DERIVABLE, and deliberately `unknown` rather than blank. A
-      // medication note has no event type, so there is nothing to derive
-      // from. `medication_note.condition_id` exists and is unpopulated —
-      // when it is populated this reads it instead.
-      'unknown', // condition
-      '', // event_type
-      '', // duration
-      '', // duration_seconds
-      '', // severity
-      '', // observations
-      '', // beforehand
-      '', // rescue_med_given
-      '', // rescue_med_helped
-      '', // rescue_med_second_dose
-      '', // referral_required
+      // ⚠️ NOT DERIVABLE. A medication note has no event type, so there is
+      // nothing to derive from. `medication_note.condition_id` exists since v8
+      // and nothing writes it — the field APPLIES and was never answered, so
+      // Not Captured (§13(cd)). When it is populated this reads it instead.
+      kCsvNotCaptured, // condition
+      // ⛔ §13(cc): the ten event-only columns do not EXIST for this record
+      // kind. Not Applicable on every one, and `record_kind` says why.
+      kCsvNotApplicable, // event_type
+      kCsvNotApplicable, // duration
+      kCsvNotApplicable, // duration_seconds
+      kCsvNotApplicable, // severity
+      kCsvNotApplicable, // observations
+      kCsvNotApplicable, // beforehand
+      kCsvNotApplicable, // rescue_med_given
+      kCsvNotApplicable, // rescue_med_helped
+      kCsvNotApplicable, // rescue_med_second_dose
+      kCsvNotApplicable, // referral_required
       medicationDeviationLabel(n.kind),
-      n.notes,
+      n.notes.isEmpty ? kCsvNotCaptured : n.notes,
     ];
 
 /* ===========================
@@ -1164,8 +1225,18 @@ List<String> _medicationCells(
 /// The current CSV shape. Bump it whenever [buildCsv]'s HEADER ROW changes.
 ///
 /// ⛔ **THE RULE, AND IT IS DELIBERATELY MECHANICAL: the marker tracks the
-/// header row. ANY change to the column set bumps it - added, removed,
-/// renamed or reordered. No judgement about whether a change is "real".**
+/// header row AND THE VALUE CONVENTION. ANY change to the column set bumps
+/// it - added, removed, renamed or reordered - and so does any change to what
+/// a cell holds for the same stored state. No judgement about whether a change
+/// is "real".**
+///
+/// ⚠️ The second clause was added at v7 (11 September 2026), because the
+/// first alone did not cover v6 or v7: both changed what a reader gets from an
+/// unchanged header. v6 changed a MEANING (what the time columns denote); v7
+/// changed a CONVENTION (an empty cell became `Not Captured` / `Not
+/// Applicable`). A reader filtering on blanks gets a different answer after
+/// v7, and nothing in the header would have told them — the same test v6
+/// applied to itself. AUDIT.md §13(cc).
 ///
 /// The temptation is to bump only for changes that break something. That
 /// requires someone to predict what a consumer does, and consumers here are
@@ -1193,7 +1264,15 @@ List<String> _medicationCells(
 ///          change, which is exactly what a shape marker is for: a
 ///          reader computing on column 1 gets a different answer, and
 ///          nothing in the header would have told them.
-const String kCsvShapeVersion = 'v6';
+///     v7   A CSV FIELD IS NEVER BLANK. Every cell is a value,              17
+///          `Not Captured` or `Not Applicable`. No column added or
+///          removed - a CONVENTION change: a reader filtering on empty
+///          cells gets a different answer, and nothing in the header
+///          would have told them. Developer decision, 11 Sep 2026,
+///          AUDIT.md §13(cc); the one exception (`referral_required`
+///          still writes `No`) and the one open cell (a named condition
+///          absent for a present type) are §13(cd).
+const String kCsvShapeVersion = 'v7';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.
 ///
