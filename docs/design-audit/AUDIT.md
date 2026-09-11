@@ -6950,3 +6950,125 @@ session where it happened. **Read, not measured.** No test exercises a failing w
 checked whether one should.
 
 **Sourcing.** Both read at fd484db. Neither executed.
+
+> ➕ **POINTER, 11 September 2026.** The question (a) left unasked — whether the before-image should be
+> read, and whether SQLite should have one — was scoped the same day. The iOS removal's premise is
+> retired: §13(bt). The recovery axis, and why its obvious shape fails: §13(bu).
+
+---
+
+### (bt) 🔴 THE iOS ROLLBACK GUARD PROTECTS AGAINST A WRITE PATH THAT WAS RETIRED
+
+**11 September 2026.** ⛔ **Recorded as a finding, not a fix. The guard is not removed or altered.**
+
+⛔ **`kEventRollbackKey` IS REMOVED ON iOS FOR A REASON THAT NO LONGER HOLDS.** The guard in
+`event_record.dart:writeEventPayload`, verbatim:
+
+> *// ── DO NOT REMOVE THIS GUARD ───*
+> *// iOS deliberately keeps NO rollback copy.*
+> *//*
+> *// On iOS the quick-log capture path is native Swift, not Dart:*
+> *// AppDelegate.handleQuickLogStart writes flutter.epilepsy_event_records_v1*
+> *// in UserDefaults directly, and EndMEREventIntent (the Live Activity button,*
+> *// running in the widget extension process) mutates it again. Neither goes*
+> *// through this function and neither knows the rollback key exists.*
+> *//*
+> *// So on iOS the primary payload advances while a rollback copy would sit*
+> *// frozen at whenever Dart last wrote. Restoring from it later would*
+> *// resurrect deleted events and lose recent ones. An absent copy is safe; a*
+> *// silently stale one is a data-loss mechanism.*
+> *//*
+> *// The proper long-term fix is to replicate this snapshot in the Swift write*
+> *// paths so iOS gets real protection. That is a native change, deliberately*
+> *// out of scope for v1.1.0, which does not touch ios/ at all.*
+
+**The premise is that Swift writes the record-list key directly.** ⭐ **MEASURED 11 September 2026:
+zero hits for `epilepsy_event_records_v1` across all eight Swift files in `ios/`**, positive control
+2 hits for the `mer_inbox` key prefix that Swift does use. `ios_handoff_test` asserts the same three
+ways: no Swift file mentions the record-list key, no Swift file writes the legacy App Group mirror,
+and the widget extension mentions neither. **Swift now posts inbox facts and the Dart drain is the
+single writer — decision D5.** `handleQuickLogStart` today opens `UserDefaults.standard` and the App
+Group suite to write an inbox entry, not the list.
+
+⚠️ **And the comment's own closing says the proper fix is to replicate the snapshot in the Swift write
+paths.** Those paths no longer write the list. There is nothing left to replicate into.
+
+⛔ **CONSEQUENCE: LIVE CODE REMOVES A SAFETY MECHANISM ON ONE PLATFORM TO DEFEND AGAINST A MECHANISM
+THAT WAS RETIRED.** ⭐ **And iOS is the platform that lost the record in §13(be).** The two facts do not
+connect causally — the iPhone runs the SQLite store, which never writes the rollback key on any
+platform (§13(bs)(a)) — but they sit beside each other, and a reader who did not know the second would
+draw the wrong conclusion from the first.
+
+⭐ **THE SHAPE, RECORDED BECAUSE IT IS THE THIRD TIME THIS REPOSITORY HAS DONE SOMETHING WELL THAT
+SURFACED AS A PROBLEM.** The reason was written down, at the site, in full — **and recording it is the
+ONLY way anyone could tell the reason had expired.** A guard with no comment would still be there, still
+removing the copy on iOS, with nobody able to say why and nothing to check the premise against. The
+date column (§13(bl)) and the preamble (§13(bl), lead closed) surfaced the same way: a recorded reason,
+re-read later, found to have decided the question. **Here the recorded reason is found to have
+expired. That is the same virtue, one step further** — a comment that lets its own premise be
+falsified.
+
+⛔ **NOT A PROPOSAL.** Removing the guard restores a before-image on the PREFS store, which is the
+fallback (`StorageBoot` on a failed migration, a failed backup write, or a failed open), not the store
+the iPhone uses. It changes little on its own. The finding is that the reason is stale, and that
+`STATUS.md`'s "v1.2.0+ (native) — iOS has no rollback copy" entry carries the same stale premise and
+names the same retired Swift functions as the place to fix it.
+
+**Sourcing.** The guard comment: quoted from `event_record.dart` at 58ae59c. The Swift measurement:
+`grep` over `ios/*.swift`, 8 files, with control. The test assertions and D5: read. The STATUS.md
+entry: read, not annotated — `STATUS.md` is append-only and this is recorded here instead.
+
+---
+
+### (bu) THE RECOVERY AXIS — BUILDABLE WHERE THE LAST THREE WERE NOT, AND ITS OBVIOUS SHAPE STILL FAILS ITS OWN DISPROOF
+
+**Scoped 11 September 2026, read-only.** ⛔ **Nothing built, nothing wired, nothing proposed.** Three
+detection candidates have been disproved on scoping — the count check (§13(bi)), the intent signal
+(§13(bq)), the per-record delete (§13(br)). This asks whether RECOVERY is a different axis or a fourth
+dead end.
+
+⭐ **RECOVERY IS NOT A FOURTH DEAD END IN THE SAME WAY.** The previous three were disproved because the
+mechanism cannot work: the shortening happens upstream of the check, the caller does not hold the
+fact, the schema cannot address one row. **A before-image CAN be built:**
+
+- the iOS reason for having none is stale (§13(bt));
+- Swift has never written SQLite, and `sqlite_single_writer_test` enforces that only the storage layer
+  reaches the database — so a before-image inside `SqliteEventStore.save`'s transaction has exactly one
+  writer, the transaction that writes the rows;
+- `putMeta` takes a `DatabaseExecutor` and inserts with `ConflictAlgorithm.replace`, so it can be
+  called with the transaction handle and would commit or roll back with the rows;
+- size is not a constraint: **about 19 KB projected for 58 records.** ⚠️ **INFERRED** from the
+  tablet's 72-record envelope (23,688 bytes compact, 329 per record); the iPhone's records are not on
+  this machine. SQLite's default maximum string length of one billion bytes is from documentation,
+  not measured.
+
+⛔ **BUT THE OBVIOUS SHAPE DOES NOT WORK, AND HERE IS THE DISPROOF PER `docs/WORKING-AGREEMENT.md`
+§2(b), BEFORE ANYTHING IS PROPOSED.** A single-slot before-image is overwritten by the next write.
+Against what is known of 30 August: the write was at 16:36:41; the transcript resumed 16 seconds later,
+in a session actively driving the app; the loss was found on 9 September. **Every `persistEvents` call
+in between replaces the slot** — every quick record, wizard save, form save, History delete and
+restore — and at every launch `_loadRecords` runs `reconcileLegacySharedRecords` and `drainInbox`,
+both of which write when they have anything to apply. ⚠️ **The number of writes between 30 August and
+9 September is UNKNOWN**, and the answer only needs to be one.
+
+⛔ **SO IT WOULD NOT HAVE RECOVERED THE 30 AUGUST RECORD** — under either store, for structural
+reasons rather than anything about the iPhone. On the iPhone nothing existed to recover from; had a
+single slot existed, it would have held a post-loss state by the time anyone looked.
+
+⭐ **TWO OPEN QUESTIONS, RECORDED AND NOT ANSWERED.**
+
+1. **Whether a multi-slot or time-bounded form changes it.** A ring of N before-images, or one per
+   calendar day, bounds the overwrite problem instead of eliminating it; whether the bound is useful
+   depends on how long a loss goes unnoticed, and the one data point is ten days.
+2. **WHAT WOULD READ IT.** ⚠️ **An unread before-image recovers nothing regardless of its shape, and
+   `kEventRollbackKey` is the existing proof** — a complete before-image, maintained on every non-iOS
+   prefs-store write for months, consulted by no code path (§13(bs)(a)). A reader needs a trigger, a
+   comparison, and a decision about which state is right, and every one of those is the detection
+   question the last three candidates failed. **Recovery without detection is a copy nobody opens.**
+
+⛔ **CHAT IS NOT PROPOSING A BEFORE-IMAGE.** Three disproved fixes, and the obvious shape of the fourth
+already fails its own disproof question. What is recorded is narrower and true: the axis is
+buildable, the single-slot form would not have helped here, and the reading problem is unsolved.
+
+**Sourcing.** `putMeta`, `SqliteEventStore.save`, `_loadRecords`, the single-writer tests: read at
+58ae59c. The size: inferred, marked. The write count: unknown, marked. The 30 August facts: §13(be).
