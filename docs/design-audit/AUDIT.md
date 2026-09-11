@@ -5598,6 +5598,11 @@ can, because the mechanism removes its own evidence.
 by construction. ⛔ **Not restated here, so the finding is not double-counted as two pieces of
 evidence.**
 
+> ➕ **POINTER, 11 September 2026.** The "obvious repairs" this entry warns against were costed on
+> scoping: **a per-record delete is not implementable as stated on this schema** — §13(br); **an intent
+> signal would not have caught a loss at either drain** — §13(bq). Both are recorded as disproved
+> rather than as risky. Nothing here is changed.
+
 ---
 
 ### (bf) 🔴 THE SAME id HOLDS DIFFERENT CONTENT ON THE TWO DEVICES, AND RESTORE PICKS A WINNER WITHOUT LOOKING
@@ -6078,6 +6083,35 @@ would not have caught the thing it was for.** ⚠️ **Every one of those checks
 "what would this actually have caught" failed** — and it was asked before implementation rather than
 after, which is the same order that saved §13(ay) and the same order §13(bg) reversed the store-sort
 premise in. ⭐ **Three times in two days the answer changed when the last question was asked first.**
+
+> ⚠️ **ANNOTATED 11 September 2026 — THIS ENTRY NAMED ONE PROBLEM WHERE THERE ARE TWO. Its
+> formulation stands: the rewrite-everything model erases the intent along with the row. What is
+> corrected is the scope of "the intent signal is absent".** Scoped by reading every write site at
+> fd484db; see §13(bq) for the full table.
+>
+> ⭐ **FOR USER ACTIONS THIS IS PLUMBING, NOT DATA MODELLING.** The intent exists one frame above the
+> write and is discarded by `home_screen.dart:_persist`'s signature, which takes nothing. History's
+> `_deleteRecord` knows the id and that a dialog was confirmed, then hands `onRecordsChanged` a bare
+> list. `_openWizard` and `_openLogScreen` decide add-or-edit by `indexWhere` and then write. ⛔ **The
+> restore handler is the clearest case: it computes `added = merged.length - _records.length` one
+> line before calling a write that cannot receive it.** The number is derived, shown in a snackbar,
+> and thrown away.
+>
+> ⛔ **FOR THE TWO DRAINS THE INTENT DOES NOT EXIST TO PLUMB.** `capture_inbox.dart:applyInbox` and
+> `ios_capture_bridge.dart:reconcileLegacySharedRecords` each know what they ADDED — `changed`,
+> `addedIds`, `durationsRecovered` — and neither knows what its `containsKey … continue` guard
+> DROPPED, because the guard counts nothing. **That is §13(bk), and it is the actual blocker.** No
+> parameter added to `save` can carry a fact the caller does not hold.
+>
+> ⚠️ **Chat conflated the two, and only the second bears on §13(be).** The user-action half is real
+> and cheap and does not touch the 30 August question; the drain half touches it and is not a
+> plumbing problem.
+>
+> ⭐ **THE WRITE SIDE IS CONCENTRATED, alongside §13(bg)'s one `_store.load()`.** `persistEvents` is
+> the only caller of `EventStore.save`. It has five call sites, three in `home_screen.dart`, and two
+> of those three are `_persist` and `_retryPersist` — the same write behind a retry button. **Four
+> distinct write reasons in the app, feeding three functions.** Whatever is decided about intent has
+> a small surface to land on.
 
 ---
 
@@ -6786,3 +6820,133 @@ error.
 > ⚠️ **THE RULE THE ENTRY STATES STILL HOLDS ON TWO.** Two absences read as gaps, two decisions with
 > their reasons in git, two reversals within the day. The default question — *"who removed this, and
 > what did they say?"* — is not withdrawn. Only the count is corrected.
+
+---
+
+### (bq) ⛔ THE INTENT SIGNAL DOES NOT ADDRESS §13(be) — THE SECOND PROPOSED FIX DISPROVED ON SCOPING
+
+**Scoped 11 September 2026, by reading every event write at fd484db.** ⛔ **No source change, no
+signal, no per-record delete, no count at the dedup guards.** This is what §13(bj) said would have
+to change, costed before anything was designed.
+
+⭐ **THE ANSWER TO "WOULD IT HAVE CAUGHT IT": NO, NOT AT THE TWO SITES THAT MATTER.** §13(be) singles
+out the inbox drain and the iOS reconcile as the writes needing no user action, with the iOS drain
+live on the device that lost the record. **Those are exactly the two sites where the caller does not
+know the truth.** A declared intent there would read *"added one record"* beside a write that was one
+shorter — **and it would be an HONEST declaration of what the code believed.** The dedup guard that
+shortened the list counts nothing, so the caller has nothing to declare about it.
+
+⛔ **AND THE COMPARING FORM COLLAPSES INTO §13(bi).** An intent that is checked against the actual
+before-and-after delta is the count check with the caller supplying the expected number. **At the
+drains the caller's expected delta is wrong in the same direction as the data**, so the comparison
+passes on exactly the case it exists for. §13(bi) disproved the count check for this path because the
+shortening happens before `save()` is called; supplying the caller's belief as the expected value does
+not move the shortening.
+
+**THE PER-SITE TABLE, read not measured.** Every event write funnels through
+`event_record.dart:persistEvents`, the only caller of `EventStore.save`.
+
+| Write site | Reaches the write via | Knows the list got SHORTER? | Knows WHY? | Would a declared intent catch a one-record loss here? |
+|---|---|---|---|---|
+| History delete — `history_screen.dart:_deleteRecord` → `onRecordsChanged` → `home_screen.dart:_persist` | callback carrying only the new list | one frame up: the id, and that a dialog was confirmed. `_persist` receives `_records` already mutated | yes, one frame up | **yes** — it turns "vanished" into "deleted, confirmed", which is the intended effect and the only site where the list shrinks on purpose |
+| Quick record — `home_screen.dart`, `_records.insert(0, rec)` → `_persist` | in-place insert, `unawaited(_persist())` | list grows | yes | never shorter here; a declared "added" beside a shorter write would be a contradiction, **flaggable only by a comparison** |
+| Wizard — `home_screen.dart:_openWizard` → `persistEvents` directly | insert or replace by `indexWhere`, sort, write | never shorter | yes, add or edit | same as above |
+| Form — `home_screen.dart:_openLogScreen` → `_persist` | insert or replace by id | never shorter | yes | same as above |
+| Restore — Home's restore handler → `_persist` | `_records = outcome.merged` | **computes the delta itself**, one line before writing | yes | would preserve a number the caller already derives and discards; restore never removes |
+| Retry — `home_screen.dart:_retryPersist` | rewrites `_records` unchanged | n/a | "retry" only | n/a |
+| Inbox drain — `capture_inbox.dart:drainInbox` → `persistEvents(store, plan.merged)` | `InboxDrainResult`: `merged`, `drainableKeys`, `deferredKeys`, `deferReasons`, `changed` | **no** — nothing compares `existing.length` to `merged.length` | knows what it added; **not what the `containsKey` guard dropped** | **no** |
+| iOS reconcile — `ios_capture_bridge.dart:reconcileLegacySharedRecords` → `persistEvents(store, merged)` | builds `addedIds`, `durationsRecovered` | **no**, same shape | same | **no** |
+
+**Read plainly:** the signal catches a loss only where the caller knows the truth, and **the two sites
+§13(be) already suspects are the two where the caller does not.** If the 30 August write went through
+a drain, neither the declaring form nor the comparing form would have caught it. If it went through
+History with a confirmation, the loss was a delete and the signal would have said so. If it went
+through a wizard or form write that somehow shortened the list, only the comparing form would flag
+it, and no mechanism for such a shortening has been identified.
+
+⛔ **THE PATTERN, STATED ONCE: TWO PROPOSED FIXES, BOTH DISPROVED ON SCOPING, AND THE SECOND DISPROVED
+BY THE FIRST'S OWN REASONING.** §13(bi) disproved the count check because every shortening happens
+upstream of `save()`. The intent signal, in its comparing form, IS the count check with a
+caller-supplied expectation, and the same upstream shortening defeats it. ⭐ **Both were disproved by
+the same question, asked before anything was built: what would this actually have caught?** ⚠️ That
+question is `docs/WORKING-AGREEMENT.md` §2(b) — every proposal carries its own disproof — and it was
+in the scoping brief both times. **The rule worked twice. It has not yet been in a proposal.**
+
+⛔ **WHAT SURVIVES AS THE ONLY REMAINING CANDIDATE, AND IT IS NOT BEING PROPOSED:** a count at the two
+dedup guards themselves — the one place in the write path where something could be made to know that
+a row was dropped, because it is the place that drops it. ⭐ **It gets the same treatment: what would
+it have caught, asked before anything is designed.** The honest first answer is that it would have
+caught a duplicate-id drop and nothing else — it says nothing about a loss whose mechanism is not the
+dedup, and §13(be) records that the dedup is a candidate, not the cause. **That question is open, not
+answered here.**
+
+**Sourcing.** Every row of the table: read from the named functions at fd484db. The 30 August facts:
+§13(be). Nothing executed.
+
+---
+
+### (br) 🔴 A PER-RECORD DELETE IS NOT IMPLEMENTABLE AS STATED ON THIS SCHEMA
+
+**Costed 11 September 2026, read at fd484db.** §13(be) warned against this repair. ⛔ **It is not
+merely risky. As stated, it does not work — and the DDL decision that makes it impossible is the same
+one that protects against a worse failure.** Recorded as its own entry because a reader looking for
+"per-record delete" needs a heading to land on; §13(be) carries a pointer.
+
+⛔ **`DELETE FROM event WHERE id = ?` CANNOT TARGET ONE ROW.** `id` is `TEXT NOT NULL` with a
+NON-UNIQUE index, `idx_event_id`. The schema permits duplicate ids, and the comment above
+`createEventSql` in `event_store_sqlite.dart` records that as deliberate: uniqueness would turn a
+duplicate into an INSERT failure and make the migration "lose" records. **The statement hits every
+row carrying that id.** §13(be) already records why adding UNIQUE is strictly worse — `batch.insert`
+carries no conflict clause, so SQLite's default ABORT would roll back the whole save.
+
+⛔ **AND `ordinal` CANNOT SUBSTITUTE.** It is the list index at the last save, assigned in
+`eventToRow`, read back `ORDER BY ordinal ASC`. It is unique within one saved state and renumbered on
+the next. **A delete keyed on it is valid only inside a read-then-delete that holds the serialiser**
+(`EventStore.serialise`, which orders operations within one process and versions nothing) — and the
+moment a per-record delete exists, `ordinal` gaps appear until a full save renumbers them. `rowid`
+would be the honest key, and nothing in the model exposes it.
+
+⚠️ **BOTH STORES.** The prefs store, `event_record.dart:EventStore`, holds the list as one JSON array
+under `kEventStorageKey` and is live whenever `StorageBoot` falls back — the pre-migration backup
+cannot be written, migration verification fails, or the open throws. **On that store a per-record
+delete is a read, filter and whole-array rewrite, which is today's model renamed.** iOS native code
+never writes the record list — `ios_handoff_test` asserts no Swift file mentions the record-list key
+or writes the legacy mirror — so no Swift counterpart would be needed.
+
+**Sites that remove a record today, for the record:** one deliberate — `history_screen.dart:
+_deleteRecord`, confirm-guarded, `removeWhere` by id; two silent — the dedup guards in `applyInbox`
+and `reconcileLegacySharedRecords`. Restore never removes; its merge is existing-wins concatenation.
+
+⭐ **THE CONSEQUENCE.** A per-record delete is implementable on SQLite only as "delete every row
+with this id", needs a `rowid`-or-`ordinal` path to be row-precise, must be mirrored as a whole-array
+rewrite on the prefs store, **and leaves the two drain dedups exactly as silent as they are now** —
+which is the half of §13(be) that matters. ⛔ **Not recommended for or against. Costed.**
+
+---
+
+### (bs) TWO THINGS FOUND WHILE SCOPING THAT WERE NOT ASKED FOR
+
+**11 September 2026.** Recorded as findings, not proposals. Neither was in the brief; both fell out of
+reading the write path for §13(bq).
+
+⭐ **(a) `kEventRollbackKey` IS A COMPLETE BEFORE-IMAGE THAT NOTHING READS.**
+`event_record.dart:writeEventPayload` copies the previous payload to `kEventRollbackKey` before
+overwriting `kEventStorageKey` — on every platform but iOS, where the key is REMOVED instead, because
+the native capture path writes the primary key without passing through Dart. **The only references
+to `kEventRollbackKey` in `lib/` are its constant, the write, and the removal.** ⛔ **A full pre-write
+snapshot exists, is maintained on every non-iOS write, and is consulted by no code path — and it is
+ABSENT on the device that lost the record.** It is also a prefs-store artefact: on a SQLite launch,
+`SqliteEventStore.save` does not touch it, so on the primary store it is not written either. ⚠️
+**Whether it should be read, or whether SQLite should have an equivalent, is a separate question
+nobody has asked.** Not asked here.
+
+⚠️ **(b) `_openWizard` CALLS `persistEvents` DIRECTLY, NOT `_persist`.** The other Home write sites
+go through `home_screen.dart:_persist`, which sets `_hasUnsavedEvents` from the result and refreshes
+the backup count. `_openWizard` calls `persistEvents(_store, _records)` and discards the `bool`. **So
+a failed wizard save never raises the unsaved-events banner** — a gap in the only warning the app has,
+on one of its two detail-capture paths. `persistEvents` itself still sets `kUnsavedEventsKey` and
+reports to Sentry, so the flag is persisted for the next launch; what is missing is the banner in the
+session where it happened. **Read, not measured.** No test exercises a failing wizard save; not
+checked whether one should.
+
+**Sourcing.** Both read at fd484db. Neither executed.
