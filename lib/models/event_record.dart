@@ -725,22 +725,22 @@ Future<void> writeEventPayload(SharedPreferences prefs, String payload) async {
 
 /// Whether a previous write of the event list failed and has not since
 /// succeeded.
-Future<bool> hasUnsavedEvents() async {
+Future<bool> hasFailedWrite() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.reload();
-  return prefs.getBool(kUnsavedEventsKey) ?? false;
+  return prefs.getBool(kFailedWriteKey) ?? false;
 }
 
 /// Records that events are in memory but not in storage.
-Future<void> setUnsavedEventsWarning() async {
+Future<void> setFailedWriteWarning() async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(kUnsavedEventsKey, true);
+  await prefs.setBool(kFailedWriteKey, true);
 }
 
 /// Clears the warning. Called only where a write demonstrably succeeded.
-Future<void> clearUnsavedEventsWarning() async {
+Future<void> clearFailedWriteWarning() async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.remove(kUnsavedEventsKey);
+  await prefs.remove(kFailedWriteKey);
 }
 
 /// Saves [records] and reports whether it worked, without ever throwing.
@@ -767,12 +767,12 @@ Future<void> clearUnsavedEventsWarning() async {
 Future<bool> persistEvents(EventStore store, List<EventRecord> records) async {
   try {
     await store.save(records);
-    await clearUnsavedEventsWarning();
+    await clearFailedWriteWarning();
     return true;
   } catch (e, st) {
     await Sentry.captureException(e, stackTrace: st);
     try {
-      await setUnsavedEventsWarning();
+      await setFailedWriteWarning();
     } catch (_) {
       // Storage is failing; the in-memory banner still shows for this session.
     }

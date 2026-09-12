@@ -203,7 +203,7 @@ void main() {
       final ok = await persistEvents(_FailingStore(), records);
 
       expect(ok, isFalse);
-      expect(await hasUnsavedEvents(), isTrue);
+      expect(await hasFailedWrite(), isTrue);
     });
 
     test('the record is NOT removed from the list on failure', () async {
@@ -227,9 +227,9 @@ void main() {
     test('the warning survives into a later session', () async {
       await persistEvents(_FailingStore(), <EventRecord>[record('a', 1)]);
 
-      // hasUnsavedEvents reloads from storage rather than trusting a cached
+      // hasFailedWrite reloads from storage rather than trusting a cached
       // instance, which is what makes it survive a restart.
-      expect(await hasUnsavedEvents(), isTrue);
+      expect(await hasFailedWrite(), isTrue);
     });
   });
 
@@ -238,12 +238,12 @@ void main() {
       final records = <EventRecord>[record('a', 1)];
 
       await persistEvents(_FailingStore(), records);
-      expect(await hasUnsavedEvents(), isTrue);
+      expect(await hasFailedWrite(), isTrue);
 
       final ok = await persistEvents(EventStore(), records);
 
       expect(ok, isTrue);
-      expect(await hasUnsavedEvents(), isFalse);
+      expect(await hasFailedWrite(), isFalse);
       expect(await storedIds(), <String>['a'],
           reason: 'the retry must actually write the records, not just clear '
               'the flag');
@@ -253,7 +253,7 @@ void main() {
       final ok = await persistEvents(EventStore(), <EventRecord>[record('a', 1)]);
 
       expect(ok, isTrue);
-      expect(await hasUnsavedEvents(), isFalse);
+      expect(await hasFailedWrite(), isFalse);
     });
   });
 
@@ -273,7 +273,7 @@ void main() {
       final ok = await persistEvents(_FailingStore(), records);
 
       expect(ok, isFalse);
-      expect(await hasUnsavedEvents(), isTrue);
+      expect(await hasFailedWrite(), isTrue);
       expect(await storedIds(), <String>['a'],
           reason: 'storage is behind the list on screen — the condition the '
               'banner reports');

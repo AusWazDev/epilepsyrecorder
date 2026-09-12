@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // Set when a write failed and the list on screen is ahead of storage. Loaded
   // at startup as well as set at runtime, because the condition outlives the
   // session that caused it.
-  bool _hasUnsavedEvents = false;
+  bool _writeFailed = false;
   bool _retryingPersist  = false;
 
   // ── BACKUP REMINDER STATE ──
@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// compete for the same space.
   bool get _showBackupReminder =>
       _loaded &&
-      !_hasUnsavedEvents &&
+      !_writeFailed &&
       !_openedFromNotification &&
       !_loggedThisSession &&
       !_backupBannerDismissed &&
@@ -415,12 +415,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       try { active = jsonDecode(activeRaw) as Map<String, dynamic>; } catch (_) {}
     }
     // A warning raised in an earlier session must come back with the app.
-    final unsaved = await hasUnsavedEvents();
+    final unsaved = await hasFailedWrite();
     if (!mounted) return;
     setState(() {
       _records          = loaded;
       _activeEvent      = active;
-      _hasUnsavedEvents = unsaved;
+      _writeFailed = unsaved;
       if (initial) _loaded = true;
     });
     await _refreshBackupCount();
@@ -489,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _persist() async {
     final ok = await persistEvents(_store, _records);
     if (!mounted) return;
-    setState(() => _hasUnsavedEvents = !ok);
+    setState(() => _writeFailed = !ok);
     await _refreshBackupCount();
   }
 
@@ -500,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (!mounted) return;
     setState(() {
       _retryingPersist = false;
-      _hasUnsavedEvents = !ok;
+      _writeFailed = !ok;
     });
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -517,10 +517,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   // ── STATS ──
+
+  /// Events that HAPPENED this month, not events typed this month.
+  ///
+  /// ⭐ `whenHappened`, not `timestamp` — 12 Sep 2026, AUDIT.md §13(j)'s last
+  /// standing site. A count of events in a month is a clinical figure, and a
+  /// seizure backdated to last month belongs in last month's count however
+  /// late it was typed. History groups, sorts and prints `whenHappened`, and
+  /// all three CSV time columns derive from it; this getter was the remaining
+  /// surface counting by the other clock.
+  ///
+  /// ⚠️ The other two sites §13(j) named are NOT defects and must keep
+  /// `timestamp`: `eventsSinceLastBackup` asks what was WRITTEN since the last
+  /// backup, and the CSV's omission of the log time is a decided v6 trade.
+  ///
+  /// ⛔ AND HOME IS NOW MIXED, WHICH IS AN IMPROVEMENT AND NOT A FINISHED JOB.
+  /// §13(bc)'s two sites — `_daysSinceLastEvent` and `_LastEventCard` — still
+  /// read `timestamp`, and both take `_records.first` from a list sorted on
+  /// `timestamp`, so correcting them is a sort change with 24 consumers
+  /// (§13(bg)) rather than a one-line read. This getter is separable because
+  /// it is an aggregate over the whole list and does not touch the order.
   int get _thisMonthCount {
     final now   = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
-    return _records.where((r) => r.timestamp.isAfter(start)).length;
+    return _records.where((r) => r.whenHappened.isAfter(start)).length;
   }
 
   int get _daysSinceLastEvent {
@@ -1067,7 +1087,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         // context for anything else on the screen.
                         //
                         // ⚠️ NO DISMISS CONTROL AND NO ACTION BUTTON. Same
-                        // policy as _UnsavedEventsBanner: this is not advice
+                        // policy as _FailedWriteBanner: this is not advice
                         // the user can judge and set aside. And unlike that
                         // banner there is no retry to offer - the condition
                         // clears only on relaunch, so offering a button would
@@ -1085,8 +1105,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         // and an event in progress are both worth showing, so
                         // this stacks. The advisory backup reminder yields to it
                         // instead, via _showBackupReminder.
-                        if (_hasUnsavedEvents) ...[
-                          _UnsavedEventsBanner(
+                        if (_writeFailed) ...[
+                          _FailedWriteBanner(
                             onRetry: _retryPersist,
                             retrying: _retryingPersist,
                           ),
@@ -1417,11 +1437,11 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
 /// Amber rather than red: the events are still on screen and still recoverable,
 /// and the person reading this may have just logged a seizure. It needs to be
 /// noticed and acted on, not to frighten.
-class _UnsavedEventsBanner extends StatelessWidget {
+class _FailedWriteBanner extends StatelessWidget {
   final Future<void> Function() onRetry;
   final bool retrying;
 
-  const _UnsavedEventsBanner({
+  const _FailedWriteBanner({
     required this.onRetry,
     required this.retrying,
   });
@@ -1495,7 +1515,7 @@ class _UnsavedEventsBanner extends StatelessWidget {
 
 /// Shown when this launch could not open its SQLite store.
 ///
-/// ⛔ MODELLED ON [_UnsavedEventsBanner], WHOSE DOC COMMENT IS THE POLICY FOR
+/// ⛔ MODELLED ON [_FailedWriteBanner], WHOSE DOC COMMENT IS THE POLICY FOR
 /// THIS CLASS OF MESSAGE AND IS FOLLOWED HERE VERBATIM:
 ///
 ///   * **No dismiss control.** The condition is not advice the user can judge

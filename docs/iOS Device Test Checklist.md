@@ -428,14 +428,14 @@ message text and judge whether it is accurate.
 
 ### Banners
 
-`_UnsavedEventsBanner` **stacks above** the banner chain rather than joining it. The chain
+`_FailedWriteBanner` **stacks above** the banner chain rather than joining it. The chain
 is exclusive, so putting the unsaved-write warning inside it would hide whichever banner it
 displaced — including the active-event banner, whose End button is the only way to end an
 event on Android. Data at risk and an event in progress are both worth showing.
 
 The exclusive chain below it is, in order: **notifications off** → **iOS Show Previews
 nudge** → **active event** → **backup reminder**. The advisory backup reminder yields to the
-unsaved warning through `_showBackupReminder`, which requires `!_hasUnsavedEvents`.
+unsaved warning through `_showBackupReminder`, which requires `!_writeFailed`.
 
 The reminder also requires **10 or more events since the last backup**
 (`kBackupReminderThreshold` in `constants.dart`). With fewer it will not appear for any
