@@ -47,22 +47,22 @@ import 'package:medical_event_recorder/screens/log_event_screen.dart';
 
 const List<double> kWidths = <double>[375, 430, 800];
 
-/// ⛔ BASELINE FROM UNPATCHED CODE, 11 Sep 2026 at 2a280ca, under Roboto. `count|fnv1a64`.
+/// ⛔ BASELINE FROM UNPATCHED CODE, 11 Sep 2026 at 2a280ca, under Roboto, RECAPTURED 12 Sep 2026 when the date exclusion landed. `count|fnv1a64`.
 /// Regenerate ONLY when a change is MEANT to move text, and say so in the
 /// commit that does.
 const Map<String, String> kBaseline = <String, String>{
   'about@375': '29|3315bff0702104a5',
   'about@430': '29|4c5c1897c3518a09',
   'about@800': '29|62f04e368eb08f4b',
-  'form@375': '111|41f845554f9f7f6d',
-  'form@430': '111|59ef24d23077d0cd',
-  'form@800': '111|005d8fd11ea3da42',
+  'form@375': '111|48623f40c0bff4c3',
+  'form@430': '111|716e03dcbd6df0cf',
+  'form@800': '111|2120df4b0899ef6a',
   'history@375': '18|7e4a49c523f9c67a',
   'history@430': '18|1b97d4c28abbd2a3',
   'history@800': '18|419cbc150b5086a6',
-  'home@375': '26|7278b6617639a096',
-  'home@430': '26|533e586b465ca2dd',
-  'home@800': '26|7b619995111d3ac2',
+  'home@375': '26|66801323bbffb5f4',
+  'home@430': '26|37dfeee43d56fd2b',
+  'home@800': '26|70fa93c93f131f2e',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.
@@ -77,6 +77,10 @@ String fnv1a64(String s) {
 }
 
 String r1(double v) => v.toStringAsFixed(1);
+
+/// A rendered date, `d MMM yyyy` — what `_LastEventCard` and `OccurredAtField`
+/// print. See the exclusion in [paragraphs].
+final RegExp kRenderedDate = RegExp(r'\b\d{1,2} \w{3} 20\d\d\b');
 
 /// One line per paragraph: `text|x,y|w x h`, sorted, so order of traversal
 /// does not matter. `x,y` and `w x h` are the GLYPHS — the union of the
@@ -108,6 +112,21 @@ List<String> paragraphs(WidgetTester tester) {
         }
       }
       final p = o.localToGlobal(r.topLeft);
+      if (kRenderedDate.hasMatch(t)) {
+        // ⛔ EXCLUDED, AND ENUMERATED — 12 Sep 2026. A paragraph that renders a
+        // DATE changes text and width every day, so hashing it made this
+        // comparison fail on the calendar rolling over rather than on anything
+        // moving. It did, the next morning: home's LAST EVENT line and the
+        // form's occurred-at line, one per screen, printed by `check` below.
+        // Their ORIGIN is still compared — only the glyphs are dropped, which
+        // is the smallest exclusion that removes the dependence.
+        // ⚠️ RESIDUAL, stated rather than hidden: a date whose width changes
+        // (1 Oct against 12 Sep) can still move a SIBLING on the same row, and
+        // that sibling is compared. The failure would be loud and the printed
+        // list identifies it.
+        out.add('<DATE>|${r1(p.dx)},${r1(p.dy)}');
+        return;
+      }
       out.add('${t.length > 40 ? t.substring(0, 40) : t}|${r1(p.dx)},${r1(p.dy)}'
           '|${r1(r.width)}x${r1(r.height)}');
     }
@@ -138,6 +157,11 @@ String? check(WidgetTester tester, String key) {
     print('  $key drained exceptions (pre-existing, §13(ay)): $drained');
   }
   final lines = paragraphs(tester);
+  // Name what the date exclusion removed, per the enumerate-every-exclusion
+  // rule. A date paragraph appearing or disappearing still changes the count.
+  final dates = lines.where((l) => l.startsWith('<DATE>|')).toList();
+  // ignore: avoid_print
+  print('  $key date paragraphs excluded: ${dates.length} $dates');
   final got = '${lines.length}|${fnv1a64(lines.join('\n'))}';
   final want = kBaseline[key];
   // ignore: avoid_print
