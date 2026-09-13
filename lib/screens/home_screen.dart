@@ -1511,7 +1511,7 @@ class _FailedWriteBanner extends StatelessWidget {
               onPressed: retrying ? null : onRetry,
               style: FilledButton.styleFrom(
                 backgroundColor: MERColours.cautionOnContainer,
-                foregroundColor: Colors.white,
+                foregroundColor: MERColours.onFill,
                 visualDensity: VisualDensity.compact,
               ),
               child: Text(retrying ? 'Saving…' : 'Retry'),

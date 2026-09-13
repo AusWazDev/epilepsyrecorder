@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The colour system. 34 tokens, role-named.
+/// The colour system. 35 tokens, role-named.
 ///
 /// ## ⛔ FOUR RULES. They are part of the set, not commentary on it.
 ///
@@ -32,20 +32,34 @@ import 'package:flutter/material.dart';
 /// > the nearest token changes what renders. Only the second needs a
 /// > decision, and neither may be answered by inventing a token to absorb it.
 /// >
-/// > ⚠️ **Consequently this rule is NOT clean today, and the residue is
-/// > enumerated rather than waved at. FOURTEEN sites** outside this file still
-/// > name a neutral, all of them real code and none in a comment: **seven**
-/// > `Colors.white.withOpacity(…)`, **one** `Colors.black45`, and **six** bare
-/// > whites sitting on grounds this set has no on-token for — `infoAccent`,
-/// > `cautionOnContainer`, a 15%-white box, and the identity colours, whose
-/// > selected chips paint white on a per-type hue. The chromatic residue is
-/// > **zero**. `Colors.white` INSIDE this file is a definition and is fine.
+/// > ⚠️ **This rule is NOT clean, and the residue is ENFORCED rather than
+/// > described.** `colour_system_test.dart` scans `lib/` for both forms,
+/// > skipping comment lines, and holds the survivors to a named allowlist —
+/// > so the residue cannot grow silently and cannot be closed by editing a
+/// > sentence. **Eight sites** remain, all of them real code:
 /// >
-/// > ⚠️ **And the sweep that produced those numbers counts COMMENTS**, so it
-/// > reports the two `Colors.red.shade…` names quoted three paragraphs above
-/// > as occurrences inside this file. They are a record of what was removed,
-/// > not a use. Any checker built from this rule must skip comment lines, or
-/// > it will flag the rule's own documentation.
+/// > * **Seven** `Colors.white.withOpacity(…)`. ⛔ **Five are live 4.5
+/// >   failures** — the splash tagline at 3.3779 and version at 2.4169, the
+/// >   About header version at 3.7663 and tagline at 2.6938, and *"Tap to
+/// >   timestamp now"* at **2.3805** on `captureFill`. The splash spinner
+/// >   passes as non-text at 3.3779. **Rule 1 forbids all of them**, and the
+/// >   values that replace them are a decision rather than a rename, so they
+/// >   are named here and not assigned.
+/// > * **One** bare `Colors.white`: the export sheet's icon, white on a
+/// >   15%-white box on a white sheet. ⛔ **Measured at zero non-white pixels
+/// >   in the whole 30×30 rect — it paints nothing at all.** No token repairs
+/// >   a widget that is invisible; that is a defect, not a naming question.
+/// >
+/// > The chromatic residue is **zero**. `Colors.white` INSIDE this file is a
+/// > definition and is fine.
+/// >
+/// > ⚠️ **`onFill` did NOT absorb these.** It is for a saturated fill; four of
+/// > the seven are muted text on `primary`, whose role token is
+/// > `onPrimaryMuted`, and widening that token past the app-bar subtitle it
+/// > was derived for is a decision nobody has taken. One of the seven has no
+/// > answer in the set at all: at 11 px on `captureFill` even solid white is
+/// > 3.67 and fails 4.5, so that site needs a larger label or a different
+/// > ground, not a colour.
 ///
 /// **3. NOTHING MAY ASSUME `onSurface == primary`.** They hold the same value
 /// today. §13(w) records that as *"two names, one colour"*. The value is not
@@ -172,6 +186,36 @@ class MERColours {
   static const Color identityMedicationOn        = Color(0xFF3B6D11);
   static const Color identityOtherContainer = Color(0xFFF1EFE8);
   static const Color identityOtherOn        = Color(0xFF5F5E5A);
+
+  // ── ON A FILL ──────────────────────────────────────────────────────────
+  /// What labels a SATURATED FILL that is not `primary`. Added 13 Sep 2026.
+  ///
+  /// ⭐ THE SLOT WAS MISSING, NOT THE DECISIONS. Every family had a
+  /// `container` and an `on`, and the set said nothing about what goes on a
+  /// fill — so six white labels sat unassigned rather than wrong, on the
+  /// filter badge, the retry button and the selected type chips. Assigning
+  /// `onPrimary` to white-on-`infoAccent` would have been a role invented by
+  /// proximity.
+  ///
+  /// ⛔ **ACCENTS ARE NEVER FILLS.** That constraint is what makes this token
+  /// unconditional, and it is a rule about fills rather than a list of
+  /// exceptions to this colour. White clears 4.5 on every `onContainer` and
+  /// every identity `on`, and on only two of four accents:
+  ///
+  ///     onContainer   info 5.17  caution 4.94  positive 5.10  critical 5.18
+  ///     identity on   seizure 6.96  absence 6.52  medication 6.21  other 6.49
+  ///     accent        info 4.60 ✓  caution 3.30 ✗  positive 4.12 ✗  critical 4.98 ✓
+  ///
+  /// ⭐ *"White works on accents"* would be true of two and false of two,
+  /// which is the shape of rule that ships a failure the first time somebody
+  /// reaches for the wrong one. Accents were derived as strokes, icons and
+  /// dots against 3.0, so barring them from fills costs nothing — and the
+  /// filter count badge, the one place that had reached for `infoAccent` as a
+  /// fill, moved to `infoOnContainer` in the same pass.
+  ///
+  /// ⚠️ `captureFill` is NOT covered by this and keeps its own exception:
+  /// white on it is 3.67, valid at large-text size only. See rule 4.
+  static const Color onFill = Color(0xFFFFFFFF);
 
   // ── DESTRUCTIVE ────────────────────────────────────────────────────────
   /// 5.18 · 4.86. Shares the critical hue deliberately: one red family, one

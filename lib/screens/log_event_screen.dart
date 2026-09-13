@@ -1140,7 +1140,7 @@ class _SelectionRow<T> extends StatelessWidget {
                         ? FontWeight.w600
                         : FontWeight.w500,
                     color: isSelected
-                        ? Colors.white
+                        ? MERColours.onFill
                         : MERColours.onSurfaceMuted,
                   ),
                 ),
@@ -1242,7 +1242,7 @@ class _SelectionWrap extends StatelessWidget {
                     ? FontWeight.w600
                     : FontWeight.w400,
                 color: isSelected
-                    ? Colors.white
+                    ? MERColours.onFill
                     : MERColours.onSurface,
               ),
             ),

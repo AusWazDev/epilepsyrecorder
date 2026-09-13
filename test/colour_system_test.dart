@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -310,5 +311,119 @@ void main() {
             '${ratio(MERColours.onPrimary, MERColours.captureFill).toStringAsFixed(2)}, '
             'so the token is invalid at this size. Either the label grows back '
             'or the fill changes.');
+  });
+  test('11. onFill, and the rule that makes it unconditional', () {
+    // ⛔ EVERY FILL IT IS PERMITTED TO LAND ON. `primary`, all four
+    // `onContainer`s and all four identity `on`s — enumerated, so a new
+    // family cannot be added without this failing until it is listed.
+    mustClear(MERColours.onFill, MERColours.primary, kNormalText,
+        'onFill on primary');
+    for (final s in kStatus) {
+      mustClear(MERColours.onFill, s.onContainer, kNormalText,
+          'onFill on ${s.name}OnContainer');
+    }
+    for (final i in kIdentity) {
+      mustClear(MERColours.onFill, i.on, kNormalText,
+          'onFill on identity ${i.name}');
+    }
+
+    // ⛔ THE RULE, ASSERTED AS A NEGATIVE — accents are never fills. Two of
+    // the four DO clear, which is exactly why the rule is about fills and not
+    // about this colour: "white works on accents" would be true of info and
+    // critical and false of caution and positive, and a rule that is half
+    // true ships a failure the first time somebody reaches for the wrong one.
+    // If either of these ever passes, the accent has been lightened and the
+    // rule beside `onFill` needs re-reading, not deleting.
+    for (final name in <String>['caution', 'positive']) {
+      final accent = kStatus.firstWhere((s) => s.name == name).accent;
+      expect(ratio(MERColours.onFill, accent) >= kNormalText, isFalse,
+          reason: '$name accent now clears 4.5 under white. Accents are '
+              'STROKES, ICONS AND DOTS, derived against 3.0. If one is being '
+              'used as a fill the rule has been broken, not outgrown.');
+    }
+
+    // ⚠️ `captureFill` is NOT in the permitted set and keeps its own
+    // large-text exception, asserted separately in test 10. Folding it in
+    // here would make `onFill` conditional again.
+    expect(ratio(MERColours.onFill, MERColours.captureFill) >= kNormalText,
+        isFalse,
+        reason: 'captureFill is a large-text-only fill and must not be '
+            'readable as an ordinary onFill ground.');
+  });
+
+  test('12. rule 2 is enforced over lib/, not described', () {
+    // ⛔ THE CHECK THAT USED TO LIVE IN A TRANSCRIPT. C1 verified "no raw
+    // literals" over hex only and reported zero, which was true and was not
+    // the same as no widget naming a colour: two `Colors.red.shade…` had
+    // survived every sweep, on the app's most destructive control, one of
+    // them a live 2.9866. This scans BOTH forms.
+    //
+    // ⛔ AND IT SKIPS COMMENT LINES. Without that it flags the rule's own
+    // documentation, because the note recording those two retired names
+    // quotes them.
+    final hex = RegExp(r'\bColor\(\s*0x[0-9a-fA-F]{8}\s*\)');
+    final named = RegExp(r'\bColors\.([A-Za-z][A-Za-z0-9]*)');
+    final neutral = RegExp(r'^(white|black)\d*$');
+
+    // ⛔ THE RESIDUE, BY ADDRESS. Every survivor is listed with the reason it
+    // survives. A new one fails this test; removing one fails it too, so the
+    // list cannot rot in either direction.
+    const allowed = <String, String>{
+      'lib/main.dart:173': 'splash tagline, white 50% on primary — 3.3779, LIVE 4.5 FAILURE',
+      'lib/main.dart:185': 'splash spinner, white 50% on primary — 3.3779, passes as non-text',
+      'lib/main.dart:195': 'splash version, white 35% on primary — 2.4169, LIVE 4.5 FAILURE',
+      'lib/models/event_record.dart:1656': 'export icon box, white 15% on a white sheet — paints nothing',
+      'lib/models/event_record.dart:1662': 'export icon, white on that box — 0 non-white pixels in 30x30',
+      'lib/screens/about_screen.dart:96': 'About version, white 55% on primary — 3.7663, LIVE 4.5 FAILURE',
+      'lib/screens/about_screen.dart:104': 'About tagline, white 40% on primary — 2.6938, LIVE 4.5 FAILURE',
+      'lib/screens/home_screen.dart:1217': 'Tap to timestamp now, white 65% on captureFill — 2.3805, LIVE 4.5 FAILURE and no token can fix it',
+    };
+
+    final chromatic = <String>[];
+    final neutrals = <String>[];
+    var scanned = 0;
+    for (final f in Directory('lib').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final path = f.path.replaceAll(r'\', '/');
+      if (path.endsWith('theme/mer_theme.dart')) continue;
+      scanned++;
+      final lines = const LineSplitter().convert(f.readAsStringSync());
+      for (var i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        final trimmed = line.trimLeft();
+        if (trimmed.startsWith('//') || trimmed.startsWith('///') ||
+            trimmed.startsWith('*')) {
+          continue;
+        }
+        final where = '$path:${i + 1}';
+        if (hex.hasMatch(line)) chromatic.add('$where  hex literal');
+        for (final m in named.allMatches(line)) {
+          if (neutral.hasMatch(m.group(1)!)) {
+            neutrals.add(where);
+          } else {
+            chromatic.add('$where  ${m.group(0)}');
+          }
+        }
+      }
+    }
+
+    expect(scanned, greaterThan(20),
+        reason: 'the scan found only $scanned files, so it did not run — a '
+            'null here would otherwise be indistinguishable from a clean one');
+
+    expect(chromatic, isEmpty,
+        reason: 'rule 2: a widget names a colour.\n  ${chromatic.join("\n  ")}');
+
+    final unexpected = neutrals.where((n) => !allowed.containsKey(n)).toList();
+    expect(unexpected, isEmpty,
+        reason: 'a NEW neutral literal appeared outside the theme. Give it a '
+            'token or add it to the allowlist with its measurement:\n'
+            '  ${unexpected.join("\n  ")}');
+
+    final gone = allowed.keys.where((k) => !neutrals.contains(k)).toList();
+    expect(gone, isEmpty,
+        reason: 'the allowlist names a site that no longer has a literal. '
+            'Delete the entry — a stale allowlist hides the next one:\n'
+            '  ${gone.join("\n  ")}');
   });
 }

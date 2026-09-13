@@ -692,7 +692,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: MERColours.infoAccent,
+                        color: MERColours.infoOnContainer,
                         shape: BoxShape.circle,
                       ),
                       constraints:
@@ -701,7 +701,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         '${activeFilters.length}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: MERColours.onFill,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           height: 1,
@@ -1082,7 +1082,7 @@ class _EventTypeFilterChips extends StatelessWidget {
                     ? FontWeight.w600
                     : FontWeight.w400,
                 color: isSelected
-                    ? Colors.white
+                    ? MERColours.onFill
                     : MERColours.onSurfaceMuted,
               ),
             ),

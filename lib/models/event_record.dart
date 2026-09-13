@@ -1516,7 +1516,7 @@ Future<void> showExportOptions(
                       style: const TextStyle(
                         fontSize:   13,
                         fontWeight: FontWeight.w600,
-                        color:      Colors.black45,
+                        color:      MERColours.onSurfaceMuted,
                         letterSpacing: 0.4,
                       ),
                     ),
