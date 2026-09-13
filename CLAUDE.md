@@ -417,6 +417,37 @@ better".**
 
 ⚠️ **Full history in `docs/design-audit/AUDIT.md` §13(ay) (retracted), §13(as) and §13(au).**
 
+⛔ **AND LOADING THE REAL FONT DOES NOT FIX AN APP-BAR MEASUREMENT. Added 13 September 2026, after
+it defeated three probes in a row.**
+
+`FontLoader('Roboto')` registers a family **named** `Roboto`. It corrects a widget whose style
+resolves to that family — `MERTheme`'s `textTheme` styles carry no family, so they inherit
+`Typography`'s, which on Android **is** `Roboto`, and those measurements do become real. ⛔ **It
+does nothing for a `TextStyle` that names no family and inherits none**, which is what MER's
+app-bar title and subtitle are: an explicit `TextStyle(fontSize: 13, …)` inside `AppBar.title`,
+under a `titleTextStyle` that also names none. Those resolve to the ENGINE default, which in the
+harness is the one-em-per-glyph font, loader or no loader.
+
+**So a widget test can report an app-bar overflow that no device has**, with the real font sitting
+loaded in the same process. Measured: the disclaimer's title Row reported a **90.2 px** overflow at
+375x667 and system scale 2.0 with Roboto loaded, and needs **232.2 of a 343 slot** when the same
+strings are laid out free in Roboto — clear by 110.8.
+
+**TWO PRACTICAL RULES, both cheap:**
+
+1. **To settle a width claim, lay the string out FREE and compare against the slot.** A
+   `TextPainter` with an explicit `fontFamily`, `layout()`, read `.width`. ⛔ **Do not read it off
+   the rendered paragraph**: one that has already ellipsised reports the SLOT width, not its own,
+   so the number looks plausible and says nothing. That cost two probes.
+2. **Remember the app bar is CLAMPED.** `app_bar.dart` wraps `AppBar.title` in
+   `MediaQuery.withClampedTextScaling(maxScaleFactor: _kMaxTitleTextScaleFactor)` — **1.34**. At
+   system scale 2.0 an app-bar title renders at 1.34x, not 2x. Any 200% figure for that slot that
+   assumes 2x is wrong before the font is even considered.
+
+⭐ **This is the same class as the rule above and it is filed here rather than only in the finding,
+because the finding is where it was learnt and this is where the next person writing a widget test
+will be looking.** Full history: `AUDIT.md` §13(bx)'s annotation of 13 September 2026.
+
 ### ⛔ CAPTURES ANSWER "HOW DOES IT LOOK". THEY DO NOT ANSWER "WHERE IS IT" OR "HOW BIG IS IT"
 
 ⚠️ **Geometry comes from widget tests. Appearance comes from captures. Do not cross them.**

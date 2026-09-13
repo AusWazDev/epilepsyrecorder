@@ -1018,6 +1018,32 @@ is not.** Two unrelated mechanisms share "unsaved", and during this session the 
 edit-state protection more than once on the strength of the name alone, by someone who had the code
 available. **The behaviour is right; the label invites the wrong inference.**
 
+✅ **RENAMED 13 September 2026, at 5b37478. The finding above stands as written; every symbol it
+names has moved, and this is the map.** The naming defect it records is closed — the code was
+always right and the word was not.
+
+| was | is |
+|---|---|
+| `kUnsavedEventsKey` | `kFailedWriteKey` |
+| `hasUnsavedEvents()` | `hasFailedWrite()` |
+| `setUnsavedEventsWarning()` | `setFailedWriteWarning()` |
+| `clearUnsavedEventsWarning()` | `clearFailedWriteWarning()` |
+| `_hasUnsavedEvents` | `_writeFailed` |
+| `_UnsavedEventsBanner` | `_FailedWriteBanner` |
+
+⛔ **THE PERSISTED STRING DID NOT MOVE, DELIBERATELY: it is still `'mer_unsaved_events'`.** Changing
+it would drop a pending warning on every device at upgrade, which `constants.dart` forbids in
+capitals. **A reader who finds that string must not read it as a missed rename** — name and value
+diverge on purpose, and the constant now says so at its own declaration.
+
+⚠️ **No surface changed.** `_FailedWriteBanner`'s copy is untouched: *"Some events aren't saved
+yet"* still stands, and it is accurate — the events genuinely are not stored.
+
+**FOUR OTHER ENTRIES STILL CITE THE OLD NAMES**, left as written because each records what was true
+on its own date: §13(f), §13(aw) item 1, §13(bi) and §13(bs). Each carries a one-line pointer here.
+`docs/iOS Device Test Checklist.md` moved with the rename, because its two references are symbol
+citations for someone running a device test rather than a record of a past reading.
+
 ### (e) Home occupancy — the button MOVES 369 points and is never unreachable
 
 **Code-verified by measurement, 8 Sep 2026. This QUALIFIES §7; it does not replace it.**
@@ -1094,6 +1120,16 @@ Observed in measurement state F above: configured with both, only the unsaved ba
 
 **Undocumented anywhere as at 8 Sep 2026.** Recorded because the two occupy the same region and a
 reader enumerating that region would otherwise expect them to stack.
+
+⚠️ **SYMBOL RENAMED 13 September 2026:** `_hasUnsavedEvents` is now `_writeFailed`. The conjunct and
+the behaviour are unchanged; see §13(d)'s annotation of that date for the full map.
+
+⛔ **AND THE "UNDOCUMENTED ANYWHERE" HALF WAS ALREADY FALSE WHEN THIS ENTRY WAS WRITTEN. Read
+12 September 2026.** `_showBackupReminder`'s own doc comment in `home_screen.dart` has said *"When
+both would apply the reminder yields, so the two never compete for the same space"* since
+**56a9112, 22 August 2026** — seventeen days before this entry. ⭐ **The co-occurrence FACT stands
+and is untouched; the absence claim beside it does not.** ⚠️ Recorded rather than softened: this
+entry's own scope says *anywhere*, and `lib/` is somewhere. The check ran over the documents.
 
 ### (g) The 2.11 screenful figure lacks provenance
 
@@ -4637,6 +4673,12 @@ system.** ⚠️ **One item is upstream of the vocabulary itself and is neither 
 of it — §10 decision 1's open half, whether COMPLETENESS is the right axis for two edit paths,
 because §10 records that its answer *"decides how many idioms the vocabulary must cover"*.**
 
+⚠️ **ITEM 1 IS DONE, 13 September 2026.** `_hasUnsavedEvents` is now `_writeFailed`; the full symbol
+map is at §13(d)'s annotation of that date. **Item 2 is done too** — `_thisMonthCount` reads
+`whenHappened` as of the same date; see §13(bc)'s annotation. ⛔ **Neither closes the list.** A
+status read of all fifteen on 12 September found 6 shipped, 1 partly, 1 maintained-by-design and 7
+not started; items 1 and 2 were two of the seven.
+
 ---
 
 ### (ax) ⚠️ THE RECORD-COUNT DISCREPANCY — CHAT'S SHAPE IS WRONG, AND A REAL UNRECONCILED DELTA IS UNDERNEATH IT
@@ -5179,6 +5221,31 @@ was right to require the enumeration first even though it was wrong about the an
 `occurred_at` across all 58 records, with `duration_seconds` (13/45) and `event_type` (45/13) as
 discriminating controls. ⛔ NOT CLOSED — untriggered is not fixed. The full annotation is at the end
 of §13(bd).**
+
+⚠️ **ONE OF THE THREE HOME SITES MOVED, 13 September 2026, and this entry's closing claim is now
+half true.** It says home is *"internally consistent — it sorts and displays the same value — and
+inconsistent with BOTH of the other two surfaces."* **That was accurate when written and describes
+a home screen that no longer exists.**
+
+`home_screen.dart`'s `_thisMonthCount` now reads `whenHappened`, closing §13(j)'s last standing
+site. So of the three figures on home:
+
+| site | reads | agrees with History and the CSV? |
+|---|---|---|
+| `_thisMonthCount` | **`whenHappened`** since 13 Sep | ✅ yes |
+| `_daysSinceLastEvent` | `timestamp` | ⛔ no |
+| `_LastEventCard` | `record.timestamp` | ⛔ no |
+
+⭐ **So home is now internally MIXED and externally partly consistent — the reverse of what this
+entry records, for one of three.** ⛔ **The two that remain are not a one-line read.** Both take
+`_records.first` from a list sorted on `timestamp` (`:667`, `:696`), so correcting them is a sort
+change with §13(bg)'s 24 consumers behind it. `_thisMonthCount` was separable precisely because it
+is an aggregate over the whole list and never touches the order.
+
+⚠️ **Inert on all current data:** zero records carry a non-null `occurredAt` across all ten backup
+envelopes on this machine, 4 to 72 records each. The change is a correctness fix for data that does
+not exist yet, and the getter's own doc comment carries this same split so the mixed state is
+legible from the code.
 
 ---
 
@@ -6182,6 +6249,11 @@ repository, and cannot be established from here.**
 > `..addAll(...)` cascade on 272. Every other line in the four chains was checked against 4a9b0bd and
 > still points at its cited symbol (11 of 12). The chain's claim is unaffected.
 
+⚠️ **SYMBOLS RENAMED 13 September 2026:** `setUnsavedEventsWarning()` is now
+`setFailedWriteWarning()`, `kUnsavedEventsKey` is now `kFailedWriteKey`, and `_UnsavedEventsBanner`
+is now `_FailedWriteBanner`. The mechanism and the quoted copy are unchanged. ⛔ **The persisted
+string is still `'mer_unsaved_events'` and did not move.** Full map at §13(d).
+
 ---
 
 ### (bj) 🔴 THE REAL BLOCKER IS THE ABSENCE OF AN INTENT SIGNAL, AND IT IS A DATA-MODEL QUESTION RATHER THAN A VERIFICATION ONE
@@ -7142,6 +7214,11 @@ checked whether one should.
 > read, and whether SQLite should have one — was scoped the same day. The iOS removal's premise is
 > retired: §13(bt). The recovery axis, and why its obvious shape fails: §13(bu).
 
+⚠️ **SYMBOLS RENAMED 13 September 2026:** `_hasUnsavedEvents` is now `_writeFailed` and
+`kUnsavedEventsKey` is now `kFailedWriteKey`; the persisted string `'mer_unsaved_events'` did not
+move. Nothing in this entry's reasoning changes — `_openWizard` still bypasses `_persist`, and the
+before-image is still read by nothing. Full map at §13(d).
+
 ---
 
 ### (bt) 🔴 THE iOS ROLLBACK GUARD PROTECTS AGAINST A WRITE PATH THAT WAS RETIRED
@@ -7416,6 +7493,54 @@ time out of `Expanded` changes its box from the whole slot to its own width whil
 not move, and the first fingerprint flagged exactly that). The rest of this entry — disclaimer
 title, duration unit labels, app-bar subtitles, URLs (fixed under §13(bw)) — stands as recorded.
 `test/a11y_batch_measure_test.dart`, run unpatched first.
+
+⛔ **THREE OF THE ROWS ABOVE ARE APP-BAR ROWS, AND THE APP BAR IS CLAMPED. 12–13 September 2026.**
+The table stands as written — every figure in it reproduces exactly, which is the point. What was
+not known on 11 September is that the app-bar title slot does not scale with the system, so the
+figures are the harness font's and not a device's.
+
+**THE MECHANISM, read from the SDK rather than inferred.** `app_bar.dart` wraps `AppBar.title` in
+`MediaQuery.withClampedTextScaling(maxScaleFactor: _kMaxTitleTextScaleFactor)`, and that constant is
+**1.34**. MER puts both its title and its subtitle inside that slot — a `Column` of two `Text`s in
+`AppBar.title` — so at system scale 2.0 they render at **1.34x, not 2x**, on every screen.
+
+**ROW: "app-bar subtitle Medical Event Recorder — truncated on the form, History and Your lists".**
+⛔ **ARTEFACT.** At the clamped 13.4 px, laid out free: **140.1 logical in Roboto against a 287
+slot**, clear by 147; **294.8 in the harness font**, over by 7.8. The harness exceeds by under 3%
+and that is the whole finding. ✅ **Confirmed on the device**: `form`, `history` and `vocabulary` at
+375x667 and system font scale 2.0, 13 September 2026 — the product name renders IN FULL on all
+three, no ellipsis. Files in `captures/INDEX.md`.
+
+**ROW: "disclaimer app-bar title — RenderFlex overflow, 90 px".** ⛔ **THE SAME ARTEFACT, and the
+90 px reproduces exactly: 90.2.** The disclaimer's title is
+`Row(MERIconWidget(40) + SizedBox(10) + Column(two Texts))` with no flexible child, so the Row needs
+50 plus its widest text. At the 1.34 clamp, laid out free:
+
+| font | line 1 at 17.4 px | line 2 at 13.4 px | Row needs | slot at 375 | overflow |
+|---|---|---|---|---|---|
+| harness | 383.2 | 348.4 | **433.2** | 343.0 | **90.2** |
+| Roboto | 182.2 | 160.9 | **232.2** | 343.0 | **none, clear by 110.8** |
+
+⚠️ **NOT CONFIRMED ON A DEVICE, and it cannot be from here.** The disclaimer is unreachable on the
+tablet without `pm clear`, and the Windows route `captures/INDEX.md` names is closed — see its
+annotation of this date. **The arithmetic is the same as the subtitle row's, which the device did
+confirm; the picture does not exist.**
+
+**ROW: "Welcome to MER (walkthrough), Your lists (vocabulary) — truncated".** ⚠️ **HALF ARTEFACT,
+HALF UNRESOLVED.** *Your lists* was captured on the device at 2.0 on 13 September and its app bar
+reads *"Your lists"* over *"Medical Event Recorder"* in full, neither truncated. *Welcome to MER* is
+on the walkthrough, which is unreachable by both routes, so that half stands unmeasured.
+
+⭐ **FOURTH INSTANCE OF §13(ay)'s FONT CAVEAT BEING LOAD-BEARING**, after §13(ay) itself, §13(bl)'s
+date column and §13(bw)'s two app-bar rows — and the first where the caveat was already written
+INTO the entry it undermined. This entry's own second sentence says every pixel figure carries it.
+⛔ **The caveat was stated and the rows were still read as measured**, here and in a brief that
+asked the developer for a brand judgement about an ellipsis that does not occur. **Writing the
+caveat down did not make it travel** — §13(r)'s subject exactly.
+
+⚠️ **AND THE REPAIR THAT DOES NOT WORK, recorded because it is the obvious one:** loading the real
+font into the harness does not correct an app-bar measurement. See the method note added to
+`CLAUDE.md` on this date.
 
 ---
 

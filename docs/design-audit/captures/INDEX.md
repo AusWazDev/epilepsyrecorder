@@ -627,6 +627,38 @@ not about the build.**
 ⭐ **Consequence worth recording: the disclaimer and walkthrough gates are UNSET on Windows**, so the
 two screens that are uncapturable on the tablet without `pm clear` are reachable here for free.
 
+⛔ **THAT CLAIM IS FALSE, AND THE PASS THAT RECORDED IT IS THE PASS THAT SET THEM. Checked
+13 September 2026; the sentence above is left exactly as written.** Both gates are set on the
+unpackaged Windows build:
+
+    %APPDATA%\au.com.bedlin\epilepsyrecorder\shared_preferences.json
+    80 bytes, last written 2026-09-08 21:57:57
+    {"flutter.disclaimerAcceptedVersion":"1.1","flutter.walkthroughSeenVersion":"1"}
+
+**21:57 on 8 September is inside this pass.** Reaching the two screens meant passing through them,
+and passing through them is what wrote the file. ⛔ **The claim was true when the pass began and
+false by the time it was written down.**
+
+⚠️ **AND THE VERIFICATION LOOKED IN THE WRONG STORE, WHICH IS WHY IT MISSED.** *"A sweep of
+`AppData` found one directory — `Local\Packages\Notiva.MedicalEventRecorder_…`"* is the **MSIX
+package container**, and it is still empty today: 2 files, 8,192 bytes, unchanged since 25 August.
+An unpackaged `flutter build windows` binary does not write there. It writes to
+`%APPDATA%\<CompanyName>\<ProductName>`, from `Runner.rc` — `au.com.bedlin` and `epilepsyrecorder`.
+⭐ **Both statements were true about different binaries**, and the sweep confirmed the one that was
+not running.
+
+**BOTH GATES CLOSE AGAINST THE CURRENT BUILD**, read from source this date: `main.dart` sets
+`_accepted = acceptedVersion == kDisclaimerVersion` and `kDisclaimerVersion` is still `'1.1'`;
+`shouldShowWalkthrough()` returns false for ANY non-empty stored value and never compares versions,
+so `"1"` closes it permanently. ⛔ **The Windows route is closed. Nothing was cleared** — clearing it
+was refused as out of scope, and it is the developer's call.
+
+⭐ **AND THE ROUTE WOULD NOT HAVE ANSWERED THE QUESTION IT WAS OPENED FOR.** §13(bx)'s 90 px
+disclaimer overflow is a NARROW-WIDTH phenomenon, measured at 375 logical. The desktop opens at
+**1012 logical**, where the same app bar reports **zero overflow even in the harness font**. A
+Windows capture would have shown a comfortable app bar whatever the font and settled nothing. **The
+route varies width and font together, and width is the binding term.**
+
 ### ⛔ Not captured, and why — additions to the table above
 
 | Layout | Reason |
@@ -723,3 +755,72 @@ History for carrying `Delete this event` — the per-row tooltip, not a dialog �
 | **800x1280** | Not in the brief for this pass; the 375 and 430 sets carry the change |
 | **History at 200% text scale** | ⛔ Still no filename convention for text scale, as the 8 September block records. The badge-row fix is held by `test/a11y_batch_measure_test.dart` at 2.0 instead |
 | **The gap line WRAPPING** | ⭐ The gap line IS in the set — row 1 of `history__default__430x932__2026-09-11.png`, the 27 Aug 4:41 PM record, reads *"Add details: duration, type, severity"* on ONE line at 430 in the device font. The fix only shows as a second line where the string does not fit, which at 375 in Roboto it does; the wrap is asserted in `test/a11y_batch_measure_test.dart` in the harness font |
+
+---
+
+## Added 13 September 2026 — the 200% text-scale set, and the convention it needed
+
+⛔ **NOTHING ABOVE IS MODIFIED. This is an ADDITION**, and it closes the gap the 8 September block
+opened: *"The 200% text-scale set — deliberately out of scope for this pass. There is no filename
+convention for text scale — nothing in the existing 99 files encodes one — and it needs its own
+decision."*
+
+### ⭐ THE CONVENTION IS NOW DECIDED, NOT PROPOSED: `-textscale-200`
+
+It goes in the **date segment**, the same slot that already carries `-ios-15promax-device`,
+`-windows-desktop` and `-after-fix-1`:
+
+    <screen>__<state>__<W>x<H>__<date>-textscale-200.png
+
+The scale is a rendering CONDITION, like the device or the platform, not a state of the screen —
+which is why it sits beside them rather than in the state segment. A capture with no scale
+qualifier is at the system default, as every file before this one is.
+
+### What was captured — 6 files, three screens at two scales
+
+| File | Logical | Size | md5 |
+|---|---|---|---|
+| `form__scroll-1-of-2__375x667__2026-09-13.png` | 375x667 | 41,840 | `850ac0d4` |
+| `form__scroll-1-of-2__375x667__2026-09-13-textscale-200.png` | 375x667 | 53,820 | `6ad4a87a` |
+| `history__default__375x667__2026-09-13.png` | 375x667 | 40,155 | `a3a9cc84` |
+| `history__default__375x667__2026-09-13-textscale-200.png` | 375x667 | 53,637 | `5552cc02` |
+| `vocabulary__default__375x667__2026-09-13.png` | 375x667 | 52,845 | `8f5c4d8f` |
+| `vocabulary__default__375x667__2026-09-13-textscale-200.png` | 375x667 | 74,895 | `cab11eb9` |
+
+**6 files, 6 distinct md5s, every PNG header read back at 375x667.** ⭐ **Each 200% shot was taken
+through the IDENTICAL route as its default-scale pair**, the form via the same complete record, so
+the only difference between a pair is `font_scale`. **375x667 is the size §13(u) and §13(bx)
+measured at**, chosen so the pictures answer those findings under their own conditions.
+
+### Build and conditions
+
+| | |
+|---|---|
+| Built from | ⛔ **NOTHING WAS BUILT OR INSTALLED.** The device carried `c4220f2` from 11 September — `versionCode 53`, `lastUpdateTime 2026-09-11 20:44:35`, unchanged across this pass |
+| Scale | `adb shell settings put system font_scale 2.0`, a system setting that touches no app data |
+| Restored | verified: no `wm` override, `font_scale 1.0`, `accelerometer_rotation 1`, `user_rotation 1`, density 160 — every one its pre-pass value |
+
+### 🔴 THE STANDING CONTROL FIGURE IS STALE: THE DEVICE HOLDS 74 RECORDS, NOT 72
+
+Read from the accessibility tree before and after this pass: **74 both times**, `LAST EVENT`
+**11 Sep 2026 · 22:00** both times. ⛔ **Every block above cites 72 as the control**, and that has
+been the figure since 27 August. **Two records were logged on 12 September**, by the developer, on
+his own device between the 11 and 13 September passes. ⭐ **Not data loss and not a defect — the
+control simply moved, and a control nobody re-reads is how a stale figure becomes evidence.**
+⚠️ **72 remains correct for every block dated before this one.**
+
+### Procedure, and the guard this pass had to add
+
+The pass-2a procedure, with one addition. ⛔ **The rotation lock does not survive `am force-stop`,
+and it does not survive a `font_scale` change either.** On 11 September three captures reached disk
+in landscape before that was noticed. The capture step now **reads the width back from the window
+manager and refuses unless it is 375**. It refused twice during this pass. ⭐ **A capture routine
+that cannot fail cannot be trusted; this one can and did.**
+
+### ⛔ Not captured, and why — additions to the table above
+
+| Layout | Reason |
+|---|---|
+| **`disclaimer` and `walkthrough`, either scale** | ⛔ **BOTH ROUTES ARE NOW CLOSED.** The tablet needs `pm clear`, which destroys the records. The Windows route this file records as open is not — see the annotation on the 8 September Windows block. **Nothing was cleared.** The third route, the disposable profile this file already specifies as pass 2b, is untouched and is the only one left |
+| **800x1280 and 430x932 at 200%** | Not attempted. 375x667 is the width the findings were measured at, and the question was whether they reproduce there |
+| **home at 200%** | Not asked for. It is the screen §13(ay) retracted a finding on, and it has no outstanding 200% claim |
