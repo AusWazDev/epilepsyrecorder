@@ -578,8 +578,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          // ⛔ C2: the destructive control is the only OUTLINED one, and
+          // this dialog has NO FILLED BUTTON AT ALL. That absence is the
+          // signal that this is not a normal affirmative flow.
+          OutlinedButton(
             onPressed: () => Navigator.pop(ctx, true),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: MERColours.destructive,
+              side: const BorderSide(
+                  color: MERColours.destructive, width: 1),
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -651,14 +659,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
               style: TextStyle(
                 fontSize:   15,
                 fontWeight: FontWeight.w600,
-                color:      Colors.white,
+                color:      MERColours.onPrimary,
               ),
             ),
             Text(
               'Medical Event Recorder',
               style: TextStyle(
                 fontSize: 10,
-                color:    Colors.white54,
+                color:    MERColours.onPrimaryMuted,
               ),
             ),
           ],
@@ -916,7 +924,7 @@ class _NeedsDetailsChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              const Icon(Icons.check, size: 15, color: Colors.white),
+              const Icon(Icons.check, size: 15, color: MERColours.onPrimary),
               const SizedBox(width: 6),
             ],
             Text(
@@ -924,7 +932,7 @@ class _NeedsDetailsChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? Colors.white : MERColours.onSurface,
+                color: selected ? MERColours.onPrimary : MERColours.onSurface,
               ),
             ),
           ],
@@ -1292,6 +1300,7 @@ class _EventListTile extends StatelessWidget {
         // shows seven byte-identical rows, so a timestamp would not
         // disambiguate. Which-record identification stays UNSOLVED.
         tooltip:   'Delete this event',
+        color:     MERColours.destructive,
         icon:      const Icon(Icons.delete_outline),
         onPressed: onDelete,
       ),

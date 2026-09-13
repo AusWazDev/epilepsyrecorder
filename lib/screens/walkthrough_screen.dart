@@ -196,7 +196,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
           // on the last page where it would be pointless.
           TextButton(
             onPressed: () => Navigator.of(context).maybePop(),
-            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            style: TextButton.styleFrom(foregroundColor: MERColours.onPrimary),
             child: const Text('Skip'),
           ),
         ],

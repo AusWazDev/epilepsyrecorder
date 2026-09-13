@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The colour system. 33 tokens, role-named.
+/// The colour system. 34 tokens, role-named.
 ///
 /// ## ⛔ FOUR RULES. They are part of the set, not commentary on it.
 ///
@@ -13,6 +13,39 @@ import 'package:flutter/material.dart';
 /// **2. NO WIDGET NAMES A COLOUR.** Every `Color(0x…)` outside this file was
 /// assigned a role or deleted. §13(w) is the argument: a fix confined to the
 /// palette file *"would look complete and leave 17 of 28 untouched"*.
+///
+/// > ⛔ **EXTENDED 13 Sep 2026, BECAUSE THE CHECK ONLY LOOKED FOR HEX.** The
+/// > rule was verified over `Color(0x…)` literals and reported zero outside
+/// > this file — **which was true, and was not the same as no widget naming a
+/// > colour.** `Colors.red.shade700` and `Colors.red.shade300` had survived
+/// > every sweep, on the app's most destructive control, and one of them was
+/// > a live 2.9866 against 3.0. ⭐ **Third instance of one class**: a fill hid
+/// > `warning` from a text-only sweep, a text-only sweep hid it twice, and a
+/// > hex-only sweep hid these. **A sweep sees the shape it was written to
+/// > see.**
+/// >
+/// > **The rule now covers NAMED palette colours too — `Colors.*` — and not
+/// > only hex.** ⚠️ **But it is two rules, not one, and conflating them is
+/// > what makes it unenforceable.** A site where a token already holds the
+/// > value is a NAMING problem and the substitution changes no pixel. A site
+/// > where NO token holds the value is a DESIGN decision, and substituting
+/// > the nearest token changes what renders. Only the second needs a
+/// > decision, and neither may be answered by inventing a token to absorb it.
+/// >
+/// > ⚠️ **Consequently this rule is NOT clean today, and the residue is
+/// > enumerated rather than waved at. FOURTEEN sites** outside this file still
+/// > name a neutral, all of them real code and none in a comment: **seven**
+/// > `Colors.white.withOpacity(…)`, **one** `Colors.black45`, and **six** bare
+/// > whites sitting on grounds this set has no on-token for — `infoAccent`,
+/// > `cautionOnContainer`, a 15%-white box, and the identity colours, whose
+/// > selected chips paint white on a per-type hue. The chromatic residue is
+/// > **zero**. `Colors.white` INSIDE this file is a definition and is fine.
+/// >
+/// > ⚠️ **And the sweep that produced those numbers counts COMMENTS**, so it
+/// > reports the two `Colors.red.shade…` names quoted three paragraphs above
+/// > as occurrences inside this file. They are a record of what was removed,
+/// > not a use. Any checker built from this rule must skip comment lines, or
+/// > it will flag the rule's own documentation.
 ///
 /// **3. NOTHING MAY ASSUME `onSurface == primary`.** They hold the same value
 /// today. §13(w) records that as *"two names, one colour"*. The value is not
@@ -66,6 +99,25 @@ class MERColours {
   /// ⛔ ON-PRIMARY ONLY, 1.88 on white. One job: the SnackBar action label on
   /// the navy SnackBar, §13(s) row 11, which was 2.37.
   static const Color accentOnPrimary = Color(0xFF88C5E4);
+
+  /// The app-bar subtitle, on `primary`. 5.11. Added 13 Sep 2026 by C2.
+  ///
+  /// ⛔ IT REPLACES TWO OPACITY FORMS OF THE SAME ELEMENT, one of which was a
+  /// live failure. Ten app bars carry the same 10–11 px subtitle and they did
+  /// not agree: seven used `Colors.white54`, which composites to `#90AEC6` =
+  /// **3.6844** against 4.5, and three used `Colors.white70` at 5.1135. Same
+  /// element, two values, one of them failing — and rule 1 forbids both,
+  /// because a tone is a token and not a transparency.
+  ///
+  /// ⚠️ The value is the MEASURED composite of the passing form, `#B7CBDA`
+  /// read off a render, not the computed blend `#B6CADA` (5.0653). Where the
+  /// two disagree the render is the instrument and the arithmetic is the
+  /// approximation.
+  ///
+  /// ⛔ NOT `accentOnPrimary`, which is also on-primary and also passes. That
+  /// one is a SnackBar ACTION LABEL — a control. This is muted prose. Two
+  /// roles that happen to share a ground are still two roles.
+  static const Color onPrimaryMuted = Color(0xFFB7CBDA);
 
   // ── CAPTURE ────────────────────────────────────────────────────────────
   /// The `Record Event` fill, and nothing else. ⛔ Large-text sizes only —

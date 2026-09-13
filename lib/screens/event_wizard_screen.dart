@@ -390,7 +390,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
                 // navy: present, tappable, and completely invisible. AppBar's
                 // `foregroundColor` does not reach it; buttons carry their own
                 // ButtonStyle.
-                style: TextButton.styleFrom(foregroundColor: Colors.white),
+                style: TextButton.styleFrom(foregroundColor: MERColours.onPrimary),
                 onPressed: () => setState(() {
                   // Same guard as _next. Skip is the FASTEST route through an
                   // untouched wizard, so leaving it unconditional would keep

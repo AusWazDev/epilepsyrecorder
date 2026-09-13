@@ -541,14 +541,14 @@ appBar: AppBar(
                 style: const TextStyle(
                   fontSize:   15,
                   fontWeight: FontWeight.w600,
-                  color:      Colors.white,
+                  color:      MERColours.onPrimary,
                 ),
               ),
               const Text(
                 'Medical Event Recorder',
                 style: TextStyle(
                   fontSize: 10,
-                  color:    Colors.white54,
+                  color:    MERColours.onPrimaryMuted,
                 ),
               ),
             ],

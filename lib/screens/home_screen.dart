@@ -910,8 +910,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          // ⛔ C2: the destructive control is the only OUTLINED one, and
+          // this dialog has NO FILLED BUTTON AT ALL. That absence is the
+          // signal that this is not a normal affirmative flow.
+          OutlinedButton(
             onPressed: () => Navigator.pop(ctx, true),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: MERColours.destructive,
+              side: const BorderSide(
+                  color: MERColours.destructive, width: 1),
+            ),
             child: const Text('Reset'),
           ),
         ],
@@ -946,14 +954,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   style: TextStyle(
                     fontSize:   13,
                     fontWeight: FontWeight.w600,
-                    color:      Colors.white,
+                    color:      MERColours.onPrimary,
                   ),
                 ),
                 Text(
                   'Record · Review · Share',
                   style: TextStyle(
                     fontSize: 10,
-                    color:    Colors.white54,
+                    color:    MERColours.onPrimaryMuted,
                   ),
                 ),
               ],
@@ -1180,7 +1188,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             onPressed: _quickRecord,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _buttonFlash
-                                  ? Colors.white
+                                  ? MERColours.surface
                                   : MERColours.captureFill,
                               foregroundColor: MERColours.onCapture,
                               elevation:       0,
@@ -1198,7 +1206,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   style: TextStyle(
                                     fontSize:   26,
                                     fontWeight: FontWeight.w700,
-                                    color:      Colors.white,
+                                    color:      MERColours.onCapture,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -1224,7 +1232,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             label: const Text('Record with details'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: MERColours.primary,
-                              foregroundColor: Colors.white,
+                              foregroundColor: MERColours.onPrimary,
                               elevation:       0,
                               padding: const EdgeInsets.symmetric(
                                 vertical: 20,
@@ -1403,7 +1411,7 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
             FilledButton(
               onPressed: widget.onEnd,
               style: FilledButton.styleFrom(
-                backgroundColor: MERColours.criticalOnContainer,
+                backgroundColor: MERColours.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 textStyle: const TextStyle(
                   fontSize:   13,
@@ -2052,7 +2060,7 @@ class _LastEventCard extends StatelessWidget {
                         Icon(
                           Icons.list_alt_outlined,
                           size:  13,
-                          color: Colors.white,
+                          color: MERColours.onPrimary,
                         ),
                         SizedBox(width: 5),
                         Text(
@@ -2060,7 +2068,7 @@ class _LastEventCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize:   11,
                             fontWeight: FontWeight.w500,
-                            color:      Colors.white,
+                            color:      MERColours.onPrimary,
                           ),
                         ),
                       ],

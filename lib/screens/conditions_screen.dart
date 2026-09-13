@@ -108,7 +108,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
           children: [
             Text('What you track', style: TextStyle(fontSize: 16)),
             Text('Medical Event Recorder',
-                style: TextStyle(fontSize: 11, color: Colors.white70)),
+                style: TextStyle(fontSize: 11, color: MERColours.onPrimaryMuted)),
           ],
         ),
       ),

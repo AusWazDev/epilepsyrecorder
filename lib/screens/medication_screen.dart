@@ -91,8 +91,16 @@ class _MedicationScreenState extends State<MedicationScreen> {
             onPressed: () => Navigator.pop(c, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          // ⛔ C2: the destructive control is the only OUTLINED one, and
+          // this dialog has NO FILLED BUTTON AT ALL. That absence is the
+          // signal that this is not a normal affirmative flow.
+          OutlinedButton(
             onPressed: () => Navigator.pop(c, true),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: MERColours.destructive,
+              side: const BorderSide(
+                  color: MERColours.destructive, width: 1),
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -114,7 +122,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
           children: [
             Text('Medication', style: TextStyle(fontSize: 16)),
             Text('Medical Event Recorder',
-                style: TextStyle(fontSize: 11, color: Colors.white70)),
+                style: TextStyle(fontSize: 11, color: MERColours.onPrimaryMuted)),
           ],
         ),
       ),
@@ -169,6 +177,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                           leading: _KindChip(kind: n.kind),
                           trailing: IconButton(
                             tooltip: 'Delete',
+                            color: MERColours.destructive,
                             icon: const Icon(Icons.delete_outline),
                             onPressed: () => _delete(n),
                           ),

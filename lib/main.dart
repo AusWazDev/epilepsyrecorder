@@ -148,7 +148,7 @@ class _SplashLoadingScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize:      28,
                 fontWeight:    FontWeight.w800,
-                color:         Colors.white,
+                color:         MERColours.onPrimary,
                 letterSpacing: 4,
               ),
             ),
@@ -160,7 +160,7 @@ class _SplashLoadingScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize:   16,
                 fontWeight: FontWeight.w600,
-                color:      Colors.white,
+                color:      MERColours.onPrimary,
               ),
             ),
             const SizedBox(height: 4),

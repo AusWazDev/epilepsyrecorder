@@ -189,7 +189,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
           children: [
             Text('Your lists', style: TextStyle(fontSize: 16)),
             Text('Medical Event Recorder',
-                style: TextStyle(fontSize: 11, color: Colors.white70)),
+                style: TextStyle(fontSize: 11, color: MERColours.onPrimaryMuted)),
           ],
         ),
         actions: [
@@ -199,7 +199,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
               if (!_selecting) _selected.clear();
             }),
             child: Text(_selecting ? 'Done' : 'Select',
-                style: const TextStyle(color: Colors.white)),
+                style: const TextStyle(color: MERColours.onPrimary)),
           ),
         ],
       ),

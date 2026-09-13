@@ -31,6 +31,12 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 /// at roughly half strength on a 1× device — `outline` reads 1.72 painted
 /// against 3.38 defined — so the non-text values here are not honest until
 /// C3 takes theme strokes to 1.0. That is recorded, not hidden.
+///
+/// > ⭐ **DISCHARGED 13 Sep 2026 at `0d57f09`.** C3 took all 26 strokes
+/// > carrying a contrast claim to 1.0, and `outline` was then measured
+/// > painting its defined `#798EA3` at full coverage. The caveat above stays
+/// > readable as written because it records what was true when the set
+/// > landed; it no longer applies to the current tree.
 
 // ── the apparatus, written from the sRGB formula ───────────────────────────
 
@@ -142,7 +148,7 @@ void main() {
     }
   });
 
-  test('3. brand and focus, including the two constrained tokens', () {
+  test('3. brand and focus, including the three constrained tokens', () {
     mustClear(MERColours.onPrimary, MERColours.primary, kNormalText, 'onPrimary');
     mustClear(MERColours.focusRing, surface, kLargeOrNonText, 'focusRing');
     mustClear(MERColours.focusRing, sunken, kLargeOrNonText, 'focusRing on sunken');
@@ -157,6 +163,21 @@ void main() {
             'it is stale and `link` may be redundant.');
     expect(ratio(MERColours.accentOnPrimary, surface) >= kLargeOrNonText, isFalse,
         reason: 'accentOnPrimary is ON-PRIMARY ONLY.');
+
+    // ⛔ THE THIRD ON-PRIMARY-ONLY TOKEN, added by C2. 5.11 on primary, and
+    // 1.67 on white — so the same negative that guards `accentOnPrimary`
+    // guards this, for the same reason: a name that carries a constraint has
+    // to fail loudly if the constraint stops being true.
+    mustClear(MERColours.onPrimaryMuted, MERColours.primary, kNormalText,
+        'onPrimaryMuted');
+    expect(ratio(MERColours.onPrimaryMuted, surface) >= kLargeOrNonText, isFalse,
+        reason: 'onPrimaryMuted is ON-PRIMARY ONLY.');
+
+    // ⛔ AND IT MUST NOT COLLAPSE INTO `accentOnPrimary`. Both are on-primary
+    // and both pass, which is exactly the condition under which two roles
+    // quietly become one. One is muted prose, the other a SnackBar action.
+    expect(MERColours.onPrimaryMuted, isNot(MERColours.accentOnPrimary),
+        reason: 'two on-primary roles, two values, on purpose.');
   });
 
   test('4. status — onContainer on all three grounds, accent likewise', () {
@@ -212,6 +233,7 @@ void main() {
       'surface': MERColours.surface, 'surfaceSunken': MERColours.surfaceSunken,
       'outline': MERColours.outline, 'onSurfaceMuted': MERColours.onSurfaceMuted,
       'focusRing': MERColours.focusRing, 'accentOnPrimary': MERColours.accentOnPrimary,
+      'onPrimaryMuted': MERColours.onPrimaryMuted,
       'captureFill': MERColours.captureFill, 'link': MERColours.link,
       'infoContainer': MERColours.infoContainer,
       'infoOnContainer': MERColours.infoOnContainer,

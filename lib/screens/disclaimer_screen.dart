@@ -38,14 +38,14 @@ class DisclaimerScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize:   13,
                     fontWeight: FontWeight.w600,
-                    color:      Colors.white,
+                    color:      MERColours.onPrimary,
                   ),
                 ),
                 Text(
                   'Medical & Legal Disclaimer',
                   style: TextStyle(
                     fontSize: 10,
-                    color:    Colors.white54,
+                    color:    MERColours.onPrimaryMuted,
                   ),
                 ),
               ],

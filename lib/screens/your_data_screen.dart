@@ -44,12 +44,12 @@ class YourDataScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: MERColours.onPrimary,
               ),
             ),
             Text(
               'Medical Event Recorder',
-              style: TextStyle(fontSize: 10, color: Colors.white54),
+              style: TextStyle(fontSize: 10, color: MERColours.onPrimaryMuted),
             ),
           ],
         ),
@@ -186,7 +186,7 @@ class _DataCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: MERColours.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: MERColours.outline),
       ),

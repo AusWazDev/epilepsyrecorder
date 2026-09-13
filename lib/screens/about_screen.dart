@@ -23,14 +23,14 @@ class AboutScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize:   15,
                 fontWeight: FontWeight.w600,
-                color:      Colors.white,
+                color:      MERColours.onPrimary,
               ),
             ),
             Text(
               'Medical Event Recorder',
               style: TextStyle(
                 fontSize: 10,
-                color:    Colors.white54,
+                color:    MERColours.onPrimaryMuted,
               ),
             ),
           ],
@@ -85,7 +85,7 @@ class AboutScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize:   18,
                       fontWeight: FontWeight.w700,
-                      color:      Colors.white,
+                      color:      MERColours.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -240,9 +240,9 @@ class AboutScreen extends StatelessWidget {
                                     size: 18),
                                 label: const Text('Reset app (clear all data)'),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red.shade700,
-                                  side: BorderSide(
-                                      color: Colors.red.shade300),
+                                  foregroundColor: MERColours.destructive,
+                                  side: const BorderSide(
+                                      color: MERColours.destructive),
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 12),
                                 ),
