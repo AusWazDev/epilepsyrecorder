@@ -171,16 +171,16 @@ Widget _disclosure({
       child: Row(
         children: [
           Icon(expanded ? Icons.expand_less : Icons.expand_more,
-              size: 20, color: MERColours.textMuted),
+              size: 20, color: MERColours.onSurfaceMuted),
           const SizedBox(width: 8),
           Expanded(
             child: Text(count,
                 style: const TextStyle(
-                    fontSize: 14, color: MERColours.textMuted)),
+                    fontSize: 14, color: MERColours.onSurfaceMuted)),
           ),
           Text(expanded ? 'Show fewer' : 'Show all',
               style:
-                  const TextStyle(fontSize: 14, color: MERColours.action)),
+                  const TextStyle(fontSize: 14, color: MERColours.link)),
         ],
       ),
     ),

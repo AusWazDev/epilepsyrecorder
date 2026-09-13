@@ -68,10 +68,15 @@ class DisclaimerScreen extends StatelessWidget {
                       width:   double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color:        const Color(0xFFFAECE7),
+                        // ⛔ WAS `#FAECE7` WITH AN `alert` BORDER, WHICH IS
+                        // `identitySeizure`'s PAIR. The legal disclaimer was
+                        // painted in the seizure identity palette by
+                        // coincidence. It cannot stay and it cannot map
+                        // across: the disclaimer's function is to caution.
+                        color:        MERColours.cautionContainer,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: MERColours.alert,
+                          color: MERColours.cautionAccent,
                           width: 0.5,
                         ),
                       ),
@@ -82,7 +87,7 @@ class DisclaimerScreen extends StatelessWidget {
                             'Important Notice',
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color:      const Color(0xFF712B13),
+                              color:      MERColours.cautionOnContainer,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -90,7 +95,7 @@ class DisclaimerScreen extends StatelessWidget {
                             'This application is provided for personal '
                             'record‑keeping purposes only.',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color:  const Color(0xFF993C1D),
+                              color:  MERColours.cautionOnContainer,
                               height: 1.5,
                             ),
                           ),
@@ -104,7 +109,7 @@ class DisclaimerScreen extends StatelessWidget {
                             'make or support any recommendation or decision '
                             'about treatment.',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color:  const Color(0xFF993C1D),
+                              color:  MERColours.cautionOnContainer,
                               height: 1.5,
                             ),
                           ),
@@ -360,7 +365,7 @@ class _DisclaimerBullet extends StatelessWidget {
             '•  ',
             style: TextStyle(
               fontSize: 18,
-              color:    MERColours.textMuted,
+              color:    MERColours.onSurfaceMuted,
             ),
           ),
           Expanded(

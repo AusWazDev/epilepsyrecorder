@@ -79,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// ⛔ THE FLASH IS RATE-BOUNDED. AUDIT.md §13(ah).
   ///
   /// `_buttonFlash` swaps this button's fill to white, a **76.4% of full-scale
-  /// luminance change** against `MERColours.alert`. Measured 8 Sep 2026: with
+  /// luminance change** against the capture fill — `MERColours.alert` when this
+  /// was measured, `MERColours.captureFill` since 13 Sep 2026, same value
+  /// `#E05B3A`. Measured 8 Sep 2026: with
   /// only the 200 ms hold below, taps spaced 200-333 ms apart produced **four
   /// onsets per second**, over WCAG 2.3.1's three-per-second threshold. Flutter's
   /// own `kDoubleTapTimeout` is **300 ms**, inside that band.
@@ -1117,11 +1119,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         if (!_notificationsAllowed && !Platform.isWindows) ...[
                           _SettingsNudgeCard(
                             icon:      Icons.notifications_off_outlined,
-                            iconColor: const Color(0xFFF57C00),
+                            iconColor: MERColours.cautionAccent,
                             title:    'Notifications are off',
                             body:     'Quick log won\'t work until notifications are enabled.',
-                            bgColor:  const Color(0xFFFFF3E0),
-                            bdColor:  const Color(0xFFFFB74D),
+                            bgColor:  MERColours.cautionContainer,
+                            bdColor:  MERColours.cautionAccent,
                             onOpenSettings: _openNotificationSettings,
                             onHelp:         _openHelp,
                           ),
@@ -1129,11 +1131,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ] else if (!_showPreviewsAlways && Platform.isIOS) ...[
                           _SettingsNudgeCard(
                             icon:      Icons.lock_outlined,
-                            iconColor: const Color(0xFF1976D2),
+                            iconColor: MERColours.infoAccent,
                             title:    'Starting events from the lock screen requires a password',
                             body:     'Set Show Previews to Always for instant lock screen logging — no authentication needed to start.',
-                            bgColor:  const Color(0xFFE3F2FD),
-                            bdColor:  const Color(0xFF90CAF9),
+                            bgColor:  MERColours.infoContainer,
+                            bdColor:  MERColours.infoAccent,
                             onOpenSettings: _openNotificationSettings,
                             onHelp:         _openHelp,
                           ),
@@ -1179,8 +1181,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _buttonFlash
                                   ? Colors.white
-                                  : MERColours.alert,
-                              foregroundColor: Colors.white,
+                                  : MERColours.captureFill,
+                              foregroundColor: MERColours.onCapture,
                               elevation:       0,
                               padding: const EdgeInsets.symmetric(
                                 vertical: 36,
@@ -1351,9 +1353,9 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
       decoration: BoxDecoration(
-        color:        const Color(0xFFFFEBEE),
+        color:        MERColours.criticalContainer,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEF9A9A)),
+        border: Border.all(color: MERColours.criticalAccent),
       ),
       child: Row(
         children: [
@@ -1361,7 +1363,7 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
             width:  10,
             height: 10,
             decoration: const BoxDecoration(
-              color: Color(0xFFD32F2F),
+              color: MERColours.criticalAccent,
               shape: BoxShape.circle,
             ),
           ),
@@ -1375,14 +1377,14 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
                   style: TextStyle(
                     fontSize:   14,
                     fontWeight: FontWeight.w700,
-                    color:      Color(0xFFB71C1C),
+                    color:      MERColours.criticalOnContainer,
                   ),
                 ),
                 Text(
                   'Started $timeStr · $elapsedStr ago',
                   style: const TextStyle(
                     fontSize: 12,
-                    color:    Color(0xFFD32F2F),
+                    color:    MERColours.criticalOnContainer,
                   ),
                 ),
                 // The iOS-only line that used to sit here — "End this event
@@ -1401,7 +1403,7 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
             FilledButton(
               onPressed: widget.onEnd,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFD32F2F),
+                backgroundColor: MERColours.criticalOnContainer,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 textStyle: const TextStyle(
                   fontSize:   13,
@@ -1452,9 +1454,9 @@ class _FailedWriteBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: MERColours.cautionContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFF9800), width: 0.5),
+        border: Border.all(color: MERColours.cautionAccent, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1463,7 +1465,7 @@ class _FailedWriteBanner extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.save_outlined,
-                  size: 20, color: Color(0xFFE65100)),
+                  size: 20, color: MERColours.cautionAccent),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1471,7 +1473,7 @@ class _FailedWriteBanner extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFE65100),
+                    color: MERColours.cautionOnContainer,
                   ),
                 ),
               ),
@@ -1491,7 +1493,7 @@ class _FailedWriteBanner extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
-              color: Color(0xFFE65100),
+              color: MERColours.cautionOnContainer,
             ),
           ),
           const SizedBox(height: 10),
@@ -1500,7 +1502,7 @@ class _FailedWriteBanner extends StatelessWidget {
             child: FilledButton(
               onPressed: retrying ? null : onRetry,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFE65100),
+                backgroundColor: MERColours.cautionOnContainer,
                 foregroundColor: Colors.white,
                 visualDensity: VisualDensity.compact,
               ),
@@ -1579,9 +1581,9 @@ class _StorageFallbackBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: MERColours.cautionContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFF9800), width: 0.5),
+        border: Border.all(color: MERColours.cautionAccent, width: 0.5),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1590,7 +1592,7 @@ class _StorageFallbackBanner extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.storage_outlined,
-                  size: 20, color: Color(0xFFE65100)),
+                  size: 20, color: MERColours.cautionAccent),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1598,7 +1600,7 @@ class _StorageFallbackBanner extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFE65100),
+                    color: MERColours.cautionOnContainer,
                   ),
                 ),
               ),
@@ -1612,7 +1614,7 @@ class _StorageFallbackBanner extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
-              color: Color(0xFFE65100),
+              color: MERColours.cautionOnContainer,
             ),
           ),
         ],
@@ -1638,9 +1640,9 @@ class _BackupReminderBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: MERColours.positiveContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF81C784), width: 0.5),
+        border: Border.all(color: MERColours.positiveAccent, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1649,7 +1651,7 @@ class _BackupReminderBanner extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Icon(Icons.backup_outlined,
-                  size: 20, color: Color(0xFF2E7D32)),
+                  size: 20, color: MERColours.positiveAccent),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1658,13 +1660,13 @@ class _BackupReminderBanner extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1B5E20),
+                    color: MERColours.positiveOnContainer,
                   ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.close, size: 18),
-                color: const Color(0xFF2E7D32),
+                color: MERColours.positiveAccent,
                 visualDensity: VisualDensity.compact,
                 onPressed: onDismiss,
                 tooltip: 'Dismiss',
@@ -1690,7 +1692,9 @@ class _BackupReminderBanner extends StatelessWidget {
           const Text(
             'A backup is your own copy — the only one that moves to a new '
             'device. Save it somewhere lasting.',
-            style: TextStyle(fontSize: 13, height: 1.4, color: Color(0xFF2E7D32)),
+            style: TextStyle(
+                fontSize: 13, height: 1.4,
+                color: MERColours.positiveOnContainer),
           ),
           const SizedBox(height: 10),
           Align(
@@ -1826,7 +1830,7 @@ class _StatsRow extends StatelessWidget {
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: MERColours.border,
+          color: MERColours.outline,
           width: 0.5,
         ),
       ),
@@ -1839,9 +1843,10 @@ class _StatsRow extends StatelessWidget {
           _StatCell(
             value:      thisMonth.toString(),
             label:      'This month',
-            valueColor: thisMonth > 0
-                ? MERColours.alert
-                : MERColours.primary,
+            // ⭐ NO LONGER ALERT-COLOURED, 13 Sep 2026. §13(k): a count
+            // rendered in alarm colour is the app having an opinion about how
+            // many events you had, on a tool positioned as capture-only.
+            valueColor: MERColours.onSurface,
           ),
           _StatDivider(),
           _StatCell(
@@ -1894,7 +1899,7 @@ class _StatCell extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 9,
-              color:    MERColours.textMuted,
+              color:    MERColours.onSurfaceMuted,
             ),
           ),
         ],
@@ -1909,7 +1914,7 @@ class _StatDivider extends StatelessWidget {
     return Container(
       width:  0.5,
       height: 36,
-      color:  MERColours.border,
+      color:  MERColours.outline,
     );
   }
 }
@@ -1944,7 +1949,7 @@ class _LastEventCard extends StatelessWidget {
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: MERColours.border,
+          color: MERColours.outline,
           width: 0.5,
         ),
       ),
@@ -1963,7 +1968,7 @@ class _LastEventCard extends StatelessWidget {
               const Icon(
                 Icons.access_time_rounded,
                 size:  14,
-                color: MERColours.textMuted,
+                color: MERColours.onSurfaceMuted,
               ),
             ],
           ),
@@ -1975,7 +1980,7 @@ class _LastEventCard extends StatelessWidget {
             style: const TextStyle(
               fontSize:   13,
               fontWeight: FontWeight.w500,
-              color:      MERColours.textPrimary,
+              color:      MERColours.onSurface,
             ),
           ),
           const SizedBox(height: 2),
@@ -1983,7 +1988,7 @@ class _LastEventCard extends StatelessWidget {
             'Tap edit to update details',
             style: TextStyle(
               fontSize:  10,
-              color:     MERColours.textMuted.withOpacity(0.7),
+              color:     MERColours.onSurfaceMuted.withOpacity(0.7),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -2000,10 +2005,10 @@ class _LastEventCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 9),
                     decoration: BoxDecoration(
-                      color:        MERColours.background,
+                      color:        MERColours.surfaceSunken,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: MERColours.border,
+                        color: MERColours.outline,
                         width: 0.5,
                       ),
                     ),
@@ -2095,7 +2100,7 @@ class _HelpLinkCard extends StatelessWidget {
       decoration: BoxDecoration(
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.border, width: 0.5),
+        border: Border.all(color: MERColours.outline, width: 0.5),
       ),
       child: InkWell(
         onTap:        onTap,
@@ -2105,18 +2110,18 @@ class _HelpLinkCard extends StatelessWidget {
           child: Row(
             children: [
               Icon(Icons.help_outline,
-                  size: 18, color: MERColours.textMuted),
+                  size: 18, color: MERColours.onSurfaceMuted),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Need Help with MER?',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: MERColours.textMuted,
+                    color: MERColours.onSurfaceMuted,
                   ),
                 ),
               ),
               Icon(Icons.chevron_right,
-                  size: 18, color: MERColours.textMuted),
+                  size: 18, color: MERColours.onSurfaceMuted),
             ],
           ),
         ),

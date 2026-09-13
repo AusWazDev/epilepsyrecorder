@@ -127,7 +127,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
                     child: Text(
                       'This needs the app database, which could not be opened '
                       'on this launch. Your records are unaffected.',
-                      style: TextStyle(color: MERColours.textMuted),
+                      style: TextStyle(color: MERColours.onSurfaceMuted),
                     ),
                   ),
                 ..._conditionsSection(),
@@ -225,7 +225,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
   Widget _typeRow(VocabularyEntry t) => Container(
         decoration: const BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: MERColours.border, width: 0.5)),
+              Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
         child: Row(
@@ -233,7 +233,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
             Expanded(
               child: Text(t.label,
                   style: const TextStyle(
-                      fontSize: 15, color: MERColours.textPrimary)),
+                      fontSize: 15, color: MERColours.onSurface)),
             ),
             DropdownButton<int?>(
               value: _conditions.any((c) => c.id == t.conditionId)
@@ -241,7 +241,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
                   : null,
               underline: const SizedBox.shrink(),
               hint: const Text('Not set',
-                  style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+                  style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
               items: <DropdownMenuItem<int?>>[
                 const DropdownMenuItem<int?>(
                   value: null,
@@ -270,11 +270,11 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: MERColours.textPrimary)),
+                    color: MERColours.onSurface)),
             const SizedBox(height: 2),
             Text(blurb,
                 style: const TextStyle(
-                    fontSize: 12, color: MERColours.textMuted)),
+                    fontSize: 12, color: MERColours.onSurfaceMuted)),
           ],
         ),
       );
@@ -282,7 +282,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
   Widget _row({required String title, required String subtitle}) => Container(
         decoration: const BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: MERColours.border, width: 0.5)),
+              Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
         child: Column(
@@ -290,11 +290,11 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
           children: [
             Text(title,
                 style: const TextStyle(
-                    fontSize: 15, color: MERColours.textPrimary)),
+                    fontSize: 15, color: MERColours.onSurface)),
             const SizedBox(height: 2),
             Text(subtitle,
                 style: const TextStyle(
-                    fontSize: 12, color: MERColours.textMuted)),
+                    fontSize: 12, color: MERColours.onSurfaceMuted)),
           ],
         ),
       );
@@ -313,7 +313,7 @@ class _Explainer extends StatelessWidget {
           children: [
             Text(
               'Name what you track, and say which event types belong to each.',
-              style: TextStyle(fontSize: 14, color: MERColours.textPrimary),
+              style: TextStyle(fontSize: 14, color: MERColours.onSurface),
             ),
             SizedBox(height: 6),
             Text(
@@ -321,7 +321,7 @@ class _Explainer extends StatelessWidget {
               'already recorded is changed or reassigned by anything on this '
               'screen. Recording an event still takes one tap and never asks '
               'which condition it was.',
-              style: TextStyle(fontSize: 13, color: MERColours.textMuted),
+              style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted),
             ),
           ],
         ),

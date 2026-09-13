@@ -136,7 +136,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
               children: [
                 _HelpRow(
                   icon:      Icons.circle,
-                  iconColor: Color(0xFFD32F2F),
+                  iconColor: MERColours.criticalAccent,
                   title:     'Quick record',
                   // Accurate before and after the nullable work — a quick record now
                   // genuinely carries a timestamp and nothing else. What it lacked was
@@ -279,7 +279,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
                 _HelpRow(
                   icon:      Icons.delete_forever_outlined,
-                  iconColor: const Color(0xFFD32F2F),
+                  iconColor: MERColours.criticalAccent,
                   title:     'Deleting the app deletes your events',
                   body:      Platform.isIOS
                       ? 'Deleting Medical Event Recorder removes every event stored on this device. '
@@ -291,7 +291,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
                 const _HelpRow(
                   icon:      Icons.phonelink_setup_outlined,
-                  iconColor: Color(0xFF388E3C),
+                  iconColor: MERColours.positiveAccent,
                   title:     'Moving to a new phone is different',
                   body:      'Your events are included in a normal device backup. Restoring that '
                              'backup onto a new phone brings them across with the app. '
@@ -300,7 +300,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
                 const _HelpRow(
                   icon:      Icons.compare_arrows,
-                  iconColor: Color(0xFF1976D2),
+                  iconColor: MERColours.infoAccent,
                   title:     'Export and backup do different jobs',
                   // Mirrors the Your data screen's own framing deliberately, so
                   // the two cannot drift, and points at that screen rather than
@@ -313,7 +313,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
                 const _HelpRow(
                   icon:      Icons.save_alt,
-                  iconColor: Color(0xFF1976D2),
+                  iconColor: MERColours.infoAccent,
                   title:     'A backup file is the only copy you control',
                   body:      'Exporting or backing up is the only way to keep your events '
                              'independently of this device. Save the file somewhere else — a '
@@ -568,7 +568,7 @@ class _StandingSwitch extends StatelessWidget {
                     'recorded without unlocking the phone.'
                 : 'Off. Events are still recorded in the app, and an event in '
                     'progress still shows its controls.',
-            style: const TextStyle(fontSize: 12, color: MERColours.textMuted),
+            style: const TextStyle(fontSize: 12, color: MERColours.onSurfaceMuted),
           ),
         ),
       ),
@@ -625,7 +625,7 @@ class _StatusBand extends StatelessWidget {
       decoration: BoxDecoration(
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.border, width: 0.5),
+        border: Border.all(color: MERColours.outline, width: 0.5),
       ),
       child: Column(children: rows),
     );
@@ -653,7 +653,11 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colour = ok ? const Color(0xFF388E3C) : const Color(0xFFF57C00);
+    // Text AND the dot take the onContainer value: it clears 4.5 for the
+    // text (rows 14 and 23) and 3.0 for the dot (row 15) in one token.
+    final colour = ok
+        ? MERColours.positiveOnContainer
+        : MERColours.cautionOnContainer;
     return InkWell(
       // Tappable in BOTH states, deliberately: someone whose setting is correct
       // may still want the Settings page, and a row that is only sometimes a
@@ -671,7 +675,7 @@ class _StatusRow extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color:      MERColours.textPrimary,
+                  color:      MERColours.onSurface,
                 ),
               ),
             ),
@@ -739,7 +743,7 @@ class _SectionState extends State<_Section> {
       decoration: BoxDecoration(
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.border, width: 0.5),
+        border: Border.all(color: MERColours.outline, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -758,7 +762,7 @@ class _SectionState extends State<_Section> {
                   Icon(
                     _open ? Icons.expand_less : Icons.expand_more,
                     size:  22,
-                    color: MERColours.textMuted,
+                    color: MERColours.onSurfaceMuted,
                   ),
                 ],
               ),
@@ -825,7 +829,7 @@ class _HelpRow extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color:      MERColours.textPrimary,
+                      color:      MERColours.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -839,7 +843,7 @@ class _HelpRow extends StatelessWidget {
             ),
             if (onTap != null)
               const Icon(Icons.chevron_right,
-                  size: 18, color: MERColours.textMuted),
+                  size: 18, color: MERColours.onSurfaceMuted),
           ],
         );
 
@@ -858,7 +862,7 @@ class _HelpRow extends StatelessWidget {
           ),
         if (!isLast) ...[
           const SizedBox(height: 10),
-          const Divider(height: 1, thickness: 0.5, color: MERColours.border),
+          const Divider(height: 1, thickness: 0.5, color: MERColours.outline),
           const SizedBox(height: 10),
         ],
       ],

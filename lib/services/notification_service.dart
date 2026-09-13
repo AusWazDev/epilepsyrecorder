@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart' show Color;
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+
+import '../theme/mer_theme.dart';
 
 // constants.dart is gone too: kEventStorageKey was the only thing this file
 // took from it, and nothing here names the record store any more.
@@ -86,7 +87,7 @@ class NotificationService {
             playSound:          false,
             enableVibration:    false,
             defaultPrivacy:     NotificationPrivacy.Public,
-            defaultColor:       const Color(0xFF0D4F82),
+            defaultColor:       MERColours.primary,
           ),
           NotificationChannel(
             channelKey:         _chanFeedback,
@@ -94,7 +95,7 @@ class NotificationService {
             channelDescription: 'Confirmation shown after a quick log action',
             importance:         NotificationImportance.High,
             defaultPrivacy:     NotificationPrivacy.Public,
-            defaultColor:       const Color(0xFF0D4F82),
+            defaultColor:       MERColours.primary,
           ),
         ],
       );
@@ -148,7 +149,7 @@ class NotificationService {
           playSound:          false,
           enableVibration:    false,
           defaultPrivacy:     NotificationPrivacy.Public,
-          defaultColor:       const Color(0xFF0D4F82),
+          defaultColor:       MERColours.primary,
         ),
         NotificationChannel(
           channelKey:         _chanFeedback,
@@ -478,7 +479,7 @@ class NotificationService {
           body:               body,
           notificationLayout: NotificationLayout.BigText,
           largeIcon:          'resource://drawable/ic_notification_large',
-          color:              const Color(0xFF0D4F82),
+          color:              MERColours.primary,
           autoDismissible:    true,
           timeoutAfter:       Platform.isAndroid ? timeout : null,
           payload:            payload,

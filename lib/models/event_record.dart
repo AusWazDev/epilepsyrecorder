@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import '../constants.dart';
 import 'duration_format.dart';
 import 'medication_note.dart';
+import '../theme/mer_theme.dart';
 import 'vocabulary.dart';
 import 'vocabulary_store.dart';
 
@@ -1533,13 +1534,13 @@ Future<void> showExportOptions(
                 width:  36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color:        const Color(0xFFEAF4FB),
+                  color:        MERColours.infoContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.ios_share,
                   size:  18,
-                  color: Color(0xFF1A8FCB),
+                  color: MERColours.infoAccent,
                 ),
               ),
               title: const Text(
@@ -1575,13 +1576,13 @@ Future<void> showExportOptions(
                   width:  36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color:        const Color(0xFFEAF4FB),
+                    color:        MERColours.infoContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.save_alt,
                     size:  18,
-                    color: Color(0xFF1A8FCB),
+                    color: MERColours.infoAccent,
                   ),
                 ),
                 title: const Text(
@@ -1610,20 +1611,24 @@ Future<void> showExportOptions(
                 width:  36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color:        const Color(0xFFFAECE7),
+                  // ⛔ A DISMISSAL IS NOT A DESTRUCTIVE ACT. This was the
+                  // seizure tint with an `alert` glyph; red-orange on Cancel
+                  // is the same category error as mapping a seizure to
+                  // critical.
+                  color:        MERColours.surfaceSunken,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.close,
                   size:  18,
-                  color: Color(0xFFE05B3A),
+                  color: MERColours.onSurfaceMuted,
                 ),
               ),
               title: const Text(
                 'Cancel',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  color:      Color(0xFFE05B3A),
+                  color:      MERColours.onSurfaceMuted,
                 ),
               ),
               onTap: () => Navigator.pop(ctx),

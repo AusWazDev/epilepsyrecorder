@@ -397,7 +397,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: MERColours.background,
+      backgroundColor: MERColours.surfaceSunken,
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.75,
@@ -684,7 +684,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: MERColours.alert,
+                        color: MERColours.infoAccent,
                         shape: BoxShape.circle,
                       ),
                       constraints:
@@ -908,7 +908,7 @@ class _NeedsDetailsChip extends StatelessWidget {
           color: selected ? MERColours.primary : MERColours.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? MERColours.primary : MERColours.border,
+            color: selected ? MERColours.primary : MERColours.outline,
             width: selected ? 1.5 : 0.5,
           ),
         ),
@@ -924,7 +924,7 @@ class _NeedsDetailsChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? Colors.white : MERColours.textPrimary,
+                color: selected ? Colors.white : MERColours.onSurface,
               ),
             ),
           ],
@@ -970,13 +970,16 @@ class _AppliedFiltersBanner extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
         decoration: BoxDecoration(
-          color: MERColours.alert.withValues(alpha: 0.10),
+          // ⭐ A TOKEN, NOT A COMPOSITE. This was `alert` at 10% alpha,
+          // which is an untokened colour nothing can assert. A banner whose
+          // job is to say a filter is on is informational.
+          color: MERColours.infoContainer,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: MERColours.alert, width: 1),
+          border: Border.all(color: MERColours.infoAccent, width: 1),
         ),
         child: Row(
           children: [
-            const Icon(Icons.filter_alt, size: 18, color: MERColours.alert),
+            const Icon(Icons.filter_alt, size: 18, color: MERColours.infoAccent),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -986,14 +989,14 @@ class _AppliedFiltersBanner extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: MERColours.alert,
+                  color: MERColours.infoOnContainer,
                 ),
               ),
             ),
             TextButton(
               onPressed: onClear,
               style: TextButton.styleFrom(
-                foregroundColor: MERColours.alert,
+                foregroundColor: MERColours.infoOnContainer,
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
@@ -1024,13 +1027,13 @@ class _EventTypeFilterChips extends StatelessWidget {
   Color _activeColor(String value) {
     switch (value) {
       case kTypeSeizure:
-        return MERColours.alert;
+        return MERColours.identitySeizureOn;
       case kTypeAbsence:
-        return MERColours.action;
+        return MERColours.identityAbsenceOn;
       case kTypeMedication:
-        return MERColours.success;
+        return MERColours.identityMedicationOn;
       default:
-        return MERColours.textMuted;
+        return MERColours.identityOtherOn;
     }
   }
 
@@ -1059,7 +1062,7 @@ class _EventTypeFilterChips extends StatelessWidget {
                   : MERColours.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? colour : MERColours.border,
+                color: isSelected ? colour : MERColours.outline,
                 width: isSelected ? 1.5 : 0.5,
               ),
             ),
@@ -1072,7 +1075,7 @@ class _EventTypeFilterChips extends StatelessWidget {
                     : FontWeight.w400,
                 color: isSelected
                     ? Colors.white
-                    : MERColours.textMuted,
+                    : MERColours.onSurfaceMuted,
               ),
             ),
           ),
@@ -1264,7 +1267,7 @@ class _EventListTile extends StatelessWidget {
               gaps,
               style: const TextStyle(
                 fontSize: 12,
-                color: MERColours.textMuted,
+                color: MERColours.onSurfaceMuted,
               ),
             ),
           ],
@@ -1309,26 +1312,26 @@ class _EventTypeBadge extends StatelessWidget {
   Color get _bg {
     switch (type) {
       case kTypeSeizure:
-        return const Color(0xFFFAECE7);
+        return MERColours.identitySeizureContainer;
       case kTypeAbsence:
-        return const Color(0xFFEAF4FB);
+        return MERColours.identityAbsenceContainer;
       case kTypeMedication:
-        return const Color(0xFFEAF3DE);
+        return MERColours.identityMedicationContainer;
       default:
-        return const Color(0xFFF1EFE8);
+        return MERColours.identityOtherContainer;
     }
   }
 
   Color get _fg {
     switch (type) {
       case kTypeSeizure:
-        return const Color(0xFF993C1D);
+        return MERColours.identitySeizureOn;
       case kTypeAbsence:
-        return const Color(0xFF185FA5);
+        return MERColours.identityAbsenceOn;
       case kTypeMedication:
-        return const Color(0xFF3B6D11);
+        return MERColours.identityMedicationOn;
       default:
-        return const Color(0xFF5F5E5A);
+        return MERColours.identityOtherOn;
     }
   }
 

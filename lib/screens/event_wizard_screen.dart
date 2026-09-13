@@ -456,7 +456,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           const SizedBox(height: 6),
           Text(hint,
               style: const TextStyle(
-                  fontSize: 14, color: MERColours.textMuted)),
+                  fontSize: 14, color: MERColours.onSurfaceMuted)),
           const SizedBox(height: 20),
         ],
       );
@@ -472,7 +472,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               child: Text(
                 'Recorded as ${durationLabel(_bucket!)}',
                 style: const TextStyle(
-                    fontSize: 13, color: MERColours.textMuted),
+                    fontSize: 13, color: MERColours.onSurfaceMuted),
               ),
             ),
           Row(
@@ -534,7 +534,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           // record" — a record is one event, so that phrasing implies a
           // record contains several.
           const Text('Compared with the others here',
-              style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+              style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
           const SizedBox(height: 10),
           _chips<EventSeverity>(
             EventSeverity.values,
@@ -640,7 +640,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           ..._rescueSection(),
           const SizedBox(height: 24),
           const Text('Medical referral required?',
-              style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+              style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
           const SizedBox(height: 10),
           _chips<bool>(
             const [false, true],
@@ -685,7 +685,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     final showChildren = rescueChildrenVisible(_draftForVisibility());
     return <Widget>[
       const Text('Rescue medication given?',
-          style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+          style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
       const SizedBox(height: 10),
       _chips<bool>(
         const [false, true],
@@ -705,7 +705,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       if (showChildren) ...<Widget>[
         const SizedBox(height: 16),
         const Text('Did it help?',
-            style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+            style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
         const SizedBox(height: 10),
         _chips<RescueResponse>(
           RescueResponse.values,
@@ -715,7 +715,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         ),
         const SizedBox(height: 16),
         const Text('Was a second dose needed?',
-            style: TextStyle(fontSize: 14, color: MERColours.textMuted)),
+            style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
         const SizedBox(height: 10),
         _chips<bool>(
           const [false, true],
@@ -850,7 +850,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: MERColours.textMuted),
+                  color: MERColours.onSurfaceMuted),
             ),
           ),
           Wrap(

@@ -72,7 +72,7 @@ class YourDataScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         height: 1.45,
-                        color: MERColours.textMuted,
+                        color: MERColours.onSurfaceMuted,
                       ),
                     ),
                   ),
@@ -140,7 +140,7 @@ class YourDataScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         height: 1.45,
-                        color: MERColours.textMuted,
+                        color: MERColours.onSurfaceMuted,
                       ),
                     ),
                   ),
@@ -188,7 +188,7 @@ class _DataCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: MERColours.border),
+        border: Border.all(color: MERColours.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +201,7 @@ class _DataCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   // An existing token rather than primary.withOpacity(): no new
                   // colour literal, and withOpacity is deprecated.
-                  color: MERColours.background,
+                  color: MERColours.surfaceSunken,
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Icon(icon, size: 19, color: MERColours.primary),
@@ -213,7 +213,7 @@ class _DataCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
-                    color: MERColours.textPrimary,
+                    color: MERColours.onSurface,
                   ),
                 ),
               ),
@@ -226,7 +226,7 @@ class _DataCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.45,
-                color: MERColours.textMuted,
+                color: MERColours.onSurfaceMuted,
               ),
             ),
             const SizedBox(height: 10),

@@ -21,7 +21,8 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 /// beyond reaching Home once.
 ///
 /// `_buttonFlash` swaps the fill to white — a 76.4% of full-scale luminance
-/// change against `MERColours.alert`. With only the 200 ms hold, taps spaced
+/// change against the capture fill — `MERColours.alert` when this was
+/// measured, `MERColours.captureFill` since 13 Sep 2026, same value `#E05B3A`. With only the 200 ms hold, taps spaced
 /// 200-333 ms apart produced FOUR onsets per second, over WCAG 2.3.1's
 /// three-per-second threshold. Flutter's own `kDoubleTapTimeout` is 300 ms,
 /// which falls inside that band.

@@ -136,7 +136,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                     child: Text(
                       'Medication notes need the app database, which could not '
                       'be opened on this launch. Your events are unaffected.',
-                      style: TextStyle(color: MERColours.textMuted),
+                      style: TextStyle(color: MERColours.onSurfaceMuted),
                     ),
                   )
                 else if (_notes.isEmpty)
@@ -149,7 +149,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                           'That is the normal state — this list is only for '
                           'doses you missed, took late, or changed.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: MERColours.textMuted),
+                          style: TextStyle(color: MERColours.onSurfaceMuted),
                         ),
                       ),
                     ),
@@ -306,7 +306,7 @@ class _RecordSheetState extends State<_RecordSheet> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
           const Text('What happened?',
-              style: TextStyle(fontSize: 13, color: MERColours.textMuted)),
+              style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -320,7 +320,7 @@ class _RecordSheetState extends State<_RecordSheet> {
           ),
           const SizedBox(height: 16),
           const Text('When?',
-              style: TextStyle(fontSize: 13, color: MERColours.textMuted)),
+              style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted)),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _pickWhen,

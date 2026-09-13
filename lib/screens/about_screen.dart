@@ -351,7 +351,7 @@ class _LinkRow extends StatelessWidget {
           Divider(
             height:    1,
             thickness: 0.5,
-            color:     MERColours.border,
+            color:     MERColours.outline,
           ),
       ],
     );
@@ -408,7 +408,7 @@ class _InfoRow extends StatelessWidget {
                   value,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color:      MERColours.textPrimary,
+                    color:      MERColours.onSurface,
                   ),
                 ),
               ),
@@ -419,7 +419,7 @@ class _InfoRow extends StatelessWidget {
           Divider(
             height:    1,
             thickness: 0.5,
-            color:     MERColours.border,
+            color:     MERColours.outline,
           ),
       ],
     );

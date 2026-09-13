@@ -597,7 +597,7 @@ appBar: AppBar(
                               'Recorded as ${durationLabel(_duration!)}',
                               style: const TextStyle(
                                 fontSize: 13,
-                                color: MERColours.textMuted,
+                                color: MERColours.onSurfaceMuted,
                               ),
                             ),
                           ),
@@ -651,16 +651,23 @@ appBar: AppBar(
                           options:    EventSeverity.values,
                           selected:   _severity,
                           labelFor:   severityLabel,
-                          colorFor:   (s) {
-                            switch (s) {
-                              case EventSeverity.mild:
-                                return MERColours.action;
-                              case EventSeverity.moderate:
-                                return MERColours.warning;
-                              case EventSeverity.severe:
-                                return MERColours.alert;
-                            }
-                          },
+                          // ⛔ NO `colorFor`. The three bespoke fills are
+                          // retired, 13 Sep 2026, and the row takes the same
+                          // selection treatment as every other single-select:
+                          // `primary` fill, white label, 8.54.
+                          //
+                          // They were mild `#1A8FCB`, moderate `#BA7517` and
+                          // severe `#E05B3A`, each behind a WHITE 13 px w600
+                          // label at 3.60, 3.72 and 3.67 — three live 4.5
+                          // failures that no sweep had seen, because a
+                          // foreground-on-background sweep enumerates text
+                          // pairs and cannot see a fill.
+                          //
+                          // ⭐ AND SEVERITY IS NOT IDENTITY. The event-type
+                          // colour travels with the record — it is the badge
+                          // on every History row. Severity's colour existed
+                          // only here, so it was selection feedback done
+                          // bespoke, not a category mark.
                           onSelected: (s) => setState(() => _severity = s),
                         ),
                         const SizedBox(height: 20),
@@ -878,7 +885,7 @@ class _SectionHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 13, color: MERColours.textMuted),
+      style: const TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted),
     );
   }
 }
@@ -999,13 +1006,13 @@ class _EventTypeButton extends StatelessWidget {
   Color get _selectedColor {
     switch (type) {
       case kTypeSeizure:
-        return MERColours.alert;
+        return MERColours.identitySeizureOn;
       case kTypeAbsence:
-        return MERColours.action;
+        return MERColours.identityAbsenceOn;
       case kTypeMedication:
-        return MERColours.success;
+        return MERColours.identityMedicationOn;
       default:
-        return MERColours.textMuted;
+        return MERColours.identityOtherOn;
     }
   }
 
@@ -1022,7 +1029,7 @@ class _EventTypeButton extends StatelessWidget {
               : MERColours.surface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? _selectedColor : MERColours.border,
+            color: isSelected ? _selectedColor : MERColours.outline,
             width: isSelected ? 1.5 : 0.5,
           ),
         ),
@@ -1031,7 +1038,7 @@ class _EventTypeButton extends StatelessWidget {
             Icon(
               _icon,
               size: 18,
-              color: isSelected ? _selectedColor : MERColours.textMuted,
+              color: isSelected ? _selectedColor : MERColours.onSurfaceMuted,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -1044,7 +1051,7 @@ class _EventTypeButton extends StatelessWidget {
                       : FontWeight.w400,
                   color: isSelected
                       ? _selectedColor
-                      : MERColours.textPrimary,
+                      : MERColours.onSurface,
                 ),
               ),
             ),
@@ -1120,7 +1127,7 @@ class _SelectionRow<T> extends StatelessWidget {
                       : MERColours.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? colour : MERColours.border,
+                    color: isSelected ? colour : MERColours.outline,
                     width: isSelected ? 1.5 : 0.5,
                   ),
                 ),
@@ -1134,7 +1141,7 @@ class _SelectionRow<T> extends StatelessWidget {
                         : FontWeight.w500,
                     color: isSelected
                         ? Colors.white
-                        : MERColours.textMuted,
+                        : MERColours.onSurfaceMuted,
                   ),
                 ),
                 ),
@@ -1223,7 +1230,7 @@ class _SelectionWrap extends StatelessWidget {
               border: Border.all(
                 color: isSelected
                     ? MERColours.primary
-                    : MERColours.border,
+                    : MERColours.outline,
                 width: isSelected ? 1.5 : 0.5,
               ),
             ),
@@ -1236,7 +1243,7 @@ class _SelectionWrap extends StatelessWidget {
                     : FontWeight.w400,
                 color: isSelected
                     ? Colors.white
-                    : MERColours.textPrimary,
+                    : MERColours.onSurface,
               ),
             ),
           ),
@@ -1255,7 +1262,7 @@ class _SelectionWrap extends StatelessWidget {
               decoration: BoxDecoration(
                 color: MERColours.surface,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: MERColours.border, width: 0.5),
+                border: Border.all(color: MERColours.outline, width: 0.5),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

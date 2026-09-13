@@ -104,12 +104,12 @@ class OccurredAtField extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: MERColours.textPrimary)),
+                        color: MERColours.onSurface)),
                 const SizedBox(height: 2),
                 Text(
                   _fmt.format(value ?? fallback),
                   style: const TextStyle(
-                      fontSize: 15, color: MERColours.textPrimary),
+                      fontSize: 15, color: MERColours.onSurface),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -122,7 +122,7 @@ class OccurredAtField extends StatelessWidget {
                       : 'The time this was recorded. Change it if it happened '
                           'earlier.',
                   style: const TextStyle(
-                      fontSize: 11, color: MERColours.textMuted),
+                      fontSize: 11, color: MERColours.onSurfaceMuted),
                 ),
               ],
             ),

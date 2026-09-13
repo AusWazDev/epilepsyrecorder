@@ -221,7 +221,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                 'Your lists need the app database, which could not be opened '
                 'on this launch. Changes here will not be kept. Your records '
                 'are unaffected.',
-                style: TextStyle(color: MERColours.textMuted),
+                style: TextStyle(color: MERColours.onSurfaceMuted),
               ),
             ),
           for (final s in _kSections) ..._section(s),
@@ -241,7 +241,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       child: Container(
         decoration: const BoxDecoration(
           color: MERColours.surface,
-          border: Border(top: BorderSide(color: MERColours.border)),
+          border: Border(top: BorderSide(color: MERColours.outline)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
@@ -250,7 +250,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
               child: Text(
                 sel.isEmpty ? 'Select entries' : '${sel.length} selected',
                 style: const TextStyle(
-                    fontSize: 14, color: MERColours.textPrimary),
+                    fontSize: 14, color: MERColours.onSurface),
               ),
             ),
             // Each action is enabled only when the selection CONTAINS a row in
@@ -321,12 +321,12 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: MERColours.textPrimary)),
+                    color: MERColours.onSurface)),
             const SizedBox(height: 2),
             Text(
               hidden == 0 ? s.blurb : '${s.blurb}  $hidden hidden.',
               style:
-                  const TextStyle(fontSize: 12, color: MERColours.textMuted),
+                  const TextStyle(fontSize: 12, color: MERColours.onSurfaceMuted),
             ),
           ],
         ),
@@ -356,13 +356,13 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       child: Container(
         decoration: const BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: MERColours.border, width: 0.5)),
+              Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
           children: [
             Icon(isOpen ? Icons.expand_less : Icons.expand_more,
-                size: 20, color: MERColours.textMuted),
+                size: 20, color: MERColours.onSurfaceMuted),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -370,12 +370,12 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                 // never reads as "there might be something here".
                 '$count replaced by newer wording',
                 style: const TextStyle(
-                    fontSize: 14, color: MERColours.textMuted),
+                    fontSize: 14, color: MERColours.onSurfaceMuted),
               ),
             ),
             Text(isOpen ? 'Hide' : 'Show',
                 style: const TextStyle(
-                    fontSize: 14, color: MERColours.action)),
+                    fontSize: 14, color: MERColours.link)),
           ],
         ),
       ),
@@ -392,7 +392,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     return Container(
       decoration: const BoxDecoration(
         border:
-            Border(bottom: BorderSide(color: MERColours.border, width: 0.5)),
+            Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
       child: Row(
@@ -408,7 +408,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     color:
-                        visible ? MERColours.textPrimary : MERColours.textMuted,
+                        visible ? MERColours.onSurface : MERColours.onSurfaceMuted,
                   ),
                 ),
                 if (!visible)
@@ -418,11 +418,11 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                               'that use it'
                           : 'Hidden — still shown on records that use it',
                       style: const TextStyle(
-                          fontSize: 11, color: MERColours.textMuted)),
+                          fontSize: 11, color: MERColours.onSurfaceMuted)),
                 if (visible && e.isProtected)
                   const Text('Cannot be hidden',
                       style:
-                          TextStyle(fontSize: 11, color: MERColours.textMuted)),
+                          TextStyle(fontSize: 11, color: MERColours.onSurfaceMuted)),
               ],
             ),
           ),
@@ -437,7 +437,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
               child: Icon(Icons.lock_outline,
-                  size: 18, color: MERColours.textMuted),
+                  size: 18, color: MERColours.onSurfaceMuted),
             )
           else if (_selecting)
             Checkbox(
@@ -490,14 +490,14 @@ class _Explainer extends StatelessWidget {
         children: [
           Text(
             'Hiding stops an entry being offered when you record something new.',
-            style: TextStyle(fontSize: 14, color: MERColours.textPrimary),
+            style: TextStyle(fontSize: 14, color: MERColours.onSurface),
           ),
           SizedBox(height: 6),
           Text(
             'Nothing is deleted. Records that already use a hidden entry keep '
             'showing it, and it still appears in your exports. You can show it '
             'again at any time.',
-            style: TextStyle(fontSize: 13, color: MERColours.textMuted),
+            style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted),
           ),
         ],
       ),
