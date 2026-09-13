@@ -50,19 +50,36 @@ const List<double> kWidths = <double>[375, 430, 800];
 /// ⛔ BASELINE FROM UNPATCHED CODE, 11 Sep 2026 at 2a280ca, under Roboto, RECAPTURED 12 Sep 2026 when the date exclusion landed. `count|fnv1a64`.
 /// Regenerate ONLY when a change is MEANT to move text, and say so in the
 /// commit that does.
+///
+/// ⚠️ **HOME AND THE FORM RECAPTURED 13 September 2026 FOR C3, and this is the
+/// "change that is MEANT to move text" the line above anticipates.** Taking 26
+/// strokes from 0.5 logical to 1.0 adds height to every bordered box, and
+/// `Border.all` paints inside the box, so the boxes grow. **About and History
+/// are UNCHANGED and were not recaptured** — they carry no bordered box that
+/// moves, and leaving their baselines at 2a280ca keeps them proving what they
+/// always proved.
+///
+/// ⭐ **WHAT WAS CHECKED BEFORE RECAPTURING, because a hash cannot say it:**
+/// a fingerprint reports that something moved, never whether anything
+/// RESIZED. Every glyph box on home, the form and the vocabulary screen was
+/// compared before and after at all three widths — **528 boxes, 162
+/// translated, 0 resized.** Nothing wrapped, nothing clipped, no extent
+/// changed by so much as a tenth. Home's glyphs move BOTH ways (-2.0 to +1.5)
+/// because home is centred; see AUDIT.md §13(ac)'s annotation of the same
+/// date, which records that as standing brittleness rather than a C3 artefact.
 const Map<String, String> kBaseline = <String, String>{
   'about@375': '29|3315bff0702104a5',
   'about@430': '29|4c5c1897c3518a09',
   'about@800': '29|62f04e368eb08f4b',
-  'form@375': '111|48623f40c0bff4c3',
-  'form@430': '111|716e03dcbd6df0cf',
-  'form@800': '111|2120df4b0899ef6a',
+  'form@375': '111|2a5e4cf5e5a35247',
+  'form@430': '111|0e13ef3c55b5385f',
+  'form@800': '111|4c2c5fd1c2ca5dce',
   'history@375': '18|7e4a49c523f9c67a',
   'history@430': '18|1b97d4c28abbd2a3',
   'history@800': '18|419cbc150b5086a6',
-  'home@375': '26|66801323bbffb5f4',
-  'home@430': '26|37dfeee43d56fd2b',
-  'home@800': '26|70fa93c93f131f2e',
+  'home@375': '26|34eb1545537fcfdb',
+  'home@430': '26|62484c15cbf2e9da',
+  'home@800': '26|25479e4599efd869',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.

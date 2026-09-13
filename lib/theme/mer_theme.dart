@@ -173,7 +173,7 @@ class MERTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: MERColours.outline, width: 0.5),
+        side: const BorderSide(color: MERColours.outline, width: 1.0),
       ),
       margin: const EdgeInsets.symmetric(vertical: 4),
     ),
@@ -230,11 +230,11 @@ class MERTheme {
       fillColor: MERColours.surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: MERColours.outline, width: 0.5),
+        borderSide: const BorderSide(color: MERColours.outline, width: 1.0),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: MERColours.outline, width: 0.5),
+        borderSide: const BorderSide(color: MERColours.outline, width: 1.0),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -279,7 +279,7 @@ chipTheme: ChipThemeData(
         fontWeight: FontWeight.w600,
         color:      Colors.white,
       ),
-      side: const BorderSide(color: MERColours.outline, width: 0.5),
+      side: const BorderSide(color: MERColours.outline, width: 1.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -288,7 +288,7 @@ chipTheme: ChipThemeData(
 
     dividerTheme: const DividerThemeData(
       color:     MERColours.outline,
-      thickness: 0.5,
+      thickness: 1.0,
     ),
 
     snackBarTheme: SnackBarThemeData(

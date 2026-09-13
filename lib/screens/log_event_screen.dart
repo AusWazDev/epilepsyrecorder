@@ -1262,7 +1262,7 @@ class _SelectionWrap extends StatelessWidget {
               decoration: BoxDecoration(
                 color: MERColours.surface,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: MERColours.outline, width: 0.5),
+                border: Border.all(color: MERColours.outline, width: 1.0),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

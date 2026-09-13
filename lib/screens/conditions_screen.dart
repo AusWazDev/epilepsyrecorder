@@ -225,7 +225,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
   Widget _typeRow(VocabularyEntry t) => Container(
         decoration: const BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
+              Border(bottom: BorderSide(color: MERColours.outline, width: 1.0)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
         child: Row(
@@ -282,7 +282,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
   Widget _row({required String title, required String subtitle}) => Container(
         decoration: const BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
+              Border(bottom: BorderSide(color: MERColours.outline, width: 1.0)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
         child: Column(

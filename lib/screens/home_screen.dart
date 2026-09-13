@@ -1456,7 +1456,7 @@ class _FailedWriteBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: MERColours.cautionContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.cautionAccent, width: 0.5),
+        border: Border.all(color: MERColours.cautionAccent, width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1583,7 +1583,7 @@ class _StorageFallbackBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: MERColours.cautionContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.cautionAccent, width: 0.5),
+        border: Border.all(color: MERColours.cautionAccent, width: 1.0),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1642,7 +1642,7 @@ class _BackupReminderBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: MERColours.positiveContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.positiveAccent, width: 0.5),
+        border: Border.all(color: MERColours.positiveAccent, width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1831,7 +1831,7 @@ class _StatsRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: MERColours.outline,
-          width: 0.5,
+          width: 1.0,
         ),
       ),
       padding: const EdgeInsets.symmetric(
@@ -1912,7 +1912,7 @@ class _StatDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width:  0.5,
+      width:  1.0,
       height: 36,
       color:  MERColours.outline,
     );
@@ -1950,7 +1950,7 @@ class _LastEventCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: MERColours.outline,
-          width: 0.5,
+          width: 1.0,
         ),
       ),
       child: Column(
@@ -2009,7 +2009,7 @@ class _LastEventCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: MERColours.outline,
-                        width: 0.5,
+                        width: 1.0,
                       ),
                     ),
                     child: const Row(
@@ -2100,7 +2100,7 @@ class _HelpLinkCard extends StatelessWidget {
       decoration: BoxDecoration(
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.outline, width: 0.5),
+        border: Border.all(color: MERColours.outline, width: 1.0),
       ),
       child: InkWell(
         onTap:        onTap,

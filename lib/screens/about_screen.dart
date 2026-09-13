@@ -197,7 +197,7 @@ class AboutScreen extends StatelessWidget {
                             'LEGAL',
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
-                          const Divider(height: 20, thickness: 0.5),
+                          const Divider(height: 20, thickness: 1.0),
                           Text(
                             'For personal record‑keeping only. Not a medical '
                             'device. Does not diagnose, treat, or replace '
@@ -225,7 +225,7 @@ class AboutScreen extends StatelessWidget {
                               'APP DATA',
                               style: Theme.of(context).textTheme.labelLarge,
                             ),
-                            const Divider(height: 20, thickness: 0.5),
+                            const Divider(height: 20, thickness: 1.0),
                             Text(
                               'Reset clears all recorded events and shows the disclaimer again. This cannot be undone.',
                               style: Theme.of(context).textTheme.bodyMedium
@@ -350,7 +350,7 @@ class _LinkRow extends StatelessWidget {
         if (!isLast)
           Divider(
             height:    1,
-            thickness: 0.5,
+            thickness: 1.0,
             color:     MERColours.outline,
           ),
       ],
@@ -418,7 +418,7 @@ class _InfoRow extends StatelessWidget {
         if (!isLast)
           Divider(
             height:    1,
-            thickness: 0.5,
+            thickness: 1.0,
             color:     MERColours.outline,
           ),
       ],

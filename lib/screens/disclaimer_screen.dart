@@ -77,7 +77,7 @@ class DisclaimerScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: MERColours.cautionAccent,
-                          width: 0.5,
+                          width: 1.0,
                         ),
                       ),
                       child: Column(

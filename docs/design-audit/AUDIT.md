@@ -3124,6 +3124,44 @@ when that sentence was written. **Where two figures for the same quantity disagr
 before reconciling** — a reconciliation that is never checked is indistinguishable from one that
 is right, and this one survived three separate writings.
 
+⭐ **ANNOTATION, 13 September 2026 — THE CENTRING HAS A SECOND COST, AND IT IS NOT ABOUT VOID AT
+ALL. EVERY CONTENT CHANGE ON HOME MOVES EVERY GLYPH ON HOME.** Found while measuring something
+else: C3 took 26 strokes from 0.5 logical to 1.0, and the glyph-box comparison at 375x667 came
+back with **23 of home's 26 paragraphs translated**, against **0 on History and 0 on About**.
+
+**Nothing wrapped** — every moved box kept its width and height to one decimal, so this is pure
+translation, not reflow. **And the strokes are not the cause.** Home's body is a scroll view
+wrapping a viewport-height box, then a `Center`, then a `Column` with
+`MainAxisAlignment.center`. At 375x667 the content FITS, so it centres, and four bordered cards
+each gaining 1.0 logical grows the stack by roughly 4 — which a centred stack redistributes about
+its midpoint rather than absorbing at the bottom.
+
+⛔ **SO THE MOVEMENT IS SIGNED, AND THAT IS THE TELL.** Content above the midpoint moved UP and
+content below it moved DOWN, from a change that only ever ADDED height:
+
+    Record Event, Tap to timestamp now      -2.0     capture button
+    the three statistics and their labels   -1.5
+    LAST EVENT, its date, Tap edit          -0.5
+    All history / Edit details                 0     the midpoint
+    Need Help with MER?                     +1.5
+
+⭐ **THIS IS STANDING BRITTLENESS, NOT A C3 ARTEFACT.** Any future change to home's content — a
+banner appearing, a word wrapping, a card gaining a row — moves every glyph on the screen by half
+its height delta, in both directions. **A screen-comparison test against home therefore fails on
+changes that are visually irrelevant to the thing being tested**, and the failure names 23
+paragraphs rather than the one that changed.
+
+⚠️ **It is a SECOND and INDEPENDENT argument for anchoring home rather than centring it**, which
+§7 already recommends on the void. **The void argument is about how home LOOKS; this one is about
+how home BEHAVES under change**, and either alone is sufficient. ⛔ **Nothing here is superseded:
+the symmetric-void measurement above stands exactly as written, and this adds a consequence of the
+same centring rather than revising the finding.**
+
+⚠️ **Basis: widget-test glyph boxes at 375x667, one probe run before and one after, with a
+determinism control** — two runs of identical code returned 0 differences across all 184
+paragraphs on four screens, so the 23 are real and not probe noise. Per the harness rules above,
+glyph POSITION is exactly what a widget test is authoritative for.
+
 ---
 
 ### (ad) HISTORY IS UNSCANNABLE WHEN RECORDS RESEMBLE EACH OTHER

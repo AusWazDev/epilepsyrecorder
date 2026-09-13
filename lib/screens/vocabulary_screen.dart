@@ -356,7 +356,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
       child: Container(
         decoration: const BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
+              Border(bottom: BorderSide(color: MERColours.outline, width: 1.0)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
@@ -392,7 +392,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
     return Container(
       decoration: const BoxDecoration(
         border:
-            Border(bottom: BorderSide(color: MERColours.outline, width: 0.5)),
+            Border(bottom: BorderSide(color: MERColours.outline, width: 1.0)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
       child: Row(

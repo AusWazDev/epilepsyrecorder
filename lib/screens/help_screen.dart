@@ -625,7 +625,7 @@ class _StatusBand extends StatelessWidget {
       decoration: BoxDecoration(
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.outline, width: 0.5),
+        border: Border.all(color: MERColours.outline, width: 1.0),
       ),
       child: Column(children: rows),
     );
@@ -743,7 +743,7 @@ class _SectionState extends State<_Section> {
       decoration: BoxDecoration(
         color:        MERColours.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: MERColours.outline, width: 0.5),
+        border: Border.all(color: MERColours.outline, width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -862,7 +862,7 @@ class _HelpRow extends StatelessWidget {
           ),
         if (!isLast) ...[
           const SizedBox(height: 10),
-          const Divider(height: 1, thickness: 0.5, color: MERColours.outline),
+          const Divider(height: 1, thickness: 1.0, color: MERColours.outline),
           const SizedBox(height: 10),
         ],
       ],

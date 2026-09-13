@@ -105,10 +105,22 @@ void main() {
     // ⛔ CAPTURED FROM UNPATCHED CODE, so this passes in BOTH states. That is
     // what makes it a proof rather than a formality — the shape that has now
     // caught the difference three times.
+    //
+    // ⚠️ RECAPTURED 13 September 2026 FOR C3, and it caught that too, which is
+    // the fourth time. C3 took every list row's bottom border from 0.5 logical
+    // to 1.0, so each bordered row above a checkbox adds half a pixel beneath
+    // it. The movement is STRICTLY DOWNWARD and cumulative — measured over the
+    // whole screen: 25 of 35 glyph boxes moved, none upward, +0.5 at the first
+    // affected row rising to +5.5 at the last, and NOTHING RESIZED at 375, 430
+    // or 800. That is ordinary top-down accumulation, and it is a different
+    // shape from home's, where the centring makes glyphs move both ways.
+    //
+    // ⛔ The row at 302.0 is unchanged because no bordered row sits above it.
+    // A recapture that moved THAT one would not be this change.
     const baseline = <String>[
       '1144.0,302.0 48.0x48.0',
-      '1144.0,370.5 48.0x48.0',
-      '1144.0,496.5 48.0x48.0',
+      '1144.0,371.0 48.0x48.0',
+      '1144.0,498.0 48.0x48.0',
     ];
 
     final rects = <String>[];
