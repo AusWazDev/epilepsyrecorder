@@ -8679,3 +8679,113 @@ entry was written by the CLI from its own measurements at the developer's instru
 **Sourcing.** Rendered tree: scratch probe at 430×932, deleted. Pixel diff: the committed captures.
 Blend prediction and ratios: the §13(s) apparatus. Stroke widths: `mer_theme.dart` and
 `home_screen.dart`, read. Density: `captures/INDEX.md`. Inferred and marked: the 3× behaviour.
+
+---
+
+### (cl) 🔴 FOUR CLASSES OF CONTRAST FAILURE §13(s)'s METHOD COULD NOT REACH — SEVEN LIVE SITES, ONE CONTROL THAT RENDERS NOTHING
+
+⛔ **§13(s) IS NOT WRONG AND IS NOT ANNOTATED HERE. It measured what it says it measured — 28
+foreground-on-background TEXT PAIRS, named in the document — and every one of those figures stands.**
+This entry records failures that lay **outside its method**, not inside its errors. The distinction
+is the whole point: each class below is invisible to a text-pair sweep **by construction**, so no
+amount of care in running that sweep would have found any of them.
+
+Found 13 September 2026 by the Phase 1 colour work (`e96f5b3` C1, `0d57f09` C3, `2ea1fa4` C2,
+`1720ba2` K, and Brief L). Every ratio below is computed by the same sRGB apparatus §13(s) uses,
+with the `#767676` / `#777777` boundary control re-run first each time.
+
+#### The four classes
+
+**1. A FILL BEHIND A LABEL. A text-pair sweep enumerates foregrounds on backgrounds; it never asks
+what the background IS.** `warning` `#BA7517` was a token that could not legally be used as text at
+all, and its only job in the app was as a fill under a white label. ⭐ **It hid from TWO independent
+sweeps** — §13(w)'s and the colour specification's — because both were shaped as text pairs. Three
+live 4.5 failures sat behind it. The durable form of the lesson is now a test that asserts every
+fill **at its label's real rendered size and weight**, because a fill's threshold is set by the
+label, not by the fill.
+
+**2. ONE ELEMENT WRITTEN AT MORE THAN ONE VALUE. A sweep enumerates values; nothing enumerates
+ELEMENTS.** The app bar subtitle is the same line on ten screens — *"Medical Event Recorder"*, 11 px,
+in an `AppBar.title` column — and it was written **seven times at white 54% and three times at white
+70%.** Only the seven failed. ⭐ **The same shape as `textPrimary` being byte-identical to `primary`:
+the defect was never the value, it was that nothing held one element to one value.** Widened across
+the app, one role — muted text on the navy ground — was written at **six different opacities: 35,
+40, 50, 54, 55 and 65.** Not one of them was a decision anyone took.
+
+**3. A COMPOSITE HAS NO NAME TO SEARCH FOR. It is unsearchable by construction.** A sweep finds
+`#BA7517` because that string is in the file. It cannot find white at 40% over navy, because the
+colour that reaches the eye — `#6E95B4` — appears nowhere in the source and exists only after the
+blend. **Five live failures were hiding in exactly that gap:**
+
+| site | composite | ratio | needs |
+|---|---|---|---|
+| splash tagline, white 50% on `primary` | `#86A7C0` | 3.3779 | 4.5 |
+| splash version, white 35% on `primary` | `#628DAE` | 2.4169 | 4.5 |
+| About header version, white 55% on `primary` | `#92B0C7` | 3.7663 | 4.5 |
+| About header tagline, white 40% on `primary` | `#6E95B4` | 2.6938 | 4.5 |
+| *"Tap to timestamp now"*, white 65% on `captureFill` | `#F4C6BA` | **2.3805** | 4.5 |
+
+⚠️ **The last one had no answer in the colour set at all.** Even SOLID white on `captureFill` is
+3.67, which is valid at large-text size only, and an 11 px hint is not large text. **No colour
+repairs it**, so the hint moved off the fill onto the surface beneath in `onSurfaceMuted`. ⭐ **And
+that is the more honest placement independently of contrast: the button's label is `Record Event`,
+and a hint about a control is not part of the control.**
+
+**4. A CONTROL THAT RENDERS NOTHING. Found by asking a colour question of a REAL RENDER rather than
+of the source.** The export sheet's header icon is a white glyph on a 15%-white box on a white sheet.
+⛔ **Measured at ZERO non-white pixels across the whole 30 × 30 rect**, on the only screen that uses
+it. Reading the source shows three plausible colours; reading the frame shows an empty rectangle.
+**No token repairs an invisible widget** — it took `infoContainer` with an `infoAccent` glyph at 4.03,
+the treatment §13's Amendment 3 had already specified for the same sheet's TILES.
+
+⭐ **AND WHICH KIND OF FINDING THAT IS WAS ESTABLISHED BEFORE IT WAS CHANGED, because the two answers
+mean different things.** Amendment 3's treatment reached all three of the sheet's `ListTile` leading
+avatars — 36 × 36, below the divider: Share and Save on `infoContainer` with `infoAccent`, and Cancel
+on `surfaceSunken` with `onSurfaceMuted`, which was separately specified. **The invisible one is a
+different element**: a 30 × 30 ornament in the header row, above the divider, that no amendment ever
+named. ⛔ **So this is a gap in the SPECIFICATION, not a missed APPLICATION** — the sheet has two icon
+treatments and only one was ever specified.
+
+#### The three already recorded, listed here so the set is in one place
+
+| site | ratio | needs | closed at |
+|---|---|---|---|
+| About's Reset border, `Colors.red.shade300` | 2.9866 | 3.0 | `2ea1fa4` |
+| app-bar subtitle, white 54% on navy, × 7 | 3.6844 | 4.5 | `2ea1fa4` |
+| export sheet header, black 45% on white | 3.3627 | 4.5 | `1720ba2` |
+
+⚠️ **The Reset border is the sharpest of the three for a different reason: it was two named Material
+palette colours, `Colors.red.shade700` and `shade300`, on the most destructive control in the app.**
+C1 verified *"no raw literals"* over `Color(0x…)` HEX literals and correctly reported zero. **Zero hex
+literals is not the same claim as no widget naming a colour**, and the gap between those two
+sentences is where these sat.
+
+#### What actually changed as a result, and it is not a list of fixes
+
+⭐ **Every one of these four classes is a SWEEP SHAPE problem, not a diligence problem.** A sweep sees
+the shape it was written to see: a text-pair sweep sees text pairs, a value sweep sees values, a
+source sweep sees source. **The counter is not to run the same sweep more carefully.** It is to run
+sweeps of different shapes, and to move the check from prose into something that fails:
+
+* rule 2 is now **enforced by `test/colour_system_test.dart`** over `lib/`, covering hex AND named
+  palette forms, skipping comment lines, with the survivors on an allowlist keyed by address and
+  carrying each one's measurement. **It fails on a new literal and on a stale allowlist entry
+  alike**, so the surface cannot grow silently and the list cannot rot.
+* the fill table asserts **at the label's real size**, which is what class 1 needed.
+* `onPrimaryMuted` gives class 2's role a single value, and `onFill` gives a saturated fill's label
+  one, with **accents barred from being fills** so that token needs no exceptions.
+
+⚠️ **Residue, stated rather than rounded away: ONE site remains** — the splash spinner at
+`main.dart:185`, white 50% on `primary`, `#86A7C0` at 3.3779. It is **not** a rule 1 violation,
+because rule 1 forbids opacity on TEXT and a spinner is not text, and it clears its own 3.0 non-text
+threshold. It is a rule 2 naming problem with no role token behind it, and `onPrimaryMuted` is muted
+PROSE on primary rather than a progress indicator's colour. **It is on the checker's allowlist with
+that measurement rather than absorbed by the nearest token that happens to fit.**
+
+**Sourcing.** Ratios: the §13(s) sRGB apparatus, boundary control re-run each pass. Composites:
+computed from the source alphas and confirmed against painted pixels where a render was available.
+The zero-pixel finding: a scratch probe at 375 × 667, device pixel ratio 1.0, reading the rawRgba
+frame, deleted after use — its first attempt captured nothing because the boundary sat under the
+modal route, and the tell was a black label reporting a darkest pixel of `#F5F8FB`. Element identity
+for the export sheet: `event_record.dart`, read. This entry was written by the CLI from its own
+measurements at the developer's instruction.

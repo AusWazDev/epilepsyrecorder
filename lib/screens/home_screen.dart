@@ -1199,25 +1199,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Record Event',
-                                  style: TextStyle(
-                                    fontSize:   26,
-                                    fontWeight: FontWeight.w700,
-                                    color:      MERColours.onCapture,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Tap to timestamp now',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white.withOpacity(0.65),
-                                  ),
-                                ),
-                              ],
+                            child: const Text(
+                              'Record Event',
+                              style: TextStyle(
+                                fontSize:   26,
+                                fontWeight: FontWeight.w700,
+                                color:      MERColours.onCapture,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // ── THE HINT, OUTSIDE THE FILL ──
+                        // It was white at 65% on `captureFill` = 2.3805, and
+                        // no colour repairs that: solid white there is 3.67,
+                        // valid at large-text size only, which an 11 px hint
+                        // is not. On the surface beneath, `onSurfaceMuted` is
+                        // 4.64 on sunken.
+                        // ⭐ And it is the more honest placement. The button's
+                        // label is `Record Event`; a hint about a control is
+                        // not part of the control.
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            'Tap to timestamp now',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: MERColours.onSurfaceMuted,
                             ),
                           ),
                         ),

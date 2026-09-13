@@ -166,11 +166,11 @@ class _SplashLoadingScreen extends StatelessWidget {
             const SizedBox(height: 4),
 
             // ── TAGLINE ──
-            Text(
+            const Text(
               'TRACK · RECORD · UNDERSTAND',
               style: TextStyle(
                 fontSize:      10,
-                color:         Colors.white.withOpacity(0.5),
+                color:         MERColours.onPrimaryMuted,
                 letterSpacing: 1.8,
               ),
             ),
@@ -190,9 +190,9 @@ class _SplashLoadingScreen extends StatelessWidget {
             // ── VERSION ──
             Text(
               'Version ${AppInfo.versionLabel}',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
-                color:    Colors.white.withOpacity(0.35),
+                color:    MERColours.onPrimaryMuted,
               ),
             ),
           ],

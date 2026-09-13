@@ -369,14 +369,14 @@ void main() {
     // survives. A new one fails this test; removing one fails it too, so the
     // list cannot rot in either direction.
     const allowed = <String, String>{
-      'lib/main.dart:173': 'splash tagline, white 50% on primary — 3.3779, LIVE 4.5 FAILURE',
-      'lib/main.dart:185': 'splash spinner, white 50% on primary — 3.3779, passes as non-text',
-      'lib/main.dart:195': 'splash version, white 35% on primary — 2.4169, LIVE 4.5 FAILURE',
-      'lib/models/event_record.dart:1656': 'export icon box, white 15% on a white sheet — paints nothing',
-      'lib/models/event_record.dart:1662': 'export icon, white on that box — 0 non-white pixels in 30x30',
-      'lib/screens/about_screen.dart:96': 'About version, white 55% on primary — 3.7663, LIVE 4.5 FAILURE',
-      'lib/screens/about_screen.dart:104': 'About tagline, white 40% on primary — 2.6938, LIVE 4.5 FAILURE',
-      'lib/screens/home_screen.dart:1217': 'Tap to timestamp now, white 65% on captureFill — 2.3805, LIVE 4.5 FAILURE and no token can fix it',
+      // ⛔ ONE SURVIVOR, and it is not a rule 1 violation: rule 1 forbids
+      // opacity on TEXT and a spinner is not text. It passes its own
+      // threshold — 3.3779 against the 3.0 non-text needs — so it is a rule 2
+      // naming problem with no role token behind it. `onPrimaryMuted` is
+      // muted PROSE on primary and a progress indicator is not prose, so it
+      // is named here rather than absorbed by the nearest token that fits.
+      'lib/main.dart:185':
+          'splash spinner, white 50% on primary — 3.3779, passes as non-text',
     };
 
     final chromatic = <String>[];

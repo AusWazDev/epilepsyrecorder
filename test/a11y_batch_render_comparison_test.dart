@@ -67,6 +67,28 @@ const List<double> kWidths = <double>[375, 430, 800];
 /// changed by so much as a tenth. Home's glyphs move BOTH ways (-2.0 to +1.5)
 /// because home is centred; see AUDIT.md §13(ac)'s annotation of the same
 /// date, which records that as standing brittleness rather than a C3 artefact.
+///
+/// ⚠️ **HOME RECAPTURED AGAIN 13 September 2026, for Brief L**, and again it
+/// is a change MEANT to move text. *"Tap to timestamp now"* left the capture
+/// button's fill for the surface beneath it, because at 11 px on
+/// `captureFill` no colour clears 4.5 — even solid white is 3.67 there. The
+/// button loses that line's height and the page gains it, which home's
+/// centring redistributes about the midpoint. **Measured at all three widths:
+/// 22 of 26 glyph boxes translated, 0 RESIZED, one up and 21 down by 2.5.**
+/// History, About and the form are untouched and keep their baselines.
+///
+/// ⛔ **THE HINT'S OWN BOX IS NOT A REAL EXTENT CHANGE — it is the font caveat
+/// from `CLAUDE.md` arriving somewhere new.** Its box reads 220.0 x 11.0
+/// before and 114.4 x 13.2 after, which looks like a shrink and is not:
+/// *"Tap to timestamp now"* is 20 characters, 20 x 11.0 = 220.0 exactly, and
+/// the line box equals the font size — the one-em-per-glyph signature of the
+/// harness font. Inside an `ElevatedButton` the text inherits
+/// `elevatedButtonTheme`'s `textStyle`, which names no family and inherits
+/// none, so it resolved to the ENGINE default even with Roboto loaded;
+/// outside the button it inherits the app's `textTheme` and resolves to
+/// Roboto. **The rule was written about the app-bar title. It applies to any
+/// `ButtonStyle.textStyle` that names no family.** The after figure is the
+/// real one.
 const Map<String, String> kBaseline = <String, String>{
   'about@375': '29|3315bff0702104a5',
   'about@430': '29|4c5c1897c3518a09',
@@ -77,9 +99,9 @@ const Map<String, String> kBaseline = <String, String>{
   'history@375': '18|7e4a49c523f9c67a',
   'history@430': '18|1b97d4c28abbd2a3',
   'history@800': '18|419cbc150b5086a6',
-  'home@375': '26|34eb1545537fcfdb',
-  'home@430': '26|62484c15cbf2e9da',
-  'home@800': '26|25479e4599efd869',
+  'home@375': '26|3925d985e5d81dd0',
+  'home@430': '26|5650d4a018ac017e',
+  'home@800': '26|7f2fed5b2153772a',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.

@@ -1653,13 +1653,19 @@ class _ExportIconWidget extends StatelessWidget {
       width:  30,
       height: 30,
       decoration: BoxDecoration(
-        color:        Colors.white.withOpacity(0.15),
+        // ⛔ THIS PAINTED NOTHING. White at 15% on a white sheet, with a white
+        // glyph on top: measured at ZERO non-white pixels across the whole
+        // 30x30 rect, on the only screen that uses it. It is the same
+        // treatment the sheet's TILES already carry — Amendment 3 specified
+        // those and they landed; this ornament sits above the divider and was
+        // never named by any amendment.
+        color:        MERColours.infoContainer,
         borderRadius: BorderRadius.circular(8),
       ),
       child: const Icon(
         Icons.download_outlined,
         size:  18,
-        color: Colors.white,
+        color: MERColours.infoAccent,
       ),
     );
   }

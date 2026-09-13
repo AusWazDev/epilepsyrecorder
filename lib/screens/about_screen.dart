@@ -91,17 +91,17 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Version ${AppInfo.version}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
-                      color:    Colors.white.withOpacity(0.55),
+                      color:    MERColours.onPrimaryMuted,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
+                  const Text(
                     'Record · Review · Share',
                     style: TextStyle(
                       fontSize:      11,
-                      color:         Colors.white.withOpacity(0.4),
+                      color:         MERColours.onPrimaryMuted,
                       letterSpacing: 1.5,
                     ),
                   ),
