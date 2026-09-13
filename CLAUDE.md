@@ -448,6 +448,41 @@ strings are laid out free in Roboto — clear by 110.8.
 because the finding is where it was learnt and this is where the next person writing a widget test
 will be looking.** Full history: `AUDIT.md` §13(bx)'s annotation of 13 September 2026.
 
+### ⛔ A CONTROL PROVES AN APPARATUS IS LIVE ONLY IF THE FAILURE IT PRODUCES IS ATTRIBUTABLE
+
+⚠️ **A control that reports "it failed" without showing WHICH assertion fired is not much better
+than a control that has never failed.** Added 13 September 2026, from C1's own control run — filed
+here beside the font rule because both are cases of an instrument that reported confidently while
+measuring something other than the question.
+
+**WHAT HAPPENED.** Four superseded colour values were substituted into the real tokens in a single
+run, to prove the new colour test could actually fail: two text pairs and two fills. The run went
+red and was read as four controls discharged. ⛔ **It was three.** `outline` threw first, and the
+first `expect` to throw ends the test — so the text substitution was **silently masked** and
+produced no output of its own. It was confirmed live only by re-running it alone.
+
+⭐ **THE SHAPE: at test granularity, a control that fired and a control that was masked have
+IDENTICAL output — a red test.** The harness reports per test, the control is per assertion, and
+nothing in between says which. **A red run is evidence that at least one substitution was live. It
+is not evidence about any particular one**, and it reads exactly like evidence about all of them.
+
+**1. MUST: run multiple substitutions separately, or make them fail separately.** One substitution
+per run is the cheap form. `expect(..., reason:)` on every assertion, or a soft-assert that collects
+rather than throws, is the form that keeps them in one run.
+
+**2. MUST: quote the assertion text the control produced, not the run's verdict.** *"the suite went
+red"* is a claim about the suite. **The claim being made is about the substituted value**, and only
+the failing assertion's own message carries it.
+
+**3. MUST NOT: infer from a red run that every substitution in it was live.** Treat the unnamed ones
+as unproven, the same way this project treats an unadjudicated hit.
+
+⭐ **Same family as the positive-control rule for null results in the workspace rules — a control
+whose output cannot be attributed is unfalsifiable in the same way a null without a control is.**
+The difference, and it is why this needed its own entry: there the apparatus returns *nothing* and
+the danger is believing the corpus is clean; here the apparatus returns *something*, and the danger
+is believing it came from where you meant it to.
+
 ### ⛔ CAPTURES ANSWER "HOW DOES IT LOOK". THEY DO NOT ANSWER "WHERE IS IT" OR "HOW BIG IS IT"
 
 ⚠️ **Geometry comes from widget tests. Appearance comes from captures. Do not cross them.**
