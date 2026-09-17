@@ -118,6 +118,45 @@ void main() {
               'Restore from backup — not a second dialog pattern');
     });
 
+    testWidgets('1c. THE ROW TOGGLE ACTUALLY UNHIDES — regression, 18 Sep 2026',
+        (tester) async {
+      // ⛔ THIS EXISTS BECAUSE IT SHIPPED BROKEN FOR ONE BUILD AND WAS CAUGHT
+      // ON A DEVICE, NOT HERE. A1 made the control a toggle and routed its
+      // unhide branch through `_unhide(original)` — a helper that restores a
+      // PRE-HIDE snapshot. In that branch `original` is the record as it is
+      // NOW, which is hidden, so it wrote the hidden state straight back while
+      // the SnackBar reported "Event unhidden."
+      //
+      // ⭐ A FALSE CONFIRMATION, in the brief whose whole subject is a hide
+      // that reported nothing. Nothing in the suite covered unhide-via-row, so
+      // 823 tests passed over it.
+      await pump(tester, <EventRecord>[rec('a', 1)]);
+
+      await tapHideAndConfirm(tester, hideButton().first);
+      expect(hideButton(), findsNothing,
+          reason: 'precondition: the row is hidden and gone from the view');
+
+      // Reveal it, then toggle it back through its own control.
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Include').first);
+      await tester.pumpAndSettle();
+      // ⛔ DISMISS THE SHEET FIRST. Selecting a segment rebuilds the sheet and
+      // leaves it OPEN, so a tap aimed at a row lands on the modal scrim and
+      // merely closes it — the row is never touched, and the test fails with a
+      // finder error that looks like the feature is broken.
+      await tester.tapAt(const Offset(200, 60));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Unhide this event').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Hide this event'), findsOneWidget,
+          reason: 'THE ASSERTION: after unhiding, the control must offer to '
+              'HIDE again — which is only true if the flag actually cleared. '
+              'Asserting on the SnackBar text would have passed against the '
+              'broken build');
+    });
+
     testWidgets('1b. CONTROL: the dialog is the APP\'s, not the harness\'s',
         (tester) async {
       // ⛔ SUPERSEDED 18 September 2026, AND ITS JOB INVERTED.

@@ -958,7 +958,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // action — confirming a restoration teaches people every tap is dangerous,
     // which is the habit that makes confirmations stop working.
     if (original.hidden) {
-      await _unhide(original);
+      // ⛔ NOT `_unhide(original)`. That helper restores a PRE-HIDE SNAPSHOT
+      // taken before the flag was set — correct for the SnackBar's Undo, which
+      // closes over the record as it was. Here `original` IS the hidden record,
+      // so handing it to `_unhide` writes the hidden state straight back and
+      // the bar below reports a change that never happened.
+      //
+      // ⚠️ CAUGHT ON DEVICE, 18 September 2026: the row kept its Hidden marker
+      // while "Event unhidden." was on screen. A false confirmation is the exact
+      // class this brief exists to remove, so it is recorded rather than
+      // quietly corrected.
+      setState(() =>
+          _records[index] = original.withHidden(false, at: DateTime.now()));
+      await widget.onRecordsChanged(_records);
       if (!mounted) return;
       _undoBar?.close();
       ScaffoldMessenger.of(context).showSnackBar(
