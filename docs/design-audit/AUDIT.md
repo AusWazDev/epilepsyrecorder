@@ -535,6 +535,23 @@ impression, **and independent of every open decision in this document.**
 > correcting them strengthens it. ⚠️ **The recommendation was never load-bearing on the numbers**
 > — it rests on the layout being `Center`, which is code-verified.
 
+> ✅ **SHIPPED 17 September 2026, at `6fd3f1c` — §10 fix 4. THE RECOMMENDATION THIS SECTION MADE
+> IS NOW THE CODE.** `Center` became `Align(alignment: Alignment.topCenter)` and the Column's
+> `mainAxisAlignment` became `start`. **Measured after:** `colTop = 76.0` at both 430x932 and
+> 800x1280 — the viewport's 56 plus the 20 padding, i.e. flush — and `contentW = 520.0` at 800.
+>
+> ⭐ **THE HORIZONTAL JOB SURVIVED, WHICH WAS THE RISK.** The `Center` was doing two jobs and only
+> the vertical one was unwanted: the column is capped at 520 and still needs centring on a wide
+> screen. `contentW = 520.0` at 800 is that half, measured rather than assumed.
+>
+> ⚠️ **THIS SECTION'S FIGURES WERE ALREADY WITHDRAWN ON 8 SEPTEMBER and are NOT what was
+> superseded.** The *"roughly 150 px of void"* was retracted nine days before this fix landed, in
+> the block above, while the recommendation was explicitly confirmed and left standing. **It is the
+> RECOMMENDATION that closes here, not the figure** — the figure had no standing left to lose.
+> ⛔ **The live measurement fix 4 supersedes is §13(ac)'s**, which was precise and was never
+> withdrawn; it is annotated there.
+
+
 ---
 
 ## 8. Smaller findings
@@ -754,6 +771,37 @@ behaviour would be solving the wrong problem.
 > **Full treatment: `STATUS.md`, session of 7 September 2026 (Windows), and the Change Register,
 > entry of the same date. The Register does not travel by `git push`.**
 
+> 🔴 **A LATER FINDING IS SUPERSEDED BY THE RETIREMENT ABOVE — recorded 17 September 2026, and
+> recorded here BECAUSE IT IS THE CONCLUSION THE RETIREMENT ANTICIPATED.**
+>
+> A CLI pass on 17 September was briefed to read whether conditions adoption writes `seeded_key`.
+> It reported, correctly on the code: *"conditions adoption does not write `seeded_key`, because
+> there is no adoption"*, and concluded *"the writer exists; the chooser does not — what would have
+> to change is a picker offering `kSeededRelevance`'s keys."*
+>
+> ⛔ **THE READING OF THE CODE IS RIGHT AND THE CONCLUSION IS THE ONE THIS RETIREMENT WARNS
+> AGAINST.** `STATUS.md`, 7 September 2026, verbatim:
+>
+> > **A future session finding a ranking key with no writer must not read that as a gap and wire it
+> > up: it was measured on real data and produced nothing.**
+>
+> ⚠️ **THE BRIEF THAT ASKED FOR THAT READ QUOTED THE WARNING IN PARAPHRASE, NOT VERBATIM**, and the
+> paraphrase is recorded here beside the real text so the difference is visible rather than
+> inherited: it rendered as *"a future session that finds a ranking key with a reader, no writer,
+> and an empty `_adoptedKeys` must not conclude the writer was forgotten … the absence of a writer
+> is the finding, not the omission."* **The sense matches; the words are not the document's.**
+>
+> ⛔ **AND THE SECOND REASON IS NOT A COST ARGUMENT.** The 7 September retirement also WITHDREW the
+> adviser question, in its own words: *"The adviser question is WITHDRAWN. There is no claim left to
+> route … Nothing is being ordered by condition, so nothing asserts anything."* ⭐ **Building a
+> chooser re-opens that regulatory question at no measured benefit** — and the benefit was measured:
+> **0 pixels of difference against a 13,199-pixel control, on the real device.**
+>
+> ⛔ **NOTHING IS TO BE BUILT FROM THAT FINDING.** `kSeededRelevance` and the comparator stay as
+> they are: **built, correct, tested and deliberately unactivated.** The absence of a writer is the
+> finding, not the omission.
+
+
 ### Then the component vocabulary
 
 One add affordance · one selection control per cardinality · one label case · one date control ·
@@ -803,6 +851,97 @@ deliberately and nothing is unreachable.)*
 > redesign or is REBUILT by it — **not a shipping status.** Two axes, one number: a count read off
 > the survives/rebuilt axis was carried as though it were the shipped/not-shipped axis. **This table
 > is the shipped axis. It says nothing about which of these survive the redesign.**
+
+> ---
+>
+> ➕ **STATUS, 17 September 2026 — read against `lib/` at `6fd3f1c`. ⛔ THE 10 SEPTEMBER TABLE
+> ABOVE IS LEFT EXACTLY AS WRITTEN; this block is the next dated reading, not a correction of it.**
+>
+> | # | Fix | Status, 17 Sep 2026 | Evidence |
+> |---|---|---|---|
+> | 1 | quick-log records not rendered as deficient | **see the note below — no status asserted here** | measured, not judged |
+> | 2 | real summary, backdating surfaced | **SHIPPED** | the in-body `_heading('Check and save')` is gone; `:379`'s app-bar title names the step conditionally (`onSummary ? 'Check and save' : 'Add details'`). Pinned by `summary_step_review_test` |
+> | 3 | raise notes, echo before save | **SECOND HALF SHIPPED · FIRST HALF RETIRED ON MEASUREMENT** | see the table below |
+> | 4 | anchor home, not centre | **SHIPPED** | `Align(alignment: Alignment.topCenter)` + `MainAxisAlignment.start`; `colTop = 76.0` at 430 and 800, `contentW = 520.0` at 800 |
+> | 5 | bound wizard step 2, plain and grouped | **TWO OF FOUR BOUNDED — the other two REFUSED, with the widget's reason** | see the note below |
+> | 6 | label the delete control | **SHIPPED** (unchanged) | as recorded 10 Sep |
+>
+> ⭐ **FIX 2'S BACKDATING HALF WAS ALREADY SATISFIED BEFORE THIS PASS, AND WAS RECORDED RATHER
+> THAN REBUILT.** `OccurredAtField` has been on the summary step since 29 August, and it states its
+> own meaning in BOTH states: unset it reads *"The time this was recorded. Change it if it happened
+> earlier."* beside a `Set` affordance; set, it reads *"Recorded later than this."* above the stated
+> time. **A reader can tell a record is backdated.** It is now pinned by test, which is the only
+> thing that changed about it.
+>
+> 🔴 **FIX 3'S FIRST HALF IS RETIRED ON MEASUREMENT, 17 September 2026 — NOT DEFERRED.** The
+> retirement rests on these numbers and not on an argument:
+>
+> | | depth from the container's first element, at 375 | taps | answer groups above |
+> |---|---|---|---|
+> | medication add sheet | **276.0 px** | 1 | 2 |
+> | wizard step 4, as shipped | **553.0 px** | 3 | — |
+> | wizard step 4, notes raised above the rescue section | **349.0 px** | | |
+>
+> ⚠️ **§6's OWN ANNOTATION SAYS ITS `78 %` AND `two-thirds` WERE DESCRIBED, NOT MEASURED**, so
+> neither figure was inherited; both depths above were measured directly. ⭐ **§6's RANKING IS
+> CONFIRMED** — notes is **2.0×** deeper in the primary capture path, which is the finding.
+>
+> ⛔ **THE MOVE WAS TRIED RATHER THAN REASONED ABOUT, AND IT FAILS ITS OWN OUTCOME.** Raising notes
+> above the rescue section reaches **349.0**, which is still deeper than the sheet's **276.0** — so
+> the outcome is not met — and items below the fold at 375x667 go **1 → 4**: `Given`, `Not given`,
+> `MEDICAL REFERRAL REQUIRED?` and its `Yes`/`No`, where before **only notes** was below. It trades
+> one buried field for four while still missing the target. **Reverted; the baseline was confirmed
+> restored at 553.0 and 1 below.**
+>
+> ⚠️ **At 375x667 everything on step 4 already fits above the fold EXCEPT notes**, so there is no
+> room to raise it without displacing what fits. **This cannot be solved by reordering step 4
+> alone.**
+>
+> ⭐ **WHAT STAYS OPEN, AND MUST NOT BE READ AS CLOSED BY THIS RETIREMENT: whether users find the
+> notes field at all.** That is **untestable against existing data** — the same class as §13(bm)'s
+> recall window, and recorded the same way: **OPEN, NOT REJECTED.** The three remaining routes each
+> change something outside this fix — the wizard's routing, the observation picker's height, or the
+> outcome itself — and none is taken here.
+>
+> ⛔ **FIX 5 — TWO REFUSALS, RECORDED WITH THE WIDGET'S OWN REASON so a later reader does not
+> re-raise them.**
+>
+> | site | outcome | reason |
+> |---|---|---|
+> | ungrouped event-type picker (`_vocabChips`) | **BOUNDED** | a real picker over a vocabulary that grows, and the path that runs at one condition or none — most devices |
+> | per-condition group (`_groupedVocabChips`) | **BOUNDED PER GROUP** | `BoundedChipWrap` takes a FLAT chip list and has no notion of groups. Bounding the grouped set whole would mean passing the condition headings in as chips, corrupting `pinned` and both counts |
+> | orphan wrap | ⛔ **CANNOT SERVE** | at most **two** chips — one carried value and the add pill — and **both are pinned by definition**. There is nothing a cap could collapse |
+> | `_chips<T>` | ⛔ **CANNOT SERVE** | **five uses, all FIXED answer sets of 2–3**: severity, referral, rescue given, did it help, second dose. *"1 more to choose from"* on a yes/no is absurd, and **per S2 these are CARDINALITIES, not pickers** |
+>
+> ⚠️ **`BoundedChipWrap` ITSELF WAS NOT CHANGED**, which is what makes the two refusals refusals
+> rather than a shortfall: they are the widget's boundary, stated, not work left undone.
+>
+> ⛔ **FIX 1 — NO STATUS IS ASSERTED HERE, DELIBERATELY.** The 10 September table records it PARTLY
+> SHIPPED, and this pass did not change a line of it. **What was done is a MEASUREMENT**, reported
+> so the design half can be judged on evidence rather than on either brief's description.
+>
+> **Measured 17 September 2026 on the case that matters — a quick-logged, timestamp-only row at
+> 375. That row has NO content line** (`content.isNotEmpty` omits it), **so the gap line is alone in
+> the subtitle**, which is the carer who quick-logged during an event and opened History:
+>
+> | | rendered |
+> |---|---|
+> | row title, `2:30 PM` | **16.0 / w600** |
+> | gap line, `Add details: duration, type, severity` | **12.0 / w400**, `didExceedMaxLines` **false**, width 193.6 |
+>
+> ⭐ **The gap line is the smallest and lightest text on the row.** H3's *"never the most prominent
+> thing on the row"* therefore holds **as a measurement rather than a judgement** — and it was
+> delivered by T1's type scale, not by any change to the gap line itself.
+>
+> ⚠️ **AND THE 375 CLIPPING THIS DOCUMENT RECORDS IS ALREADY RESOLVED** — by the 11 September change
+> that removed `maxLines: 1` so the line WRAPS rather than ellipsising, because the row's whole job
+> is to name the open fields and an ellipsis hid the names. **Measured: not clipped.** So demoting
+> the line would neither resolve the clipping nor move it; there is nothing left there to resolve.
+>
+> ⛔ **§5's COUNTER-ARGUMENT IS NOT BYPASSED AND THE FIELD LIST STAYS.** Naming the gaps is what
+> makes a filtered list of quick-logs a work queue rather than a broken screen. **Whether the above
+> closes fix 1's design half is not decided here.**
+
 
 ### Then the layout work
 
@@ -3093,6 +3232,24 @@ separately.
 
 ⚠️ **Content is SHORTER at 800 than at 430** — 370 against 383 — because the 520 cap lets text wrap
 less. **So widening the window shrinks the content and doubles the void.**
+
+> 🔴 **SUPERSEDED 17 September 2026, at `6fd3f1c` — §10 fix 4 ANCHORED HOME. The measurement above
+> is left exactly as written; it described the centred layout, and the layout is no longer
+> centred.**
+>
+> **What it said, preserved:** *"THE VOIDS ARE EXACTLY EQUAL AT BOTH WIDTHS — 246.5 / 246.5 and
+> 427 / 427"*, and *"AT 800 THERE IS MORE EMPTY SPACE ABOVE THE CONTENT THAN THERE IS CONTENT
+> (34.9% against 30.2%)"*.
+>
+> **What replaces it, measured the same way:** content now begins at `colTop = 76.0` at 430x932 and
+> at 800x1280 alike — the viewport top plus the screen's own padding. ⭐ **The void no longer
+> SPLITS; it all sits below the content.** The symmetry this section measured was the symptom the
+> recommendation named, and it is gone rather than reduced.
+>
+> ⚠️ **THE SECTION IS STILL THE REASON THE FIX EXISTS.** Its equal-voids figure is what made
+> "centred rather than anchored" a measurement instead of an impression, and a later reader
+> comparing today's home against these numbers should read them as the BEFORE, not as a defect.
+
 
 ⭐ **A READING, MARKED AS A READING AND NOT A CONCLUSION.** The void **below** may be the more
 serious half: space above a primary action reads as breathing room, while space below it reads as
