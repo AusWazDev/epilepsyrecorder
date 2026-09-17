@@ -1136,6 +1136,174 @@ when the thing was introduced.
 ⚠️ **Three of these correct or qualify earlier text. None replaces it.** Where an earlier section
 is affected, this one points at it and the earlier wording stands.
 
+> ➕ **STATUS, ADDED 17 September 2026 — §13 HAS NEVER HAD A STATUS AXIS, AND THIS IS IT.**
+> ⛔ **The findings above are left EXACTLY as written; this is the column they never had**, in
+> the form §10's two status blocks already use. **One table, not one block per finding.**
+>
+> ⚠️ **THE CORPUS, COUNTED RATHER THAN QUOTED: 90 findings, `(a)` through `(cl)`** — a
+> complete sequence, no gaps, no duplicates (26 + 26 + 26 + 12). **39 carry 🔴.** The briefing
+> figure was 91; **the sequence is 90** and the red and status-block counts matched.
+>
+> ## ⛔ THE APPARATUS AND ITS LIMIT — READ THIS BEFORE THE TABLE
+>
+> **Status is derived from EVIDENCE, never from a finding's own prose.** A heading saying
+> *RETIRED* is a CLAIM inside the document; a commit is a FACT about the repository.
+>
+> | evidence class | what it yields |
+> |---|---|
+> | a commit citing the finding by letter that touched `lib/` or `ios/` | **SHIPPED** |
+> | a specific, quotable decision record | **OPEN** / **DESIGN-TRACK**, with the record cited |
+> | the document claims resolution, no citing code commit corroborates it | **UNKNOWN\*** |
+> | nothing | **UNKNOWN** |
+>
+> 🔴 **THE LIMIT, STATED SO THE TABLE IS NOT OVER-READ: a commit that implements a finding
+> WITHOUT citing it by letter is INVISIBLE to this method.** ⛔ **So `SHIPPED` is reliable and
+> `UNKNOWN` IS NOT THE SAME AS NOT DONE.** ⭐ **`UNKNOWN` is a statement about the EVIDENCE, not
+> about the code.**
+>
+> ⚠️ **`UNKNOWN\*` is where the document and the repository DISAGREE**, and it is reported as a
+> disagreement rather than resolved either way: **the finding's own text says FIXED, SHIPPED,
+> CLOSED or RESOLVED, and no commit citing that letter touched code.** ⭐ **Either the fix landed
+> in a commit that did not cite it — which is the citation convention's value, measured — or the
+> claim is stale. This method cannot tell those apart and does not try.**
+>
+> ## The counts
+>
+> | status | all | of the 39 🔴 |
+> |---|---|---|
+> | **SHIPPED** | 15 | 9 |
+> | **OPEN** | 2 | 2 |
+> | **DESIGN-TRACK** | 1 | 1 |
+> | **UNKNOWN*** | 27 | 11 |
+> | **UNKNOWN** | 45 | 16 |
+> | | **90** | **39** |
+>
+> 🔴 **THE NUMBER NOBODY HELD: 29 of the 39 🔴 findings are OPEN or UNKNOWN.** ⭐ **That is the
+> honest size of what is left**, and it is a floor rather than a total — the limit above means
+> some of those 27 `UNKNOWN\*` may already be done.
+>
+> ⚠️ **HOW MANY WERE RESOLVED BY A COMMIT THAT DOES NOT CITE THEM — AN ESTIMATE, AND SAID TO BE
+> ONE.** It cannot be counted by this method, because the thing being counted is precisely what
+> the method cannot see. **The `UNKNOWN\*` bucket — 27 — is its UPPER BOUND**: every one of them
+> is a finding the document believes resolved with no citing code commit. ⛔ **The true figure is
+> somewhere in 0–27 and this apparatus cannot narrow it.**
+>
+> ⭐ **AND THAT IS THE MEASURE OF WHAT THE CITATION CONVENTION IS WORTH: 15 findings can be
+> traced to a commit because someone wrote the letter in the message. 27 cannot be, and the
+> difference is a habit, not a tool.**
+>
+> ## ⚠️ THE ESCAPE CLAUSE DID NOT FIRE, AND WHY
+>
+> **The clause was: stop if telling SHIPPED from OPEN would need RE-TESTING BEHAVIOUR rather than
+> reading.** ⛔ **For 72 of the 90 it would** — every `UNKNOWN` and `UNKNOWN\*` row. Resolving
+> those means reading `lib/` at HEAD and judging whether each described defect still occurs,
+> which for a behaviour finding is a test, not a read.
+>
+> ⭐ **The clause did not fire because that work is not required to answer the question.**
+> `UNKNOWN` IS the answer for those 72, and this document says so rather than guessing. **A status
+> column over 90 re-tested findings is a different piece of work.** ⛔ **72 is the size of it.**
+>
+> ## The table
+>
+> | | status | evidence |
+> |---|---|---|
+> | **(a)** 🔴 | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(b)** | UNKNOWN* | document claims SHIPPED; no citing code commit |
+> | **(c)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(d)** | SHIPPED | 5b37478 |
+> | **(e)** | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(f)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(g)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(h)** 🔴 | UNKNOWN* | document claims FIXED/RESOLVED/SHIPPED; no citing code commit |
+> | **(i)** | UNKNOWN* | document claims RESOLVED; no citing code commit |
+> | **(j)** | SHIPPED | 5b37478 |
+> | **(k)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(l)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(m)** 🔴 | SHIPPED | 6fd3f1c |
+> | **(n)** | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(o)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(p)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(q)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(r)** | UNKNOWN* | document claims CLOSED/FIXED/RESOLVED/SHIPPED; no citing code commit |
+> | **(s)** 🔴 | SHIPPED | a0d3bf8 |
+> | **(t)** | UNKNOWN* | document claims CLOSED/FIXED/SHIPPED; no citing code commit |
+> | **(u)** 🔴 | UNKNOWN* | document claims CLOSED; no citing code commit |
+> | **(v)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(w)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(x)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(y)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(z)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(aa)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ab)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ac)** | SHIPPED | 0d57f09 |
+> | **(ad)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ae)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(af)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ag)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ah)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(ai)** | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(aj)** 🔴 | UNKNOWN* | document claims FIXED/RESOLVED/SHIPPED; no citing code commit |
+> | **(ak)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(al)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(am)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(an)** | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(ao)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ap)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(aq)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ar)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(as)** | UNKNOWN* | document claims CLOSED/FIXED/SHIPPED; no citing code commit |
+> | **(at)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(au)** | UNKNOWN* | document claims FIXED/RESOLVED/SHIPPED; no citing code commit |
+> | **(av)** | SHIPPED | 2ea1fa4 |
+> | **(aw)** | UNKNOWN* | document claims FIXED/SHIPPED; no citing code commit |
+> | **(ax)** | UNKNOWN* | document claims CLOSED; no citing code commit |
+> | **(ay)** 🔴 | UNKNOWN* | document claims FIXED/SHIPPED; no citing code commit |
+> | **(az)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ba)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bb)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bc)** 🔴 | SHIPPED | 5b37478 |
+> | **(bd)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(be)** 🔴 | OPEN | its own text: "THE HIGHEST-PRIORITY OPEN ITEM IN THIS DOCUMENT" |
+> | **(bf)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bg)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bh)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bi)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bj)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bk)** 🔴 | DESIGN-TRACK | DECISIONS.md, developer item 2 — the dedup instrumentation |
+> | **(bl)** | SHIPPED | 8e1bc96 |
+> | **(bm)** 🔴 | OPEN | its own text: "Recorded as an OPEN PROPOSAL, not as rejected" |
+> | **(bn)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bo)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bp)** | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(bq)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(br)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bs)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bt)** 🔴 | UNKNOWN* | document claims CLOSED; no citing code commit |
+> | **(bu)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bv)** 🔴 | UNKNOWN* | document claims SHIPPED; no citing code commit |
+> | **(bw)** | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(bx)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED/SHIPPED; no citing code commit |
+> | **(by)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(bz)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ca)** | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(cb)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(cc)** | SHIPPED | 8e1bc96 |
+> | **(cd)** 🔴 | SHIPPED | 41c26f9 8e1bc96 |
+> | **(ce)** 🔴 | SHIPPED | 41c26f9 |
+> | **(cf)** | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(cg)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(ch)** 🔴 | SHIPPED | a69f0a7 |
+> | **(ci)** | UNKNOWN | no citing commit, no dated resolution in the finding |
+> | **(cj)** 🔴 | SHIPPED | a69f0a7 3595093 bee5df7 |
+> | **(ck)** 🔴 | SHIPPED | 0d57f09 |
+> | **(cl)** 🔴 | SHIPPED | a0d3bf8 |
+>
+> ⭐ **RE-DERIVE THIS RATHER THAN TRUSTING IT.** Every row above is a reading of the repository
+> as at `0d3b8e4`, 17 September 2026. ⛔ **It is a dated measurement, not a maintained field** —
+> the same class as backlog item #24, which sat open for three weeks after `2d5f588` closed it
+> because nothing re-derived it. **This table will rot the same way, and the commit that
+> supersedes it is the one to trust.**
+
 ### (a) 🔴 `LogEventScreen` discards edits silently — a live defect
 
 **Code-verified, 8 Sep 2026.**
