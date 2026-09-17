@@ -263,6 +263,10 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
         rescueMedGiven:       existing.rescueMedGiven,
         rescueMedHelped:      existing.rescueMedHelped,
         rescueMedSecondDose:  existing.rescueMedSecondDose,
+        // CARRIED. Dropping it here is AUDIT.md §13(cj) failure mode (b), "a
+        // hidden record could silently unhide", on the pathway the developer
+        // names as the most used.
+        hidden:               existing.hidden,
       );
       durationsRecovered.add(m.id);
     }

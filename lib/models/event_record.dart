@@ -443,6 +443,40 @@ class EventRecord {
   /// that worked is a different event from one dose that worked.
   final bool? rescueMedSecondDose;
 
+  /// Whether this record is hidden from the lists the user reads.
+  ///
+  /// ## ⛔ NOT NULLABLE, AND IT IS THE ONLY FIELD HERE THAT IS NOT
+  ///
+  /// Every other optional field on this class is nullable because NULL means
+  /// NOT ASKED, and a default would be a claim nobody made. **That reasoning
+  /// does not apply here.** Hiding is not a question put to the user about
+  /// their health — it is a thing they do to a row, and a record they have
+  /// never touched genuinely is not hidden. There is no third state to
+  /// preserve, so a nullable column would carry a distinction that does not
+  /// exist and every reader would have to collapse it anyway.
+  ///
+  /// ## ⚠️ FALSE IS THE DEFAULT IN THREE PLACES AND THEY MUST AGREE
+  ///
+  /// The constructor default, [fromMap]'s absent-key fallback, and the
+  /// column's `DEFAULT 0` are three independent statements of the same fact.
+  /// `rebuild_preserves_fields_test.dart` test 3 asserts the first two agree
+  /// for every field, and it covers this one the day it lands without being
+  /// edited to accommodate it.
+  ///
+  /// ## ⛔ IT TRAVELS IN THE BACKUP PAYLOAD, AND THAT IS NON-NEGOTIABLE
+  ///
+  /// Restore is merge-by-id and add-only, so on a fresh install a backup is a
+  /// full reconstruction. **A hidden record absent from a backup is destroyed
+  /// by an uninstall**, and retention is FOREVER — the hidden set is not
+  /// deletion and must not behave like it. [toMap] carries it, so
+  /// `buildBackupJson` does too.
+  ///
+  /// ⭐ INERT AS AT THIS CHANGE. It is written, read and round-tripped, and
+  /// nothing looks at it: no list filters on it and no screen offers to set
+  /// it. Storage lands before behaviour so the migration can be proved on its
+  /// own.
+  final bool hidden;
+
   EventRecord({
     required this.id,
     required this.timestamp,
@@ -459,6 +493,7 @@ class EventRecord {
     this.rescueMedGiven,
     this.rescueMedHelped,
     this.rescueMedSecondDose,
+    this.hidden = false,
   });
 
   /// Parses a stored timestamp and normalises it to local wall-clock time.
@@ -516,6 +551,14 @@ class EventRecord {
         'rescueMedGiven':      rescueMedGiven,
         'rescueMedHelped':     rescueMedHelped?.name,
         'rescueMedSecondDose': rescueMedSecondDose,
+        // ⛔ ALWAYS WRITTEN, and this is the key that makes the backup safe.
+        // Restore is merge-by-id and add-only, so a hidden record missing from
+        // the file is destroyed by an uninstall. An OLD build reading this key
+        // simply ignores it and the record returns visible — recoverable in one
+        // tap, which is why the envelope version is NOT bumped for it. Bumping
+        // would make an older build REFUSE the whole file, losing everything to
+        // protect a flag.
+        'hidden': hidden,
       };
 
   /// Parses a stored record, or returns null if it cannot be trusted.
@@ -592,6 +635,17 @@ class EventRecord {
       rescueMedSecondDose: (map['rescueMedSecondDose'] is bool)
           ? map['rescueMedSecondDose'] as bool
           : null,
+      // ⛔ ABSENT MEANS FALSE, and that is the OPPOSITE rule to every field
+      // above it — deliberately. Those read absent as NULL because absent means
+      // NOT ASKED and a default would invent a clinical claim. Hiding is not a
+      // question anyone was asked: a record from a backup written before this
+      // field existed genuinely was not hidden, so false is the fact, not a
+      // guess standing in for one.
+      //
+      // ⚠️ THIS FALLBACK AND THE CONSTRUCTOR DEFAULT MUST AGREE.
+      // `rebuild_preserves_fields_test.dart` test 3 asserts it for every field
+      // and covers this one without being edited.
+      hidden: (map['hidden'] is bool) ? map['hidden'] as bool : false,
     );
   }
 }

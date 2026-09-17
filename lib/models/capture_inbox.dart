@@ -249,6 +249,11 @@ InboxDrainResult applyInbox(
       rescueMedGiven: record.rescueMedGiven,
       rescueMedHelped: record.rescueMedHelped,
       rescueMedSecondDose: record.rescueMedSecondDose,
+      // CARRIED, and the guard above is not rhetorical: this line was written
+      // BECAUSE `rebuild_preserves_fields_test` failed the moment `hidden`
+      // landed. It is the first field added since that test existed, and the
+      // test caught it before the field had a reader.
+      hidden: record.hidden,
     );
     changed = true;
   }

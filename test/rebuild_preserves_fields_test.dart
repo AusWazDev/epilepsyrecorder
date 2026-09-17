@@ -54,6 +54,9 @@ void main() {
         rescueMedGiven: true,
         rescueMedHelped: RescueResponse.helped,
         rescueMedSecondDose: false,
+        // NON-DEFAULT ON PURPOSE -- see the header: a field left at its
+        // default compares equal to a rebuild that destroyed it.
+        hidden: true,
       );
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));

@@ -44,11 +44,22 @@ import 'vocabulary.dart';
 ///   ADDITIVE — `triggers_json` is kept and stays authoritative, exactly as
 ///   `feelings_json` was in v7.
 ///
+/// 10 since a record can be hidden: `event.hidden`.
+///   ⛔ **THE ONE COLUMN THAT IS `NOT NULL` WITH A DEFAULT rather than nullable**,
+///   and it is the exception that the sentence below has to be read against.
+///   Every other added column is NULL on existing rows because NULL means NOT
+///   ASKED. Hiding was never asked: a record that predates the column genuinely
+///   is not hidden, so `DEFAULT 0` states a fact rather than inventing one, and
+///   there is no third state for a nullable column to carry.
+///   See [EventRecord.hidden].
+///
 /// Every bump so far is ADDITIVE ONLY — new tables, and ADD COLUMN on a
 /// populated table. Non-destructive, every existing value untouched, and the
 /// new columns NULL on every existing row, which is exactly right: those
-/// records predate the concept.
-const int kSqliteSchemaVersion = 9;
+/// records predate the concept. ⚠️ **v10 is additive and non-destructive on the
+/// same terms, but it is the first whose new column is not NULL** — the
+/// distinction is in the entry above, not a departure from this rule.
+const int kSqliteSchemaVersion = 10;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -119,7 +130,16 @@ const String createEventSql = 'CREATE TABLE event ('
     // in a raw dump and cannot be silently shifted by reordering the enum.
     'rescue_med_given INTEGER, '
     'rescue_med_helped TEXT, '
-    'rescue_med_second_dose INTEGER)';
+    'rescue_med_second_dose INTEGER, '
+    // ⛔ NOT NULL WITH A DEFAULT — the only column here that is, and the
+    // reasoning is the inverse of every nullable one above. Those are nullable
+    // because NULL means NOT ASKED. Hiding is not a question put to the user:
+    // a record nobody has hidden is not hidden, so there is no third state and
+    // `DEFAULT 0` records a fact rather than a guess.
+    //
+    // The default is stated HERE as well as in the ALTER, so a database born at
+    // v10 and one walked up to it are identical. See [EventRecord.hidden].
+    'hidden INTEGER NOT NULL DEFAULT 0)';
 
 const String createEventIdIndexSql = 'CREATE INDEX idx_event_id ON event(id)';
 const String createEventLoggedAtIndexSql =
@@ -134,6 +154,22 @@ const String createEventLoggedAtIndexSql =
 /// Steps are `if`, not `else if`, and each guards on its own version — so a
 /// v1 database installed after a long gap walks 1 -> 2 -> 3 in one open, and a
 /// v2 database runs only the second step.
+/// Whether [table] already has [column], read from the database itself.
+///
+/// ⭐ EXISTS BECAUSE A VERSION BOUND IS A CLAIM ABOUT A SHAPE, NOT A READING OF
+/// ONE. Three migration steps in this file have now been wrong about what shape
+/// a database arrives in — v4 and v8 threw `duplicate column name` on real
+/// upgrade paths, and the v10 step threw it across 22 tests. Each was repaired
+/// by hand-deriving a tighter bound, and the next one failed anyway.
+///
+/// ⚠️ Use it ALONGSIDE the version bound, never instead of it. The bound states
+/// WHEN the step belongs; this states whether the work is already done. Dropping
+/// the bound would make every open re-interrogate every step.
+Future<bool> hasColumn(Database db, String table, String column) async {
+  final info = await db.rawQuery('PRAGMA table_info($table)');
+  return info.any((r) => r['name'] == column);
+}
+
 Future<void> upgradeSchema(Database db, int from, int to) async {
   if (from < 2 && to >= 2) {
     await db.execute('ALTER TABLE event ADD COLUMN details_completed INTEGER');
@@ -244,6 +280,45 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     // ordering hazard the v7 step had to call `ensureSeeded` for.
     await migrateTriggersToTable(db);
   }
+  // ⛔ GUARDED ON THE TABLE'S ACTUAL SHAPE, NOT ON A VERSION BOUND ALONE — AND
+  // THE FIRST DRAFT OF THIS STEP WAS THE v4/v8 TRAP FOR THE THIRD TIME.
+  //
+  // It read `if (from < 10 && to >= 10)` with a comment asserting the trap
+  // "does not apply", on the reasoning that `event` is created only by
+  // `createSchema` and by no upgrade step. ⚠️ **That reasoning is true of
+  // `lib/` and was declared over everything.** Six test fixtures open at
+  // `version: 5`..`8` and build the table with `createEventSql`, which always
+  // emits the CURRENT column list — so they reach here ALREADY carrying
+  // `hidden`, and the ALTER threw `duplicate column name: hidden` across 22
+  // tests.
+  //
+  // ⭐ WHY IT WAS DORMANT UNTIL NOW: v10 is the FIRST `event`-column ALTER
+  // since v5. A fixture born at v5 or later never ran the v2 or v5 steps, so
+  // no earlier bump could expose the mismatch. The defect is as old as those
+  // fixtures; this change is merely the first to reach it.
+  //
+  // ⛔ A TWO-SIDED BOUND CANNOT FIX IT, which is why this differs from v4 and
+  // v8. There, only a database that reached the range under an OLDER BINARY
+  // lacked the column, so a bound named a real population. Here EVERY real
+  // database below 10 genuinely lacks it — a lower bound would skip the ALTER
+  // for devices that need it, trading 22 red tests for silent data loss.
+  //
+  // ⭐ SO THE SCOPE IS DERIVED FROM THE ARTEFACT RATHER THAN DECLARED ABOUT
+  // IT: ask the table what columns it has. That cannot be wrong about a
+  // starting shape, and it is the rule `C:\dev\CLAUDE.md` states for exactly
+  // this class of check.
+  //
+  // ⛔ STILL ADD COLUMN ONLY. No table rewrite, no row rewritten, no value
+  // derived. `save` is already a full delete-and-reinsert, and a migration
+  // that also rewrote would be a second rewrite path for one change.
+  //
+  // NOT NULL is legal here because a constant DEFAULT is supplied — SQLite
+  // requires exactly that pairing on ADD COLUMN. Every existing row gets 0,
+  // which is the honest value: none of them has been hidden.
+  if (from < 10 && to >= 10 && !await hasColumn(db, 'event', 'hidden')) {
+    await db.execute(
+        'ALTER TABLE event ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0');
+  }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
 
@@ -348,6 +423,9 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'rescue_med_second_dose': r.rescueMedSecondDose == null
           ? null
           : (r.rescueMedSecondDose! ? 1 : 0),
+      // No null arm, unlike every line above: the field is non-nullable, so
+      // there is nothing to collapse. See [EventRecord.hidden].
+      'hidden': r.hidden ? 1 : 0,
     };
 
 List<String> decodeStringList(Object? raw) {
@@ -415,6 +493,14 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     rescueMedSecondDose: row['rescue_med_second_dose'] == null
         ? null
         : row['rescue_med_second_dose'] == 1,
+    // ⛔ `== 1` WITH NO NULL GUARD, and here that is correct rather than the
+    // defect the three lines above warn about. Those guard NULL because the
+    // column is nullable and NULL means NOT ASKED, so collapsing it to false
+    // would be a claim. This column is NOT NULL DEFAULT 0, so NULL cannot
+    // occur — and if a hand-edited database somehow produced one, false is
+    // still the honest reading. Matches `fromMap`'s absent-key fallback, as
+    // this function's own contract requires.
+    hidden: row['hidden'] == 1,
   );
 }
 

@@ -77,6 +77,11 @@ EventRecord fullRecord(String id, DateTime at) => EventRecord(
       rescueMedGiven: true,
       rescueMedHelped: RescueResponse.helped,
       rescueMedSecondDose: false,
+      // NON-DEFAULT ON PURPOSE. `hidden` defaults to false, so a fixture
+      // leaving it unset compares false against false and the whole-map
+      // guard passes over a rebuild that dropped it -- the exact
+      // null-equals-null trap this helper's own header warns about.
+      hidden: true,
     );
 
 String startPayload(String id, DateTime at) => jsonEncode({
