@@ -800,6 +800,56 @@ behaviour would be solving the wrong problem.
 > ⛔ **NOTHING IS TO BE BUILT FROM THAT FINDING.** `kSeededRelevance` and the comparator stay as
 > they are: **built, correct, tested and deliberately unactivated.** The absence of a writer is the
 > finding, not the omission.
+>
+> ---
+>
+> 🔴 **THE PARAPHRASE FINDING ABOVE IS WITHDRAWN — 17 September 2026. It is left in place rather
+> than deleted, so a later reader sees that it was made and corrected.**
+>
+> **What it claimed, quoted:** *"THE BRIEF THAT ASKED FOR THAT READ QUOTED THE WARNING IN
+> PARAPHRASE, NOT VERBATIM … The sense matches; the words are not the document's."*
+>
+> ⛔ **THAT IS FALSE. THE BRIEF'S WORDING WAS VERBATIM — FROM A SECOND SOURCE, OUTSIDE THE REPO.**
+> It is the **Change Register**, `OneDrive\Projects\App Dev\Claude\Medical Event Recorder —
+> Change Register.md`, in the entry *"🔴 Condition relevance measured on the device, and RETIRED —
+> 7 September 2026"*, under *"✅ WHAT STAYS, AND IT MUST NOT BE READ AS AN OVERSIGHT"*:
+>
+> > ⚠️ **A future session that finds a ranking key with a reader, no writer, and an empty
+> > `_adoptedKeys` must not conclude the writer was forgotten.** It was measured on the real device
+> > against the real records and produced zero observable difference. **The absence of a writer is
+> > the finding, not the omission.**
+>
+> **Verified against the file on this machine, 17 September 2026** — present at that path,
+> 471,977 bytes, last modified 11 September 2026. ⭐ **Checked rather than taken from the brief,
+> because the brief's transcription is exactly what was in question.** It matches word for word.
+>
+> **The adviser sentence has two wordings too, and both are verbatim in their own source:**
+>
+> | source | wording |
+> |---|---|
+> | `STATUS.md` | *"Nothing is being ordered by condition, so nothing asserts anything."* |
+> | the Change Register | *"Nothing will be ordered by condition, so the app asserts nothing about any condition"* |
+>
+> ⛔ **THE `STATUS.md` QUOTATION ABOVE IS CORRECT AND STAYS.** Nothing in this correction disturbs
+> it. **Two documents carry two wordings of one warning; each is accurate to itself.**
+>
+> ⭐ **THE REAL DEFECT, WHICH IS THE ONE WORTH KEEPING: a brief quoted a non-repo document WITHOUT
+> NAMING IT.** ⚠️ That made the quotation **unverifiable from the repo**, and it **guaranteed** a
+> mismatch against the repo's own wording of the same warning — so the CLI's check could only ever
+> return "not verbatim", which is precisely what it returned. **The check was right about the
+> evidence available to it and wrong about the world.**
+>
+> ⛔ **THE RULE THAT FOLLOWS: any brief quoting the Change Register NAMES IT as the source in the
+> same sentence as the quote, and states that it does not travel by `git push`.** A quotation whose
+> source the reader cannot open is not a citation; it is an assertion wearing quotation marks.
+>
+> ⭐ **AND THIS IS AN INSTANCE OF §13(r) — correct knowledge existing, written down, and not
+> travelling.** ⚠️ **It is the FIRST instance where the direction is reversed: chat holding a
+> source the CLI cannot reach**, rather than the CLI holding one chat cannot. The register is
+> 471,977 bytes of exactly this kind of knowledge sitting outside `git`, and **there is no check
+> that proves it synced anywhere** — which is the same reason this correction does not claim it
+> reached anything.
+
 
 
 ### Then the component vocabulary
