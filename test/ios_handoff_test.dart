@@ -56,6 +56,29 @@ EventRecord record(
       notes: '',
     );
 
+/// Every nullable field populated, and `duration` left null so the recovery
+/// branch is the one that fires.
+///
+/// The populated values are what make an omission visible: a field the rebuild
+/// drops comes back null, and null-equals-null would hide it.
+EventRecord fullRecord(String id, DateTime at) => EventRecord(
+      id: id,
+      timestamp: at,
+      occurredAt: DateTime(2026, 8, 20, 9, 15),
+      duration: null,
+      durationSeconds: 187,
+      detailsCompleted: true,
+      feelings: const <String>['Tired'],
+      triggers: const <String>['Stress'],
+      referralRequired: true,
+      notes: 'a note',
+      eventType: 'seizure',
+      severity: EventSeverity.moderate,
+      rescueMedGiven: true,
+      rescueMedHelped: RescueResponse.helped,
+      rescueMedSecondDose: false,
+    );
+
 String startPayload(String id, DateTime at) => jsonEncode({
       'v': kInboxSchemaVersion,
       'kind': kInboxKindStart,
@@ -489,6 +512,47 @@ void main() {
       expect(out.records.single.duration, DurationCategory.oneToFive);
       expect(host.legacyCleared, isTrue,
           reason: 'retired, so nothing can read it as a mirror again');
+    });
+
+    test('a recovered duration changes ONLY the duration', () async {
+      // ⛔ THE SAME GUARD `rebuild_preserves_fields_test.dart` PUTS ON
+      // `applyInbox`, on the path that file's own header names as the second
+      // hazard and then does not cover.
+      //
+      // The branch above rebuilds an EXISTING record with an explicit
+      // `EventRecord(…)` listing every field, so every field it does not set is
+      // a field it destroys — the wording is that function's own. It has been
+      // wrong once already: the three rescue fields were destroyed here from
+      // 216bef7 until they were noticed, and `occurredAt` would have been the
+      // fourth.
+      //
+      // ⭐ COMPARED AS A WHOLE MAP, minus the one key this path exists to
+      // change, for the reason the sibling file gives: a test that names the
+      // fields it checks has to be extended by hand for every future field,
+      // which is the failure that caused this. A field added tomorrow is
+      // covered the day it lands.
+      final at = DateTime(2026, 8, 22, 16, 29, 59);
+      final before = fullRecord('A', at);
+      host.legacyRecords = jsonEncode([
+        record('A', at, duration: DurationCategory.oneToFive).toMap(),
+      ]);
+
+      final out = await run([before]);
+
+      // Positive control: the rebuild branch actually ran. Without this the
+      // map comparison passes trivially when nothing is rebuilt at all.
+      expect(out.durationsRecovered, <String>['A'],
+          reason: 'positive control: the rebuild branch must have executed, '
+              'or the comparison below is over an untouched record');
+
+      final after = out.records.single;
+      expect(after.duration, DurationCategory.oneToFive,
+          reason: 'the one field this path exists to set');
+
+      final b = before.toMap()..remove('duration');
+      final a = after.toMap()..remove('duration');
+      expect(a, b,
+          reason: 'the rebuild destroyed a field it was not meant to touch');
     });
 
     test('a record only the mirror has is added, by union not overwrite',

@@ -118,4 +118,65 @@ void main() {
     expect(after.occurredAt, DateTime(2026, 8, 20, 9, 15),
         reason: 'would have been the fourth field lost the same way');
   });
+
+  /// ⛔ THE SAME HAZARD ONE STEP EARLIER: a field that is not destroyed on the
+  /// way through, but arrives WRONG on the way in.
+  ///
+  /// Two independent statements of "what this field is when nobody said" exist
+  /// for every optional field — the constructor's default parameter value, and
+  /// `fromMap`'s own fallback for an absent key. Nothing makes them agree.
+  ///
+  /// ## ⚠️ WHY AN ABSENT KEY IS REACHABLE AT ALL
+  ///
+  /// `toMap` writes every key, including nulls, deliberately — so a payload
+  /// this app wrote never exercises a fallback. **The legacy App Group mirror
+  /// is the exception**: `reconcileLegacySharedRecords` parses records written
+  /// by an older build, and a key that build did not have is simply absent.
+  /// That read takes `fromMap`'s fallback, not the constructor's default, and
+  /// a divergence between the two would appear on that path ONLY.
+  ///
+  /// ## ⭐ WHY THIS COMPARES WHOLE MAPS RATHER THAN LISTING FIELDS
+  ///
+  /// Same reason as test 1. The six REQUIRED constructor parameters have no
+  /// default to disagree with, so they are supplied identically on both sides
+  /// and thereby pinned out of the comparison; everything left is exactly the
+  /// optional set. A new optional field is compared the day it lands, and a
+  /// new required one breaks this file's compilation rather than passing
+  /// silently.
+  test('3. fromMap\'s absent-key fallback equals the constructor default, '
+      'for every field', () {
+    final t = DateTime(2026, 8, 22, 18, 30);
+
+    // The required six, and nothing else. Values are arbitrary and identical
+    // on both sides — they exist to pin, not to assert.
+    final viaConstructor = EventRecord(
+      id: 'x',
+      timestamp: t,
+      duration: DurationCategory.lt1,
+      feelings: const <String>[],
+      referralRequired: false,
+      notes: '',
+    );
+
+    // ⛔ EVERY OPTIONAL KEY OMITTED, which is the whole point: supplying one as
+    // an explicit null would test the parse, not the fallback.
+    final viaFromMap = EventRecord.fromMap(<String, dynamic>{
+      'id': 'x',
+      'timestamp': t.toIso8601String(),
+      'duration': DurationCategory.lt1.name,
+      'feelings': const <String>[],
+      'referralRequired': false,
+      'notes': '',
+    });
+
+    expect(viaFromMap, isNotNull,
+        reason: 'positive control: the map must parse at all, or the '
+            'comparison below never happens');
+
+    expect(viaFromMap!.toMap(), viaConstructor.toMap(),
+        reason: 'an absent key takes fromMap\'s fallback while a fresh record '
+            'takes the constructor default — they must not disagree, or the '
+            'same record means two things depending on which door it came '
+            'through');
+  });
 }
