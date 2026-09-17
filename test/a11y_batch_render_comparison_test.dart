@@ -203,9 +203,23 @@ const Map<String, String> kBaseline = <String, String>{
   //
   // ⭐ COUNT STILL 26 at every width, across three separate changes now.
   // Anchoring moves paragraphs; it must not create or destroy one.
-  'home@375': '26|0f4328a65b772386',
-  'home@430': '26|4213dbc43d975993',
-  'home@800': '26|52789e80c2f9064c',
+
+// RE-BASELINED 18 September 2026 (second time today) - HOME'S COMPOSITION IS
+// CENTRED AGAIN, reversing 6fd3f1c's anchoring. A PURE VERTICAL TRANSLATION:
+// every paragraph count is unchanged at 26, across all three widths.
+//
+// NOTE THE DIFFERENCE FROM THIS MORNING'S SPACING RE-BASELINE, because it is
+// evidence rather than trivia: that one left home@800 untouched, since above
+// 560 the maxWidth: 520 cap binds and a horizontal inset goes inert. This is a
+// VERTICAL change, which no horizontal cap can absorb, so all three moved.
+//
+// PREVIOUS VALUES:
+//   home@375  26|0f4328a65b772386
+//   home@430  26|4213dbc43d975993
+//   home@800  26|52789e80c2f9064c
+  'home@375': '26|0b86b546f29e3373',
+  'home@430': '26|15d4582aab01e8aa',
+  'home@800': '26|0fe9ec35e9ad5a56',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.

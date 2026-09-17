@@ -1112,12 +1112,53 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 //
                 // ⚠️ On a tall screen the void now sits BELOW the content
                 // instead of splitting above and below it. That is the fix.
+                // ⛔ SUPERSEDED 18 September 2026 — THE COMPOSITION IS CENTRED
+                // AGAIN, AND §10 FIX 4 IS THEREBY REVERSED. The reasoning above
+                // is left exactly as written because it was sound on its own
+                // terms; what changed is the weighing, not the facts.
+                //
+                // ⚠️ THIS IS NOT AN INTERIM AND THERE IS NO PROPER FIX WAITING.
+                // `[read]`: §10 fix 4 IS this anchoring — AUDIT.md records it as
+                // "SHIPPED 17 September 2026, at 6fd3f1c — §10 fix 4". So the
+                // acceptance quoted above, that C3 and L tolerated glyph
+                // movement "on the stated grounds that §10 fix 4 would anchor
+                // it", now has nothing queued behind it. Restoring centring
+                // means accepting that movement with no pending remedy, and
+                // that is recorded rather than implied.
+                //
+                // THREE REASONS, so a later reader can weigh them:
+                //
+                //   1. The costs are not comparable in kind. Banner movement is
+                //      TRANSIENT and RARE. Half an empty screen is CONSTANT, and
+                //      it is what was seen and called unacceptable.
+                //   2. The banner behaviour was then observed directly — an
+                //      event started from the notification on 18 September, the
+                //      dashboard watched to move — and drew no objection. That
+                //      is a measurement of the objection, not an argument about
+                //      it.
+                //   3. Centring is not novel. It returns to a state C3 and L had
+                //      already accepted, rather than to an unconsidered one.
+                //
+                // ⭐ AND THE MEASUREMENT THAT MAKES IT SAFE, which the 17
+                // September change did not have: centring CANNOT overflow.
+                // `minHeight: maxHeight - 40` sizes this Column to the viewport,
+                // so when content fits, `mainAxisAlignment` places it; when
+                // content exceeds, the Column grows, spare space is zero, and
+                // centre and start render IDENTICALLY. Measured at 800x1280
+                // under Roboto at 100% and 200%: viewport 1224.0, content
+                // 1224.0, no scroll, no exceptions, at both scales —
+                // test/home_centring_overflow_test.dart and its 200% twin.
+                //
+                // ⛔ SO `minHeight` IS LOAD-BEARING, and that settles a question
+                // left open on 18 September: it is what makes this Column
+                // viewport-tall, which is what makes any vertical alignment
+                // meaningful at all. Without it the Column shrink-wraps and both
+                // alignments collapse to the same top-aligned result.
                 child: Align(
-                  alignment: Alignment.topCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
