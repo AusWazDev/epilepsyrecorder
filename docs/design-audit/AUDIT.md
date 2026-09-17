@@ -1279,7 +1279,7 @@ is affected, this one points at it and the earlier wording stands.
 > | **(bq)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(br)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bs)** | UNKNOWN | no citing commit, no dated resolution in the finding |
-> | **(bt)** 🔴 | 🔴 **LIVE — re-confirmed at HEAD 18 Sep 2026** | the guard in `writeEventPayload` still justifies itself by a write path retired at `4ba63e1`. **Stopped on, not fixed** |
+> | **(bt)** 🔴 | **SPLIT 18 Sep 2026** — justification CORRECTED; behaviour question **OPEN** | the false premise is annotated in place at `writeEventPayload`, quoting the original wording and naming `4ba63e1`. ⛔ **Whether iOS should keep a rollback copy is NOT decided — it depends on §13(be)** |
 > | **(bu)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bv)** 🔴 | SHIPPED | `dbe9086` + `5e4af17` — resolved by CONTENT 18 Sep 2026 |
 > | **(bw)** | UNKNOWN* | document claims FIXED; no citing code commit |
@@ -8013,6 +8013,29 @@ entry: read, not annotated — `STATUS.md` is append-only and this is recorded h
 > is recorded here is the STALE JUSTIFICATION, which is established by reading. Whether the
 > rollback copy should now exist is NOT established** — that needs the data-loss question
 > answered, not a grep.
+>
+> ⛔ **THE SPLIT, APPLIED 18 September 2026 — TWO QUESTIONS, ONE ANSWERED AND ONE DELIBERATELY NOT.**
+>
+> | | |
+> |---|---|
+> | **the justification is FALSE** | ✅ **CORRECTED NOW.** Documentation accuracy on a provable fact. The guard at `writeEventPayload` is **annotated in place**, dated, **quoting the original wording** and naming `4ba63e1` as what falsified it. ⛔ **The original comment is not rewritten and not removed.** |
+> | **whether a rollback copy should now EXIST** | 🔴 **OPEN. NOT DECIDED HERE.** It is a data-safety question and it **depends on the open §13(be) work.** ⛔ **Nothing added, nothing removed, guard left in place.** |
+>
+> ⭐ **WHY A STALE GUARD IS WORSE THAN NO GUARD, recorded because the reasoning is the finding and
+> not merely its cause.** A guard's whole function is to stop someone changing something.
+> ⛔ **One resting on a false premise does not fail open — it actively PREVENTS THE RIGHT CHANGE,
+> and its confident phrasing is exactly what protects it from being questioned.** ⚠️ **Three weeks
+> is how long this one held, and nothing in that time challenged it.**
+>
+> ⚠️ **AND IT REACHES THE RELEASE CANDIDATE. `[read]`, confirmed rather than taken on trust:**
+> `git merge-base --is-ancestor 4ba63e1 956b2d3` → **true**; the reverse → **false**, so the test
+> discriminates rather than merely passing. Both commits are 24 August, and `956b2d3` is an
+> ancestor of HEAD. ⛔ **So the candidate build carries the retirement AND the stale guard.**
+> ⭐ **That is an inherited OPEN QUESTION, not a defect in the cut** — recorded in `DECISIONS.md`
+> Amendment 2.
+>
+> ⛔ **CORRECTING A FALSE PREMISE IS NOT THE SAME AS SETTLING WHAT THE PREMISE WAS INVOKED TO
+> DECIDE**, and the two must not be read as one act.
 
 ### (bu) THE RECOVERY AXIS — BUILDABLE WHERE THE LAST THREE WERE NOT, AND ITS OBVIOUS SHAPE STILL FAILS ITS OWN DISPROOF
 

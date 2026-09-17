@@ -915,6 +915,46 @@ class EventStore {
 /// On first run there is no previous payload, so nothing is copied and the
 /// rollback key simply does not exist yet. It appears on the second save.
 Future<void> writeEventPayload(SharedPreferences prefs, String payload) async {
+  // ── ANNOTATION, 18 September 2026 ─────────────────────────────────────────
+  // ⛔ THE JUSTIFICATION BELOW IS FALSE AT HEAD. THE GUARD IS LEFT IN PLACE
+  //    ANYWAY, DELIBERATELY — see "WHAT IS NOT DECIDED" at the end of this note.
+  //
+  // WHAT THE NOTE BELOW CLAIMS, quoted so it stays legible if it ever moves:
+  //
+  //   "On iOS the quick-log capture path is native Swift, not Dart:
+  //    AppDelegate.handleQuickLogStart writes flutter.epilepsy_event_records_v1
+  //    in UserDefaults directly, and EndMEREventIntent (the Live Activity
+  //    button, running in the widget extension process) mutates it again."
+  //
+  // WHAT FALSIFIED IT: commit 4ba63e1, 24 August 2026,
+  //   "iOS transport: Swift posts facts, Dart writes the record list".
+  // Swift stopped writing the record list there. Each native site now posts a
+  // FACT to the capture inbox instead, and Dart drains it.
+  //
+  // MEASURED AT HEAD, with a control, because a zero from a search that never
+  // ran looks identical to a zero from a search that looked everywhere:
+  //
+  //   epilepsy_event_records_v1   across ios/   0 hits
+  //   forKey: kStorageKey         across ios/   0 hits
+  //   kAppGroupId  (the CONTROL)  across ios/   2 files   <- apparatus live
+  //   setString(kEventStorageKey) across lib/   1 site    <- this function
+  //
+  // ⚠️ WHY A STALE GUARD IS WORSE THAN NO GUARD, recorded with it because the
+  //    reasoning is the finding and not merely its cause. A guard's whole
+  //    function is to stop someone changing something. One resting on a false
+  //    premise does NOT fail open — it actively prevents the right change, and
+  //    its confident phrasing is exactly what protects it from being
+  //    questioned. This one held for three weeks and nothing challenged it.
+  //
+  // ⛔ WHAT IS NOT DECIDED HERE, AND MUST NOT BE READ AS DECIDED:
+  //    whether iOS should now KEEP a rollback copy. That is a data-safety
+  //    question, it depends on the open §13(be) work, and it is recorded OPEN.
+  //    Nothing is added and nothing is removed on the strength of this note.
+  //    Correcting a false premise is not the same as settling what the premise
+  //    was invoked to decide.
+  //
+  // Full finding: docs/design-audit/AUDIT.md §13(bt).
+  // ──────────────────────────────────────────────────────────────────────────
   // ── DO NOT REMOVE THIS GUARD ──────────────────────────────────────────────
   // iOS deliberately keeps NO rollback copy.
   //

@@ -522,6 +522,65 @@ The difference, and it is why this needed its own entry: there the apparatus ret
 the danger is believing the corpus is clean; here the apparatus returns *something*, and the danger
 is believing it came from where you meant it to.
 
+### ⛔ AN INSTRUMENT THAT CAN ONLY UNDER-REPORT IS NOT SAFE BY DEFAULT — MAKE THE NULL THE LOUD CASE
+
+⚠️ **Three instrument failures, 18 September 2026, all inside one pass over §13's status table.**
+⭐ **Recorded as ONE CLASS on purpose: separately they read as three typos, and the third would
+never have been written down at all.** ⛔ **All three UNDER-reported, silently, and one surfaced as
+a FALSE CLOSURE — a live finding presented as resolved, which is the direction that costs most.**
+
+    #   THE INSTRUMENT            WHAT IT DID
+    1   the status-marker match   matched CLOSED and FIXED INSIDE THEIR OWN NEGATIONS. §13(bd)
+                                  reads "NONE OF THESE IS CLOSED" and "STILL NOT FIXED", and
+                                  scored as resolved.  The token matched; the claim was its opposite
+    2   the row generator         matched ^### \(([a-z]{1,2})\) and produced 90 ROWS AGAINST 91
+                                  HEADINGS, with nothing in the output saying so.  (h-ii) is the one
+                                  heading whose label is not one or two bare letters
+    3   the positive control      FAILED TWICE FOR ITS OWN REASONS — once mangling a phrase that
+                                  lives in CLAUDE.md rather than AUDIT.md, once mangling one already
+                                  in the flagged set.  Both runs read as "apparatus dead" and were
+                                  WRONG ABOUT THE APPARATUS
+
+⛔ **THE RULE THEY SHARE.** **Where a search backs a claim of RESOLUTION, the null must be the LOUD
+case** — a count that does not reconcile, a row that does not exist, a control that did not move.
+⭐ **An instrument whose failure mode is silence returns the same output as a clean corpus**, and a
+clean corpus is what the reader was hoping for, so nothing in the reading resists it.
+
+**1. MUST: assert the reconciliation, never eyeball it.** Print the denominator beside the result
+and **fail the run when the two sides differ.** ⭐ **The one-line repair for #2 was available the
+whole time:** `grep -c '^### ('` against `grep -c '^> | \*\*('`, compared, non-zero exit on
+mismatch. **It would have caught the gap before the table was ever read.**
+
+**2. MUST: check what a match ASSERTS, not only that it occurred.** A marker search for CLOSED /
+FIXED / RESOLVED is a search for the word, and the word appears in its own negation. ⚠️ **Where a
+mechanical match cannot tell an assertion from its denial, it may enumerate candidates but must not
+set a status** — the adjudication stays manual, which is the enumeration-versus-judgement line the
+workspace rules already draw.
+
+**3. MUST: bias a resolution instrument toward OVER-reporting.** ⛔ **A false OPEN costs a second
+look. A false CLOSED costs the finding.** Those are not symmetric and the instrument should not
+treat them as though they were.
+
+⭐ **AND THE COROLLARY, WHICH IS THE THIRD FAILURE'S WHOLE LESSON: A CONTROL NEEDS ITS OWN
+CONTROL.** ⛔ **A control drawn from the population under test can fail for the very reason the
+test does.** Control #3 was meant to prove a sentence-integrity check was live; it was drawn
+without checking that its target was (a) in the file at all and (b) **currently reporting as
+intact**. A control aimed at an already-flagged sentence cannot move the count, so it proves
+nothing while looking exactly like a discharged control.
+
+**PRACTICAL FORM, and it is two cheap assertions:** before trusting a control, assert that the
+substitution **actually applied** (`mangled != original`), and that its target was in the
+**passing** set beforehand. **Then report the DELTA the control produced, not the run's verdict** —
+`newly reported: 1` is a claim about the control; *"the run went red"* is a claim about the run.
+
+⚠️ **This extends the rule immediately above rather than replacing it.** That one says a control's
+failure must be ATTRIBUTABLE. **This one says the control must be CAPABLE OF FAILING in the first
+place** — and a control that was never capable of it is indistinguishable, in its output, from an
+apparatus that is dead.
+
+*Full instances: `docs/design-audit/AUDIT.md` §13(bd) and the derivation note beneath §13's status
+table.*
+
 ### ⛔ CAPTURES ANSWER "HOW DOES IT LOOK". THEY DO NOT ANSWER "WHERE IS IT" OR "HOW BIG IS IT"
 
 ⚠️ **Geometry comes from widget tests. Appearance comes from captures. Do not cross them.**

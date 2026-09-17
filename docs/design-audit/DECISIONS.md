@@ -433,6 +433,12 @@ cut does not create it; it fails to fix it.**
 > same `endTime` supplies both the instruction's `at` and its `seconds`, and `capture_inbox.dart`
 > takes `instruction.seconds` straight through to `durationSeconds` without recomputing.
 >
+> ⚠️ **AND THE CUT INHERITS ONE FURTHER OPEN QUESTION, ADDED 18 September 2026 — `956b2d3` IS A
+> DESCENDANT OF `4ba63e1`** (`git merge-base --is-ancestor` true, reverse false), **so the candidate
+> carries both the iOS write-path retirement and the now-false rollback guard that justified itself
+> by it.** ⛔ **That is an OPEN DATA-SAFETY QUESTION, not a defect in the cut, and it is §13(be)'s
+> to settle — see §13(bt).**
+
 > 🔴 **IT CANNOT CURRENTLY BE MARKED, AND THAT IS A SEPARATE FINDING — see the feasibility read of
 > 17 September 2026.** `kBtnEnd` carries `.authenticationRequired` **unconditionally**, so it is
 > set whether or not the handset was locked; **a flag derived from it would be true for every iOS
