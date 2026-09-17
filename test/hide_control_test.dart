@@ -44,6 +44,19 @@ EventRecord rec(String id, int minute, {bool hidden = false}) => EventRecord(
       hidden: hidden,
     );
 
+/// Taps the hide control AND confirms the dialog restored by A2 on
+/// 18 September 2026.
+///
+/// ⛔ **Every hide in this file goes through here, because a hide is no longer
+/// one tap.** ⭐ Test 1a deliberately does NOT use it — it asserts the dialog
+/// itself, so it must meet the raw control.
+Future<void> tapHideAndConfirm(WidgetTester tester, Finder control) async {
+  await tester.tap(control);
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(FilledButton, 'Hide'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(Vocabularies.debugReset);
   tearDown(Vocabularies.debugReset);
@@ -76,27 +89,50 @@ void main() {
   Finder hideButton() => find.byIcon(Icons.visibility_off_outlined);
 
   group('1. THE CONTROL — one tap, no dialog', () {
-    testWidgets('1a. hiding shows NO dialog', (tester) async {
+    testWidgets('1a. hiding DOES show a dialog — superseded 18 Sep 2026',
+        (tester) async {
       await pump(tester, <EventRecord>[rec('a', 1), rec('b', 2)]);
 
       await tester.tap(hideButton().first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(AlertDialog), findsNothing,
-          reason: 'a reversible act does not earn a destructive dialog — C2\'s '
-              'own test is whether the user came here to do this thing');
+      expect(find.byType(AlertDialog), findsOneWidget,
+          reason: 'SUPERSEDED 18 September 2026. This previously asserted '
+              '`findsNothing`, on the reason "a reversible act does not earn a '
+              'destructive dialog". That was CORRECT ON 17 SEPTEMBER on a '
+              'precondition Brief 54 proved false: a69f0a7 traded the dialog '
+              'away because "the reveal shipped first at a0cfc7f", but Show '
+              'hidden revealed the ROW and restored nothing, so the act was '
+              'not in fact reversible. The toggle makes it reversible; the '
+              'dialog answers the SECOND failure, which the toggle does not '
+              'touch — that a hidden row simply vanishes from the default view '
+              'and the SnackBar is transient, so an accidental tap goes '
+              'unnoticed');
       expect(find.textContaining('cannot be undone'), findsNothing,
-          reason: 'and that sentence is now FALSE, so it must not survive in '
-              'any form');
+          reason: 'UNCHANGED, and it is the half of 17 September that still '
+              'holds: the objection was to the SENTENCE, not to the dialog. '
+              'That sentence is false and must not return in any form');
+      expect(find.text('Hide'), findsOneWidget,
+          reason: 'the affirmative is a FilledButton labelled for the act, '
+              'matching log_event_screen Confirm changes and backup_service '
+              'Restore from backup — not a second dialog pattern');
     });
 
-    testWidgets('1b. CONTROL: the apparatus would have seen a dialog',
+    testWidgets('1b. CONTROL: the dialog is the APP\'s, not the harness\'s',
         (tester) async {
-      // ⛔ A NEGATIVE NEEDS A POSITIVE CONTROL. `findsNothing` above passes
-      // just as well against a finder that can never match anything — a
-      // renamed widget, a typo, a dialog rendered outside the tested tree.
-      // This proves the same finder DOES see an AlertDialog in the same
-      // harness, so 1a's silence is a fact about the app.
+      // ⛔ SUPERSEDED 18 September 2026, AND ITS JOB INVERTED.
+      //
+      // It previously read: "A NEGATIVE NEEDS A POSITIVE CONTROL. `findsNothing`
+      // above passes just as well against a finder that can never match
+      // anything … This proves the same finder DOES see an AlertDialog in the
+      // same harness, so 1a's silence is a fact about the app."
+      //
+      // ⭐ 1a NO LONGER ASSERTS A NEGATIVE, so it no longer needs a finder
+      // control. What it needs instead is proof that the dialog it found came
+      // from the app rather than from this file: the harness-raised dialog
+      // below carries DIFFERENT text, and 1a asserts the app's own wording.
+      // A control that raises its own dialog and then confirms a dialog exists
+      // would pass with the feature deleted.
       await pump(tester, <EventRecord>[rec('a', 1)]);
 
       final ctx = tester.element(find.byType(HistoryScreen));
@@ -122,7 +158,7 @@ void main() {
       await pump(tester, <EventRecord>[rec('a', 1), rec('b', 2), rec('c', 3)]);
       expect(hideButton(), findsNWidgets(3), reason: 'precondition: three rows');
 
-      await tester.tap(hideButton().first);
+      await tapHideAndConfirm(tester, hideButton().first);
       await tester.pumpAndSettle();
 
       expect(hideButton(), findsNWidgets(2),
@@ -147,7 +183,7 @@ void main() {
       final before = rec('a', 1);
       await pump(tester, <EventRecord>[before, rec('b', 2)]);
 
-      await tester.tap(hideButton().first);
+      await tapHideAndConfirm(tester, hideButton().first);
       await tester.pumpAndSettle();
 
       final after = written.firstWhere((r) => r.id == 'a');
@@ -178,7 +214,7 @@ void main() {
       // avoids.
       await pump(tester, <EventRecord>[rec('a', 1), rec('b', 2), rec('c', 3)]);
 
-      await tester.tap(hideButton().at(1)); // the MIDDLE row
+      await tapHideAndConfirm(tester, hideButton().at(1)); // the MIDDLE row
       await tester.pumpAndSettle();
       expect(written.map((r) => r.id), <String>['a', 'b', 'c'],
           reason: 'precondition: index preserved by the hide itself');
@@ -201,7 +237,7 @@ void main() {
       final before = rec('b', 2);
       await pump(tester, <EventRecord>[rec('a', 1), before, rec('c', 3)]);
 
-      await tester.tap(hideButton().at(1));
+      await tapHideAndConfirm(tester, hideButton().at(1));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Undo'));
       await tester.pumpAndSettle();
@@ -222,9 +258,9 @@ void main() {
       // undoable, and only one bar says so.
       await pump(tester, <EventRecord>[rec('a', 1), rec('b', 2), rec('c', 3)]);
 
-      await tester.tap(hideButton().first);
+      await tapHideAndConfirm(tester, hideButton().first);
       await tester.pump();
-      await tester.tap(hideButton().first);
+      await tapHideAndConfirm(tester, hideButton().first);
       await tester.pump();
 
       expect(find.byType(SnackBar), findsOneWidget,
@@ -263,7 +299,7 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
-      await tester.tap(hideButton().first);
+      await tapHideAndConfirm(tester, hideButton().first);
       await tester.pumpAndSettle();
       expect(find.text('Undo'), findsOneWidget,
           reason: 'positive control: the bar is up before the pop');
@@ -284,7 +320,7 @@ void main() {
       // list the screen hands out, which is the one home assigns and persists,
       // still carries the record after a hide through the UI.
       await pump(tester, <EventRecord>[rec('a', 1), rec('b', 2)]);
-      await tester.tap(hideButton().first);
+      await tapHideAndConfirm(tester, hideButton().first);
       await tester.pumpAndSettle();
 
       expect(written, hasLength(2),

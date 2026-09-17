@@ -114,7 +114,12 @@ void main() {
             'is not hidden and the test is vacuous');
 
     // One tap, no confirmation — see the sibling file.
+    // ⛔ A HIDE IS NO LONGER ONE TAP — A2 restored the confirmation on
+    // 18 September 2026, so the control opens a dialog and the act only
+    // happens on the affirmative.
     await tester.tap(find.byIcon(Icons.visibility_off_outlined).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Hide'));
     await settle(tester);
 
     // ⛔ READ THE TABLE, NOT `store.load()`. A second `serialise` call after the

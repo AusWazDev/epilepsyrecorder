@@ -967,6 +967,52 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return;
     }
 
+    // ⛔ CONFIRM BEFORE HIDING — RESTORED 18 September 2026, ON HIDE ONLY.
+    //
+    // `a69f0a7` removed a confirmation here on 17 September, and its reasoning
+    // is quoted rather than paraphrased so the supersession is honest:
+    //
+    //   "THE CONFIRMATION IS GONE BECAUSE IT HAD BECOME FALSE. It said 'This
+    //    action cannot be undone.' … a reversible act does not earn a
+    //    destructive dialog."
+    //
+    // ⭐ THE OBJECTION WAS TO THE SENTENCE, NOT TO THE DIALOG. Deleting the
+    // dialog fixed a copy defect by deleting the copy. That trade was also
+    // said to hold "ONLY because the reveal shipped first at a0cfc7f" — and
+    // that precondition was never true: *Show hidden* revealed the ROW and
+    // restored nothing, which is why three records sat unrecoverable.
+    //
+    // ⚠️ TWO FAILURES EXIST AND THE TOGGLE FIXES ONLY ONE. "Could not undo" is
+    // solved. "Did not know it happened" is not — the default view excludes
+    // hidden rows, so the row simply vanishes and the SnackBar is transient.
+    // This is the only thing in the set that converts an accidental tap into an
+    // intentional one.
+    //
+    // ⛔ NOT DESTRUCTIVE IN VOICE. No warning tone, and no "cannot be undone" —
+    // that would be the same falsehood in a new dialog. It confirms intent AND
+    // teaches the reversal, so it is where a user discovers that Filters brings
+    // records back.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hide this event?'),
+        content: const Text(
+            'It stays in your records. You can bring it back from Filters.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hide'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
     // The moment of the TAP. Hiding is a change the user made, and their
     // most recent intent is what the field records.
     setState(() =>
