@@ -700,6 +700,69 @@ in two idioms, for one entity.**
 > with the component vocabulary, exactly as recorded above. **This adds a cost to the current answer;
 > it does not choose a different one.**
 
+>
+> ---
+>
+> ✅ **ANSWERED 17 September 2026, ON MEASUREMENT, at `d0d9919` — COMPLETENESS IS THE RIGHT AXIS
+> AND IT STANDS.** ⛔ **The 8 and 9 September blocks above stand exactly as written; this is the
+> next dated reading, not a correction of either.**
+>
+> The question named **three** differences the axis hands a user. Measured, each one:
+>
+> | the difference the question named | as at 17 September 2026 |
+> |---|---|
+> | **two densities** | ⛔ **GONE.** No text style in either path resolves outside `MERType`. Only two locally-constructed `TextStyle`s exist across both files — the form's `_EventTypeButton` label and the wizard's `_heading` — and both draw every size and weight from it |
+> | **two control kinds** | ⚠️ **ALL BUT ONE GONE.** Both paths render `ChoiceChip`, `FilterChip` and `ActionChip`. **One survives: event type is a hand-rolled `GestureDetector` grid on the form and a `ChoiceChip` picker in the wizard** — §1's finding, still true |
+> | **two field orders** | ✅ **REAL, and four differences wide** — duration/type swapped, beforehand/afterwards swapped, severity at 4 against 3, and `occurredAt` at position 3 on the form against the wizard's summary |
+>
+> ⭐ **AND THE COST IS EQUAL, WHICH IS WHAT DECIDES IT.** Four taps either way — to change severity
+> on a complete record, or to add it to an incomplete one; five where all three fields are null.
+> **The paths differ in SCREENS, not in EFFORT** — one screen plus a dialog against two to three.
+>
+> ⛔ **`firstUnansweredStep` IS INTRINSICALLY A COMPLETENESS MECHANISM, AND THAT IS THE ARGUMENT.**
+> It is what keeps the wizard cheap, by never re-asking a field the record already answers — and it
+> reads completeness to do it. **The axis is not a classification imposed on the two screens from
+> outside; it is what one of them RUNS ON.** Taken with the form's own recorded reason — *"Stepping
+> a completed record through screens to change severity would be worse than the form"* — the axis
+> is doing real work and the measurement supports it.
+>
+> ⚠️ **THE ROUTER IS A DISJUNCTION, AND THAT IS DELIBERATE RATHER THAN A DEFECT. RECORD IT; DO NOT
+> SIMPLIFY IT.** Both entry points share one predicate,
+> `r.detailsCompleted == false || isIncomplete(r)`. **A record with duration, type and severity all
+> set still routes to the wizard when the flag is false.** `isIncomplete` was added to catch records
+> the flag missed — *"WHATEVER the flag says"* — and the flag catches records the field check cannot
+> see. **Completeness is the router. It is not the SOLE router**, and each half covers the other's
+> blind spot.
+>
+> ### ⛔ WHAT THIS ANSWER LICENSES, AND WHAT IT DOES NOT
+>
+> **§10's fourth part opens *"With decisions 1 to 3 answered."* As at 17 September 2026 all three
+> are: 1 **ANSWERED** (here), 2 **DEFERRED** (`daily_entry` designed and deliberately not built),
+> 3 **RETIRED** (on the 7 September device measurement). ⭐ **The layout work is unblocked.**
+>
+> ⛔ **THE SURVIVING DIFFERENCES SPLIT BY WHO OWNS THEM, AND THEY MUST NOT BE FIXED TOGETHER.**
+>
+> | residue | owner | disposition |
+> |---|---|---|
+> | event type: hand-rolled grid vs `ChoiceChip` | **the component vocabulary** — *one selection control per cardinality* | **fix now** |
+> | severity's wording differs between the paths | **the component vocabulary** — one question, one label | **fix now** |
+> | four field-order differences | **the layout work** | ⏸️ **carried, not fixed.** Reordering fields IS layout work, and §10 sequences the vocabulary before it |
+> | screen count, 1 + dialog against 2–3 | **the layout work** | ⏸️ **carried.** Taps are equal; this is not a cost defect |
+> | `occurredAt` at position 3 against the summary | **the layout work** | ⏸️ **carried, and presumed deliberate.** The summary control states its own meaning in both states, verified at `6fd3f1c` |
+>
+> ⚠️ **NOT MEASURED, AND NAMED RATHER THAN ESTIMATED: scroll distance on the form at 375×667.** It
+> needs a test, and the pass that produced these figures was forbidden from adding one.
+> ⛔ **Recorded as an OPEN MEASUREMENT the layout work needs — not as a finding**, because an
+> estimate here would be indistinguishable from a measurement to the next reader.
+>
+> ⭐ **AND THE APPARATUS WAS SHOWN TO DISCRIMINATE BEFORE ANY OF THE ABOVE WAS REPORTED**, because
+> two of the three answers are partial or total nulls. Two-sided: **form against the medication add
+> sheet** returned differences in both field order and control kind, and **the wizard's triggers
+> control against its observations control** — two genuinely distinct call sites, not one thing
+> compared with itself — returned none. **A null without a control is unfalsifiable, and this
+> register already carries that rule.**
+
+
 **2. How do episode and daily records coexist?** History, the export and the entry point all assume
 one kind. **`daily_entry` is not a screen to add** — it is a second record shape that every one of
 those surfaces has to accommodate.
@@ -998,6 +1061,13 @@ deliberately and nothing is unreachable.)*
 **With decisions 1 to 3 answered.** ⭐ **Which is why option (b) beat option (a):** the outstanding
 features are not small, and building them into a layout already thought messy means reworking them
 twice.
+
+> ✅ **ALL THREE ARE ANSWERED AS AT 17 September 2026 — 1 ANSWERED, 2 DEFERRED, 3 RETIRED — SO THIS
+> PART IS UNBLOCKED.** ⛔ **The statuses are NOT restated here; they would drift.** Decision 1's
+> answer and what it licenses are recorded beneath decision 1 itself; decision 2's deferral beneath
+> decision 2; decision 3's retirement is in `STATUS.md` and the Change Register, both dated
+> 7 September 2026.
+
 
 ---
 
