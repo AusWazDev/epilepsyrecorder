@@ -182,24 +182,35 @@ void main() {
     // resolves to Material's own 14, NOT `MERTheme`'s `MERType.caption` (12)
     // that a user actually sees. Stated because a reader will otherwise take
     // these rects for the shipped layout. Pre-existing, not introduced here.
+    // ⛔ RECAPTURED 17 September 2026 FOR B1, which replaced the form's
+    // event-type `GridView` of hand-rolled tiles with `ChoiceChip`s in a
+    // `BoundedChipWrap`. That control sits ABOVE everything this baseline
+    // measures.
+    //
+    // ⭐ **EVERY x AND EVERY SIZE IS UNCHANGED. ONLY y MOVED**, and by a
+    // CONSTANT within each width: **+107.3 at 375 and 430, and −8.0 at 800**.
+    // That is a pure vertical translation — the picker above got taller on a
+    // phone and slightly shorter on a tablet — and it is the signal that B1
+    // moved these chips without touching them. A change that had altered the
+    // chips themselves would have moved a width or a size too.
     const baseline = <int, List<String>>{
       375: <String>[
-        '33.0,694.7 98.7x20.0',
-        '173.7,694.7 84.6x20.0',
-        '33.0,1014.7 84.6x20.0',
-        '159.6,1014.7 141.0x20.0',
+        '33.0,802.0 98.7x20.0',
+        '173.7,802.0 84.6x20.0',
+        '33.0,1122.0 84.6x20.0',
+        '159.6,1122.0 141.0x20.0',
       ],
       430: <String>[
-        '33.0,674.9 98.7x20.0',
-        '173.7,674.9 84.6x20.0',
-        '33.0,980.9 84.6x20.0',
-        '159.6,980.9 141.0x20.0',
+        '33.0,765.0 98.7x20.0',
+        '173.7,765.0 84.6x20.0',
+        '33.0,1071.0 84.6x20.0',
+        '159.6,1071.0 141.0x20.0',
       ],
       800: <String>[
-        '157.0,679.0 98.7x20.0',
-        '297.7,679.0 84.6x20.0',
-        '157.0,948.0 84.6x20.0',
-        '283.6,948.0 141.0x20.0',
+        '157.0,671.0 98.7x20.0',
+        '297.7,671.0 84.6x20.0',
+        '157.0,940.0 84.6x20.0',
+        '283.6,940.0 141.0x20.0',
       ],
     };
 

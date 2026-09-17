@@ -242,8 +242,34 @@ void main() {
       final late = kSeedObservations.last.value;
       await pump(t, LogEventScreen(existing: recordCarrying([late])));
 
-      final v = (t.renderObject(find.byType(BoundedWrap).first)
-              as RenderBoundedWrap)
+      // ⛔ DERIVED, NOT POSITIONAL. This was `.first`, which silently meant
+      // "the observation picker" only because observations happened to be the
+      // first bounded wrap on the form. B1 bounded the EVENT TYPE picker too,
+      // and event type is the form's first field — so `.first` began pointing
+      // at a different control while still passing its `.first` lookup.
+      //
+      // ⭐ The observation picker is identified by its own SIZE: it offers
+      // every offerable observation, which no other picker on this screen
+      // comes close to. That is a property of the thing being tested rather
+      // than of where it sits.
+      final wraps = find.byType(BoundedWrap);
+      final obsWrap = t
+          .widgetList(wraps)
+          .toList()
+          .asMap()
+          .entries
+          .map((e) => (
+                i: e.key,
+                n: (t.renderObject(wraps.at(e.key)) as RenderBoundedWrap)
+                    .childVisibility
+                    .length
+              ))
+          .reduce((a, b) => b.n > a.n ? b : a);
+      expect(obsWrap.n, greaterThan(Vocabularies.offerableEventTypes.length),
+          reason: 'positive control: the wrap selected really is the '
+              'observation picker and not the event-type one');
+
+      final v = (t.renderObject(wraps.at(obsWrap.i)) as RenderBoundedWrap)
           .childVisibility;
       expect(v.where((e) => e).length, lessThan(v.length),
           reason: 'the observation picker is collapsed on the form');
@@ -252,13 +278,16 @@ void main() {
       expect(v[idx], isTrue);
     });
 
-    testWidgets('14. FORM: both pickers are bounded, not just the first',
+    testWidgets('14. FORM: every picker is bounded, not just the first',
         (t) async {
       await pump(t, const LogEventScreen());
       final wraps = find.byType(BoundedWrap);
-      expect(t.widgetList(wraps).length, 2,
-          reason: 'observations AND beforehand');
-      for (var i = 0; i < 2; i++) {
+      // ⚠️ WAS 2 — "observations AND beforehand". B1 bounded the EVENT TYPE
+      // picker as well, replacing the hand-rolled `GridView` of tiles that was
+      // the last unbounded selection control on this screen. Three now.
+      expect(t.widgetList(wraps).length, 3,
+          reason: 'event type, observations AND beforehand');
+      for (var i = 0; i < 3; i++) {
         final v =
             (t.renderObject(wraps.at(i)) as RenderBoundedWrap).childVisibility;
         expect(v.where((e) => e).length, lessThan(v.length),

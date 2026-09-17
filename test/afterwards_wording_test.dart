@@ -164,7 +164,12 @@ void main() {
         MaterialApp(home: LogEventScreen(existing: legacyRecord())));
     await tester.pumpAndSettle();
 
-    expect(find.text('SEVERITY'), findsOneWidget);
+    // ⚠️ WAS `'SEVERITY'`, 17 Sep 2026. The form adopted the wizard's wording
+    // for that heading (B2) because the wizard's code declares its relative
+    // framing load-bearing. The CONTROL is unaffected — it needs a label that
+    // is present, not that particular label — and `DURATION` beside it is the
+    // second anchor that makes the move visible rather than silent.
+    expect(find.text('COMPARED WITH THE OTHERS HERE'), findsOneWidget);
     expect(find.text('DURATION'), findsOneWidget);
   });
 

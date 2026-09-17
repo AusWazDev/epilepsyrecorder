@@ -117,7 +117,11 @@ void main() {
         MaterialApp(home: LogEventScreen(existing: legacyRecord())));
     await tester.pumpAndSettle();
 
-    expect(find.text('SEVERITY'), findsOneWidget);
+    // ⚠️ WAS `'SEVERITY'`, 17 Sep 2026 — and this control has now moved FOUR
+    // times, which the note below already asks be read as a record. The form
+    // adopted the wizard's wording for that heading (B2). The control's job is
+    // unchanged: it needs a label that IS present, not that one.
+    expect(find.text('COMPARED WITH THE OTHERS HERE'), findsOneWidget);
     // ⚠️ THIS CONTROL HAS MOVED THREE TIMES, and it is worth reading as a
     // record rather than as churn: it tracked the observation label through
     // "How are you feeling?" -> "How did you feel afterwards?" ->

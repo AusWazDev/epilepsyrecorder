@@ -127,9 +127,29 @@ const Map<String, String> kBaseline = <String, String>{
   //
   // ⭐ Still 111 at every width across BOTH changes. Casing a label alters the
   // glyphs, never the paragraph count.
-  'form@375': '111|38d3ee217359d306',
-  'form@430': '111|6bae0bf974af9c1d',
-  'form@800': '111|1c3371e344744849',
+  //
+  // 🔴 MOVED AGAIN FOR B1 — AND THIS IS THE FIRST TIME THE **COUNT** HAS
+  // MOVED, so it is explained rather than just re-recorded. The form's event
+  // type went from a `GridView` of hand-rolled tiles to `ChoiceChip`s in a
+  // `BoundedChipWrap`.
+  //   B1 before  111|38d3ee217359d306  111|6bae0bf974af9c1d  111|1c3371e344744849
+  //
+  // ⚠️ **114 at 375 and 430, still 111 at 800**, and the three extra
+  // paragraphs were MEASURED, not assumed: diffing the form's paragraphs
+  // across widths, the only strings present at 375 and absent at 800 are
+  // `4 to choose from`, a chevron icon glyph, and `Show all`. **That is the
+  // bounded picker's disclosure**, which appears at 375/430 because the four
+  // type chips need a fourth row there and not at 800.
+  //
+  // ⛔ AND THE CONSEQUENCE, RECORDED BECAUSE IT IS A REAL COST: at 375 the
+  // picker renders **3 of 4** event types, with the fourth behind `Show all`.
+  // The grid always showed all four. The selected chip and any orphan are
+  // PINNED, so a value the record holds can never be hidden — but an
+  // unselected type costs one tap at 375. The wizard's picker behaves
+  // identically (**4 of 5** at 375), which is what B1 set out to achieve.
+  'form@375': '114|6ab040606e0afa76',
+  'form@430': '114|28fb9b5df8b0c24c',
+  'form@800': '111|24c6846d23152844',
   // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
   // "change that is MEANT to move text" in the sense the rule above requires.
   //

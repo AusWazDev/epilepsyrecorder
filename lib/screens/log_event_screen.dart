@@ -696,7 +696,31 @@ appBar: AppBar(
 
                         const SizedBox(height: 28),
 
-                        _SectionLabel('Severity'),
+                        // ⛔ THE WIZARD'S WORDING, ADOPTED — B2. This read
+                        // `'Severity'`, and the two paths did not merely word
+                        // one question differently: the wizard's code declares
+                        // its framing LOAD-BEARING, and the form was the path
+                        // that dropped it.
+                        //
+                        // ⭐ *"Severity is kept precisely because it is a
+                        // RELATIVE self-assessment — how this event compares
+                        // with this person's own others — which is data a
+                        // specialist cannot get any other way."* A bare
+                        // *Severity* over mild/moderate/severe reads as a
+                        // SCALE; this reads as a comparison with the user's
+                        // own records.
+                        //
+                        // ⚠️ The precedent is already in this file: the
+                        // afterwards heading is "word for word the wizard's
+                        // step 4 heading, for the same reason the type label
+                        // above matches its step 2". The form already adopts
+                        // the wizard's wording where that wording carries a
+                        // reason.
+                        //
+                        // ⛔ ONE HEADING. The option labels, `EventSeverity`
+                        // and everything stored are untouched — the three
+                        // words are persisted and permanent.
+                        _SectionLabel('Compared with the others here'),
                         const SizedBox(height: 8),
                         _SelectionRow<EventSeverity>(
                           options:    EventSeverity.values,
@@ -1000,61 +1024,97 @@ class _EventTypeGrid extends StatelessWidget {
         ? null
         : selected;
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      childAspectRatio: 3.2,
-      children: <Widget>[
-        for (final e in entries)
-          _EventTypeButton(
-            type: e.value,
-            label: e.label,
-            isSelected: selected == e.value,
-            onTap: () => onSelected(e.value),
-          ),
-        if (orphan != null)
-          _EventTypeButton(
-            type: orphan,
-            label: eventTypeLabel(orphan),
-            isSelected: true,
-            onTap: () {},
-          ),
-        if (onAdd != null)
-          _EventTypeButton(
-            type: '',
-            label: 'Add your own',
-            isSelected: false,
-            onTap: onAdd!,
-            icon: Icons.add,
-          ),
-      ],
+    // ⛔ B1 — THE LAST HAND-ROLLED SELECTION CONTROL IN EITHER PATH IS GONE.
+    // This was a `GridView.count` of `GestureDetector` tiles; event type is
+    // single-select from a list in both paths, so per the vocabulary it is
+    // ONE control, and this is now the idiom the wizard already uses.
+    //
+    // ⭐ EVERY BEHAVIOUR THE TILES CARRIED IS CARRIED HERE, and each was
+    // confirmed against the code before the change rather than after:
+    //
+    //   null selects nothing        no chip is `selected`
+    //   the ORPHAN value            a type this vocabulary has never seen —
+    //                               from a backup made elsewhere — still gets
+    //                               a chip, selected, and it is PINNED so the
+    //                               cap can never hide a value the record holds
+    //   `onAdd == null` hides add   unchanged, and it is the same rule the
+    //                               wizard's picker follows
+    //   a per-type ICON             `avatar:`, with `showCheckmark: false` so
+    //                               the tick does not displace it — the avatar
+    //                               and the checkmark share one slot
+    //   a per-type IDENTITY COLOUR  `selectedColor:`, the same mechanism
+    //                               severity's `colorFor` uses
+    //
+    // ⚠️ WHAT IS NOT CARRIED, STATED: the two-column fixed-aspect GRID and its
+    // ~51pt tile. A chip sizes to its content and `RawChip` always lays out
+    // [avatar][label] in a row, so a grid of equal tiles is not expressible on
+    // one. That is APPEARANCE, not behaviour — the tap target is 48 either
+    // way — and it is the density a chip vocabulary means.
+    //
+    // ⭐ AND THE COLOUR CHECKER ALREADY VALIDATES THIS RENDERING. `kWhiteOnFill`
+    // carries `selected type button, seizure|absence|medication|other` as
+    // SOLID identity fills, and test 8 asserts white clears 4.5 on every
+    // identity `on`. The tiles rendered a 10% TINT with coloured text; the
+    // chip renders the fill the checker was already describing.
+    final chips = <Widget>[];
+    final pinned = <bool>[];
+
+    for (final e in entries) {
+      final isSel = selected == e.value;
+      pinned.add(isSel);
+      chips.add(ChoiceChip(
+        avatar: Icon(_iconFor(e.value),
+            size: 18,
+            color: isSel ? MERColours.onFill : MERColours.onSurfaceMuted),
+        showCheckmark: false,
+        label: Text(e.label),
+        selected: isSel,
+        selectedColor: _colourFor(e.value),
+        onSelected: (_) => onSelected(e.value),
+      ));
+    }
+
+    if (orphan != null) {
+      pinned.add(true);
+      chips.add(ChoiceChip(
+        avatar: const Icon(Icons.edit_note_outlined,
+            size: 18, color: MERColours.onFill),
+        showCheckmark: false,
+        label: Text(eventTypeLabel(orphan)),
+        selected: true,
+        selectedColor: _colourFor(orphan),
+        onSelected: (_) {},
+      ));
+    }
+
+    if (onAdd != null) {
+      pinned.add(true);
+      chips.add(ActionChip(
+        avatar: const Icon(Icons.add, size: 18),
+        label: const Text('Add your own'),
+        onPressed: onAdd,
+        // V1's corner geometry: the add affordance is a rounded rectangle at a
+        // visibly smaller radius than the stadium the value chips take.
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
+      ));
+    }
+
+    return BoundedChipWrap(
+      chips: chips,
+      pinned: pinned,
+      // The add pill is an ACTION and is excluded from the count, the same way
+      // `_SelectionWrap` and the wizard's pickers exclude it.
+      totalCount: entries.length + (orphan != null ? 1 : 0),
+      selectedCount: selected == null ? 0 : 1,
     );
   }
-}
-
-class _EventTypeButton extends StatelessWidget {
-  final String type;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  const _EventTypeButton({
-    required this.type,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-    this.icon,
-  });
 
   /// An icon per SEEDED type, and one neutral icon for everything else. A
   /// user-defined type gets no bespoke icon for the same reason it gets no
   /// bespoke colour — see `_EventTypeFilterChips._activeColor` in History.
-  IconData get _icon {
-    if (icon != null) return icon!;
+  static IconData _iconFor(String type) {
     switch (type) {
       case kTypeSeizure:
         return Icons.monitor_heart_outlined;
@@ -1067,7 +1127,7 @@ class _EventTypeButton extends StatelessWidget {
     }
   }
 
-  Color get _selectedColor {
+  static Color _colourFor(String type) {
     switch (type) {
       case kTypeSeizure:
         return MERColours.identitySeizureOn;
@@ -1079,52 +1139,13 @@ class _EventTypeButton extends StatelessWidget {
         return MERColours.identityOtherOn;
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? _selectedColor.withOpacity(0.1)
-              : MERColours.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? _selectedColor : MERColours.outline,
-            width: isSelected ? 1.5 : 0.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              _icon,
-              size: 18,
-              color: isSelected ? _selectedColor : MERColours.onSurfaceMuted,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize:   MERType.caption,
-                  fontWeight: isSelected
-                      ? MERType.emphasis
-                      : MERType.regular,
-                  color: isSelected
-                      ? _selectedColor
-                      : MERColours.onSurface,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
+
+// ⛔ `_EventTypeButton` WAS HERE AND IS DELETED — B1, 17 Sep 2026. It was the
+// LAST hand-rolled selection control in either edit path: a `GestureDetector`
+// over an `AnimatedContainer`, rendering a 10% tint with identity-coloured
+// text. `_EventTypeGrid` now builds `ChoiceChip`s carrying every behaviour it
+// had — see the note there for what was carried and what was not.
 
 /* ===========================
    SINGLE SELECT ROW
