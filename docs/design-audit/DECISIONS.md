@@ -411,6 +411,36 @@ rule's condition, met exactly.
 `.authenticationRequired` is absent at `192ae40` **and** at `824cd16`, present at `11d2fda`. **The
 cut does not create it; it fails to fix it.**
 
+> ⚠️ **THE TRADE THE CUT MAKES, RECORDED 17 September 2026 — CONFIRMED BY READING, NOT INFERRED
+> FROM ENDPOINTS.** `[read]`: `git log -S ".authenticationRequired" -- ios/` returns **two**
+> commits. **`956b2d3` is the one that adds `options: [.authenticationRequired]`.** The other,
+> `eb8196e` (27 Aug), adds only a COMMENT mentioning the symbol and is **after** the cut — it adds
+> no option, **so the cut is unaffected by it.**
+>
+> ⛔ **SO THE CHOSEN CUT IS THE COMMIT THAT INTRODUCES THE AUTHENTICATION PROMPT ON 16.2–16.x, AND
+> THEREFORE INTRODUCES THE DURATION INFLATION ON THAT TIER.**
+>
+> ⭐ **BEFORE IT**, ending from a locked device on that tier failed silently and left the `lt1`
+> default — **a multi-minute event recorded as under one minute.**
+> ⭐ **AFTER IT**, the duration inflates by the authentication delay, because both end paths stamp
+> `Date()` **inside the handler**, which iOS runs only once authentication has succeeded
+> (`AppDelegate.swift` `handleQuickLogEnd`, `EndMEREventIntent.perform()`).
+>
+> ⛔ **BOTH ARE WRONG. THE SECOND IS CLOSER TO TRUE AND FAILS LOUDLY.** ⚠️ **The trade was made
+> without being seen, and is recorded here so it is not discovered later.**
+>
+> ⚠️ **AND THE INFLATION IS IN THE DURATION ITSELF, not merely in when the record appears.** The
+> same `endTime` supplies both the instruction's `at` and its `seconds`, and `capture_inbox.dart`
+> takes `instruction.seconds` straight through to `durationSeconds` without recomputing.
+>
+> 🔴 **IT CANNOT CURRENTLY BE MARKED, AND THAT IS A SEPARATE FINDING — see the feasibility read of
+> 17 September 2026.** `kBtnEnd` carries `.authenticationRequired` **unconditionally**, so it is
+> set whether or not the handset was locked; **a flag derived from it would be true for every iOS
+> notification end, including the instant ones, and would mark nothing.** ⛔ **Nothing available to
+> either handler distinguishes a delayed end from a prompt one.** **The decision to mark the
+> duration is therefore not buildable in that form**, and that goes back to the developer rather
+> than into a spec.
+
 ### What did NOT qualify — recorded so the rule is seen to have DISCRIMINATED
 
 | commit | why not |
