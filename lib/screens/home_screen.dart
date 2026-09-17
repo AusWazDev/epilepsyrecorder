@@ -1136,8 +1136,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 //      dashboard watched to move — and drew no objection. That
                 //      is a measurement of the objection, not an argument about
                 //      it.
-                //   3. Centring is not novel. It returns to a state C3 and L had
-                //      already accepted, rather than to an unconsidered one.
+                //   3. ~~Centring is not novel. It returns to a state C3 and L
+                //      had already accepted, rather than to an unconsidered
+                //      one.~~
+                //
+                //      ⛔ WITHDRAWN AND STRUCK, 18 September 2026, quoted above
+                //      rather than deleted. It is FALSE. Restoring does NOT
+                //      return to a state with a pending remedy: §10 fix 4 IS
+                //      this anchoring, and it SHIPPED at 6fd3f1c. C3 and L
+                //      accepted glyph movement against a fix that has since
+                //      been spent, so there is nothing left for that acceptance
+                //      to rest on.
+                //
+                // ⭐ THE DECISION STANDS ON REASONS 1 AND 2 ONLY — SUPPORT IS
+                // 2 OF 3. Stated explicitly because a reader counting three
+                // reasons would weigh this more heavily than the evidence
+                // carries.
+                //
+                // 🔴 SO GLYPH MOVEMENT ON HOME IS AN ACCEPTED PERMANENT COST AS
+                // AT 18 SEPTEMBER 2026, WITH NOTHING QUEUED BEHIND IT.
+                // ⛔ A LATER READER MUST NOT GO LOOKING FOR A FIX: it was
+                // already made, shipped, and deliberately reversed here. If the
+                // cost is ever judged too high, that is NEW work and needs a new
+                // decision — not the recovery of an existing one.
                 //
                 // ⭐ AND THE MEASUREMENT THAT MAKES IT SAFE, which the 17
                 // September change did not have: centring CANNOT overflow.
