@@ -5,6 +5,21 @@
 
 **Findings are recorded, not repaired. Nothing here was fixed while writing it.**
 
+> 🔴 **THE COPY YOU ARE READING MAY NOT BE THIS FILE — recorded 17 September 2026.** `[report]`,
+> **source: a chat window, not a document.**
+>
+> ⛔ **THE REPO COPY IS THE AUTHORITY. The project-context copy is a MANUAL SNAPSHOT.** The
+> recorded instruction is: *"when Audit.md is updated, you need to explicitly tell me to update it
+> in the project context."* **There is no sync, and nothing detects drift.**
+>
+> ⚠️ **In one conversation that copy was found EMPTY once and STALE once.** ⛔ **Anyone reading
+> `AUDIT.md` from the project rather than the repo may be reading NOTHING AT ALL, and will not be
+> told.** An empty document does not announce itself; it reads as a document with no findings.
+>
+> ⭐ **Same class as the Change Register, recorded there for the same reason:** a second copy of a
+> living document, updated by hand, with no check that proves it synced.
+
+
 > ⚠️ **AMENDED 8 September 2026. The statement above is the ORIGINAL and is quoted here
 > verbatim, unchanged — it records what the audit was scoped to when it began, and stays
 > readable as written. What follows widens it. It does not replace it.**
@@ -5698,6 +5713,17 @@ RECORD WAS LOST ON 30 AUGUST 2026, IN THE WRITE AT 16:36:41 AEST. UNRECOVERABLE.
 one.** Seven device copies are one state, byte-identical, sha256 `e6366d33`. `mer_last_backup_at`
 (`constants.dart:179`, `kLastBackupKey`) is **24 August**, so **no backup covers the 59 state.**
 
+> ➕ **THE POPULATION'S PROVENANCE WAS ESTABLISHED 17 September 2026 — see §13(bm).**
+> ⛔ **NOT RESTATED HERE; a second copy is what drifts.** In one line: the records post-date
+> v1.0.0 by four months, and the population is a developer exercising the app.
+>
+> ⛔ **WHAT THAT DOES TO THIS SECTION, AND WHAT IT DOES NOT.** ⭐ **The INCIDENT is less grave
+> than this section had to assume** — what was lost is one record of a developer's own test
+> population, not a patient's history. ⚠️ **THE FINDING IS UNCHANGED.** This section is about the
+> storage model being unable to say HOW a record was lost, and that is exactly as true. ⛔ **A
+> mechanism is as dangerous as what it COULD destroy, not as what it happened to destroy this
+> time.** **Do not read a lower incident severity as a lower mechanism severity.**
+
 ⭐ **WHAT SETTLED IT WAS THE SESSION TRANSCRIPT, NOT THE DATABASE.** The database cannot answer the
 question at all — see the mechanism below. The count of 59 exists only because a transcript recorded
 it in passing.
@@ -7219,6 +7245,21 @@ so the next cycle has it costed rather than rediscovered.
 
 ### (bm) 🔴 THE RECALL WINDOW IS UNMEASURABLE — NO COMPLETION TIMESTAMP EXISTS, AND THE POPULATION CANNOT BE SHOWN TO BE REAL USE
 
+> ⭐ **CORROBORATED FROM A SECOND DIRECTION — 17 September 2026.** `[report]`, **source: a chat
+> window, not a document.** Asked who uses the app, **the developer answered: *"I'm only the
+> developer."***
+>
+> ⛔ **THIS SECTION REACHED THE SAME CONCLUSION FROM THE DATA. This is the same conclusion from the
+> person who made the records.** ⚠️ **Not restated here — see the section below it.** A second copy
+> is what drifts.
+>
+> ⛔ **THE OPERATIVE CONSEQUENCE, WHICH IS WIDER THAN THIS SECTION: wherever a finding in this
+> document is weighted by "the developer's stated use", that use is A DEVELOPER'S — not a patient's
+> and not a carer's.** It is exercise of the app by the person building it, and it carries none of
+> the properties a real-use population would: no recall gap, no clinical motivation, no cost to
+> getting it wrong.
+
+
 **10 September 2026.** The question a reminder rests on — *how long after a quick-log does the user
 come back and add details, and do they come back at all* — **cannot be answered from any data MER
 holds.** Three independent reasons, each read.
@@ -7277,6 +7318,48 @@ untouched and with any amount of activity between the reads.
 make it wrong — **it makes it unevidenced.** Recorded as an **OPEN PROPOSAL**, not as rejected. ⛔
 **No reminder is designed here and no completion timestamp is specified** — both are proposals under
 the working agreement.
+
+> ➕ **THE POPULATION'S PROVENANCE, ESTABLISHED FROM THE REPO — 17 September 2026.**
+>
+> **A claim had been carried that *"the iPhone's records were created when testing v1.0.0. There was
+> no wizard in the app then."*** `[report]`, **source: a chat window, not a document.** ⭐ **Its
+> second half is TRUE and its first half is not consistent with the data.**
+>
+> **v1.0.0 spans 7 March – 26 April 2026** (`c7fc127` … `8801097`). **Field introductions, `[read]`
+> from this repository:**
+>
+> | | introduced | |
+> |---|---|---|
+> | the wizard, `event_wizard_screen.dart` | `77adc0b` **26 Aug 2026** | four months after v1.0.0 |
+> | `detailsCompleted` | `77adc0b` 26 Aug 2026 | same commit |
+> | `occurredAt` | `77d33df` 26 Aug 2026 | |
+> | `durationSeconds` | `657aca1` 25 Aug 2026 | |
+> | `rescueMedGiven` | `216bef7` 27 Aug 2026 | |
+> | `notes`, `severity`, `triggers`, `feelings` | `0de48d1` **21 Mar 2026** | v1.0.0-era |
+>
+> ⛔ **THE DISCRIMINATOR IS THE SCHEMA'S OWN RULE**, `event_store_sqlite.dart` — *"1 complete, 0
+> partial, **NULL predates the wizard**"* — with every record migrated on 26 August carrying NULL.
+> **So a record genuinely created at v1.0.0 must read NULL on `details_completed`, and must carry no
+> `occurredAt`, no `durationSeconds` and no rescue field.** ⚠️ The 16 post-wizard records this
+> section reports are `[report]` and are not verified here; **the discriminator is not.**
+>
+> ### ⛔ TWO READINGS THIS MUST NOT BE GIVEN, STATED TOGETHER BECAUSE EITHER ALONE MISLEADS
+>
+> **1. ⭐ IT EXPLAINS THIS SECTION RATHER THAN WEAKENING IT.** This section already concluded the
+> population cannot be shown to be real use. **A 27 August origin is what its own evidence
+> describes**, and it removes a premise that was pulling against it — the v1.0.0 story implied a
+> population accumulated over months of testing, which would have been closer to real use, not
+> further from it. ⛔ **Nothing here softens (bm). It supplies the provenance (bm) said was
+> missing.**
+>
+> **2. ⛔ IT LOWERS THE SEVERITY OF THE 30 AUGUST INCIDENT WITHOUT LOWERING THE SEVERITY OF THE
+> MECHANISM.** The lost record is one of a population created by the developer exercising the app,
+> not a patient's history — **so what was lost is less grave than §13(be) had to assume.** ⚠️ **The
+> STORAGE MODEL'S inability to say how it was lost is unchanged, and so is every mechanism that can
+> destroy records.** ⭐ **A mechanism is as dangerous as what it COULD destroy, not as what it
+> happened to destroy this time.** ⛔ **Do not read a lower incident severity as a lower mechanism
+> severity. They are different quantities and only one of them moved.**
+
 
 ⭐ **AND A COMPLETION TIMESTAMP IS A CANDIDATE FOR THE SAME DATA-MODEL WORK AS §13(bj)'s INTENT
 SIGNAL.** That entry found the write path cannot say whether a shortened list was intended; this one

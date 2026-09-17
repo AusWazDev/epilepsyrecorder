@@ -109,6 +109,72 @@ missed something a clock would have caught.
 ---
 
 ## 3. What always escalates to the developer
+## 2A. Provenance labels — `[report]`, recorded 17 September 2026
+
+⚠️ **SOURCE: a chat window, not a document.** `[report]` — this convention was agreed in
+conversation and, until now, **written nowhere.** It is in daily use across every brief.
+
+**Every claim in a brief carries one of three labels:**
+
+| label | meaning |
+|---|---|
+| `[read]` | **a command was run and the result is quotable.** The output exists and can be pasted. |
+| `[report]` | **another party said it, and that party is NAMED.** Chat, the developer, a transcript, a document outside the repo. |
+| `[VERIFY]` | **unknown, and stated as unknown.** Not a soft claim — an absence of one. |
+
+⛔ **A claim carrying none of the three does not go into a brief.**
+
+⭐ **WHY IT EXISTS, recorded because the reason is the rule's whole force:** it was agreed after
+**four fabricated premises in one evening.** A claim with no provenance cannot be checked, and an
+unchecked claim that reads as checked is the failure this whole agreement is built against.
+
+⚠️ **AND THE LABEL TRAVELS WITH THE CLAIM, not with the brief.** A `[report]` quoted into a second
+document is still `[report]` there. ⛔ **Verification does not upgrade it retroactively** — a
+separate `[read]` line records what was checked, beside it.
+
+---
+
+## 2B. The four rules from the handover — three were already written down, one was not
+
+⚠️ **CHECKED 17 September 2026 rather than assumed.** The claim reaching this document was that
+*"three of the four are in active use; whether they were ever written down is unknown."*
+⭐ **Measured against this file:**
+
+| rule | recorded? |
+|---|---|
+| **Every brief carries an escape clause** | ✅ §2(a) |
+| **Every proposal carries its own disproof** | ✅ §2(b) |
+| **Cite by symbol, not by line number** | ✅ §6, approved 11 September 2026 |
+| ⛔ **A CONTROL FOR EVERY NULL** | 🔴 **NOT RECORDED.** Zero hits for `null` in this file; the single `control` hit is an incidental list item |
+
+### ⛔ (e) A CONTROL FOR EVERY NULL — recorded 17 September 2026, having been in use and unwritten
+
+**A null result must carry evidence that its search could have found something.** ⚠️ **An empty
+output is identical whether the corpus was clean or the apparatus was broken** — it is the one
+result that cannot be checked by reading it.
+
+**So every "zero hits", "not present", "no such thing exists" states:**
+
+1. **the DENOMINATOR** — how many files, rows or documents were examined;
+2. **a POSITIVE CONTROL** — a term KNOWN to be present in the same corpus, searched the same way.
+   ⛔ **If the control returns zero, the apparatus is broken and the null means nothing.**
+
+⭐ **IT HAS EARNED ITS PLACE REPEATEDLY AND WAS NEVER WRITTEN HERE.** Two probes once returned
+*"0 hits over 1,006 rows"* whose controls **also** returned zero — the extractor was reading Word
+paragraphs rather than table rows and saw only each row's ID cell. **Without the control those two
+would have reported NULL CONFIRMED over a denominator of 1,006 and been completely wrong.**
+
+### ⚠️ And the fifth, which is not one of the four: READING IS NOT VERIFYING
+
+**Also absent from this file — zero hits — and also in daily use.** ⛔ **A source read is evidence
+about the source, not about the world.** A path traced through code establishes what the code
+says; it does not establish that the path is reachable, that the sequence occurs, or that the
+build being read is the build that shipped. **Reproduction is a different act and gets a different
+label.**
+
+---
+
+
 
 - ⛔ **Anything destructive to real records.**
 - ⛔ **Any change to the write path.** §13(be) is why: one event record lost on 30 August 2026,

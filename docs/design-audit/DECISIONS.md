@@ -67,6 +67,40 @@ defect.**
 - ⛔ **Storage keys are immutable once published.** Renaming one orphans every existing user's data.
 - ⛔ **Repo names predate both rebrands and are never renamed.**
 
+**Regulatory position**
+
+- 🔴 **SETTLED 17 SEPTEMBER 2026, AND IT IS THE STANDING POSITION RESTORED RATHER THAN A NEW ONE.**
+  **MER is positioned as a DATA CAPTURE TOOL ONLY, never diagnostic. Claim wording is
+  load-bearing. Anything touching diagnosis, prognosis, monitoring or treatment ROUTES TO THE
+  ADVISER rather than being decided in a brief.**
+
+  ⛔ **A statement made in a chat window — `[report]`, source a chat window and not a document —
+  withdrew that routing.** Quoted in place rather than deleted, because it was made in good faith
+  and was acted on:
+
+  > *"This isn't a medical app, so there is not medical compliance to adhere to"*
+
+  ⚠️ **SUPERSEDED 17 September 2026.** Put to the developer against the standing instruction it
+  conflicts with; **the developer's answer was to stay with the project instructions.**
+
+  ⛔ **AND THE CLASS, WHICH IS WHY THIS IS RECORDED HERE RATHER THAN NOTED AND DROPPED: a standing
+  instruction was withdrawn in a conversation and the withdrawal reached no document.** For a
+  period **nobody can now bound**, the project was operating against an instruction its own
+  instructions still stated. ⭐ **A reader who finds only the restoration cannot tell that the
+  routing ever lapsed, or for how long.** That is what the quotation above is for.
+
+  **Three consequences, recorded so they are not re-litigated:**
+
+  1. ⛔ **The terms' liability clause** — a cap at *"the amount you paid for the app"*, which
+     becomes a cap of **zero** at a free price — **goes to the adviser. It is not drafted in a
+     brief.**
+  2. **Store and website copy stays on capture-tool wording.** Any claim touching diagnosis,
+     prognosis, monitoring or treatment routes out.
+  3. ⭐ **The severity relabel at `5e4af17`** — *"Severity"* to *"Compared with the others here"* —
+     **is consistent with this position and is not revisited.** It moved the copy AWAY from a
+     clinical scale toward a self-relative comparison, which is the direction this position points.
+
+
 **Process**
 
 - ⛔ **`dart format` is never run on this codebase.** The alignment is hand-maintained.
@@ -189,6 +223,22 @@ where an entry could not persist.
 4. **The store and website surfaces.** Three claims are correct today and wrong on release day: the
    field list, the date-and-time behaviour, and the absence of backup.
 5. **The screenshot set.** ⛔ **Never captured from a device holding real records.**
+
+6. 🔴 **THE SCOPE REVERSAL, RECORDED BECAUSE IT IS THE OPERATIVE DECISION AND IT LIVED NOWHERE.**
+   `[report]` — **source: a chat window, not a document.** In order:
+
+   > **"go"** — accepting a launch recommendation
+   >
+   > *two messages later:* **"I did say I wanted to get everything in if we can speed it up"**
+
+   ⛔ **THE SECOND SUPERSEDES THE FIRST, and only the first was written down.** A reader finding
+   the *"go"* alone would conclude a narrowed launch was agreed. **It was not.**
+
+   ⚠️ **AND IT DOES NOT CONFLICT WITH THE iOS RELEASE QUESTION NOW OPEN**, which concerns a
+   MINIMAL CUT carrying no design work — not a launch of the full build. ⭐ **Stated explicitly
+   because the two look alike at a glance and a reader with only the `"go"` would read them as the
+   same decision reversed twice.**
+
 
 ---
 
