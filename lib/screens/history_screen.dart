@@ -204,6 +204,26 @@ extension FilterKindLabel on FilterKind {
 
 enum _DateRange { all, days30, months3, months12 }
 
+/// How the hidden population is treated, added 18 September 2026.
+///
+/// ⛔ **`bool _showHidden` could not express the question people actually
+/// arrive with.** It offered *everything* or *everything plus hidden*, so the
+/// only way to find a hidden record was to read the whole list looking for a
+/// marker that did not exist. ⭐ **`only` is the one that answers "show me what
+/// I have hidden".**
+enum HiddenView {
+  /// The default. Hidden records are withheld.
+  exclude,
+
+  /// Hidden records appear alongside visible ones. This is what the old
+  /// *Show hidden* switch did, and it is kept because it is the right view
+  /// when checking whether a particular record was hidden in place.
+  include,
+
+  /// ⭐ HIDDEN ONLY — the recovery view.
+  only,
+}
+
 extension _DateRangeLabel on _DateRange {
   String get chipLabel {
     switch (this) {
@@ -245,7 +265,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool   _referralOnly    = false;
   bool   _incompleteOnly  = false;
   /// Reveals hidden records. FALSE is the default and Clear-all returns here.
-  bool   _showHidden      = false;
+  HiddenView _hiddenView  = HiddenView.exclude;
   _DateRange _dateRange   = _DateRange.all;
   final Set<String> _selectedTypes = {};
 
@@ -426,7 +446,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         FilterKind.referral => _referralOnly,
         FilterKind.dateRange => _dateRange != _DateRange.all,
         FilterKind.incomplete => _incompleteOnly,
-        FilterKind.showHidden => _showHidden,
+        FilterKind.showHidden => _hiddenView != HiddenView.exclude,
       };
       if (active) out.add(k);
     }
@@ -448,7 +468,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// from*, and it coincides with the visible population exactly when nothing
   /// is being revealed.
   List<EventRecord> get _scopePopulation =>
-      _showHidden ? _records : _records.visible;
+      switch (_hiddenView) {
+        HiddenView.exclude => _records.visible,
+        HiddenView.include => _records,
+        HiddenView.only =>
+            _records.where((r) => r.hidden).toList(growable: false),
+      };
 
   /// How many records are being WITHHELD from the view right now.
   ///
@@ -456,7 +481,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// the records are still flagged, but saying "5 events hidden" beside five
   /// visible rows would be false.
   int get _hiddenWithheld =>
-      _showHidden ? 0 : _records.length - _records.visible.length;
+      _hiddenView == HiddenView.exclude
+          ? _records.length - _records.visible.length
+          : 0;
 
   /// ⛔ THE PAIR BOTH SCOPE STATEMENTS READ. See [ExportScope].
   ExportScope get exportScope => ExportScope(
@@ -664,7 +691,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             _selectedTypes.clear();
                             _dateRange = _DateRange.all;
                             // Same reset as `_clearFilters`, same reason.
-                            _showHidden = false;
+                            _hiddenView = HiddenView.exclude;
                           }),
                           icon: const Icon(Icons.filter_alt_off_outlined,
                               size: 16),
@@ -784,14 +811,77 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   // it with the narrowing chips would suggest it belongs to
                   // them; and `filter_sheet_test` taps the referral switch as
                   // `find.byType(Switch).first`, which this must not displace.
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _showHidden,
-                    title: const Text('Show hidden'),
-                    subtitle: const Text(
-                        'Include events you have hidden from this list'),
-                    onChanged: (v) => update(() => _showHidden = v),
-                  ),
+                    // ⛔ REPLACED 18 September 2026. It read:
+                    //
+                    //   SwitchListTile(value: _showHidden,
+                    //     title: 'Show hidden',
+                    //     subtitle: 'Include events you have hidden from this
+                    //               list')
+                    //
+                    // ⭐ A switch can only say INCLUDE or NOT. It could not say
+                    // ONLY, so "show me what I have hidden" had no control at
+                    // all — the recovery case had to be done by eye over the
+                    // whole list.
+                    //
+                    // ⚠️ THE SWITCH COUNT IN THIS SHEET DROPS FROM TWO TO ONE,
+                    // and that is deliberate rather than incidental: the old
+                    // comment here recorded that `filter_sheet_test` taps
+                    // `find.byType(Switch).first` for the REFERRAL switch, so
+                    // this control had to stay after it. Removing the switch
+                    // entirely leaves referral as the only one, and `.first`
+                    // still finds it.
+                    const Text('HIDDEN EVENTS',
+                        style: MERType.captionOnSurfaceMuted),
+                    const SizedBox(height: 8),
+                    SegmentedButton<HiddenView>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: HiddenView.exclude,
+                          label: Text('Hide'),
+                        ),
+                        ButtonSegment(
+                          value: HiddenView.include,
+                          label: Text('Include'),
+                        ),
+                        ButtonSegment(
+                          value: HiddenView.only,
+                          label: Text('Only'),
+                        ),
+                      ],
+                      selected: {_hiddenView},
+                      onSelectionChanged: (v) =>
+                          update(() => _hiddenView = v.first),
+                    ),
+
+                    // ⭐ UNHIDE ALL — offered ONLY in the recovery view, and
+                    // only when it would do something. ⛔ NO CONFIRMATION: it is
+                    // restorative, and confirming a restoration teaches people
+                    // that every tap is dangerous.
+                    if (_hiddenView == HiddenView.only &&
+                        _records.any((r) => r.hidden)) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            final n = await _unhideAll();
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            update(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(n == 1
+                                    ? '1 event unhidden.'
+                                    : '$n events unhidden.'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text('Unhide all'),
+                        ),
+                      ),
+                    ],
                 ],
               );
             },
@@ -813,7 +903,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       // Omitting this line is the INERT-CONTROL defect: the banner and badge
       // would keep reporting an adjustment the clear control did not clear,
       // and the control would visibly do nothing. Guarded by a test.
-      _showHidden = false;
+      _hiddenView = HiddenView.exclude;
     });
   }
 
@@ -842,11 +932,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// ⭐ AND UNDO RESTORES THE ORIGINAL OBJECT, not a rebuilt one. Nothing is
   /// reconstructed on the way back, so there is no second opportunity to drop
   /// a field — §13(cj) failure mode (b) does not apply to this path at all.
-  Future<void> _hideAndPersist(String id) async {
+  /// ⛔ TOGGLE, NOT A ONE-WAY HIDE — changed 18 September 2026.
+  ///
+  /// This opened `if (original.hidden) return;`, which made the row control a
+  /// one-way door: it could hide and could never unhide. ⭐ **The only route
+  /// back was the SnackBar's Undo, and `_unhide` had exactly one caller — so
+  /// once the bar timed out there was no path back through the UI at all.**
+  ///
+  /// ⚠️ **`a69f0a7` removed this control's confirmation on the stated ground
+  /// that the reveal had shipped: *"Without Show hidden this would be deletion
+  /// with a four-second window."*** ⛔ **Show hidden revealed the ROW and
+  /// restored nothing, so that precondition was never actually met.** This
+  /// change is what makes it true.
+  ///
+  /// Measured consequence, 18 September 2026: three of the developer's records
+  /// were hidden and could not be recovered by any UI path, backup restore
+  /// included — restore is merge-by-id and add-only, so a hidden row stays
+  /// hidden.
+  Future<void> _toggleHiddenAndPersist(String id) async {
     final index = _records.indexWhere((r) => r.id == id);
     if (index < 0) return;
     final original = _records[index];
-    if (original.hidden) return;
+
+    // ⭐ UNHIDE ACTS IMMEDIATELY AND REPORTS. No confirmation on a restorative
+    // action — confirming a restoration teaches people every tap is dangerous,
+    // which is the habit that makes confirmations stop working.
+    if (original.hidden) {
+      await _unhide(original);
+      if (!mounted) return;
+      _undoBar?.close();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event unhidden.')),
+      );
+      return;
+    }
 
     // The moment of the TAP. Hiding is a change the user made, and their
     // most recent intent is what the field records.
@@ -890,6 +1009,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (i < 0) return;
     setState(() => _records[i] = original);
     await widget.onRecordsChanged(_records);
+  }
+
+  /// Restores EVERY hidden record and reports how many. Added 18 September
+  /// 2026 alongside the [HiddenView.only] view.
+  ///
+  /// ⛔ **An addition, not a replacement — an individual row is still unhidden
+  /// by its own control.** ⭐ **No confirmation: it only ever adds rows back.**
+  Future<int> _unhideAll() async {
+    final ids = [
+      for (final r in _records)
+        if (r.hidden) r.id,
+    ];
+    if (ids.isEmpty) return 0;
+    setState(() {
+      for (final id in ids) {
+        final i = _records.indexWhere((r) => r.id == id);
+        // ⭐ STAMPED, unlike the single-row `_unhide`. That one restores the
+        // pre-hide record object, so its `updatedAt` reverts with it; here the
+        // originals are not held, and a bulk restore IS a user action under
+        // `8f3a19e`'s rule, so it stamps.
+        if (i >= 0) {
+          _records[i] = _records[i].withHidden(false, at: DateTime.now());
+        }
+      }
+    });
+    await widget.onRecordsChanged(_records);
+    return ids.length;
   }
 
   // ── EDIT ──
@@ -1150,7 +1296,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   record:   r,
                                   timeFmt:  _rowTimeFmt,
                                   onTap:    () => _editRecord(r),
-                                  onDelete: () => _hideAndPersist(r.id),
+                                  onDelete: () => _toggleHiddenAndPersist(r.id),
                                 ),
                                 if (!item.isLastOfDay)
                                   const Divider(height: 1, indent: 16),
@@ -1555,7 +1701,20 @@ class _EventListTile extends StatelessWidget {
       // default view: one row boundary drops below the fold. Negligible, but
       // it is a real cost and it is not zero.
       subtitle: Builder(builder: (_) {
-        final content = parts.join(' · ');
+        // ⛔ THE TEXT HALF OF THE HIDDEN MARKER — 1.4.1, added 18 September
+        // 2026. The glyph alone is an eye against a crossed-out eye: a
+        // one-stroke difference, and NOT a sufficient carrier. Two expert
+        // observers read the Show-hidden list and could not tell which rows
+        // were hidden.
+        //
+        // ⭐ PLACED IN THE EXISTING CONTENT LINE, not in the title Row. That Row
+        // is the §13(bx) layout tuned for 200% text and held against a render
+        // baseline; a new child there would disturb both. This adds no widget
+        // and no height.
+        final body    = parts.join(' · ');
+        final content = !r.hidden
+            ? body
+            : (body.isEmpty ? 'Hidden' : 'Hidden · $body');
         final gaps = isIncomplete(r)
             // ⭐ "Add details:", not "Needs:". Changed 7 Sep 2026.
             //
@@ -1638,9 +1797,21 @@ class _EventListTile extends StatelessWidget {
         // alone — C2: the destructive control is the only red one. Hiding is
         // reversible, so it takes the ordinary muted control colour already in
         // the palette rather than a new value.
-        tooltip:   'Hide this event',
+        // ⛔ BOTH STATES NAMED, 18 September 2026. The label was the static
+        // 'Hide this event' while the control could only hide. Now that it
+        // toggles, a static label would be WRONG half the time — and an
+        // IconButton's tooltip is what supplies its semantics label, so this
+        // is 4.1.2 (Name, Role, Value), not only a usability point.
+        tooltip:   r.hidden ? 'Unhide this event' : 'Hide this event',
         color:     MERColours.onSurfaceMuted,
-        icon:      const Icon(Icons.visibility_off_outlined),
+        // ⚠️ THE GLYPH CARRIES THE STATE, AND IT IS NOT THE ONLY CARRIER —
+        // 1.4.1 (Use of Colour). The row also renders a HIDDEN text marker,
+        // because an eye and a crossed-out eye differ by a stroke and nothing
+        // else, which is exactly the distinction that failed to register on
+        // two observers reading the Show-hidden list.
+        icon: Icon(r.hidden
+            ? Icons.visibility_outlined
+            : Icons.visibility_off_outlined),
         onPressed: onDelete,
       ),
     );

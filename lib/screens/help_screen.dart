@@ -195,9 +195,21 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   body:   'Tap any event in the list to open it and make changes. An event you '
                           'started adding details to reopens in the guided steps so you can '
                           'carry on; everything else opens as a single form. In History, each '
+                          // ⛔ CORRECTED 18 September 2026. It read:
+                          //
+                          //   '...without deleting it — turn on "Show hidden"
+                          //    in Filters to bring it back.'
+                          //
+                          // ⚠️ THAT WAS FALSE IN THE ONE WAY THAT MATTERED.
+                          // "Show hidden" revealed the ROW; it restored
+                          // nothing. The only restore was the Undo on a
+                          // SnackBar that had already gone, so a user who read
+                          // this sentence and acted on it got a visible row and
+                          // a record still hidden from every count.
                           'row also has a hide button. Hiding takes the event out of the list '
-                          'without deleting it — turn on "Show hidden" in Filters to bring it '
-                          'back.',
+                          'without deleting it. To bring one back, open Filters, set Hidden '
+                          'events to "Only", then tap the same button on the row — or use '
+                          '"Unhide all" to restore every hidden event at once.',
                   isLast: true,
                 ),
               ],

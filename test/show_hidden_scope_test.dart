@@ -96,7 +96,12 @@ void main() {
 
   Future<void> toggleShowHidden(WidgetTester tester) async {
     await openSheet(tester);
-    await tester.tap(inSheet(find.text('Show hidden')).first);
+    // ⛔ RETARGETED 18 September 2026. The `Show hidden` SwitchListTile
+    // became a three-way control (Hide / Include / Only), because a
+    // switch could not express "show me ONLY what I have hidden" —
+    // the recovery case. `Include` is the exact equivalent of the old
+    // switch in its ON state, so every assertion below is unchanged.
+    await tester.tap(inSheet(find.text('Include')).first);
     await tester.pumpAndSettle();
     await closeSheet(tester);
   }

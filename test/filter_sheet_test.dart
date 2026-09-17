@@ -127,7 +127,12 @@ void main() {
       case FilterKind.showHidden:
         // By LABEL, not `find.byType(Switch).first` — that anchor belongs to
         // the referral toggle and a second switch must not be able to steal it.
-        await tester.tap(inSheet(find.text('Show hidden')).first);
+        // ⛔ RETARGETED 18 September 2026. The `Show hidden` SwitchListTile
+    // became a three-way control (Hide / Include / Only), because a
+    // switch could not express "show me ONLY what I have hidden" —
+    // the recovery case. `Include` is the exact equivalent of the old
+    // switch in its ON state, so every assertion below is unchanged.
+    await tester.tap(inSheet(find.text('Include')).first);
     }
     await tester.pumpAndSettle();
     await closeSheet(tester);
