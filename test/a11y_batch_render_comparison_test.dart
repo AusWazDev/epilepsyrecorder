@@ -108,9 +108,20 @@ const Map<String, String> kBaseline = <String, String>{
   'about@375': '29|02511aa5c288620a',
   'about@430': '29|25ce74635aecd66d',
   'about@800': '29|2104bac54e69c174',
-  'form@375': '111|56ece42ea2561b54',
-  'form@430': '111|01961f3a33b9a433',
-  'form@800': '111|1bfce1dcaf07c456',
+  // ⚠️ FORM RECAPTURED 17 September 2026 FOR S3, which migrated the form's
+  // selection controls to `FilterChip`/`ChoiceChip`. A chip migration is a
+  // change that is MEANT to move text, so the hashes move with it.
+  //
+  // ⭐ **THE COUNT IS THE PART THAT DID NOT MOVE, AND IT IS THE PART THAT
+  // MATTERS HERE: 111 paragraphs at every width, before and after.** The
+  // hash says glyphs are in different places; the count says none was added
+  // and none was lost. A migration that had dropped a label — the retired
+  // legacy value, say, whose whole point is that it is easy to lose — would
+  // have changed the count, not just the hash.
+  //   before  111|56ece42ea2561b54  111|01961f3a33b9a433  111|1bfce1dcaf07c456
+  'form@375': '111|3cd1a2421b855f64',
+  'form@430': '111|2c9c2ab5df28b2e7',
+  'form@800': '111|551c4704e46052bf',
   // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
   // "change that is MEANT to move text" in the sense the rule above requires.
   //

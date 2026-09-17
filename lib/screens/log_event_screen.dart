@@ -1,9 +1,15 @@
-// `kIsWeb` only — for the `selected` / `checked` split in `_SelectionRow`'s
-// semantics, copied from RawChip. `material.dart` does not re-export it.
-import 'package:flutter/foundation.dart' show kIsWeb;
+// ⚠️ `foundation.dart` (for `kIsWeb`) WAS imported here and is gone with S3.
+// Its only consumer was the hand-written `selected` / `checked` split, which
+// `RawChip` now performs itself. The dead import is the visible trace that the
+// duplicate semantics really were removed rather than left behind.
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+// ⚠️ `hide TextDirection` — `package:intl` exports a `TextDirection` of its
+// own whose members are `LTR`/`RTL`, and it SHADOWS the framework's, so
+// `TextDirection.ltr` in `_revealRescueChildren` failed to resolve. Only
+// `DateFormat` is wanted from here.
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:uuid/uuid.dart';
 
 import '../models/event_record.dart';
@@ -67,6 +73,45 @@ class _LogEventScreenState extends State<LogEventScreen> {
   bool? _rescueGiven;
   RescueResponse? _rescueHelped;
   bool? _rescueSecondDose;
+
+  /// V5's anchor: the RESCUE MEDICATION question itself.
+  final _rescueAnchor = GlobalKey();
+
+  /// ⛔ V5. Answering "Given" inserts two more questions BELOW the one just
+  /// answered, and the measurement is what makes this necessary rather than
+  /// tidy: at 375x667 the block already begins **373.7 below the fold** at
+  /// scale 1.0 and **972.7 below it at 200%**. Someone who taps Given has the
+  /// form grow underneath them with nothing on screen saying so.
+  ///
+  /// TWO SEPARATE PROBLEMS, TWO SEPARATE FIXES, and they are not substitutes:
+  ///
+  ///  * **SIGHTED** — `ensureVisible` with `alignment: 0.0` pulls the parent
+  ///    question to the TOP of the viewport, so the new questions land in the
+  ///    space below it rather than off-screen.
+  ///  * **SCREEN READER** — scrolling announces nothing on its own. A reader
+  ///    parked on the Given chip is given no reason to believe the form
+  ///    changed, so the insertion is stated outright.
+  ///
+  /// ⚠️ **After the frame, not during it.** The children are inserted by this
+  /// same `setState`, so the render object the scroll must account for does
+  /// not exist until the frame is built. Scrolling in the callback scrolls to
+  /// the OLD layout.
+  void _revealRescueChildren() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _rescueAnchor.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+    SemanticsService.announce(
+      'Two more questions added: did it help, and second dose.',
+      TextDirection.ltr,
+    );
+  }
 
   /// The three rescue values as they stand, for [rescueChildrenVisible].
   /// See the wizard's `_draftForVisibility` — one function, asked by both
@@ -778,19 +823,33 @@ appBar: AppBar(
                         // clearing rule. The two screens edit the same record
                         // and a user who learns one must not be surprised by
                         // the other.
-                        _SectionLabel('Rescue medication'),
+                        // ⛔ V5's ANCHOR. The key is on the QUESTION, not on the
+                        // revealed children — the point is that the parent
+                        // question stays in view once answering it grows the
+                        // form beneath it.
+                        _SectionLabel('Rescue medication', key: _rescueAnchor),
                         const SizedBox(height: 8),
                         _SelectionRow<bool>(
                           options:    const [false, true],
                           selected:   _rescueGiven,
                           labelFor:   rescueGivenLabel,
-                          onSelected: (v) => setState(() {
-                            _rescueGiven = v;
-                            if (!v) {
-                              _rescueHelped = null;
-                              _rescueSecondDose = null;
+                          onSelected: (v) {
+                            // ⚠️ MEASURED BEFORE THE setState, or the "before"
+                            // is already the "after".
+                            final wasVisible =
+                                rescueChildrenVisible(_rescueDraft());
+                            setState(() {
+                              _rescueGiven = v;
+                              if (!v) {
+                                _rescueHelped = null;
+                                _rescueSecondDose = null;
+                              }
+                            });
+                            if (!wasVisible &&
+                                rescueChildrenVisible(_rescueDraft())) {
+                              _revealRescueChildren();
                             }
-                          }),
+                          },
                         ),
                         if (rescueChildrenVisible(_rescueDraft())) ...[
                           const SizedBox(height: 20),
@@ -897,7 +956,7 @@ class _SectionHint extends StatelessWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
-  const _SectionLabel(this.text);
+  const _SectionLabel(this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1094,63 +1153,28 @@ class _SelectionRow<T> extends StatelessWidget {
     return Row(
       children: options.map((option) {
         final isSelected = selected == option;
-        final colour = colorFor != null
-            ? colorFor!(option)
-            : MERColours.primary;
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.only(right: 8),
-            // ⛔ ADDED 9 Sep 2026 — SEMANTICS ONLY. Nothing visual changed.
-            // AUDIT.md §13(z)/§13(t): selection was carried by fill colour,
-            // border colour, border width and font weight — all VISUAL — so a
-            // screen reader announced the options and never which one was the
-            // answer, across severity, rescue given, did-it-help, second dose
-            // and referral.
+            // ⛔ MIGRATED TO `ChoiceChip` (S3). The hand-written `Semantics`
+            // block that stood here is GONE, and its removal is the point
+            // rather than an omission: `RawChip` emits the identical block
+            // itself at `chip.dart:1503-1515` — container + button +
+            // `kIsWeb ? null : selected` / `kIsWeb ? selected : null`, the
+            // exact lines the old comment cited as its source. Carrying both
+            // would have DOUBLED the node, not preserved it.
             //
-            // ⭐ The shape is COPIED FROM `RawChip` (`chip.dart:1503-1513`),
-            // not invented: container + button + selected/checked. The wizard
-            // renders these same fields with real `ChoiceChip`s, which already
-            // announce this way, so the two edit paths now agree rather than
-            // this screen getting a third idiom (§1, §10 decision 1).
-            //
-            // `checked` on web because aria-selected only applies to certain
-            // roles — the framework's own reason, kept verbatim. Web is not a
-            // shipped target, so that branch is inert today.
-            child: Semantics(
-              container: true,
-              button: true,
-              selected: kIsWeb ? null : isSelected,
-              checked: kIsWeb ? isSelected : null,
-              child: GestureDetector(
-              onTap: () => onSelected(option),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? colour
-                      : MERColours.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? colour : MERColours.outline,
-                    width: isSelected ? 1.5 : 0.5,
-                  ),
-                ),
-                child: Text(
-                  labelFor(option),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize:   MERType.body,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.w500,
-                    color: isSelected
-                        ? MERColours.onFill
-                        : MERColours.onSurfaceMuted,
-                  ),
-                ),
-                ),
-              ),
+            // ⭐ The wizard already renders these same fields with real
+            // `ChoiceChip`s. This is the form adopting that idiom, so the two
+            // edit paths stop being two idioms for one question.
+            child: ChoiceChip(
+              label: Text(labelFor(option), textAlign: TextAlign.center),
+              selected: isSelected,
+              onSelected: (_) => onSelected(option),
+              // Null resolves to the theme's `selectedColor`, which is already
+              // `MERColours.primary` — the same colour the old default used.
+              // Non-null is severity's bespoke per-option colour, unchanged.
+              selectedColor: colorFor?.call(option),
             ),
           ),
         );
@@ -1202,83 +1226,39 @@ class _SelectionWrap extends StatelessWidget {
     for (final option in options) {
       final isSelected = selected.contains(option);
       pinned.add(isSelected);
-      // ⛔ ADDED 9 Sep 2026 — SEMANTICS ONLY, nothing visual. The matched pair
-      // to `_SelectionRow`, fixed earlier the same day: selection here was
-      // carried by fill colour, border colour, border width, font weight and
-      // text colour — all VISUAL — so a screen reader announced every
-      // observation and trigger and never which ones the record held.
+      // ⛔ MIGRATED TO `FilterChip` (S3), the same widget the wizard already
+      // uses for these two same fields. The hand-written `Semantics` block is
+      // REMOVED, not carried: `RawChip` emits it itself at
+      // `chip.dart:1503-1515`, and the old comment here had already read that
+      // and copied its shape. Keeping both would double the node.
       //
-      // ⭐ MULTI-select, and the mechanism is nevertheless the SAME as the
-      // single-select case. That was READ, not assumed: `FilterChip` (which the
-      // wizard uses for these two same fields) and `ChoiceChip` both pass
-      // `selected` straight to `RawChip`, and `RawChip` has exactly ONE
-      // Semantics block (`chip.dart:1503-1513`). They differ only in
-      // `showCheckmark`'s default, which is visual.
-      chips.add(Semantics(
-          container: true,
-          button: true,
-          selected: kIsWeb ? null : isSelected,
-          checked: kIsWeb ? isSelected : null,
-          child: GestureDetector(
-          onTap: () => onToggle(option),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? MERColours.primary
-                  : MERColours.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? MERColours.primary
-                    : MERColours.outline,
-                width: isSelected ? 1.5 : 0.5,
-              ),
-            ),
-            child: Text(
-              labelFor?.call(option) ?? option,
-              style: TextStyle(
-                fontSize:   MERType.body,
-                fontWeight: isSelected
-                    ? FontWeight.w600
-                    : FontWeight.w400,
-                color: isSelected
-                    ? MERColours.onFill
-                    : MERColours.onSurface,
-              ),
-            ),
-          ),
-        )));
+      // ⭐ MULTI-select, same mechanism as the single-select case — `FilterChip`
+      // and `ChoiceChip` both pass `selected` straight to `RawChip`, which has
+      // exactly ONE Semantics block. They differ only in `showCheckmark`'s
+      // default, which is visual.
+      chips.add(FilterChip(
+        // display, not the raw value — the glyph belongs on a chip and nowhere
+        // a record is rendered. The wizard's comment, because it is the same
+        // rule and this is now the same widget.
+        label: Text(labelFor?.call(option) ?? option),
+        selected: isSelected,
+        onSelected: (_) => onToggle(option),
+      ));
     }
 
     // An ACTION, not an entry: pinned so collapsing never puts it out of
     // reach, and excluded from the count for the same reason.
     if (onAdd != null) {
       pinned.add(true);
-      chips.add(GestureDetector(
-            onTap: onAdd,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: MERColours.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: MERColours.outline, width: 1.0),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 16, color: MERColours.primary),
-                  const SizedBox(width: 6),
-                  Text(addLabel,
-                      style: MERType.bodyStrongPrimary),
-                ],
-              ),
-            ),
+      // ⚠️ `ActionChip`, matching the wizard's `_addRow`. V1 — that the add
+      // pill must be visually distinguishable from a selectable one — is NOT
+      // addressed by this line and is still open: it differs by ICON and by
+      // COLOUR, and after this migration it no longer differs in FORM either,
+      // because both are now the same Material chip. See the V1 report.
+      chips.add(ActionChip(
+            avatar: const Icon(Icons.add, size: 18),
+            label: Text(addLabel),
+            onPressed: onAdd,
           ));
     }
 

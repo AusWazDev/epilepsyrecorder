@@ -168,30 +168,38 @@ void main() {
 
   testWidgets('4. THE RENDER IS UNCHANGED at 375, 430 and 800', (tester) async {
     addTearDown(tester.view.reset);
-    // ⛔ BASELINE CAPTURED FROM UNPATCHED CODE. This test therefore passes in
-    // BOTH states, which is what makes it a proof rather than a formality.
-    // ⚠️ ALL THREE WIDTHS RECAPTURED 17 September 2026 for the type
-    // scale. Every shift is VERTICAL -- x and both extents are unchanged
-    // at every width -- which is what says the type moved and the layout
-    // did not.
+    // ⛔ RECAPTURED 17 September 2026 FOR S3, AND THE REASON THIS TEST GIVES
+    // HAS CHANGED WITH IT. It was written to prove that ADDING a hand-written
+    // `Semantics` wrapper moved no pixels — a claim that passed in both
+    // states, which is what made it a proof. ⚠️ **That wrapper no longer
+    // exists.** S3 migrated these chips to `FilterChip`/`ChoiceChip`, and
+    // `RawChip` emits the identical semantics itself, so the thing the old
+    // baseline guarded is gone and the baseline now guards the MIGRATED
+    // geometry instead. It is a measurement re-taken, not a citation kept.
+    //
+    // ⚠️ **CAPTURED UNDER THE DEFAULT MATERIAL THEME, NOT THE APP'S.** This
+    // file pumps `MaterialApp(home: ...)` with no `theme:`, so the chip label
+    // resolves to Material's own 14, NOT `MERTheme`'s `MERType.caption` (12)
+    // that a user actually sees. Stated because a reader will otherwise take
+    // these rects for the shipped layout. Pre-existing, not introduced here.
     const baseline = <int, List<String>>{
       375: <String>[
-        '30.5,708.2 99.8x20.0',
-        '167.3,708.2 85.5x20.0',
-        '30.5,1007.2 85.5x20.0',
-        '153.0,1007.2 142.5x20.0',
+        '33.0,694.7 98.7x20.0',
+        '173.7,694.7 84.6x20.0',
+        '33.0,1014.7 84.6x20.0',
+        '159.6,1014.7 141.0x20.0',
       ],
       430: <String>[
-        '30.5,670.4 99.8x20.0',
-        '167.3,670.4 85.5x20.0',
-        '30.5,955.4 85.5x20.0',
-        '153.0,955.4 142.5x20.0',
+        '33.0,674.9 98.7x20.0',
+        '173.7,674.9 84.6x20.0',
+        '33.0,980.9 84.6x20.0',
+        '159.6,980.9 141.0x20.0',
       ],
       800: <String>[
-        '154.5,674.5 99.8x20.0',
-        '291.3,674.5 85.5x20.0',
-        '154.5,922.5 85.5x20.0',
-        '277.0,922.5 142.5x20.0',
+        '157.0,679.0 98.7x20.0',
+        '297.7,679.0 84.6x20.0',
+        '157.0,948.0 84.6x20.0',
+        '283.6,948.0 141.0x20.0',
       ],
     };
 
@@ -209,7 +217,7 @@ void main() {
       }
       if (baseline.containsKey(w.round())) {
         expect(rects, baseline[w.round()],
-            reason: 'the Semantics wrapper moved something at width $w');
+            reason: 'S3 moved an observation or trigger chip at width $w');
       }
     }
   });

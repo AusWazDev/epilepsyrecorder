@@ -203,81 +203,62 @@ void main() {
 
   testWidgets('3. THE RENDER IS UNCHANGED at 375, 430 and 800', (tester) async {
     addTearDown(tester.view.reset);
-    // ⚠️ RECAPTURED 17 September 2026 FOR THE ANSWER WORDING, and the
-    // change is a HEIGHT change rather than a move. Two chips — *Partly
-    // helped* and *Didn't help* — now WRAP TO TWO LINES at 375: a rect of
-    // 105.3x19.0 becomes 105.3x38.0.
+    // ⛔ RECAPTURED 17 September 2026 FOR S3, AND THE REASON THIS TEST GIVES
+    // HAS CHANGED WITH IT. It was written to prove that ADDING a hand-written
+    // `Semantics` wrapper moved no pixels — a claim that passed in both
+    // states, which is what made it a proof. ⚠️ **That wrapper no longer
+    // exists.** S3 migrated these chips to `FilterChip`/`ChoiceChip`, and
+    // `RawChip` emits the identical semantics itself, so the thing the old
+    // baseline guarded is gone and the baseline now guards the MIGRATED
+    // geometry instead. It is a measurement re-taken, not a citation kept.
     //
-    // ⛔ NOT A TRUNCATION — the 200% gate's ellipsis census is clean, and
-    // wrapping is what a chip is supposed to do with a longer label. But
-    // the block grows by roughly 19 points, and V5 already has it landing
-    // 268 below the fold, so S3 inherits a slightly taller block than it
-    // was scoped against.
-    // ⚠️ RECAPTURED 17 September 2026 FOR THE ANSWER WORDING, and the
-    // change is a HEIGHT change rather than a move. Two chips — *Partly
-    // helped* and *Didn't help* — now WRAP TO TWO LINES at 375: a rect of
-    // 105.3x19.0 becomes 105.3x38.0.
-    //
-    // ⛔ NOT A TRUNCATION — the 200% gate's ellipsis census is clean, and
-    // wrapping is what a chip is supposed to do with a longer label. But
-    // the block grows by roughly 19 points, and V5 already has it landing
-    // 268 below the fold, so S3 inherits a slightly taller block than it
-    // was scoped against.
-    // ⚠️ RECAPTURED 17 September 2026 FOR THE ANSWER WORDING, and the
-    // change is a HEIGHT change rather than a move. Two chips — *Partly
-    // helped* and *Didn't help* — now WRAP TO TWO LINES at 375: a rect of
-    // 105.3x19.0 becomes 105.3x38.0.
-    //
-    // ⛔ NOT A TRUNCATION — the 200% gate's ellipsis census is clean, and
-    // wrapping is what a chip is supposed to do with a longer label. But
-    // the block grows by roughly 19 points, and V5 already has it landing
-    // 268 below the fold, so S3 inherits a slightly taller block than it
-    // was scoped against.
-    // ⛔ BASELINE CAPTURED FROM THE UNPATCHED CODE and pasted here. Regenerate
-    // by running this test on a tree without the Semantics wrapper and reading
-    // the printed rects.
+    // ⚠️ **CAPTURED UNDER THE DEFAULT MATERIAL THEME, NOT THE APP'S.** This
+    // file pumps `MaterialApp(home: ...)` with no `theme:`, so the chip label
+    // resolves to Material's own 14, NOT `MERTheme`'s `MERType.caption` (12)
+    // that a user actually sees. Stated because a reader will otherwise take
+    // these rects for the shipped layout. Pre-existing, not introduced here.
     const baseline = <int, List<String>>{
       375: <String>[
-        '17.5,549.2 103.3x20.0',
-        '130.8,539.2 105.3x40.0',
-        '245.2,549.2 105.3x20.0',
-        '16.5,1251.2 162.5x20.0',
-        '189.0,1251.2 160.5x20.0',
-        '17.5,1355.2 103.3x20.0',
-        '130.8,1345.2 105.3x40.0',
-        '245.2,1345.2 105.3x40.0',
-        '17.5,1459.2 160.5x20.0',
-        '188.0,1459.2 162.5x20.0',
-        '17.5,1574.2 160.5x20.0',
-        '188.0,1574.2 162.5x20.0',
+        '53.0,540.7 52.3x20.0',
+        '147.3,540.7 72.3x20.0',
+        '261.7,540.7 72.3x20.0',
+        '34.3,1276.7 126.9x20.0',
+        '244.0,1276.7 70.5x20.0',
+        '53.0,1372.7 52.3x20.0',
+        '147.3,1372.7 72.3x20.0',
+        '261.7,1372.7 72.3x20.0',
+        '53.0,1468.7 109.5x20.0',
+        '234.0,1468.7 70.5x20.0',
+        '93.6,1584.7 28.2x20.0',
+        '248.1,1584.7 42.3x20.0',
       ],
       430: <String>[
-        '17.5,540.4 121.7x20.0',
-        '149.2,540.4 123.7x20.0',
-        '281.8,540.4 123.7x20.0',
-        '16.5,1185.4 190.0x20.0',
-        '216.5,1185.4 188.0x20.0',
-        '17.5,1289.4 121.7x20.0',
-        '149.2,1279.4 123.7x40.0',
-        '281.8,1279.4 123.7x40.0',
-        '17.5,1393.4 188.0x20.0',
-        '215.5,1393.4 190.0x20.0',
-        '17.5,1488.4 188.0x20.0',
-        '215.5,1488.4 190.0x20.0',
+        '60.1,540.9 56.4x20.0',
+        '165.7,540.9 90.7x20.0',
+        '301.4,540.9 84.6x20.0',
+        '48.0,1228.9 126.9x20.0',
+        '285.3,1228.9 70.5x20.0',
+        '53.0,1324.9 70.7x20.0',
+        '165.7,1324.9 90.7x20.0',
+        '298.3,1324.9 90.7x20.0',
+        '53.0,1420.9 137.0x20.0',
+        '275.3,1420.9 70.5x20.0',
+        '107.4,1516.9 28.2x20.0',
+        '289.4,1516.9 42.3x20.0',
       ],
       800: <String>[
-        '141.5,561.5 162.3x20.0',
-        '313.8,561.5 164.3x20.0',
-        '487.2,561.5 164.3x20.0',
-        '140.5,1152.5 251.0x20.0',
-        '401.5,1152.5 249.0x20.0',
-        '141.5,1256.5 162.3x20.0',
-        '313.8,1246.5 164.3x40.0',
-        '487.2,1256.5 164.3x20.0',
-        '141.5,1360.5 249.0x20.0',
-        '400.5,1360.5 251.0x20.0',
-        '141.5,1455.5 249.0x20.0',
-        '400.5,1455.5 251.0x20.0',
+        '204.5,562.0 56.4x20.0',
+        '339.6,562.0 112.8x20.0',
+        '527.0,562.0 84.6x20.0',
+        '202.5,1196.0 126.9x20.0',
+        '500.8,1196.0 70.5x20.0',
+        '190.4,1292.0 84.6x20.0',
+        '330.3,1292.0 131.3x20.0',
+        '503.7,1292.0 131.3x20.0',
+        '205.5,1388.0 141.0x20.0',
+        '490.8,1388.0 70.5x20.0',
+        '261.9,1484.0 28.2x20.0',
+        '504.9,1484.0 42.3x20.0',
       ],
     };
 
@@ -295,7 +276,7 @@ void main() {
       }
       if (baseline.containsKey(w.round())) {
         expect(rects, baseline[w.round()],
-            reason: 'the Semantics wrapper moved something at width $w');
+            reason: 'S3 moved a single-select chip at width $w');
       }
     }
   });
