@@ -246,6 +246,10 @@ class MERTheme {
       foregroundColor: Colors.white,
       elevation:       0,
       centerTitle:     false,
+      // ⭐ ALREADY ON THE SCALE at subhead 16/w600, and measured to fit:
+      // home's app-bar Row has 335.0 of constraint against 274.2 required, and
+      // the disclaimer's 307.0 against the same 274.2. The other seven titles
+      // move UP to join it.
       titleTextStyle:  TextStyle(
         fontSize:   16,
         fontWeight: FontWeight.w600,
@@ -253,15 +257,60 @@ class MERTheme {
       ),
     ),
 
+    // ⛔ THE SIX STEPS, AND THE SLOT EACH ONE LIVES IN.
+    //
+    // 10 · 12 · 14 · 16 · 18 · 28, weights w400 / w600 / w700, per the type
+    // scale of 17 September 2026. **No widget may name a literal size** —
+    // every site names one of these slots, which is what makes rule 1
+    // enforceable by the same shape of checker rule 2 uses for colour.
+    //
+    // ## ⚠️ THE SLOT MAPPING IS A DECISION, NOT A MEASUREMENT
+    //
+    // The spec fixes six sizes and three weights; Material's TextTheme has
+    // fixed slot NAMES, and which step lives in which name is a choice. It is
+    // made here, once, rather than at 91 call sites:
+    //
+    //     displayLarge  28 w700          display
+    //     titleLarge    18 w600          heading
+    //     titleMedium   16 w600          subhead     app-bar title
+    //     titleSmall    14 w600          body/w600   section heading, button
+    //                                                label, banner titles
+    //     bodyLarge     16 w400          subhead/w400 — reserved, see below
+    //     bodyMedium    14 w400          body        THE DEFAULT
+    //     bodySmall     12 w400          caption     hint, metadata,
+    //                                                list-tile secondary
+    //     labelLarge    12 w600 ls 0.8   caption/w600 THE UPPERCASE REGISTER
+    //     labelMedium   12 w600          caption/w600 badge or count
+    //     labelSmall    10 w400          micro       app-bar subtitle
+    //
+    // ⛔ `labelLarge` AND `labelMedium` ARE THE SAME STEP AND DIFFER ONLY IN
+    // TRACKING, and that is deliberate rather than a duplicate. V4 renders
+    // screen furniture UPPERCASE, and uppercase without positive tracking is
+    // measurably harder to read — so the uppercase register carries `ls: 0.8`
+    // and the lowercase one carries none. A badge is not uppercase and must not
+    // inherit the tracking.
+    //
+    // ⚠️ 0.8 IS VERIFIED, NOT ASSUMED. Seventeen uppercase sites exist —
+    // three via `.toUpperCase()` and fourteen as literal capitals — and
+    // SIXTEEN already resolve to `labelLarge`'s 0.8. The one that does not is
+    // `history_screen.dart`'s `_DayHeader`, which carries a local `ls: 0.6`;
+    // it joins the register here. The three brand taglines at 1.5, 1.8 and 4
+    // are a different register and are not screen furniture.
+    //
+    // ⛔ `bodyLarge` IS RESERVED AND UNUSED BY ANY CLASS. Kept on the scale
+    // so a future 16/w400 need does not invent a seventh size; nothing assigns
+    // it today.
     textTheme: const TextTheme(
-      displayLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: MERColours.onSurface),
+      displayLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: MERColours.onSurface),
       titleLarge:   TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: MERColours.onSurface),
-      titleMedium:  TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: MERColours.onSurface),
-      titleSmall:   TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: MERColours.onSurface),
-      bodyLarge:    TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: MERColours.onSurface),
-      bodyMedium:   TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
-      bodySmall:    TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
-      labelLarge:   TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: MERColours.onSurfaceMuted, letterSpacing: 0.8),
+      titleMedium:  TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: MERColours.onSurface),
+      titleSmall:   TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: MERColours.onSurface),
+      bodyLarge:    TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: MERColours.onSurface),
+      bodyMedium:   TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
+      bodySmall:    TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
+      labelLarge:   TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: MERColours.onSurfaceMuted, letterSpacing: 0.8),
+      labelMedium:  TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: MERColours.onSurfaceMuted),
+      labelSmall:   TextStyle(fontSize: 10, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
     ),
 
     cardTheme: CardThemeData(

@@ -12,7 +12,9 @@ import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/storage_boot.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 import 'package:medical_event_recorder/screens/about_screen.dart';
+import 'package:medical_event_recorder/screens/disclaimer_screen.dart';
 import 'package:medical_event_recorder/screens/help_screen.dart';
+import 'package:medical_event_recorder/screens/home_screen.dart';
 import 'package:medical_event_recorder/screens/history_screen.dart';
 import 'package:medical_event_recorder/screens/log_event_screen.dart';
 import 'package:medical_event_recorder/screens/your_data_screen.dart';
@@ -147,6 +149,94 @@ void main() {
         '  truncated text   : ${t.isEmpty ? "none" : t.join(" | ")}');
   }
 
+  /// The REAL maximum width the app bar hands its title, measured from the
+  /// render tree rather than derived from arithmetic.
+  ///
+  /// ⛔ THE ARITHMETIC WAS 375 - 56 - 96 = 223 AND IT WAS A GUESS. Brief U
+  /// flagged it as arithmetic rather than a measurement and declined to call it
+  /// a finding on that basis; this is the measurement.
+  ///
+  /// ⚠️ `AppBar` wraps its title in
+  /// `MediaQuery.withClampedTextScaling(maxScaleFactor: 1.34)`, so the title
+  /// renders at 1.34x even when the platform says 2.0. Measuring it at 2.0
+  /// would report an overflow no device shows.
+  double? titleSlot(WidgetTester tester, String titleText) {
+    double? found;
+    void visit(RenderObject o) {
+      if (o is RenderParagraph && o.text.toPlainText() == titleText) {
+        found = o.constraints.maxWidth;
+      }
+      o.visitChildren(visit);
+    }
+
+    visit(tester.binding.renderViews.single);
+    return found;
+  }
+
+  testWidgets('SLOT: the app-bar title constraint, measured', (tester) async {
+    final cases = <String, Widget Function()>{
+      'history': () => HistoryScreen(
+            records: rows(),
+            onRecordsChanged: (_) async {},
+            onEdit: (_, {required confirmOnSave}) async {},
+          ),
+      'form': () => const LogEventScreen(existing: null, confirmOnSave: false),
+      'about': () => AboutScreen(onReset: () {}),
+      'help': () => const HelpScreen(),
+      'your-data': () => YourDataScreen(
+            onExport: (_) async {},
+            onBackUp: (_) async {},
+            onRestore: (_) async {},
+          ),
+      // The BINDING case: home's title is a Row carrying a 40pt mark and a
+      // 10pt gap before the Column, and it is the longest title in the app.
+      'home': () => const HomeScreen(),
+      'disclaimer': () => const DisclaimerScreen(),
+    };
+    final titles = <String, String>{
+      'history': 'History',
+      'form': 'Log new event',
+      'about': 'About',
+      'help': 'Help',
+      'your-data': 'Your data',
+      'home': 'Medical Event Recorder',
+      'disclaimer': 'Medical Event Recorder',
+    };
+
+    for (final e in cases.entries) {
+      sizeAndScale(tester, phone, 2.0);
+      await tester.pumpWidget(
+          MaterialApp(theme: MERTheme.light, home: e.value()));
+      await tester.pumpAndSettle();
+      // ⛔ DRAIN FIRST. Home's app-bar Row already overflows at 200% on
+      // unmodified code, and an undrained layout exception would fail this
+      // probe instead of letting it report the number.
+      for (var x = tester.takeException(); x != null; x = tester.takeException()) {}
+      final slot = titleSlot(tester, titles[e.key]!);
+      final sub = titleSlot(tester, 'Medical Event Recorder');
+      // The ROW's own constraint, for the two screens whose title Column is
+      // unconstrained and therefore reports Infinity above.
+      double? rowMax;
+      void findRow(RenderObject o) {
+        if (o is RenderFlex &&
+            o.direction == Axis.horizontal &&
+            rowMax == null &&
+            o.constraints.maxWidth.isFinite &&
+            o.constraints.maxWidth < 360) {
+          rowMax = o.constraints.maxWidth;
+        }
+        o.visitChildren(findRow);
+      }
+      findRow(tester.binding.renderViews.single);
+      // ignore: avoid_print
+      print('SLOT ${e.key.padRight(10)} title "${titles[e.key]}" '
+          'maxWidth=${slot?.toStringAsFixed(1)}   '
+          'subtitle maxWidth=${sub?.toStringAsFixed(1)}   '
+          'firstRow maxWidth=${rowMax?.toStringAsFixed(1)}');
+    }
+    expect(cases, isNotEmpty);
+  });
+
   testWidgets('history at 200%', (tester) async {
     await probe(
         tester,
@@ -169,6 +259,19 @@ void main() {
 
   testWidgets('help at 200%', (tester) async {
     await probe(tester, 'help', const HelpScreen());
+  });
+
+  testWidgets('HOME at 200% — the primary screen, and it was MISSING', (tester) async {
+    // ⛔ HOME WAS ABSENT FROM THE BRIEF U BASELINE, and that omission hid a
+    // live defect: `home_screen.dart:952`'s app-bar Row overflows by 138 px at
+    // 200% on unmodified code. A baseline that skips the app's primary screen
+    // is reporting on its own reach, which is the rule this file already
+    // states about the two instruments.
+    await probe(tester, 'home', const HomeScreen());
+  });
+
+  testWidgets('disclaimer at 200%', (tester) async {
+    await probe(tester, 'disclaimer', const DisclaimerScreen());
   });
 
   testWidgets('your data at 200%', (tester) async {

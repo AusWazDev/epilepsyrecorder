@@ -176,6 +176,30 @@ void main() {
     expect(answers, isNotEmpty);
   });
 
+  test('4b. HOME app-bar Row, the binding case', () {
+    // ⛔ Home's title is a Row: a 40pt mark, a 10pt gap, then an
+    // UNCONSTRAINED Column carrying the app name over its tagline. The Column
+    // is not wrapped in Expanded or Flexible, so the Text has infinite width
+    // available and the ROW overflows rather than the text truncating.
+    //
+    // Measured on unmodified code at ca2152f: RenderFlex overflowed by 138 px.
+    const mark = 40.0 + 10.0;
+    for (final size in <double>[13, 14, 16]) {
+      final title = widthOf('Medical Event Recorder',
+          style(size, FontWeight.w600), scale: 1.34);
+      // The tagline sits under it at micro 10 and the Column takes the wider.
+      final sub = widthOf('Record · Review · Share',
+          style(10, FontWeight.w400), scale: 1.34);
+      final column = title > sub ? title : sub;
+      // ignore: avoid_print
+      print('HOME-ROW title@$size = ${title.toStringAsFixed(1)}  '
+          'tagline@10 = ${sub.toStringAsFixed(1)}  '
+          'column = ${column.toStringAsFixed(1)}  '
+          'row extent = ${(mark + column).toStringAsFixed(1)}');
+    }
+    expect(mark, 50.0);
+  });
+
   test('4. the classes that MOVE UP, measured on their longest live string',
       () {
     // app-bar title 13/15 -> 16, and body prose 12/13 -> 14. These are the two

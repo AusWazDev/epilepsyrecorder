@@ -131,13 +131,17 @@ void main() {
       final c = cells(buildCsv(<EventRecord>[
         rec(given: false, helped: RescueResponse.partly, second: true)
       ]));
-      expect(c.sublist(11, 14), <String>['No', 'Partly', 'Yes']);
+      // ⚠️ THE TWO BOOLEANS ANSWER IN THEIR OWN WORDS as of 17 Sep 2026.
+      // The claim is unchanged — an inconsistent record exports its children
+      // anyway — only the vocabulary moved. Referral still reads Yes / No.
+      expect(c.sublist(11, 14),
+          <String>['Not given', 'Partly helped', 'Given']);
     });
 
     test('10. and the three response values render as words', () {
-      expect(rescueResponseCsv(RescueResponse.helped), 'Yes');
-      expect(rescueResponseCsv(RescueResponse.partly), 'Partly');
-      expect(rescueResponseCsv(RescueResponse.didNotHelp), 'No');
+      expect(rescueResponseCsv(RescueResponse.helped), 'Helped');
+      expect(rescueResponseCsv(RescueResponse.partly), 'Partly helped');
+      expect(rescueResponseCsv(RescueResponse.didNotHelp), "Didn't help");
       expect(rescueResponseCsv(null), kCsvNotCaptured);
     });
   });
@@ -249,7 +253,7 @@ void main() {
       // The NO chip under "Rescue medication given?".
       final noChip = find.descendant(
         of: find.byType(Wrap),
-        matching: find.text('No'),
+        matching: find.text('Not given'),
       );
       await tester.tap(noChip.first);
       await tester.pumpAndSettle();

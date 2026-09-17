@@ -684,12 +684,12 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   List<Widget> _rescueSection() {
     final showChildren = rescueChildrenVisible(_draftForVisibility());
     return <Widget>[
-      const Text('Rescue medication given?',
+      const Text('Rescue medication',
           style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
       const SizedBox(height: 10),
       _chips<bool>(
         const [false, true],
-        (b) => b ? 'Yes' : 'No',
+        rescueGivenLabel,
         (b) => _rescueGiven == b,
         (b) => setState(() {
           _rescueGiven = b;
@@ -714,12 +714,12 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           (r) => setState(() => _rescueHelped = r),
         ),
         const SizedBox(height: 16),
-        const Text('Was a second dose needed?',
+        const Text('Second dose',
             style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
         const SizedBox(height: 10),
         _chips<bool>(
           const [false, true],
-          (b) => b ? 'Yes' : 'No',
+          secondDoseLabel,
           (b) => _rescueSecondDose == b,
           (b) => setState(() => _rescueSecondDose = b),
         ),
@@ -1065,12 +1065,12 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     // no" on every summary would crowd out the lines that carry information,
     // and unanswered is not the same as no.
     if (_rescueGiven != null) {
-      lines.add('Rescue medication: ${_rescueGiven! ? 'given' : 'not given'}');
+      lines.add('Rescue medication: ${rescueGivenLabel(_rescueGiven!)}');
     }
     final helped = rescueResponseDisplay(_rescueHelped);
     if (helped != null) lines.add('Did it help: $helped');
     if (_rescueSecondDose != null) {
-      lines.add('Second dose: ${_rescueSecondDose! ? 'yes' : 'no'}');
+      lines.add('Second dose: ${secondDoseLabel(_rescueSecondDose!)}');
     }
     if (_referral) lines.add('Medical referral required');
     if (_notesController.text.trim().isNotEmpty) lines.add('Notes added');

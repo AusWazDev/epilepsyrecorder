@@ -80,7 +80,12 @@ List<(String, bool)> optionSemantics(WidgetTester tester) {
 /// geometry probe to these keeps the baseline small enough to read and stops it
 /// drifting when an unrelated chip moves.
 const kOptionLabels = <String>{
-  'Mild', 'Moderate', 'Severe', 'Yes', 'No', 'Partly'
+  // ⚠️ THE RESCUE FIELDS ANSWER IN THEIR OWN WORDS as of 17 Sep 2026.
+  // Referral keeps 'Yes' / 'No'; it is a different question and never
+  // shared this vocabulary except by an inline lambda written six times.
+  'Mild', 'Moderate', 'Severe', 'Yes', 'No',
+  'Given', 'Not given', 'Not needed',
+  'Helped', 'Partly helped', "Didn't help"
 };
 
 /// Rect of every option pill's TEXT, in paint order — the geometry that must
@@ -136,28 +141,40 @@ void main() {
     // ignore: avoid_print
     print('  unselected: $unselected');
 
-    // severity = Severe; rescue given = Yes; helped = Partly; second dose = No;
-    // referral = Yes. 'Yes' and 'No' each appear on more than one row, so the
-    // assertion is on the multiset, not on membership alone.
+    // ⭐ THE COLLISION THIS TEST WAS WRITTEN AROUND IS GONE, 17 Sep 2026.
+    //
+    // It read: *'Yes' and 'No' each appear on more than one row, so the
+    // assertion is on the multiset, not on membership alone* — and that
+    // collision was S2's whole argument. Each rescue field now answers in its
+    // own words, so a selected label identifies its row.
+    //
+    // ⛔ THE MULTISET ASSERTION IS KEPT, AND INVERTED: 'Yes' must now appear
+    // EXACTLY ONCE. That is a stronger claim than membership, and it is what
+    // fails if a rescue field ever borrows the yes/no pair back.
     expect(selected, contains('Severe'), reason: 'severity');
-    expect(selected, contains('Partly'), reason: 'did it help');
-    expect(selected.where((s) => s == 'Yes').length, 2,
-        reason: 'rescue given = Yes and referral = Yes are BOTH selected');
-    expect(selected.where((s) => s == 'No').length, 1,
-        reason: 'second dose = No is selected');
+    expect(selected, contains('Given'), reason: 'rescue given');
+    expect(selected, contains('Partly helped'), reason: 'did it help');
+    expect(selected, contains('Not needed'), reason: 'second dose');
+    expect(selected.where((s) => s == 'Yes').length, 1,
+        reason: 'referral ALONE keeps Yes — if this is 2 a rescue field has '
+            'taken the shared pair back and its answer no longer reads away '
+            'from its question');
+    expect(selected.where((s) => s == 'No').length, 0,
+        reason: 'NOTHING answers No any more except referral, and referral is '
+            'Yes in this fixture');
     expect(unselected, contains('Mild'), reason: 'an unselected option exists');
-    // The unselected Yes/No multiset, enumerated per row so the figure is
-    // derived rather than guessed:
-    //   severity      Severe selected  -> Mild, Moderate unselected
-    //   rescue given  Yes selected     -> No
-    //   did it help   Partly selected  -> Yes, No
-    //   second dose   No selected      -> Yes
-    //   referral      Yes selected     -> No
-    // => unselected Yes x2, No x3.
-    expect(unselected.where((s) => s == 'Yes').length, 2,
-        reason: "did-it-help's Yes and second-dose's Yes are both unselected");
-    expect(unselected.where((s) => s == 'No').length, 3,
-        reason: "rescue-given, did-it-help and referral each have No unselected");
+    // The Yes/No multiset, re-enumerated per row for the new wording so the
+    // figure stays derived rather than guessed:
+    //   severity      Severe selected        -> Mild, Moderate unselected
+    //   rescue given  Given selected         -> Not given
+    //   did it help   Partly helped selected -> Helped, Didn't help
+    //   second dose   Not needed selected    -> Given
+    //   referral      Yes selected           -> No
+    // => unselected Yes x0, No x1. ⭐ The pair now belongs to ONE row.
+    expect(unselected.where((s) => s == 'Yes').length, 0,
+        reason: 'no rescue row offers Yes any more');
+    expect(unselected.where((s) => s == 'No').length, 1,
+        reason: 'referral ALONE still offers No');
 
     handle.dispose();
   });
@@ -186,6 +203,16 @@ void main() {
 
   testWidgets('3. THE RENDER IS UNCHANGED at 375, 430 and 800', (tester) async {
     addTearDown(tester.view.reset);
+    // ⚠️ RECAPTURED 17 September 2026 FOR THE ANSWER WORDING, and the
+    // change is a HEIGHT change rather than a move. Two chips — *Partly
+    // helped* and *Didn't help* — now WRAP TO TWO LINES at 375: a rect of
+    // 105.3x19.0 becomes 105.3x38.0.
+    //
+    // ⛔ NOT A TRUNCATION — the 200% gate's ellipsis census is clean, and
+    // wrapping is what a chip is supposed to do with a longer label. But
+    // the block grows by roughly 19 points, and V5 already has it landing
+    // 268 below the fold, so S3 inherits a slightly taller block than it
+    // was scoped against.
     // ⛔ BASELINE CAPTURED FROM THE UNPATCHED CODE and pasted here. Regenerate
     // by running this test on a tree without the Semantics wrapper and reading
     // the printed rects.
@@ -196,13 +223,13 @@ void main() {
         '245.2,555.7 105.3x19.0',
         '16.5,1270.2 162.5x19.0',
         '189.0,1270.2 160.5x19.0',
-        '17.5,1364.2 103.3x19.0',
-        '130.8,1364.2 105.3x19.0',
-        '245.2,1364.2 105.3x19.0',
-        '17.5,1478.2 160.5x19.0',
-        '188.0,1478.2 162.5x19.0',
-        '17.5,1592.2 160.5x19.0',
-        '188.0,1592.2 162.5x19.0',
+        '17.5,1372.7 103.3x19.0',
+        '130.8,1363.2 105.3x38.0',
+        '245.2,1363.2 105.3x38.0',
+        '17.5,1475.2 160.5x19.0',
+        '188.0,1475.2 162.5x19.0',
+        '17.5,1589.2 160.5x19.0',
+        '188.0,1589.2 162.5x19.0',
       ],
       430: <String>[
         '17.5,543.4 121.7x19.0',
@@ -210,13 +237,13 @@ void main() {
         '281.8,543.4 123.7x19.0',
         '16.5,1189.4 190.0x19.0',
         '216.5,1189.4 188.0x19.0',
-        '17.5,1283.4 121.7x19.0',
-        '149.2,1283.4 123.7x19.0',
-        '281.8,1283.4 123.7x19.0',
-        '17.5,1377.4 188.0x19.0',
-        '215.5,1377.4 190.0x19.0',
-        '17.5,1471.4 188.0x19.0',
-        '215.5,1471.4 190.0x19.0',
+        '17.5,1291.9 121.7x19.0',
+        '149.2,1282.4 123.7x38.0',
+        '281.8,1282.4 123.7x38.0',
+        '17.5,1394.4 188.0x19.0',
+        '215.5,1394.4 190.0x19.0',
+        '17.5,1488.4 188.0x19.0',
+        '215.5,1488.4 190.0x19.0',
       ],
       800: <String>[
         '141.5,565.5 162.3x19.0',
@@ -224,13 +251,13 @@ void main() {
         '487.2,565.5 164.3x19.0',
         '140.5,1172.5 251.0x19.0',
         '401.5,1172.5 249.0x19.0',
-        '141.5,1266.5 162.3x19.0',
-        '313.8,1266.5 164.3x19.0',
-        '487.2,1266.5 164.3x19.0',
-        '141.5,1360.5 249.0x19.0',
-        '400.5,1360.5 251.0x19.0',
-        '141.5,1454.5 249.0x19.0',
-        '400.5,1454.5 251.0x19.0',
+        '141.5,1275.0 162.3x19.0',
+        '313.8,1265.5 164.3x38.0',
+        '487.2,1275.0 164.3x19.0',
+        '141.5,1377.5 249.0x19.0',
+        '400.5,1377.5 251.0x19.0',
+        '141.5,1471.5 249.0x19.0',
+        '400.5,1471.5 251.0x19.0',
       ],
     };
 

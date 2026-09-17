@@ -20,8 +20,17 @@ import 'package:medical_event_recorder/screens/log_event_screen.dart';
 ///
 /// ## Why the finders are scoped by ROW and not by text
 ///
-/// `rescueResponseLabel` returns 'Yes' / 'Partly' / 'No' — the SAME strings the
-/// two boolean rows use. With the rescue children visible, 'Yes' appears four
+/// ⚠️ REWRITTEN 17 September 2026, AND THE COLLISION THIS DESCRIBES IS GONE.
+/// It read: `rescueResponseLabel` returns 'Yes' / 'Partly' / 'No' — the SAME
+/// strings the two boolean rows use. Each of the three now answers in its own
+/// words — Given / Not given, Helped / Partly helped / Didn't help, Given /
+/// Not needed — so a label no longer identifies more than one row.
+///
+/// ⭐ The finder scoping below is KEPT even so. It was correct for a reason
+/// that outlives the collision: a row's answer must be located within that
+/// row, not by a global text search that happens to be unambiguous today.
+///
+/// [historical] 'Yes' appears four
 /// times on this screen (rescue given, did it help, second dose, referral).
 /// Only 'Partly' is unique. Each test therefore asserts the expected NUMBER of
 /// boolean selection rows before tapping one by index, so a layout change fails
@@ -86,7 +95,8 @@ void main() {
         reason: 'rescue given + referral; the children are gated off at '
             'given == false. If this fails the index below taps the wrong row.');
 
-    final yes = find.descendant(of: boolRows().at(0), matching: find.text('Yes'));
+    final yes =
+        find.descendant(of: boolRows().at(0), matching: find.text('Given'));
     expect(yes, findsOneWidget);
     await tester.ensureVisible(yes);
     await tester.pumpAndSettle();
@@ -116,7 +126,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // 'Partly' is the one rescue label that cannot collide with a boolean row.
-    final partly = find.text('Partly');
+    final partly = find.text('Partly helped');
     expect(partly, findsOneWidget);
     await tester.ensureVisible(partly);
     await tester.pumpAndSettle();
@@ -129,7 +139,8 @@ void main() {
     // Rendered through rescueResponseDisplay, so the arrow carries the enum's
     // own labels. A bool rendering would read "Yes -> No" and lose 'Partly'
     // entirely, which is the third of three values.
-    expect(find.textContaining('Did it help: Yes → Partly'), findsOneWidget);
+    expect(find.textContaining("Did it help: Helped → Partly helped"),
+        findsOneWidget);
   });
 
   testWidgets('3. second dose, changed alone, is NAMED', (tester) async {
@@ -146,7 +157,8 @@ void main() {
     expect(boolRows(), findsNWidgets(3),
         reason: 'rescue given + second dose + referral');
 
-    final yes = find.descendant(of: boolRows().at(1), matching: find.text('Yes'));
+    final yes =
+        find.descendant(of: boolRows().at(1), matching: find.text('Given'));
     expect(yes, findsOneWidget);
     await tester.ensureVisible(yes);
     await tester.pumpAndSettle();

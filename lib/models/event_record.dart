@@ -235,16 +235,42 @@ enum EventSeverity { mild, moderate, severe }
 /// off" to yes or no gives a specialist a worse answer than no answer.
 enum RescueResponse { helped, partly, didNotHelp }
 
+/// ⛔ THE ANSWER CARRIES THE MEANING, NOT THE QUESTION.
+///
+/// These read *Yes / Partly / No* until 17 September 2026, and a bare *Yes* is
+/// unreadable away from the question that gave it meaning. **This app separates
+/// them routinely** — the CSV export, and control-only screen-reader
+/// navigation, both present an answer without its label. A column of *Yes*
+/// under a header reading `rescue_med_helped` is the least readable surface the
+/// app produces, and it is the one a clinician actually reads.
+///
+/// ⚠️ `partly` IS KEPT AND IS NOT *Not sure*. A middle case already
+/// existed here; *Not sure* would have been a confidence hedge replacing a
+/// DEGREE a clinician can use, and D6 is append-only — retiring `partly` is a
+/// decision nobody has taken. The unanswered state survives separately, as
+/// null, which is the distinction this record model is built on.
 String rescueResponseLabel(RescueResponse r) {
   switch (r) {
     case RescueResponse.helped:
-      return 'Yes';
+      return 'Helped';
     case RescueResponse.partly:
-      return 'Partly';
+      return 'Partly helped';
     case RescueResponse.didNotHelp:
-      return 'No';
+      return "Didn't help";
   }
 }
+
+/// *Was rescue medication given?* answered so the answer reads alone.
+///
+/// ⚠️ NOT `yesNoCsv`, and the difference is the point. `referralRequired`
+/// keeps *Yes / No* — it is a different question, it shares no vocabulary with
+/// this one, and the two were only ever the same because a `b ? 'Yes' : 'No'`
+/// lambda was written inline at six sites.
+String rescueGivenLabel(bool v) => v ? 'Given' : 'Not given';
+
+/// *Was a second dose needed?* — same rule, different pair. *Not needed*
+/// rather than *Not given*, because the question is about necessity.
+String secondDoseLabel(bool v) => v ? 'Given' : 'Not needed';
 
 /// What a SCREEN shows, or null to show nothing. See [severityDisplay].
 String? rescueResponseDisplay(RescueResponse? r) =>
@@ -263,7 +289,21 @@ String rescueResponseCsv(RescueResponse? r) =>
     rescueResponseDisplay(r) ?? kCsvNotCaptured;
 
 /// A nullable yes/no, rendered for the CSV. Blank when unanswered.
+///
+/// ⚠️ STILL USED BY `referralRequired`, which keeps *Yes / No*. The two
+/// rescue booleans moved to their own writers below — CSV VALUES follow the
+/// new answer wording, and the HEADERS do not. Different blast radius: a value
+/// change affects reading, a header change affects anyone whose spreadsheet
+/// matches on column names.
 String yesNoCsv(bool? v) => v == null ? kCsvNotCaptured : (v ? 'Yes' : 'No');
+
+/// The CSV cell for *rescue medication given*. Blank when unanswered.
+String rescueGivenCsv(bool? v) =>
+    v == null ? kCsvNotCaptured : rescueGivenLabel(v);
+
+/// The CSV cell for *second dose*. Blank when unanswered.
+String secondDoseCsv(bool? v) =>
+    v == null ? kCsvNotCaptured : secondDoseLabel(v);
 
 /// Whether the two follow-up questions should be RENDERED for this record.
 ///
@@ -1277,7 +1317,7 @@ String buildCsv(
       // WHATEVER IS STORED, never what the UI would have shown — a value that
       // exists in the record appears in the file. If the two ever disagree,
       // the file is the one a clinician reads.
-      yesNoCsv(r.rescueMedGiven),
+      rescueGivenCsv(r.rescueMedGiven),
       // ⚠️ THE TWO CONDITIONALS, §13(cd). The screen hides these children when
       // rescue medication was NOT given, so on that record they do not exist:
       // Not Applicable. When given is null (never asked) or Yes with the child
@@ -1292,7 +1332,7 @@ String buildCsv(
           ? rescueResponseCsv(r.rescueMedHelped)
           : (r.rescueMedGiven == false ? kCsvNotApplicable : kCsvNotCaptured),
       r.rescueMedSecondDose != null
-          ? yesNoCsv(r.rescueMedSecondDose)
+          ? secondDoseCsv(r.rescueMedSecondDose)
           : (r.rescueMedGiven == false ? kCsvNotApplicable : kCsvNotCaptured),
       // ⛔ THE ONE KNOWN EXCEPTION. A non-nullable bool: `No` is the only
       // value the type can hold for a record that was never asked. Routed to

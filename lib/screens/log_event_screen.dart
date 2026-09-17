@@ -277,9 +277,16 @@ class _LogEventScreenState extends State<LogEventScreen> {
     // vocabulary the rest of this list uses for absence.
     String yn(bool? v) => v == null ? 'not recorded' : (v ? 'Yes' : 'No');
 
+    // ⚠️ THE ANSWER VOCABULARY, NOT `yn`. `yn` renders *Yes / No / not
+    // recorded* and is kept for its own contract; these two fields now answer
+    // in their own words, and a change list saying *Yes → No* beside a chip
+    // reading *Given → Not given* would name one edit two ways.
+    String rg(bool? v) => v == null ? 'not recorded' : rescueGivenLabel(v);
+    String sd(bool? v) => v == null ? 'not recorded' : secondDoseLabel(v);
+
     if (_rescueGiven != _origRescueGiven) {
       changes.add(
-        'Rescue medication: ${yn(_origRescueGiven)} → ${yn(_rescueGiven)}',
+        'Rescue medication: ${rg(_origRescueGiven)} → ${rg(_rescueGiven)}',
       );
     }
     // Three-valued, so rendered through its own display helper exactly as
@@ -292,7 +299,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     }
     if (_rescueSecondDose != _origRescueSecondDose) {
       changes.add(
-        'Second dose: ${yn(_origRescueSecondDose)} → ${yn(_rescueSecondDose)}',
+        'Second dose: ${sd(_origRescueSecondDose)} → ${sd(_rescueSecondDose)}',
       );
     }
     if (_referralRequired != _origReferral) {
@@ -773,12 +780,12 @@ appBar: AppBar(
                         // clearing rule. The two screens edit the same record
                         // and a user who learns one must not be surprised by
                         // the other.
-                        _SectionLabel('Rescue medication given?'),
+                        _SectionLabel('Rescue medication'),
                         const SizedBox(height: 8),
                         _SelectionRow<bool>(
                           options:    const [false, true],
                           selected:   _rescueGiven,
-                          labelFor:   (v) => v ? 'Yes' : 'No',
+                          labelFor:   rescueGivenLabel,
                           onSelected: (v) => setState(() {
                             _rescueGiven = v;
                             if (!v) {
@@ -799,12 +806,12 @@ appBar: AppBar(
                                 setState(() => _rescueHelped = v),
                           ),
                           const SizedBox(height: 20),
-                          _SectionLabel('Was a second dose needed?'),
+                          _SectionLabel('Second dose'),
                           const SizedBox(height: 8),
                           _SelectionRow<bool>(
                             options:    const [false, true],
                             selected:   _rescueSecondDose,
-                            labelFor:   (v) => v ? 'Yes' : 'No',
+                            labelFor:   secondDoseLabel,
                             onSelected: (v) =>
                                 setState(() => _rescueSecondDose = v),
                           ),

@@ -213,7 +213,10 @@ void main() {
     final second = h.indexOf('rescue_med_second_dose');
 
     final no = rows(buildCsv(<EventRecord>[rescueNo()])).single;
-    expect(no[h.indexOf('rescue_med_given')], 'No');
+    // The HEADER is unchanged — headers were deliberately excluded from the
+    // wording change, because a value change affects reading and a header
+    // change affects anyone matching on column names.
+    expect(no[h.indexOf('rescue_med_given')], 'Not given');
     expect(no[helped], _na, reason: 'hidden on screen when given is No');
     expect(no[second], _na);
 
