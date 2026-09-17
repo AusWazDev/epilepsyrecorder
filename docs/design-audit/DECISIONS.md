@@ -377,3 +377,109 @@ corrected into a falsehood.**
 
 **Every copy finding is adjudicated against the RENDERED sentence, never against the matched
 string.**
+
+---
+
+# AMENDMENT 2 — the iOS release cut. Decided 17 September 2026.
+
+⛔ **RECORDED HERE BECAUSE IT TRAVELS BY `git push`.** The reasoning chain behind it lives in the
+Change Register and in commit messages; **the Register does not travel, and a release decision that
+exists only in a chat window is the failure Amendment 1's method rules were written about.**
+
+---
+
+## 🔴 THE CUT IS `956b2d3`
+
+**The rule was stated BEFORE the read, so the read could not be shaped to fit it:**
+
+> **the cut is `824cd16` — the smallest change that works — UNLESS one of the thirteen fixes
+> something that would otherwise ship broken.** ⛔ *"Nice to have" does not qualify. "Ships a defect
+> without it" does.*
+
+⛔ **ONE QUALIFIED.** `956b2d3`, *"iOS 16.2-16.x: make the End action prompt instead of failing
+silently"*, whose own body records a **data** defect:
+
+> *"the record kept its `lt1` default — **wrong data** on the only end path this tier has."*
+
+⭐ **AND THE TIER IT NAMES IS THE MINIMUM SUPPORTED TIER.** `efae60d` is an ancestor of `824cd16`
+(`merge-base --is-ancestor`, `[read]`), so **no viable cut avoids the iOS 16.2 floor** — 16.2 to
+16.x becomes the lowest supported band on every candidate. **Shipping without `956b2d3` would ship
+a build whose lowest supported iOS version writes wrong data on its only end path.** That is the
+rule's condition, met exactly.
+
+⚠️ **AND THE DEFECT IS PRE-EXISTING, NOT INTRODUCED BY THE CUT.** `[read]`:
+`.authenticationRequired` is absent at `192ae40` **and** at `824cd16`, present at `11d2fda`. **The
+cut does not create it; it fails to fix it.**
+
+### What did NOT qualify — recorded so the rule is seen to have DISCRIMINATED
+
+| commit | why not |
+|---|---|
+| `468fb23` | ⛔ **explicitly disclaims a data effect** — *"Neither affected the record."* A behaviour improvement on the same tier, not a defect fix. **It travels only because it is an ancestor.** |
+| `8e0b9ee` | same path, ancestor of `956b2d3`; **travels with it rather than qualifying on its own.** `956b2d3`'s body states the reorder *"is neither the fix nor a regression"* |
+| `db2fd38` (Help collapsible sections) · `51fa65e` (History date range, day grouping) | ⛔ **user-facing and substantial, and neither fixes a shipping defect.** Taking them would be choosing SCOPE rather than removing a defect. **Excluded.** |
+| the six tooling, docs and test commits | not user-facing; **excluded by being beyond `956b2d3`, not by judgement** |
+
+⭐ **A rule that excluded nothing would not have been a rule.** Two user-facing features and a
+same-tier behaviour fix were available and were left out.
+
+---
+
+## ⛔ THE CAVEAT THAT TRAVELS WITH THE DECISION — BOTH SENTENCES, ALWAYS TOGETHER
+
+**1. NO CUT IS A HOTFIX.** `192ae40 → 824cd16` is **1,135 insertions across seven files — six
+screens plus a widget** (`[read]`, `git diff --shortstat`). The live build is May; these commits
+are late August. ⛔ **Four months of accumulated work ships regardless of which candidate is
+chosen.**
+
+**2. WHAT THE CUT AVOIDS IS THIS MONTH'S DESIGN WORK**, which is what the standing rule was written
+about. ⛔ **It does not avoid shipping a substantially different app from what is live.**
+
+⚠️ **A reader who finds only the second sentence will believe the cut is a hotfix. It is not.**
+⭐ **Both sentences are the record; either alone misrepresents it.**
+
+---
+
+## The upgrade test — LOCATED, and it DOES NOT TRANSFER
+
+**Found in two places:** `STATUS.md:1185` (*"Session: 24 August 2026 — Windows"*) and the Change
+Register at line 979 (*"Android inbox — device test, 24 August 2026"*). It records a Teclast P30,
+Release build, `adb install -r`, versionCode **3 → 5**, `firstInstallTime` unchanged with a new
+`lastUpdateTime`, and *"Data retained across the upgrade."*
+
+⭐ **IT WAS CORRECTLY REMEMBERED AND IT IS REAL EVIDENCE** — about Android, at an unestablished
+commit. ⛔ **THREE LIMITS, all of which travel with it:**
+
+1. ⛔ **IT DOES NOT NAME THE COMMIT THE TESTED BUILD WAS MADE FROM.** The only shas in either block
+   are an `ios/` subtree hash, two section headings, a fix reference, and — in the Register — a
+   **certificate** SHA-256, not a commit.
+2. ⭐ **THE VERSION STRING CANNOT SUBSTITUTE FOR ONE.** `1.1.0+5` is carried by **four** commits
+   that **straddle the SQLite boundary**: `bc4dc77`, `b7df6f1`, `747a7d7` pre-SQLite, and
+   `9461f27` — **which IS SQLite phase one.** ⛔ **So "before or after SQLite" is NOT established,
+   and deriving it from a 24 August build date against a 25 August authored commit is an
+   INFERENCE, not a reading.** ⚠️ A build date can precede its commit, and a commit authored on the
+   25th can have been written on the 24th.
+3. 🔴 **IT IS AN ANDROID TEST.** `adb install -r`, `versionCode` and `firstInstallTime` are Android
+   mechanics. ⛔ **No iOS in-place upgrade test appears anywhere in `STATUS.md`.** **The release in
+   question is iOS.**
+
+⛔ **DO NOT RECORD IT AS EVIDENCE THAT AN iOS UPGRADE PRESERVES DATA. That is the one claim it does
+not support**, and it is the claim a reader most wants it to make.
+
+⚠️ **The two harness tests are not a substitute either.** `sqlite_migration_test.dart` and
+`sqlite_upgrade_v2_test.dart` cover **v1 → v2** — the latter describes itself as *"run against a
+database built the way the device's actually was"* — **not live-build → candidate.**
+
+---
+
+## ⚠️ A correction to Brief 35, recorded where the cut decision is
+
+**Brief 35's FILE carried THREE confirmations.** The upgrade test was a **FOURTH, added in a chat
+window and never written into the document.** ⭐ **Recorded here so the brief is not later read as
+having asked for it**, and because it is the same class Amendment 1's provenance rules exist for: a
+requirement that reached the work without reaching the document.
+
+⛔ **The separation matters beyond bookkeeping.** The three written confirmations returned answers;
+the unwritten fourth returned *"the record does not say."* **A reader reconciling the brief against
+the report would otherwise find one more answer than the brief has questions, and no way to tell
+which was which.**
