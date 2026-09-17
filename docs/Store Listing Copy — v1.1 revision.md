@@ -24,11 +24,11 @@ Medical Event Recorder is a private, on-device record of medical events — for
 individuals and carers who need an accurate written record of what happened and when.
 
 Record an event as it happens. Each entry is timestamped and structured: event
-type, duration, how severe it felt, possible triggers, and any notes you want to
+type, duration, how severe it was, possible triggers, and any notes you want to
 add.
 
-Start and stop an event from the Lock Screen or notification shade, without unlocking
-your phone.
+Start an event from the Lock Screen or notification shade — one tap, without unlocking.
+On iPhone and iPad, ending an event asks you to unlock first.
 
 Export your full record as a CSV file — open it in a spreadsheet, keep it as a backup,
 or share it with whoever you choose.

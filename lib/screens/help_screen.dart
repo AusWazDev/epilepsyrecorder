@@ -159,8 +159,15 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // it: there are two screens now and they order things differently on
                   // purpose.
                   body:  'Use the blue Record with details button for a guided version: one question '
+                         // ⭐ "how you felt afterwards" -> "how things were
+                         // afterwards". NOT A NEW DECISION: this is `a690f71`,
+                         // 29 Aug 2026, reaching a file it missed. That pass
+                         // retired this exact phrasing in four labels across
+                         // `event_wizard_screen.dart` and `log_event_screen.dart`
+                         // and never touched Help, so the retired wording
+                         // survived on the one screen that explains the flow.
                          'at a time — how long it lasted, what happened, what was going on beforehand, '
-                         'and how you felt afterwards — with a summary before you save. You can skip '
+                         'and how things were afterwards — with a summary before you save. You can skip '
                          'any step, and whatever you have entered is kept if you back out. Anything '
                          'you add to a list is offered next time.',
                 ),
@@ -375,7 +382,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   ),
                   const _HelpRow(
                     icon:  Icons.lock_open_outlined,
-                    title: 'Ending an event needs your phone unlocked',
+                    title: 'Ending an event needs the phone unlocked',
                     // iOS ONLY, and this is a correction to the brief, which
                     // asserted the wording is "accurate everywhere". It is not.
                     // On Android both notification actions are
@@ -389,7 +396,16 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                     // useful content. On 17+ the system demands authentication
                     // before ending; on 16.2-16.x a locked device does not
                     // deliver the action at all.
-                    body:  'Starting an event never does — one tap from the Lock Screen and it is recorded. Ending one is different: unlock your phone first, then tap "Event Ended" on the timer or the notification.',
+                    // ⭐ CARER VOICE, 17 Sep 2026. This read "unlock YOUR phone
+                    // first", which instructs a carer to unlock a phone that is
+                    // not theirs. The observer-voice work of 29 Aug established
+                    // that a carer recording someone else is a core path, not an
+                    // edge case — the person having a seizure is not the one
+                    // holding the phone.
+                    //
+                    // The Windows precedent applies: Help explains an absence
+                    // rather than telling someone to do something they cannot.
+                    body:  'Starting never does — one tap from the Lock Screen and it is recorded. Ending is different: the phone has to be unlocked first, then tap "Event Ended" on the timer or the notification. If someone else is recording the event, they will need the phone\'s owner to unlock it, or to know the passcode.',
                   ),
                   const _HelpRow(
                     icon:  Icons.timer_outlined,
@@ -417,7 +433,29 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   const _HelpRow(
                     icon:  Icons.open_in_new,
                     title: 'Reviewing the event',
-                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, what was happening beforehand, and severity while the details are still fresh.',
+                    // ⛔ THE DURATION CAVEAT LIVES HERE, AND ONLY IN THIS
+                    // BRANCH. Both end paths stamp the end at the moment the
+                    // handler RUNS, which iOS reaches only once authentication
+                    // has succeeded — so an end that waited for a passcode
+                    // carries that wait inside the duration.
+                    //
+                    // ⚠️ THE ELSE BRANCH MUST NOT CARRY THIS. Android's actions
+                    // are ActionType.SilentAction: no authentication, no wait,
+                    // nothing to caveat. Rendering it there would describe a
+                    // delay that cannot occur — the same error the "needs the
+                    // phone unlocked" row above is iOS-guarded to avoid.
+                    //
+                    // ⭐ It says SOME durations may include it and cannot say
+                    // WHICH. That limit is real: the app cannot distinguish a
+                    // delayed end from a prompt one, because kBtnEnd carries
+                    // .authenticationRequired unconditionally and nothing
+                    // reaches the handler that varies with lock state. A
+                    // per-record mark was ruled out on that finding.
+                    //
+                    // Time-agnostic and factual by design: no version numbers,
+                    // no apology, and no estimate of how large the delay is —
+                    // that has never been measured.
+                    body:  'After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER directly on the event\'s edit screen — add notes, what was happening beforehand, and severity while the details are still fresh. The duration is measured to the moment the end is recorded. If the phone had to be unlocked first, that time is included.',
                   ),
                 ] else ...[
                   const _HelpRow(
