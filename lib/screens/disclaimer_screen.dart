@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/section_label.dart';
 
 import '../constants.dart';
 import '../theme/mer_theme.dart';
@@ -82,9 +83,9 @@ class DisclaimerScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Important Notice',
+                            'Important notice',
                             style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: MERType.strong,
                               color:      MERColours.cautionOnContainer,
                             ),
                           ),
@@ -123,10 +124,7 @@ class DisclaimerScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'LIMITATIONS',
-                              style: theme.textTheme.labelLarge,
-                            ),
+                            SectionLabel('Limitations'),
                             const SizedBox(height: 10),
                             const _DisclaimerBullet(
                               text: 'This app does not provide medical advice '
@@ -157,10 +155,7 @@ class DisclaimerScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'MEDICAL ADVICE',
-                              style: theme.textTheme.labelLarge,
-                            ),
+                            SectionLabel('Medical advice'),
                             const SizedBox(height: 8),
                             Text(
                               'Always seek the advice of a qualified '
@@ -185,10 +180,7 @@ class DisclaimerScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'EMERGENCY SITUATIONS',
-                              style: theme.textTheme.labelLarge,
-                            ),
+                            SectionLabel('Emergency situations'),
                             const SizedBox(height: 8),
                             Text.rich(
                               const TextSpan(
@@ -202,7 +194,7 @@ class DisclaimerScreen extends StatelessWidget {
                                     text: 'Never delay calling for help in '
                                         'order to record an event.',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: MERType.strong,
                                     ),
                                   ),
                                   TextSpan(
@@ -229,10 +221,7 @@ class DisclaimerScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'DATA STORAGE & PRIVACY',
-                              style: theme.textTheme.labelLarge,
-                            ),
+                            SectionLabel('Data storage & privacy'),
                             const SizedBox(height: 8),
                             Text(
                               'All event data entered into this application '
@@ -267,7 +256,7 @@ class DisclaimerScreen extends StatelessWidget {
                                         'event with it, and neither you nor '
                                         'Notiva can recover them.',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: MERType.strong,
                                     ),
                                   ),
                                   TextSpan(
@@ -294,7 +283,7 @@ class DisclaimerScreen extends StatelessWidget {
                                 'Read our full Privacy Policy →',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color:           MERColours.primary,
-                                  fontWeight:      FontWeight.w600,
+                                  fontWeight:      MERType.emphasis,
                                   decoration:      TextDecoration.underline,
                                   decorationColor: MERColours.primary,
                                 ),
@@ -310,7 +299,7 @@ class DisclaimerScreen extends StatelessWidget {
                                 'Read our full Terms of Service →',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color:           MERColours.primary,
-                                  fontWeight:      FontWeight.w600,
+                                  fontWeight:      MERType.emphasis,
                                   decoration:      TextDecoration.underline,
                                   decorationColor: MERColours.primary,
                                 ),
@@ -335,7 +324,7 @@ class DisclaimerScreen extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () => _accept(context),
                   child: const Text(
-                    'I Understand and Agree',
+                    'I understand and agree',
                     style: MERType.bodyStrongInherit,
                   ),
                 ),

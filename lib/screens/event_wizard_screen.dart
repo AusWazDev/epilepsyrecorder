@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import '../widgets/section_label.dart';
 
 import '../models/condition.dart';
 import '../models/event_record.dart';
@@ -538,8 +539,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           // the comparison and names nobody. Deliberately NOT "in this
           // record" — a record is one event, so that phrasing implies a
           // record contains several.
-          const Text('COMPARED WITH THE OTHERS HERE',
-              style: MERType.captionUpperOnSurfaceMuted),
+          const SectionLabel('Compared with the others here'),
           const SizedBox(height: 10),
           _chips<EventSeverity>(
             EventSeverity.values,
@@ -644,8 +644,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           const SizedBox(height: 24),
           ..._rescueSection(),
           const SizedBox(height: 24),
-          const Text('MEDICAL REFERRAL REQUIRED?',
-              style: MERType.captionUpperOnSurfaceMuted),
+          const SectionLabel('Medical referral required?'),
           const SizedBox(height: 10),
           _chips<bool>(
             const [false, true],
@@ -689,8 +688,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   List<Widget> _rescueSection() {
     final showChildren = rescueChildrenVisible(_draftForVisibility());
     return <Widget>[
-      const Text('RESCUE MEDICATION',
-          style: MERType.captionUpperOnSurfaceMuted),
+      const SectionLabel('Rescue medication'),
       const SizedBox(height: 10),
       _chips<bool>(
         const [false, true],
@@ -709,8 +707,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       ),
       if (showChildren) ...<Widget>[
         const SizedBox(height: 16),
-        const Text('DID IT HELP?',
-            style: MERType.captionUpperOnSurfaceMuted),
+        const SectionLabel('Did it help?'),
         const SizedBox(height: 10),
         _chips<RescueResponse>(
           RescueResponse.values,
@@ -719,8 +716,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           (r) => setState(() => _rescueHelped = r),
         ),
         const SizedBox(height: 16),
-        const Text('SECOND DOSE',
-            style: MERType.captionUpperOnSurfaceMuted),
+        const SectionLabel('Second dose'),
         const SizedBox(height: 10),
         _chips<bool>(
           const [false, true],

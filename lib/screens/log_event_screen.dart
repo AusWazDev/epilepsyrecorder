@@ -13,6 +13,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:uuid/uuid.dart';
 
 import '../models/event_record.dart';
+import '../widgets/section_label.dart';
 import '../models/vocabulary.dart';
 import '../widgets/bounded_chip_wrap.dart';
 import '../models/vocabulary_store.dart';
@@ -958,13 +959,12 @@ class _SectionLabel extends StatelessWidget {
   final String text;
   const _SectionLabel(this.text, {super.key});
 
+  // ⭐ DELEGATES. This was one of three separate implementations of the same
+  // uppercase section label; `SectionLabel` is now the only one. The name is
+  // kept because the V5 anchor and several tests reference this call shape,
+  // and a rename would be churn rather than a change.
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: Theme.of(context).textTheme.labelLarge,
-    );
-  }
+  Widget build(BuildContext context) => SectionLabel(text);
 }
 
 /* ===========================
@@ -1111,8 +1111,8 @@ class _EventTypeButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize:   MERType.caption,
                   fontWeight: isSelected
-                      ? FontWeight.w600
-                      : FontWeight.w400,
+                      ? MERType.emphasis
+                      : MERType.regular,
                   color: isSelected
                       ? _selectedColor
                       : MERColours.onSurface,

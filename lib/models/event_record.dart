@@ -1768,7 +1768,7 @@ Future<void> showExportOptions(
               title: const Text(
                 'Share to apps',
                 style: TextStyle(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: MERType.emphasis,
                 ),
               ),
               subtitle: const Text(
@@ -1810,7 +1810,7 @@ Future<void> showExportOptions(
                 title: const Text(
                   'Save to device',
                   style: TextStyle(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: MERType.emphasis,
                   ),
                 ),
                 subtitle: const Text(
@@ -1849,7 +1849,7 @@ Future<void> showExportOptions(
               title: const Text(
                 'Cancel',
                 style: TextStyle(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: MERType.emphasis,
                   color:      MERColours.onSurfaceMuted,
                 ),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/section_label.dart';
 
 import '../app_info.dart';
 import '../constants.dart';
@@ -110,10 +111,7 @@ class AboutScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'APP',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
+                          SectionLabel('App'),
                           const SizedBox(height: 12),
                           _InfoRow(
                             label: 'Developer',
@@ -145,10 +143,7 @@ class AboutScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'LINKS',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
+                          SectionLabel('Links'),
                           const SizedBox(height: 12),
                           _LinkRow(
                             label: 'Website',
@@ -180,10 +175,7 @@ class AboutScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'LEGAL',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
+                          SectionLabel('Legal'),
                           const Divider(height: 20, thickness: 1.0),
                           Text(
                             'For personal record‑keeping only. Not a medical '
@@ -208,10 +200,7 @@ class AboutScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'APP DATA',
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
+                            SectionLabel('App data'),
                             const Divider(height: 20, thickness: 1.0),
                             Text(
                               'Reset clears all recorded events and shows the disclaimer again. This cannot be undone.',
@@ -314,7 +303,7 @@ class _LinkRow extends StatelessWidget {
                                   .replaceFirst('www.', ''),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:      MERColours.primary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: MERType.emphasis,
                           ),
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.end,
@@ -394,7 +383,7 @@ class _InfoRow extends StatelessWidget {
                 child: Text(
                   value,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: MERType.emphasis,
                     color:      MERColours.onSurface,
                   ),
                 ),

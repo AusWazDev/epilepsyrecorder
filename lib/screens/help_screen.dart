@@ -682,7 +682,7 @@ class _StatusRow extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: MERType.emphasis,
                   color:      MERColours.onSurface,
                 ),
               ),
@@ -698,7 +698,7 @@ class _StatusRow extends StatelessWidget {
                 ok ? okText : badText,
                 textAlign: TextAlign.end,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: MERType.emphasis,
                   color:      colour,
                 ),
               ),
@@ -836,7 +836,7 @@ class _HelpRow extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: MERType.emphasis,
                       color:      MERColours.onSurface,
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import '../widgets/section_label.dart';
 
 import '../models/medication_note.dart';
 import '../theme/mer_theme.dart';
@@ -313,8 +314,7 @@ class _RecordSheetState extends State<_RecordSheet> {
               style: TextStyle(
                   fontSize: MERType.heading, fontWeight: MERType.emphasis)),
           const SizedBox(height: 16),
-          const Text('WHAT HAPPENED?',
-              style: MERType.captionUpperOnSurfaceMuted),
+          const SectionLabel('What happened?'),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -327,8 +327,7 @@ class _RecordSheetState extends State<_RecordSheet> {
                 .toList(),
           ),
           const SizedBox(height: 16),
-          const Text('WHEN?',
-              style: MERType.captionUpperOnSurfaceMuted),
+          const SectionLabel('When?'),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _pickWhen,

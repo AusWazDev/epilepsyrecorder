@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter/services.dart';
 
 import 'package:sentry_flutter/sentry_flutter.dart';
+import '../widgets/section_label.dart';
 
 import '../constants.dart';
 import '../services/backup_service.dart';
@@ -1222,7 +1223,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               'Record Event',
                               style: TextStyle(
                                 fontSize:   MERType.display,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: MERType.strong,
                                 color:      MERColours.onCapture,
                               ),
                             ),
@@ -1880,7 +1881,7 @@ class _StatCell extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize:   MERType.heading,
-              fontWeight: FontWeight.w600,
+              fontWeight: MERType.emphasis,
               color:      valueColor ?? MERColours.primary,
             ),
           ),
@@ -1949,10 +1950,7 @@ class _LastEventCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'LAST EVENT',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
+              SectionLabel('Last event'),
               const Icon(
                 Icons.access_time_rounded,
                 size:  14,

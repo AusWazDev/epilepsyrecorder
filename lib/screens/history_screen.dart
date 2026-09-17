@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/event_record.dart';
+import '../widgets/section_label.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
 import '../screens/event_wizard_screen.dart';
@@ -1197,11 +1198,9 @@ class _SheetSectionLabel extends StatelessWidget {
   const _SheetSectionLabel(this.text);
   final String text;
 
+  // ⭐ DELEGATES to the one implementation. See `SectionLabel`.
   @override
-  Widget build(BuildContext context) => Text(
-        text.toUpperCase(),
-        style: Theme.of(context).textTheme.labelLarge,
-      );
+  Widget build(BuildContext context) => SectionLabel(text);
 }
 
 /// The "Needs details" chip.
@@ -1412,8 +1411,8 @@ class _EventTypeFilterChips extends StatelessWidget {
               style: TextStyle(
                 fontSize:   MERType.caption,
                 fontWeight: isSelected
-                    ? FontWeight.w600
-                    : FontWeight.w400,
+                    ? MERType.emphasis
+                    : MERType.regular,
                 color: isSelected
                     ? MERColours.onFill
                     : MERColours.onSurfaceMuted,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../widgets/section_label.dart';
 
 import '../theme/mer_theme.dart';
 import '../theme/mer_type.dart';
@@ -101,8 +102,7 @@ class OccurredAtField extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('WHEN IT HAPPENED',
-                    style: MERType.captionUpperOnSurface),
+                const SectionLabel('When it happened', style: MERType.captionUpperOnSurface),
                 const SizedBox(height: 2),
                 Text(
                   _fmt.format(value ?? fallback),
