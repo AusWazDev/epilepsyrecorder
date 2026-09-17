@@ -285,11 +285,11 @@ void main() {
       await toAfterwardsStep(tester);
 
       expect(find.text(kAfterwardsHeading), findsOneWidget);
-      expect(find.text('Medical referral required?'), findsOneWidget);
+      expect(find.text('MEDICAL REFERRAL REQUIRED?'), findsOneWidget);
 
       final obs = tester.getTopLeft(find.text(kAfterwardsHeading));
       final referral =
-          tester.getTopLeft(find.text('Medical referral required?'));
+          tester.getTopLeft(find.text('MEDICAL REFERRAL REQUIRED?'));
       expect(referral.dy, greaterThan(obs.dy),
           reason: 'both labelled, in order, on the same step');
     });

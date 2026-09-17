@@ -100,7 +100,7 @@ void main() {
     // ends, and it keeps growing after scrolling stops mattering.
     // The gate's state, reported beside the number so a measurement can never
     // be read as a layout finding when it is really a fixture one.
-    final childrenShown = find.text('Did it help?').evaluate().isNotEmpty;
+    final childrenShown = find.text('DID IT HELP?').evaluate().isNotEmpty;
     final pos = tester.state<ScrollableState>(find.byType(Scrollable).first)
         .position;
     final notesBottom =

@@ -313,7 +313,7 @@ class _RecordSheetState extends State<_RecordSheet> {
               style: TextStyle(
                   fontSize: MERType.heading, fontWeight: MERType.emphasis)),
           const SizedBox(height: 16),
-          const Text('What happened?',
+          const Text('WHAT HAPPENED?',
               style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 8),
           Wrap(
@@ -327,7 +327,7 @@ class _RecordSheetState extends State<_RecordSheet> {
                 .toList(),
           ),
           const SizedBox(height: 16),
-          const Text('When?',
+          const Text('WHEN?',
               style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 8),
           OutlinedButton.icon(

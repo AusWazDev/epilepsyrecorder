@@ -318,4 +318,5 @@ void main() {
         '  MERType.caption     : ${MERType.caption}');
     expect(wrap, isNotNull, reason: 'positive control: a pill was measured');
   });
+
 }

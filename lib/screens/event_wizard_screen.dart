@@ -538,7 +538,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           // the comparison and names nobody. Deliberately NOT "in this
           // record" — a record is one event, so that phrasing implies a
           // record contains several.
-          const Text('Compared with the others here',
+          const Text('COMPARED WITH THE OTHERS HERE',
               style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 10),
           _chips<EventSeverity>(
@@ -644,7 +644,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           const SizedBox(height: 24),
           ..._rescueSection(),
           const SizedBox(height: 24),
-          const Text('Medical referral required?',
+          const Text('MEDICAL REFERRAL REQUIRED?',
               style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 10),
           _chips<bool>(
@@ -689,7 +689,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   List<Widget> _rescueSection() {
     final showChildren = rescueChildrenVisible(_draftForVisibility());
     return <Widget>[
-      const Text('Rescue medication',
+      const Text('RESCUE MEDICATION',
           style: MERType.captionUpperOnSurfaceMuted),
       const SizedBox(height: 10),
       _chips<bool>(
@@ -709,7 +709,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       ),
       if (showChildren) ...<Widget>[
         const SizedBox(height: 16),
-        const Text('Did it help?',
+        const Text('DID IT HELP?',
             style: MERType.captionUpperOnSurfaceMuted),
         const SizedBox(height: 10),
         _chips<RescueResponse>(
@@ -719,7 +719,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           (r) => setState(() => _rescueHelped = r),
         ),
         const SizedBox(height: 16),
-        const Text('Second dose',
+        const Text('SECOND DOSE',
             style: MERType.captionUpperOnSurfaceMuted),
         const SizedBox(height: 10),
         _chips<bool>(

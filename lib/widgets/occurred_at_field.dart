@@ -101,7 +101,7 @@ class OccurredAtField extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('When it happened',
+                const Text('WHEN IT HAPPENED',
                     style: MERType.captionUpperOnSurface),
                 const SizedBox(height: 2),
                 Text(

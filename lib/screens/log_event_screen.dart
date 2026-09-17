@@ -1250,15 +1250,31 @@ class _SelectionWrap extends StatelessWidget {
     // reach, and excluded from the count for the same reason.
     if (onAdd != null) {
       pinned.add(true);
-      // ⚠️ `ActionChip`, matching the wizard's `_addRow`. V1 — that the add
-      // pill must be visually distinguishable from a selectable one — is NOT
-      // addressed by this line and is still open: it differs by ICON and by
-      // COLOUR, and after this migration it no longer differs in FORM either,
-      // because both are now the same Material chip. See the V1 report.
+      // ⛔ V1 — THE ADD PILL TAKES DIFFERENT CORNER GEOMETRY, and that is the
+      // whole change: value chips keep the stadium, this one is a rounded
+      // rectangle at a visibly smaller radius.
+      //
+      // ⭐ Corner geometry reads as *a different kind of thing* before any
+      // label is read, which is why it beat colour on the destructive
+      // treatment. `showCheckmark` already distinguishes a SELECTED value chip
+      // from this, but only once selected — the unselected value chip against
+      // the add pill was the open case, and shape answers it in both states.
+      //
+      // ⚠️ ONE CONSTRUCTOR ARGUMENT. `shape` takes an `OutlinedBorder`, so
+      // this needs no custom widget.
+      //
+      // ⚠️ THE STADIUM ON THE VALUE CHIPS IS INHERITED, NOT SET HERE. The chip
+      // theme's `RoundedRectangleBorder(20)` clamps to half the height on a
+      // 34-tall chip, which IS a stadium. Stated because a reader comparing
+      // `20` against the `8` below would otherwise read the gap as 12 points
+      // when the rendered gap is 17 against 8.
       chips.add(ActionChip(
             avatar: const Icon(Icons.add, size: 18),
             label: Text(addLabel),
             onPressed: onAdd,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
           ));
     }
 

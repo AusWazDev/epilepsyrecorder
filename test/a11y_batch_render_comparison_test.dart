@@ -118,10 +118,18 @@ const Map<String, String> kBaseline = <String, String>{
   // and none was lost. A migration that had dropped a label — the retired
   // legacy value, say, whose whole point is that it is easy to lose — would
   // have changed the count, not just the hash.
-  //   before  111|56ece42ea2561b54  111|01961f3a33b9a433  111|1bfce1dcaf07c456
-  'form@375': '111|3cd1a2421b855f64',
-  'form@430': '111|2c9c2ab5df28b2e7',
-  'form@800': '111|551c4704e46052bf',
+  //   S3 before  111|56ece42ea2561b54  111|01961f3a33b9a433  111|1bfce1dcaf07c456
+  //
+  // ⚠️ MOVED AGAIN FOR V4, same day. `occurred_at_field`'s section label is
+  // one of the eight strings that joined the uppercase register, and it is on
+  // this screen — so the glyphs move and the hash with them.
+  //   V4 before  111|3cd1a2421b855f64  111|2c9c2ab5df28b2e7  111|551c4704e46052bf
+  //
+  // ⭐ Still 111 at every width across BOTH changes. Casing a label alters the
+  // glyphs, never the paragraph count.
+  'form@375': '111|38d3ee217359d306',
+  'form@430': '111|6bae0bf974af9c1d',
+  'form@800': '111|1c3371e344744849',
   // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
   // "change that is MEANT to move text" in the sense the rule above requires.
   //

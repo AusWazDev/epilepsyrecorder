@@ -247,7 +247,7 @@ void main() {
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Did it help?'), findsOneWidget,
+      expect(find.text('DID IT HELP?'), findsOneWidget,
           reason: 'precondition: the children are showing');
 
       // The NO chip under "Rescue medication given?".
@@ -258,7 +258,7 @@ void main() {
       await tester.tap(noChip.first);
       await tester.pumpAndSettle();
 
-      expect(find.text('Did it help?'), findsNothing);
+      expect(find.text('DID IT HELP?'), findsNothing);
       expect(find.text('Was a second dose needed?'), findsNothing);
     });
   });
