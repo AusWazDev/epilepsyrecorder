@@ -519,3 +519,81 @@ requirement that reached the work without reaching the document.
 the unwritten fourth returned *"the record does not say."* **A reader reconciling the brief against
 the report would otherwise find one more answer than the brief has questions, and no way to tell
 which was which.**
+
+---
+
+## §10's fourth part is FOUR pieces of work plus two already closed — recorded 18 September 2026
+
+⛔ **THIS IS AN ANNOTATION. §10's text stands and is not rewritten**, and neither is D2's.
+
+⭐ **The layout work is NOT one design pass.** Brief 46's escape clause fired on a measurement rather
+than on an argument, and the grouping below is what the measurement found. ⚠️ **One of the four
+items was misfiled and is refiled here BEFORE anything is scheduled**, because filing it under
+layout would have put it under the wrong rules.
+
+| # | the work | disposition |
+|---|---|---|
+| **1 + 2** | **cap coverage and the absent breakpoint** | ⭐ **ONE AXIS, ONE PASS.** ⚠️ **LOWEST PRIORITY: the 520 cap binds only above 560**, so on every phone in the capture set **it does nothing at all.** ⛔ **And it has no recorded provenance** — it arrived inside `af28902`, unrelated work, and was copied twice. **Changing it overturns no decision.** |
+| **3** | the horizontal inset population `{0, 14, 16, 20, 24}` | 🔴 **REFILED — NOT LAYOUT WORK.** ⭐ **It is the COMPONENT VOCABULARY's missing axis.** The vocabulary covered colour, type, chips and cardinalities and **never covered SPACING.** ⛔ **A gap in a phase recorded as COMPLETE, and governed by the vocabulary's rules rather than the layout work's.** |
+| **4** | the vertical budget | 🔴 **FIRST. The only one users meet on every capture.** |
+| **5** | Windows offset and clipping | ⛔ **RETRACTED** — the finding's own text says the offset is a capture-instrument artefact, not an app defect. |
+| **6** | the narrow-width floor | ✅ **DECIDED** — D2, prevent rather than support. |
+
+⚠️ **WHY THE REFILING OF ITEM 3 MATTERS MORE THAN ITS PLACE IN A LIST.** ⛔ **The component
+vocabulary is recorded as a COMPLETE phase, and a complete phase is one nobody re-opens to check.**
+⭐ **The gap was invisible from inside the vocabulary — every axis it DID define was defined well**
+— and it surfaced only because a layout measurement enumerated the insets and found five values
+where a vocabulary would have had one rule. **A phase is complete against the axes it named, never
+against the axes it did not.**
+
+### 🔴 Within item 4, the sharpest measurement, recorded so it is not lost among the others
+
+**On wizard step 4 at 375×667, `Review` and `Back` both sit at 613 against a fold of 591.**
+🔴 **BOTH NAVIGATION BUTTONS ARE BELOW THE FOLD ON THE PRIMARY CAPTURE PATH.** ⚠️ **That is the
+FORWARD AFFORDANCE, not density — a user mid-capture sees no way to proceed without scrolling.**
+⭐ **It outranks the notes overhang that opened this thread.**
+
+### ✅ And the figure that was outstanding when this split was written is now measured
+
+**The form's scroll distance at 375×667, `test/form_scroll_distance_test.dart`, under Roboto:**
+
+| scale | scroll distance | content | viewport |
+|---|---|---|---|
+| **100%** | **1195** | 1806 | 611 |
+| **200%** | **1885** | 2496 | 611 |
+
+⛔ **THE CLI'S OWN ESTIMATE WAS 850–900 AND IT WAS WRONG BY 33%, AND THE METHOD IS THE FINDING
+RATHER THAN THE GAP.** The estimate anchored on the deepest element it had a measurement for — the
+referral label, *"below fold by 783"* — and treated everything past it as small. ⚠️ **Everything
+past it was 390 points**: the referral control, the notes label, a four-line notes field, and a
+buttons block of 150 that had been READ AND THEN OMITTED. ⭐ **An estimate anchored on the deepest
+MEASURED point can only under-report, because what lies beyond it is unmeasured precisely because
+nothing looked there.** ⛔ **Same class as the instrument rule of 18 September: an instrument that
+can only fail in one direction is not safe by default.**
+
+⚠️ **AND THE TECHNIQUE DID NOT TRANSFER UNCHANGED.** `step4_density_test` measures from
+`TextField.last`, which IS the last child on wizard step 4. **On the form it is not** — Save, Cancel
+and three spacers follow it. ⛔ **Copied without re-deriving the last child, it under-reports by
+134 points at both scales.** The new test prints that gap rather than hiding it.
+
+### Also recorded, not actioned
+
+**`log_event_screen`'s `LayoutBuilder` is dead** — `constraints.` is used **0 times** in its body.
+It wraps the whole screen and provides nothing.
+
+⛔ **`occurredAt`'s two placements are BOTH DELIBERATE, with their reasoning in the code** — the
+form's *"AFTER DURATION, NOT AT THE TOP — moved there on evidence"*, the wizard's *"ON THE SUMMARY,
+NOT ON STEP 1, AND THAT IS THE DESIGN"*. ⚠️ **Difference 3 is two decisions that disagree, not a
+drift. Unifying it would overturn one. NOT to be reconciled.**
+
+### ⛔ A second-order effect the status table has, found by the marker sweep of 18 September 2026
+
+**§13's heading markers are HISTORICAL BY CONVENTION, and the status table reads them as CURRENT.**
+`(al)` states it outright: *"Its text and its 🔴 are left exactly as written, because a record of
+what was concluded that day must stay true."* ⭐ **So a retracted finding KEEPS its 🔴 on purpose,
+and that is the annotate-never-rewrite rule working correctly, not a defect in the document.**
+
+⛔ **THE DEFECT IS IN THE TABLE, WHICH DERIVES A LIVE STATUS FROM A FROZEN RECORD.** ⚠️ **No amount
+of re-marking fixes it** — re-marking would destroy the historical record the convention exists to
+protect. **The table needs a different INPUT: the dated annotations, not the heading glyph.**
+**Nothing was re-marked.**
