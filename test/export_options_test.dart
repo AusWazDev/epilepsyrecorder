@@ -72,10 +72,10 @@ void main() {
     });
 
     await tester.pumpWidget(const AppBootstrap());
-    await pumpUntilFound(tester, find.text('Record Event'));
+    await pumpUntilFound(tester, find.text('Record event'));
 
     // Create one event so export is allowed (your export blocks empty lists)
-    await tester.tap(find.text('Record Event'));
+    await tester.tap(find.text('Record event'));
     await tester.pump();
 
     // ⚠️ THE ROUTE CHANGED. There is no "Export CSV (all events)" overflow item

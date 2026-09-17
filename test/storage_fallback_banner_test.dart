@@ -98,7 +98,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const AppBootstrap());
-    await pumpUntilFound(tester, find.text('Record Event'));
+    await pumpUntilFound(tester, find.text('Record event'));
 
     expect(find.text(kTitle), findsOneWidget,
         reason: 'the only user-facing signal that the history may be short');
@@ -137,7 +137,7 @@ void main() {
     StorageBoot.debugSet(result: succeeded());
 
     await tester.pumpWidget(const AppBootstrap());
-    await pumpUntilFound(tester, find.text('Record Event'));
+    await pumpUntilFound(tester, find.text('Record event'));
 
     expect(find.text(kTitle), findsNothing);
   });
@@ -152,7 +152,7 @@ void main() {
     expect(StorageBoot.outcome, isNull);
 
     await tester.pumpWidget(const AppBootstrap());
-    await pumpUntilFound(tester, find.text('Record Event'));
+    await pumpUntilFound(tester, find.text('Record event'));
 
     expect(find.text(kTitle), findsNothing);
   });

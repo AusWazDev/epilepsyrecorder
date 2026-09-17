@@ -14,7 +14,7 @@ import 'package:medical_event_recorder/screens/walkthrough_screen.dart';
 /// Not the copy — the RULES. Four of them are load-bearing and each has a
 /// failure mode that looks fine on a developer's device:
 ///
-///  * **Not interactive.** An invitation to tap Record Event would create the
+///  * **Not interactive.** An invitation to tap Record event would create the
 ///    junk record the walkthrough exists to prevent — and a junk record is now
 ///    BLANK, so it is indistinguishable from a real deferred capture.
 ///  * **Nothing gated.** If the seen-flag were written on completion rather
@@ -152,7 +152,7 @@ void main() {
     testWidgets('3. no step invites the user to record anything',
         (tester) async {
       // THE RULE THAT PROTECTS THE DATA. A walkthrough that says "try tapping
-      // Record Event" manufactures a fake seizure in a medical history.
+      // Record event" manufactures a fake seizure in a medical history.
       await pumpWalkthrough(tester);
       const forbidden = <String>[
         'try tapping',
@@ -182,7 +182,7 @@ void main() {
       // The stronger form of test 3: copy could avoid the phrase and still
       // ship a control. The only actions are navigation.
       await pumpWalkthrough(tester);
-      expect(find.text('Record Event'), findsNothing,
+      expect(find.text('Record event'), findsNothing,
           reason: 'the red button must be DESCRIBED, never present');
     });
   });

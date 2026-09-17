@@ -170,7 +170,7 @@ void main() {
     // `label: "..."` / `tooltip: "..."` per line and produced 19 entries
     // against the paint walk's 22 — a silently short list, which the workspace
     // rule forbids: a list of names must be validated against a count from the
-    // same source. Multi-line labels ("Record Event\nTap to timestamp now")
+    // same source. Multi-line labels ("Record event\nTap to timestamp now")
     // were what it dropped.
     // Node id -> its name, from the walk (labels can span lines in the dump,
     // so they are resolved by ID rather than scraped out of the text).

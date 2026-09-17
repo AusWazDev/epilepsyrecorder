@@ -27,7 +27,7 @@ import '../theme/mer_type.dart';
 ///
 /// ## The rules, which are load-bearing rather than stylistic
 ///
-///  * **NOT INTERACTIVE.** No "try tapping Record Event now" — that creates
+///  * **NOT INTERACTIVE.** No "try tapping Record event now" — that creates
 ///    exactly the junk record this exists to prevent. Every step SHOWS.
 ///  * **Skippable from step one**, not buried and not only on the last step.
 ///  * **Nothing gated.** The seen-flag is written when the walkthrough is
@@ -95,7 +95,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
           icon: Icons.radio_button_checked,
           title: 'Record an event the moment it happens',
           paragraphs: <String>[
-            'The red Record Event button saves the time instantly. One tap — '
+            'The red Record event button saves the time instantly. One tap — '
                 'nothing to choose, nothing to type.',
             // The interaction claim and the record claim are SEPARATE
             // sentences, deliberately. "Nothing to fill in" conflated them and

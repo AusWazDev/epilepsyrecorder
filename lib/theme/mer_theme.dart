@@ -74,7 +74,7 @@ import 'mer_type.dart';
 ///     or label needing this hue as text takes `link` instead.
 ///   * `accentOnPrimary` is ON-PRIMARY ONLY. It is 1.88 on white.
 ///   * `captureFill` is a fill valid ONLY AT LARGE-TEXT SIZE. White on it is
-///     3.67, which passes at `Record Event`'s 26 px w700 and fails the moment
+///     3.67, which passes at `Record event`'s 26 px w700 and fails the moment
 ///     that label drops below 18.67 px bold. ⚠️ **That dependency has already
 ///     been violated once**, by the same value behind a 13 px w600 severity
 ///     chip, so `colour_system_test` asserts the SIZE and not only the ratio.
@@ -136,7 +136,7 @@ class MERColours {
   static const Color onPrimaryMuted = Color(0xFFB7CBDA);
 
   // ── CAPTURE ────────────────────────────────────────────────────────────
-  /// The `Record Event` fill, and nothing else. ⛔ Large-text sizes only —
+  /// The `Record event` fill, and nothing else. ⛔ Large-text sizes only —
   /// see rule 4. Was `alert`, which did six jobs.
   static const Color captureFill = Color(0xFFE05B3A);
   static const Color onCapture = Color(0xFFFFFFFF);

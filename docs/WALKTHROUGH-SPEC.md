@@ -91,7 +91,7 @@ the problem it exists to avoid.
 
 ### 1. Record an event the moment it happens
 
-> The red **Record Event** button saves the time instantly. One tap — nothing to choose,
+> The red **Record event** button saves the time instantly. One tap — nothing to choose,
 > nothing to type.
 >
 > That is all it saves: **the time it happened, and nothing guessed.**
@@ -298,7 +298,7 @@ which was a count of the arrangement at the time. **Skip step 2 on Windows; the 
 
 ## What it must not do
 
-- **Not interactive.** No "try tapping Record Event now" — that creates the junk record the
+- **Not interactive.** No "try tapping Record event now" — that creates the junk record the
   walkthrough exists to prevent. **More necessary than before**, because such a record is now
   blank and indistinguishable from a real deferred capture.
 - **No claim about what the app records beyond what the model supports.** Audit against the

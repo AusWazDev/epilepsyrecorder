@@ -135,7 +135,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // Accurate before and after the nullable work — a quick record now
                   // genuinely carries a timestamp and nothing else. What it lacked was
                   // the NEXT step: it read as though that is all one can ever be.
-                  body:      'Tap the red Record Event button to instantly log an event with the '
+                  body:      'Tap the red Record event button to instantly log an event with the '
                              'current timestamp — nothing else is recorded and nothing is guessed. '
                              'Add the details whenever you are ready, from the last event on the '
                              'home screen or from History.',

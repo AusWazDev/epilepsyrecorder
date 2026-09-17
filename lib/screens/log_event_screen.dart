@@ -538,7 +538,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
         // thing" is the same on both dialogs.
         //
         // ⛔ Discard is NOT styled destructive-red. Red already carries the
-        // alert meaning on the home statistic and on Record Event; a third red
+        // alert meaning on the home statistic and on Record event; a third red
         // meaning dilutes all three.
         actions: [
           FilledButton(

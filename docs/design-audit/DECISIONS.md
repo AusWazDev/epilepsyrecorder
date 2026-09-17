@@ -91,8 +91,12 @@ and took the standard chip treatment, which was a subtraction.**
 in those dialogs at all.** ⛔ **The form's discard dialog is deliberately inverted and must not be
 normalised** — the test is *did the user come here to do this thing*.
 
-⭐ **`End Event` takes `primary`, not the destructive token**, because it and `Record Event` render
+⭐ **`End event` takes `primary`, not the destructive token**, because it and `Record event` render
 together 113 apart: two controls, not one in two states.
+
+⚠️ *[Both names recased by Amendment 1.2, which retired Title Case on these two controls. This
+sentence previously read* **`End Event` … `Record Event`** *. The colour decision it states is
+unchanged — only the labels moved.]*
 
 ### Type — T1
 
@@ -235,3 +239,91 @@ where an entry could not persist.
 - ⛔ **§13(be)'s mechanism set.** **Nothing in this build touches it, and the recycle model protects
   against none of it.** ⚠️ **That is a known exclusion, recorded so it is not later discovered as an
   oversight.**
+
+---
+
+# AMENDMENT 1 to DECISIONS.md — 17 September 2026 AEST
+
+**Append to `docs/design-audit/DECISIONS.md`.** ⛔ **Append — do not rewrite the file.** It is
+already committed at `4292288` and this session's copy may have diverged.
+
+**Two design questions raised by the closing brief and not resolved there. Both are decided here.**
+
+---
+
+## 1. ⛔ `MERType.strong` stays reserved, and four sites move off it
+
+**Its own stated role is display and the capture action. Three disclaimer headings and one home site
+now use it** — rule-1 compliant, rendered-identical, and ⚠️ **the name has stopped being true of four
+of its uses.**
+
+⭐ **That is `textPrimary` byte-identical to `primary` in a new medium**, and this whole build exists
+because names that stopped being true shipped defects nobody could see. ⛔ **Widening the role to fit
+the uses would make *reserved* mean nothing.**
+
+**Decided: the four sites take the step their element class calls for. `strong` stays reserved.**
+
+⚠️ **This WILL change how those headings render, and that is correct.** ⭐ **The conversion was
+rendered-identical by design, so it faithfully preserved a wrongness — which is what a mechanical
+pass is supposed to do.** **This is the first deliberate rendering change of the type work and it
+should be named as one.**
+
+⭐ **And there is a product argument, not only a naming one: if the disclaimer's headings sit at
+display weight, they compete with the capture action for the loudest thing in the app.** **The
+capture action should be the loudest thing; a heading should be a heading.** ⛔ **The disclaimer's
+force comes from its words and its gate, never from its font weight.**
+
+⚠️ **Gated on a 200% pass like any appearance change.**
+
+---
+
+## 2. ⛔ `Record Event` and `End Event` go to sentence case
+
+**V4 already decided this and the reasoning stands.** Title Case clusters on the app's two
+ceremonial moments — the capture action and the consent gate — ⭐ **and casing is the weakest way to
+carry weight: invisible to a screen reader, and it does nothing at 200%.** **`Record Event` already
+carries its emphasis at 26 px `w700`, white on the capture fill.**
+
+⛔ **The consent-gate half already moved. Leaving the capture half out because the ripple is awkward
+is how a rule becomes a preference.**
+
+**Decided: both go to sentence case. The ripple into Help, notifications and tests IS the work.**
+
+⚠️ **One carve-out, and it is V4's own, not a new exception: notification ACTION titles keep
+platform convention.** ⭐ **Those are different strings, so nothing collides** — ⛔ **confirm that
+before applying rather than inheriting it from this sentence.**
+
+⚠️ **`DECISIONS.md` discusses these two controls by name. Update those references in the same
+change**, or the document starts describing an app that no longer exists — **which is the failure it
+was written to prevent.**
+
+---
+
+## Two method rules, both earned by the closing brief
+
+### ⛔ A check that lives in a transcript is not installed
+
+**`DECISIONS.md` named a colour checker and a type checker as a pair. Only the colour one existed.**
+⚠️ **Rule 1 had been reported satisfied on the strength of its size half — genuinely clean — while
+the weight half was violated twenty times and nothing looked.**
+
+⭐ **A rule reported as satisfied and a rule enforced by something that runs are different states,
+and only the second survives the next commit.** ⛔ **Where this document names a check, the check
+must exist, carry a fixture proving it can fail, and assert its own denominator.**
+
+⚠️ **And an allowlist is keyed on source text, never on a line number.** ⭐ **The colour checker's
+one entry has already drifted — 185 to 178 — and its own comment says quoting the source would not
+have.**
+
+### ⛔ A literal scanner can report a fragment that inverts the claim
+
+**The copy sweep reported `disclaimer:257` as *"Notiva can recover them."*** ⚠️ **The real sentence
+is *"neither you nor Notiva can recover them"*, split across `TextSpan`s.**
+
+⭐ **A scanner that segments on string boundaries cuts a sentence wherever the markup does, and a
+negation left on the other side of the cut reverses the meaning.** ⛔ **This matters most for exactly
+the work still open — the store and website copy — where a claim read as a fragment could be
+corrected into a falsehood.**
+
+**Every copy finding is adjudicated against the RENDERED sentence, never against the matched
+string.**

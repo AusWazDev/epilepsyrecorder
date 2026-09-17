@@ -76,7 +76,7 @@ void main() {
         w is ConstrainedBox && w.constraints.maxWidth == 520);
     final contentW = tester.any(inner) ? tester.getSize(inner.first).width : -1;
 
-    final btn = find.textContaining('Record Event');
+    final btn = find.textContaining('Record event');
     expect(btn, findsWidgets);
     final b = tester.getRect(btn.first);
 

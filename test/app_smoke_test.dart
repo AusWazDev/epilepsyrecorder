@@ -69,8 +69,8 @@ void main() {
     await tester.pumpWidget(const AppBootstrap());
 
     // Avoid pumpAndSettle: it can time out if an infinite animation exists. [1](https://www.positioniseverything.net/a-positional-parameter-cannot-be-found-that-accepts-argument/)[2](https://stackoverflow.com/questions/35433151/powershell-a-positional-parameter-cannot-be-found-that-accepts-argument-xxx)
-    await pumpUntilFound(tester, find.text('Record Event'));
-    expect(find.text('Record Event'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('Record event'));
+    expect(find.text('Record event'), findsOneWidget);
 
     await tapOverflowMenuItem(tester, 'History');
 

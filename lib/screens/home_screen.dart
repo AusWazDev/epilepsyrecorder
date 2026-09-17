@@ -1220,7 +1220,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                             ),
                             child: const Text(
-                              'Record Event',
+                              'Record event',
                               style: TextStyle(
                                 fontSize:   MERType.display,
                                 fontWeight: MERType.strong,
@@ -1237,7 +1237,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         // is not. On the surface beneath, `onSurfaceMuted` is
                         // 4.64 on sunken.
                         // ⭐ And it is the more honest placement. The button's
-                        // label is `Record Event`; a hint about a control is
+                        // label is `Record event`; a hint about a control is
                         // not part of the control.
                         const SizedBox(height: 4),
                         SizedBox(
@@ -1433,7 +1433,7 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 textStyle: MERType.bodyStrongInherit,
               ),
-              child: const Text('End Event'),
+              child: const Text('End event'),
             ),
           ],
         ],

@@ -147,9 +147,18 @@ const Map<String, String> kBaseline = <String, String>{
   'history@375': '18|5b9a6e7eb59bde87',
   'history@430': '18|00b7a64db41605a1',
   'history@800': '18|51b8a4a60ef0f99c',
-  'home@375': '26|11ff9fc06c3f4b04',
-  'home@430': '26|797ecb4fea786548',
-  'home@800': '26|4e7775de03f9b076',
+  // ⚠️ HOME RECAPTURED 17 September 2026 for Amendment 1.2, which recased
+  // `Record Event` to `Record event`. A label the census measures changed its
+  // glyphs, so the hash moves — this is a change that is MEANT to move text.
+  //   before  26|11ff9fc06c3f4b04  26|797ecb4fea786548  26|4e7775de03f9b076
+  //
+  // ⭐ COUNT HELD AT 26 at every width. The capture control is still exactly
+  // one paragraph — recasing a label must not split or merge one, and a
+  // ripple that had missed a quoting site would show up as a count change on
+  // whichever screen still said the old name.
+  'home@375': '26|680aa3b95bd039a4',
+  'home@430': '26|5e8b430f8b8f1928',
+  'home@800': '26|0fe9ec35e9ad5a56',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.

@@ -8,7 +8,7 @@ import 'package:medical_event_recorder/models/vocabulary_store.dart';
 import 'package:medical_event_recorder/screens/home_screen.dart';
 import 'package:medical_event_recorder/theme/mer_theme.dart';
 
-/// The Record Event flash is rate-bounded. AUDIT.md §13(ah).
+/// The Record event flash is rate-bounded. AUDIT.md §13(ah).
 ///
 /// `_buttonFlash` swaps the fill to white — a 76.4% of full-scale luminance
 /// change against the capture fill — `MERColours.alert` when this was
@@ -30,7 +30,7 @@ class OnsetCounter {
   bool? wasWhite;
 
   void sample(WidgetTester tester) {
-    final btn = find.textContaining('Record Event');
+    final btn = find.textContaining('Record event');
     if (!tester.any(btn)) return;
     final material = find
         .ancestor(of: btn.first, matching: find.byType(Material))
@@ -47,12 +47,12 @@ class OnsetCounter {
   }
 }
 
-/// Taps Record Event every [intervalMs] for [spanMs], sampling every 10 ms,
+/// Taps Record event every [intervalMs] for [spanMs], sampling every 10 ms,
 /// and returns (onsets, taps).
 Future<(int, int)> run(WidgetTester tester,
     {required int intervalMs, int spanMs = 1000}) async {
   final counter = OnsetCounter();
-  final btn = find.textContaining('Record Event');
+  final btn = find.textContaining('Record event');
   int taps = 0;
   int sinceTap = intervalMs; // tap on the first step
   for (int t = 0; t < spanMs; t += 10) {

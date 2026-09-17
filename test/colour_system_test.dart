@@ -110,7 +110,7 @@ const List<Identity> kIdentity = <Identity>[
 /// A fill's threshold depends on the LABEL, not on the fill.
 const List<({String what, Color fill, double px, FontWeight weight})> kWhiteOnFill =
     <({String what, Color fill, double px, FontWeight weight})>[
-  (what: 'Record Event', fill: MERColours.captureFill,
+  (what: 'Record event', fill: MERColours.captureFill,
    px: 26, weight: FontWeight.w700),
   (what: 'selected chip / selected severity', fill: MERColours.primary,
    px: 13, weight: FontWeight.w600),
@@ -276,7 +276,7 @@ void main() {
   // ⛔ THE ONE PREFS-DEPENDENT TEST IN THIS FILE, per CLAUDE.md's harness rule.
   testWidgets('10. captureFill asserts its SIZE, not only its contrast',
       (tester) async {
-    // `captureFill` is valid at 3.67 only because `Record Event` is large
+    // `captureFill` is valid at 3.67 only because `Record event` is large
     // text. That dependency has already been violated once — the same value
     // sat behind a 13 px w600 severity chip at 3.67 against 4.5 — so the
     // token's validity is asserted from the RENDERED label, not from a
@@ -302,11 +302,11 @@ void main() {
     await tester.pumpAndSettle();
     for (var e = tester.takeException(); e != null; e = tester.takeException()) {}
 
-    final label = tester.widget<Text>(find.text('Record Event'));
+    final label = tester.widget<Text>(find.text('Record event'));
     final px = label.style!.fontSize!;
     final weight = label.style!.fontWeight!;
     expect(isLarge(px, weight), isTrue,
-        reason: 'Record Event renders at ${px}px $weight, which is NOT large '
+        reason: 'Record event renders at ${px}px $weight, which is NOT large '
             'text. White on captureFill is '
             '${ratio(MERColours.onPrimary, MERColours.captureFill).toStringAsFixed(2)}, '
             'so the token is invalid at this size. Either the label grows back '

@@ -84,9 +84,15 @@ class DisclaimerScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Important notice',
+                            // ⛔ NO `fontWeight` OVERRIDE. `titleSmall` IS the
+                            // element class for a section heading and already
+                            // carries `emphasis` (body 14 / w600). This asked
+                            // for `strong`, which is reserved for `display`
+                            // and the capture action — so the override both
+                            // broke the reservation and restated a weight the
+                            // class already had. Only the colour is local.
                             style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: MERType.strong,
-                              color:      MERColours.cautionOnContainer,
+                              color: MERColours.cautionOnContainer,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -194,7 +200,7 @@ class DisclaimerScreen extends StatelessWidget {
                                     text: 'Never delay calling for help in '
                                         'order to record an event.',
                                     style: TextStyle(
-                                      fontWeight: MERType.strong,
+                                      fontWeight: MERType.emphasis,
                                     ),
                                   ),
                                   TextSpan(
@@ -256,7 +262,7 @@ class DisclaimerScreen extends StatelessWidget {
                                         'event with it, and neither you nor '
                                         'Notiva can recover them.',
                                     style: TextStyle(
-                                      fontWeight: MERType.strong,
+                                      fontWeight: MERType.emphasis,
                                     ),
                                   ),
                                   TextSpan(

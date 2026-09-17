@@ -511,7 +511,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // 1. Nothing has ever been recorded.
     if (_records.isEmpty) {
       return 'No events yet.\n'
-          'Tap "Record Event" to get started.';
+          'Tap "Record event" to get started.';
     }
 
     final withheld = _hiddenWithheld;
