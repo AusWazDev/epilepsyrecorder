@@ -716,3 +716,85 @@ reported 72 and the stale gate would have scored it a PASS** — ⭐ **a stale c
 merely fail to catch a fault, it converts the fault into a confirmation.** **Second instance of
 the dated-observation-as-live-status class, after the §13 status table deriving current state
 from a frozen heading marker.**
+
+---
+
+## Part C closed — three of four items needed no change at all, 18 September 2026
+
+⛔ **FOUR ITEMS WERE RAISED. ONE REQUIRED WORK.** ⭐ **That one, C1, was the developer's own
+complaint. The other three were the chat's, raised from screenshots, and all three closed
+without a change.**
+
+| item | origin | outcome |
+|---|---|---|
+| **C1** — the centred composition | ⭐ **the developer** | ✅ **BUILT.** Restored at `4bf2786`; reason 3 withdrawn and struck at `d1905cb` |
+| **C2** — the hint inside the orange card | the chat | ⛔ **DROPPED.** No colour change, no type step, no spacing change |
+| **C3** — the *This month* accent | the chat | ⛔ **DROPPED.** Left exactly as it is |
+| **C4** — the orange card's height | the chat | ⛔ **NOTHING TO DO.** The premise was false |
+
+### C2 — dropped, and what the attempt established is worth keeping
+
+⭐ **The measurement is the durable part.** `[read]`: all **35** colour tokens in
+`mer_theme.dart` were measured against `captureFill` `#E05B3A`. ⛔ **NOT ONE CLEARS 4.5:1.**
+The palette's maximum on that fill is **3.67:1** — the four white tokens — and the fill sits at
+mid-luminance, so nothing escapes it in *either* direction; the dark end is worse than the
+light end, not better.
+
+⚠️ **SO THE ORIGINAL STATE WAS NON-COMPLIANT, WHICH IS WHY "RESTORE IT" WAS NEVER AVAILABLE.**
+White at 11px inside that card is **2.38:1** at 65% opacity and **3.67:1** solid, against
+1.4.3's 4.5:1. ⭐ **Restoring it exactly would have reintroduced a defect.**
+
+⛔ **AND A NEAR-MISS RECORDED AS ITS OWN FINDING: a proposed value was measured correctly and
+attributed to a token that does not exist.** `#1A1A1A` was reported as *"onSurface"* at
+4.75:1. The real `onSurface` is `#0D4F82` at **2.33:1** — a clear fail. The ratio was right; the
+name was not. ⭐ **It was caught only because the decision required an EXISTING TOKEN rather
+than a value.** Without that constraint an invented hex would have shipped, and it would have
+measured correctly forever while belonging to nothing.
+
+### C3 — dropped on the regulatory position, and the refusal is recorded so it is not re-litigated
+
+**The accent's removal rests on D2, 13 September 2026:** *"a count rendered in alarm colour is
+the app having an opinion about how many events you had, on a tool positioned as
+capture-only."*
+
+⚠️ **A hierarchy-by-weight-or-size alternative was proposed and DECLINED**, and the reason is
+recorded rather than the outcome alone: **emphasis by weight is defensible but sits near a
+regulatory boundary for a cosmetic gain, and getting it subtly wrong there costs more than a
+flat stat row.** ⛔ **Do not re-open this from a screenshot.**
+
+### C4 — the premise was false
+
+`[read]`: the orange card's `vertical: 36` padding is from `0de48d1`, **21 March 2026**, and has
+**never changed**. ⭐ **It did not lose height. Its neighbours moved, and the settings-nudge
+banner is absent because the notification permission is granted.**
+
+---
+
+## ⛔ THE CLASS — A BROKEN COMPOSITION DEGRADES EVERY ELEMENT INSIDE IT, AND THE READER BLAMES THE ELEMENTS
+
+**Recorded 18 September 2026, from three premises that failed the same way in one sitting.**
+
+⭐ **All three were raised from screenshots of the TOP-ALIGNED home screen** — the one state the
+developer had already called unacceptable. **All three were false. Every one of them was false
+IN THE APP'S FAVOUR:**
+
+| the premise | what was actually true |
+|---|---|
+| the hint had been moved out and should go back | it was moved out for **1.4.3**, and putting it back as it was would reintroduce a contrast failure |
+| the *This month* accent had been dropped, presumably for contrast | it was dropped for the **regulatory position**, deliberately, with reasoning |
+| the orange card had lost height | its padding has been unchanged since **21 March** |
+
+⛔ **THE MECHANISM: when a composition is wrong, everything inside it looks wrong too, and the
+eye attributes the wrongness to whatever it happens to be looking at.** ⚠️ **The elements were
+never the problem. The arrangement was — and fixing the arrangement dissolved all three.**
+
+⭐ **SAME ERROR AS RELATIVE-READ-AS-ABSOLUTE, AT SCREEN SCALE.** That class says: two captures
+differ, and the difference is attributed to the element rather than to its surroundings. **This
+is the whole-screen form of it** — one arrangement is wrong, and the badness is distributed
+across every component in view.
+
+**PRACTICAL FORM: when a composition is under complaint, FIX THE COMPOSITION FIRST AND RE-LOOK
+BEFORE RAISING ANYTHING INSIDE IT.** ⛔ **A defect list generated from a broken layout is
+mostly a list of symptoms of that layout**, and each item will arrive with its own plausible
+explanation attached. ⭐ **The tell is the direction: three independent premises, all wrong, all
+favouring the app, is not three coincidences — it is one cause.**
