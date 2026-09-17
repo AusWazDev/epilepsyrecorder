@@ -80,7 +80,7 @@ Future<Map<String, String>> pumpHistory(
   ));
   await tester.pumpAndSettle();
 
-  final icons = find.byIcon(Icons.delete_outline);
+  final icons = find.byIcon(Icons.visibility_off_outlined);
   final n = tester.widgetList(icons).length;
   final btn0 = tester.getRect(
       find.ancestor(of: icons.at(0), matching: find.byType(IconButton)).first);

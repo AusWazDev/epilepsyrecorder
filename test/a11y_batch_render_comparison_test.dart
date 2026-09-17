@@ -96,9 +96,23 @@ const Map<String, String> kBaseline = <String, String>{
   'form@375': '111|2a5e4cf5e5a35247',
   'form@430': '111|0e13ef3c55b5385f',
   'form@800': '111|4c2c5fd1c2ca5dce',
-  'history@375': '18|7e4a49c523f9c67a',
-  'history@430': '18|1b97d4c28abbd2a3',
-  'history@800': '18|419cbc150b5086a6',
+  // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
+  // "change that is MEANT to move text" in the sense the rule above requires.
+  //
+  // The per-row control's ICON changed from `delete_outline` to
+  // `visibility_off_outlined` when the action became a hide. An `Icon` is a
+  // glyph in an icon font, so it IS a paragraph here — a different codepoint
+  // is different text and the fingerprint must change.
+  //
+  // ⭐ PROVED RATHER THAN ASSERTED, because "only the icon moved" is exactly
+  // the kind of claim this file exists to distrust. With the icon alone
+  // reverted and the new tooltip and colour left in place, all four cases
+  // PASSED against the old baselines — so the tooltip and the colour move no
+  // glyph, and the whole delta is the codepoint. The paragraph COUNT is
+  // unchanged at 18 in every case, which is the second half of the same check.
+  'history@375': '18|481cdc4d31f4864c',
+  'history@430': '18|3a0b37bde5937d79',
+  'history@800': '18|0e0734934403e404',
   'home@375': '26|3925d985e5d81dd0',
   'home@430': '26|5650d4a018ac017e',
   'home@800': '26|7f2fed5b2153772a',

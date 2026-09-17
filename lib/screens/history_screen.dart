@@ -255,9 +255,47 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   void dispose() {
+    // ⛔ THE UNDO BELONGS TO THIS SCREEN, so it must not outlive it.
+    //
+    // `ScaffoldMessenger` sits ABOVE the Navigator in `MaterialApp`, so a
+    // SnackBar shown here SURVIVES a pop and stays on screen over Home — with
+    // an Undo whose closure targets a disposed State. That is worse than a
+    // missed undo: it is a live control that does nothing.
+    //
+    // ⚠️ Clearing it costs the fast path for a user who hides and
+    // immediately leaves. It is not data loss: the record is hidden, not
+    // deleted, and *Show hidden* reaches it from the filter sheet at any time.
+    // The SnackBar is the QUICK reversal; the filter is the DURABLE one.
+    //
+    // ⛔ THE BAR'S OWN CONTROLLER, NOT `removeCurrentSnackBar()`. Two reasons,
+    // and the first is that the messenger call DOES NOT WORK HERE — measured:
+    // with it, `HistoryScreen` was gone from the tree and the bar was still up
+    // with a live Undo. The second is that "current" is whatever bar happens to
+    // be showing, which need not be the one this screen put there.
+    // ⛔ NOT CLOSED HERE — SEE THE `PopScope` IN `build`.
+    //
+    // Two attempts failed before the right hook was found, and both are worth
+    // recording because the second looked correct:
+    //
+    //   `_messenger?.removeCurrentSnackBar()`  did nothing. Measured: History
+    //       gone from the tree, bar still up with a live Undo.
+    //   `_undoBar?.close()`, even guarded on `_messenger!.mounted`, threw
+    //       `'mounted': is not true` on a WHOLE-TREE teardown. The assert is
+    //       inside a DEFERRED closure, so a check at call time cannot help.
+    //
+    // ⭐ And the guard was answering the wrong question anyway. The condition
+    // that matters is *the user navigated away from History*, not *this State
+    // was disposed* — a test tearing the tree down is not navigation.
     _searchController.dispose();
     super.dispose();
   }
+
+  /// The controller for the undo bar THIS screen last showed.
+  ///
+  /// Held so `dispose` can close that exact bar rather than whatever is
+  /// current, and so a second hide can close the first one by identity.
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _undoBar;
+
 
   // ── FILTERING ──
   List<EventRecord> get _filteredRecords {
@@ -777,39 +815,74 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   // ── DELETE ──
-  Future<void> _deleteAndPersist(String id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete this event?'),
-        content: const Text(
-          'This action cannot be undone.\n\n'
-          'Are you sure you want to delete this event?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          // ⛔ C2: the destructive control is the only OUTLINED one, and
-          // this dialog has NO FILLED BUTTON AT ALL. That absence is the
-          // signal that this is not a normal affirmative flow.
-          OutlinedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: MERColours.destructive,
-              side: const BorderSide(
-                  color: MERColours.destructive, width: 1),
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
+  /// Hides one record, with an Undo. ⛔ NO CONFIRMATION, DELIBERATELY.
+  ///
+  /// ## ⭐ WHY THE DIALOG WENT
+  ///
+  /// It said *"This action cannot be undone"*, and once hiding replaced
+  /// deletion **that sentence became false**. C2's own test is *did the user
+  /// come here to do this thing* — a reversible act does not earn a
+  /// destructive dialog, and this app already has the precedent: vocabulary's
+  /// hide warns about nothing, because nothing is destroyed.
+  ///
+  /// ⚠️ THE TRADE ONLY HOLDS BECAUSE THE REVEAL SHIPPED FIRST (`a0cfc7f`).
+  /// Without *Show hidden* this would be deletion with a four-second window,
+  /// and a reversible-action argument applied to an irreversible one is how a
+  /// false safety claim reaches medical copy.
+  ///
+  /// ## ⛔ REPLACED IN PLACE, NEVER REMOVED AND RE-INSERTED
+  ///
+  /// The record keeps its INDEX, and `ordinal` is the index at save time — so
+  /// position survives without anything having to restore it. `§13(ch)`'s
+  /// delete-then-reinsert shape is what this avoids.
+  ///
+  /// ⭐ AND UNDO RESTORES THE ORIGINAL OBJECT, not a rebuilt one. Nothing is
+  /// reconstructed on the way back, so there is no second opportunity to drop
+  /// a field — §13(cj) failure mode (b) does not apply to this path at all.
+  Future<void> _hideAndPersist(String id) async {
+    final index = _records.indexWhere((r) => r.id == id);
+    if (index < 0) return;
+    final original = _records[index];
+    if (original.hidden) return;
+
+    setState(() => _records[index] = original.withHidden(true));
+    await widget.onRecordsChanged(_records);
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    // ⛔ REPLACE, DO NOT QUEUE. Two hides in quick succession would otherwise
+    // stack two identical "Event hidden" bars, and the first one's Undo would
+    // refer to a record the user can no longer tell apart from the second.
+    // Only the most recent action is undoable, and only one bar says so.
+    _undoBar?.close();
+    _undoBar = messenger.showSnackBar(SnackBar(
+      // D6's register: a STATE, never a place. There is no bin and nowhere to
+      // go, and "Nothing is deleted" is the sentence the removed dialog used
+      // to be answering.
+      content: const Text('Event hidden. Nothing is deleted.'),
+      action: SnackBarAction(
+        label: 'Undo',
+        onPressed: () => _unhide(original),
       ),
-    );
+    ));
+    // Cleared when the bar goes for ANY reason — timeout, swipe, the action —
+    // so `dispose` never closes a controller that is already finished and a
+    // later hide never closes a stale one.
+    _undoBar?.closed.then((_) {
+      if (mounted) _undoBar = null;
+    });
+  }
 
-    if (confirm != true) return;
-
-    setState(() => _records.removeWhere((r) => r.id == id));
+  /// Restores [original] — the exact object captured before the hide — to
+  /// whatever position its id now occupies.
+  ///
+  /// ⚠️ Re-located by id rather than by the old index: an edit elsewhere
+  /// could have re-sorted the list while the SnackBar was up, and writing to a
+  /// stale index would overwrite a different record.
+  Future<void> _unhide(EventRecord original) async {
+    final i = _records.indexWhere((r) => r.id == original.id);
+    if (i < 0) return;
+    setState(() => _records[i] = original);
     await widget.onRecordsChanged(_records);
   }
 
@@ -859,6 +932,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ⛔ THE UNDO BELONGS TO THIS SCREEN AND MUST NOT OUTLIVE IT ON SCREEN.
+    //
+    // `ScaffoldMessenger` sits ABOVE the Navigator in `MaterialApp`, so a bar
+    // shown here SURVIVES a pop and sits over Home carrying an Undo whose
+    // closure targets a disposed State — a live control that silently does
+    // nothing, which is worse than a missed undo.
+    //
+    // ⚠️ Closing it costs the fast path for a user who hides and leaves
+    // immediately. That is not data loss: the record is hidden, not deleted,
+    // and *Show hidden* reaches it from the filter sheet at any time. The bar
+    // is the QUICK reversal; the filter is the DURABLE one.
+    //
+    // ⭐ `canPop: true` — this does not gate the pop, it only reacts to one,
+    // unlike the form's `PopScope` which guards an unsaved draft.
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _undoBar?.close();
+      },
+      child: _buildHistory(context),
+    );
+  }
+
+  Widget _buildHistory(BuildContext context) {
     final shown = _filteredRecords;
 
     return Scaffold(
@@ -1059,7 +1156,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   record:   r,
                                   timeFmt:  _rowTimeFmt,
                                   onTap:    () => _editRecord(r),
-                                  onDelete: () => _deleteAndPersist(r.id),
+                                  onDelete: () => _hideAndPersist(r.id),
                                 ),
                                 if (!item.isLastOfDay)
                                   const Divider(height: 1, indent: 16),
@@ -1530,11 +1627,16 @@ class _EventListTile extends StatelessWidget {
       }),
       trailing: IconButton(
         // ⛔ NAMED 9 Sep 2026 — AUDIT.md §13(z). It announced NOTHING on every
-        // row, and it is the one irreversible control in the app (§13(ax): a
-        // delete leaves no row, no flag and no log).
+        // row.
         //
-        // "Delete this event" rather than medication's bare "Delete", because
-        // this one repeats per row. Measured: the row's own content IS the
+        // ⚠️ IT IS NO LONGER THE ONE IRREVERSIBLE CONTROL IN THE APP, and
+        // that claim is retired rather than moved: §13(ax) described a delete
+        // leaving no row, no flag and no log. This now HIDES — the row stays,
+        // the flag is what changed, and *Show hidden* reveals it. The reset in
+        // About is the destructive control, and it keeps its confirmation.
+        //
+        // "Hide this event" rather than a bare "Hide", because this one
+        // repeats per row. Measured: the row's own content IS the
         // semantics node immediately BEFORE this button in traversal order, so
         // forward navigation supplies context — but TalkBack's next-control
         // gesture and VoiceOver's rotor set to buttons SKIP it, leaving
@@ -1546,9 +1648,14 @@ class _EventListTile extends StatelessWidget {
         // nothing leaves the device unless the user sends it. §13(ad) also
         // shows seven byte-identical rows, so a timestamp would not
         // disambiguate. Which-record identification stays UNSOLVED.
-        tooltip:   'Delete this event',
-        color:     MERColours.destructive,
-        icon:      const Icon(Icons.delete_outline),
+        // ⛔ NOT `destructive`, AND NOT A TOKEN CHANGE. `destructive` is
+        // reserved for the one control that destroys, which is now the reset
+        // alone — C2: the destructive control is the only red one. Hiding is
+        // reversible, so it takes the ordinary muted control colour already in
+        // the palette rather than a new value.
+        tooltip:   'Hide this event',
+        color:     MERColours.onSurfaceMuted,
+        icon:      const Icon(Icons.visibility_off_outlined),
         onPressed: onDelete,
       ),
     );

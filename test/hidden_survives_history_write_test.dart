@@ -67,11 +67,15 @@ import 'package:medical_event_recorder/screens/history_screen.dart';
 /// one-prefs-test-per-process rule in `CLAUDE.md`: a static that outlives the
 /// zone it was last touched from.
 ///
-/// ## ⛔ THE FLAG IS SETTABLE ONLY FROM A TEST
 ///
-/// No UI sets `hidden`, no filter option reveals it, and no copy mentions it.
-/// That is what makes this verifiable in isolation: the only way a record is
-/// hidden is the fixture below.
+/// ## ⚠️ WHAT THE ROW CONTROL DOES CHANGED, AND THE CLAIM DID NOT
+///
+/// Until 17 September 2026 the row control DELETED. It now HIDES, so the
+/// assertions below say *all three rows are still in storage* where they
+/// once said *two*. ⛔ **The claim this file makes is unchanged**: whatever
+/// list crosses `onRecordsChanged` is what survives, so a filter at `:149`
+/// destroys the hidden record. The control substitution still fires — only
+/// the count on the right-hand side moved.
 
 EventRecord rec(String id, int minute, {bool hidden = false}) => EventRecord(
       id: id,
@@ -167,13 +171,13 @@ void main() {
       // screen, or this test is about three visible rows.
       expect(find.text('note HIDDEN'), findsNothing,
           reason: 'positive control: the derived view excludes it');
-      expect(find.byIcon(Icons.delete_outline), findsNWidgets(2),
+      expect(find.byIcon(Icons.visibility_off_outlined), findsNWidgets(2),
           reason: 'positive control: two visible rows, each with one control — '
               'if this is 3 the fixture is not hidden and the test is vacuous');
 
-      await tester.tap(find.byIcon(Icons.delete_outline).first);
-      await settle(tester);
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      // ⚠️ NO CONFIRMATION ANY MORE — one tap hides. The dialog went with
+      // Brief S, because the action it warned about became reversible.
+      await tester.tap(find.byIcon(Icons.visibility_off_outlined).first);
       await settle(tester);
 
       final after = await tester.runAsync(idsInStorage);
@@ -197,12 +201,16 @@ void main() {
               'crosses onRecordsChanged is what survives — §13(cj) failure '
               'mode (a), and retention is FOREVER');
 
-      // Positive control: the delete really happened. Without this the test
+      // Positive control: the hide really happened. Without this the test
       // passes when nothing occurred at all.
-      expect(after, hasLength(2),
-          reason: 'positive control: one record was actually deleted');
-      expect(after!.contains('visible-a'), isFalse,
-          reason: 'the row the user deleted is the one that went');
+      //
+      // ⛔ ALL THREE, NOT TWO. Hiding does not remove a row — that is the
+      // whole change — so storage is unchanged in LENGTH and changed in
+      // FLAG. The flag is checked in the sibling file.
+      expect(after, hasLength(3),
+          reason: 'positive control: hiding removes nothing from storage');
+      expect(after!.contains('visible-a'), isTrue,
+          reason: 'the row the user hid is still there, hidden');
     });
   });
 

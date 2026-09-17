@@ -33,9 +33,12 @@ import 'package:medical_event_recorder/screens/history_screen.dart';
 ///
 /// ## WHAT THIS ADDS OVER THE SIBLING
 ///
-/// The sibling asserts the hidden record's ROW survives a History delete. ⛔ **A
+/// The sibling asserts the hidden record's ROW survives a History write. ⛔ **A
 /// row that came back VISIBLE would satisfy that and still be a loss**: the
 /// user hid it and the write path forgot. This asserts the flag.
+///
+/// ⚠️ The row control HIDES rather than deletes as of 17 September 2026, so
+/// the write under test is now a hide. The claim is unchanged.
 
 EventRecord rec(String id, int minute, {bool hidden = false}) => EventRecord(
       id: id,
@@ -88,7 +91,7 @@ void main() {
     }
   }
 
-  testWidgets('a hidden record survives a History delete with its FLAG intact',
+  testWidgets('a hidden record survives a History write with its FLAG intact',
       (tester) async {
     final seed = <EventRecord>[
       rec('visible-a', 1),
@@ -106,13 +109,12 @@ void main() {
     ));
     await settle(tester);
 
-    expect(find.byIcon(Icons.delete_outline), findsOneWidget,
+    expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget,
         reason: 'positive control: ONE visible row. If this is 2 the fixture '
             'is not hidden and the test is vacuous');
 
-    await tester.tap(find.byIcon(Icons.delete_outline).first);
-    await settle(tester);
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+    // One tap, no confirmation — see the sibling file.
+    await tester.tap(find.byIcon(Icons.visibility_off_outlined).first);
     await settle(tester);
 
     // ⛔ READ THE TABLE, NOT `store.load()`. A second `serialise` call after the
@@ -122,10 +124,18 @@ void main() {
     final rows = await tester.runAsync(
         () => db.query('event', columns: <String>['id', 'hidden']));
 
-    expect(rows, hasLength(1), reason: 'positive control: the delete ran');
-    expect(rows!.single['id'], 'HIDDEN');
-    expect(rows.single['hidden'], 1,
+    // ⛔ BOTH ROWS, and BOTH now hidden: the pre-existing one, which must not
+    // have been destroyed, and the one the user just hid.
+    expect(rows, hasLength(2),
+        reason: 'positive control: hiding removes nothing from storage');
+    final byId = <String, Object?>{
+      for (final r in rows!) r['id'] as String: r['hidden'],
+    };
+    expect(byId['HIDDEN'], 1,
         reason: 'surviving as a VISIBLE row is still a loss — the user hid it '
             'and the write path forgot');
+    expect(byId['visible-a'], 1,
+        reason: 'and the row the user just hid carries the flag, or the tap '
+            'did nothing and this test is vacuous');
   });
 }

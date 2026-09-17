@@ -56,7 +56,7 @@ Future<void> measure(WidgetTester tester, double w, double h) async {
   ));
   await tester.pumpAndSettle();
 
-  final icons = find.byIcon(Icons.delete_outline);
+  final icons = find.byIcon(Icons.visibility_off_outlined);
   final n = tester.widgetList(icons).length;
   expect(n, greaterThan(0), reason: 'every row carries one');
 

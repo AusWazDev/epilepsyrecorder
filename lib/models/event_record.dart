@@ -496,6 +496,44 @@ class EventRecord {
     this.hidden = false,
   });
 
+  /// This record with [hidden] set, and every other field carried verbatim.
+  ///
+  /// ## ⛔ NARROW ON PURPOSE — NOT A GENERAL `copyWith`
+  ///
+  /// Two rebuild paths in this app have already destroyed fields they did not
+  /// name: `capture_inbox` and `ios_capture_bridge` both reset the three rescue
+  /// fields from `216bef7` until a test caught it, and `AUDIT.md` §13(cj)
+  /// failure mode (b) is exactly this shape. **A general `copyWith` would be a
+  /// third such site and a standing invitation to forget a field for some
+  /// unrelated purpose.** One parameter, one caller, one reason.
+  ///
+  /// ⚠️ IT STILL LISTS EVERY FIELD, so it still has the hazard —
+  /// `rebuild_preserves_fields_test` compares the whole map minus `hidden`,
+  /// which is what makes a field added tomorrow safe here without anyone
+  /// remembering.
+  ///
+  /// ⭐ UNDO DOES NOT USE THIS. Un-hiding restores the ORIGINAL OBJECT that
+  /// was captured before the hide, so nothing is rebuilt on the way back and
+  /// there is no second chance to drop a field.
+  EventRecord withHidden(bool value) => EventRecord(
+        id: id,
+        timestamp: timestamp,
+        occurredAt: occurredAt,
+        duration: duration,
+        durationSeconds: durationSeconds,
+        detailsCompleted: detailsCompleted,
+        feelings: feelings,
+        referralRequired: referralRequired,
+        notes: notes,
+        eventType: eventType,
+        severity: severity,
+        triggers: triggers,
+        rescueMedGiven: rescueMedGiven,
+        rescueMedHelped: rescueMedHelped,
+        rescueMedSecondDose: rescueMedSecondDose,
+        hidden: value,
+      );
+
   /// Parses a stored timestamp and normalises it to local wall-clock time.
   ///
   /// Two writers produce two shapes, and they must not display differently:

@@ -70,14 +70,19 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final deleteNamed = announcedNames(tester).contains('Delete this event');
+    // ⚠️ RENAMED 17 September 2026. The control hides rather than deletes,
+    // and the old reason — *"the one irreversible control in the app"* — is
+    // RETIRED rather than reworded: it is not irreversible any more. The name
+    // still matters for the reason it always did, which is that this control
+    // repeats per row and announced nothing at all before §13(z).
+    final deleteNamed = announcedNames(tester).contains('Hide this event');
     expect(deleteNamed, isTrue,
-        reason: 'the per-row delete is the one irreversible control in the app '
-            'and must announce a name');
+        reason: 'a per-row control that repeats must announce a name, or a '
+            'rotor set to buttons reads "Hide, Hide, Hide"');
 
     // ⛔ BASELINE FROM UNPATCHED CODE. Three rows, three delete icons.
     expect(
-        iconRects(tester, const [Icons.delete_outline]),
+        iconRects(tester, const [Icons.visibility_off_outlined]),
         <String>[
           '356.0,152.0 24.0x24.0',
           '356.0,225.0 24.0x24.0',

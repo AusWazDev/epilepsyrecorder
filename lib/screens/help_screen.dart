@@ -178,13 +178,25 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // Icons.more_vert in the Getting Started card is decoration.
                   // What a History row actually offers, verified in
                   // history_screen.dart: onTap opens the editor, and a trailing
-                  // delete IconButton whose handler confirms first.
+                  // HIDE IconButton that acts on one tap.
+                  //
+                  // ⛔ CORRECTED 17 September 2026, AND IT WAS FALSE TWICE OVER.
+                  // It read *"each row also has a delete button, and deleting
+                  // asks you to confirm first"*. The control no longer deletes,
+                  // and there is no confirmation — so this sentence PROMISED A
+                  // SAFETY STEP THAT HAD BEEN REMOVED. Worse than stale: a user
+                  // who read it would tap expecting to be asked.
+                  //
+                  // ⚠️ The replacement states the reversal, because that is
+                  // what the removed confirmation was standing in for.
                   // The routing is invisible and a user WILL notice the screens differ,
                   // so the row says why rather than leaving it as apparent inconsistency.
                   body:   'Tap any event in the list to open it and make changes. An event you '
                           'started adding details to reopens in the guided steps so you can '
                           'carry on; everything else opens as a single form. In History, each '
-                          'row also has a delete button, and deleting asks you to confirm first.',
+                          'row also has a hide button. Hiding takes the event out of the list '
+                          'without deleting it — turn on "Show hidden" in Filters to bring it '
+                          'back.',
                   isLast: true,
                 ),
               ],
@@ -200,8 +212,10 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // Names BOTH routes. The ⋮ path was the only one documented,
                   // and "All history" on the Last Event card is the more
                   // prominent of the two on the running screen.
+                  // ⛔ "delete" corrected to "hide", 17 September 2026. The
+                  // per-row control no longer deletes anything.
                   body:  'Tap "All history" on the last event, or ⋮ (top right) → History, to see '
-                         'all past events with edit and delete options.',
+                         'all past events with edit and hide options.',
                 ),
                 _HelpRow(
                   icon:   Icons.filter_list,
