@@ -317,7 +317,37 @@ if (Platform.isWindows || Platform.isIOS) return;
 | Implementation | Native Swift: `UNUserNotificationCenter` + ActivityKit + App Intent | awesome_notifications (Dart) | **none** | awesome_notifications (scaffolding, not shipped) |
 | Code | `ios/Runner/AppDelegate.swift`, `ios/MERWidget/*` | `lib/services/notification_service.dart` | — | — |
 | Native shim | — | `MainActivity.kt` is a bare `FlutterActivity` | — | — |
-| Start **and** stop without opening the app | Yes | Yes | **No** | — |
+| Start and stop without **OPENING the app** | Yes | Yes | **No** | — |
+| Start and stop without **UNLOCKING the device** | **Start only** | Yes | **No** | — |
+
+> ⚠️ **SPLIT 17 September 2026 — ONE ROW BECAME TWO, AND IT WAS NOT A CORRECTION.**
+>
+> **The original row, quoted so it is recognisable wherever it is met — in a commit, a brief, or
+> the store copy document:**
+>
+> > `| Start **and** stop without opening the app | Yes | Yes | **No** | — |`
+>
+> ⭐ **IT WAS ACCURATE ON ITS OWN AXIS.** On iOS the end handler genuinely runs without
+> foregrounding MER, so **Yes** was right for the question the row asked.
+>
+> ⛔ **IT WAS READ AS ANSWERING A DIFFERENT QUESTION, AND THAT READING REACHED A PUBLIC SURFACE.**
+> The store copy draft carried *"Start and stop … without unlocking your phone"* — **which is what
+> this row says if you read it as the question a copywriter is actually asking.** ⚠️ **Splitting it
+> rather than rewording it is deliberate: the row was not wrong, it was AMBIGUOUS**, and a reworded
+> row would leave the next person to make the same substitution faithfully.
+>
+> **The evidence for `Start only`, so the split traces to reads rather than to an opinion:**
+>
+> | | |
+> |---|---|
+> | the notification end action | `kBtnEnd` declares `options: [.authenticationRequired]` **unconditionally** — introduced by `956b2d3` |
+> | the Live Activity end | `EndMEREventIntent` requests `authenticationPolicy: .alwaysAllowed` and **ActivityKit overrides it**, demanding authentication on 17+ |
+> | Android, both actions | `ActionType.SilentAction` — **no authentication on either action**, which is why Android reads **Yes** on both rows |
+>
+> ⭐ **AND THE TWO AXES ARE NOT REDUNDANT.** *Not opening the app* is why capture works mid-episode
+> at all; *not unlocking the device* is what decides whether someone other than the phone's owner
+> can complete one. **Collapsing them again loses the second question, which is the one that
+> matters to a carer.**
 
 `onActionReceived` returns immediately on iOS (`notification_service.dart:111`).
 The plugin is registered on Windows but `init()` returns before using it, so
