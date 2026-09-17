@@ -174,7 +174,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (prefs.getBool('mer_open_latest_event') ?? false) {
             await prefs.remove('mer_open_latest_event');
             _openedFromNotification = true;
-            if (mounted && _records.isNotEmpty) _openDetails(_records.first);
+            if (mounted && _records.visible.isNotEmpty) {
+              _openDetails(_records.visible.first);
+            }
             break;
           }
           await Future.delayed(const Duration(milliseconds: 250));
@@ -222,9 +224,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _openingLatest = true;
     try {
       if (reload) await _loadRecords();
-      if (!mounted || _records.isEmpty) return;
+      if (!mounted || _records.visible.isEmpty) return;
       _openedFromNotification = true;
-      await _openDetails(_records.first);
+      await _openDetails(_records.visible.first);
     } finally {
       _openingLatest = false;
     }
@@ -289,7 +291,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await prefs.reload();
         if (prefs.getBool('mer_open_latest_event') ?? false) {
           await prefs.remove('mer_open_latest_event');
-          if (mounted && _records.isNotEmpty) _openDetails(_records.first);
+          if (mounted && _records.visible.isNotEmpty) {
+            _openDetails(_records.visible.first);
+          }
           return;
         }
         await Future.delayed(const Duration(milliseconds: 250));
@@ -542,16 +546,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int get _thisMonthCount {
     final now   = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
-    return _records.where((r) => r.whenHappened.isAfter(start)).length;
+    return _records.visible
+        .where((r) => r.whenHappened.isAfter(start))
+        .length;
   }
 
   int get _daysSinceLastEvent {
-    if (_records.isEmpty) return 0;
-    return DateTime.now().difference(_records.first.timestamp).inDays;
+    if (_records.visible.isEmpty) return 0;
+    return DateTime.now()
+        .difference(_records.visible.first.timestamp)
+        .inDays;
   }
 
   int get _referralCount =>
-      _records.where((r) => r.referralRequired).length;
+      _records.visible.where((r) => r.referralRequired).length;
 
   // ── QUICK RECORD ──
   /// Records an event. Synchronous by design.
@@ -1263,17 +1271,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         if (_loaded)
                           _StatsRow(
                             thisMonth:  _thisMonthCount,
-                            totalSaved: _records.length,
+                            totalSaved: _records.visible.length,
                             daysFree:   _daysSinceLastEvent,
                             referrals:  _referralCount,
                           ),
                         const SizedBox(height: 12),
 
                         // ── LAST EVENT ──
-                        if (_loaded && _records.isNotEmpty)
+                        if (_loaded && _records.visible.isNotEmpty)
                           _LastEventCard(
-                            record:    _records.first,
-                            onEdit:    () => _openDetails(_records.first),
+                            record:    _records.visible.first,
+                            onEdit:    () =>
+                                _openDetails(_records.visible.first),
                             onHistory: _openHistory,
                           ),
 

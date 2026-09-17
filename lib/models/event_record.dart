@@ -650,6 +650,43 @@ class EventRecord {
   }
 }
 
+/// The ONE derivation that excludes hidden records.
+///
+/// ## ⛔ ONE AUTHORITY, NOT TWO AGREEING ONES
+///
+/// `home_screen` and `history_screen` hold separate lists, so a getter on
+/// either would have to be written twice — and two predicates that must agree
+/// are the shape this file already refuses elsewhere (see `buildBackupJson`'s
+/// note on reusing the row shape rather than writing a second encoder). One
+/// extension, two call sites of one definition.
+///
+/// ## ⭐ WHY `_records.visible` RATHER THAN A SECOND FIELD
+///
+/// The complete list stays NAMED at every site that derives from it, so the
+/// seam is legible in the code: `_records` and `_records.visible` sit one word
+/// apart and a reader can see which one a site took. A second field called
+/// something like `_visibleRecords` would read as a peer of `_records` rather
+/// than as something derived from it, and the next person would wonder which
+/// is authoritative.
+///
+/// ## ⛔ THIS MUST NEVER REACH `save`
+///
+/// `SqliteEventStore.save` is a full delete-and-reinsert of whatever list it is
+/// handed, so a derived list reaching it deletes every hidden row from the
+/// table permanently — `AUDIT.md` §13(cj) failure mode (a). Retention is
+/// FOREVER and the hidden set is not deletion. **Every site that writes,
+/// persists, counts for a backup, exports all, or hands the list to another
+/// screen that writes takes `_records`, not this.**
+///
+/// ⚠️ `history_screen.dart:149` is the site that looks most like a render site
+/// and is not: `List.from(widget.records)` feeds a render tree AND is written
+/// back through `onRecordsChanged`. It takes the complete list. See §13(cj)'s
+/// annotation of 17 September 2026.
+extension EventRecordVisibility on List<EventRecord> {
+  List<EventRecord> get visible =>
+      where((r) => !r.hidden).toList(growable: false);
+}
+
 /* ===========================
    STORAGE
    =========================== */

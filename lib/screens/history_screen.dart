@@ -163,7 +163,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // move the boundary while the list is being filtered.
     final from = _dateRange.startFrom(DateTime.now());
 
-    return _records.where((r) {
+    // ⛔ THE ONE SEAM. Hiding composes with the user's filters HERE and
+    // nowhere else, and `_records` itself stays complete because `:149`
+    // is written back through `onRecordsChanged` -- see `:149`.
+    return _records.visible.where((r) {
       // Referral filter
       if (_referralOnly && !r.referralRequired) return false;
 
