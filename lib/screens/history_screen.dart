@@ -45,9 +45,73 @@ class HistoryScreen extends StatefulWidget {
 /// Named so a test can call the REAL mapping rather than restate it. A test
 /// that rewrites these two strings agrees with the source by construction and
 /// would go on passing through precisely the change it is meant to catch.
-String exportFilenamePrefix({required bool narrowed}) => narrowed
-    ? 'medical_event_recorder_filtered'
-    : 'medical_event_recorder_all';
+/// What an export will contain, and the complete set it is drawn from.
+///
+/// ## ⛔ ONE PAIR, TWO CONSUMERS, STRUCTURALLY UNABLE TO DISAGREE
+///
+/// The sheet title and the filename both state the export's scope, and until
+/// 17 September 2026 each DERIVED THAT SEPARATELY — the title from a count
+/// comparison, the filename from `activeFilters`. Two derivations of one claim
+/// can drift, and this one had a live divergence waiting: with records hidden
+/// and no filter set, `activeFilters` is empty, so the filename said `_all`
+/// over a file that omitted them.
+///
+/// ⚠️ A BOOLEAN CANNOT CARRY THIS. The title needs BOTH numbers —
+/// *Export 15 of 20 events* — and a predicate throws away the half it needs.
+/// That is why this is a pair rather than the `narrowed` flag it replaces.
+///
+/// ⭐ [isComplete] is the ONE question both consumers ask, so "the file is
+/// named `_all`" and "the title says *all*" are now the same fact rather than
+/// two facts that agree.
+class ExportScope {
+  const ExportScope({required this.willExport, required this.total});
+
+  /// How many records the file will actually contain.
+  final int willExport;
+
+  /// The complete set, hidden records included. This is deliberately NOT the
+  /// visible population: the file leaves the app, so its scope statement is a
+  /// completeness claim about everything the app holds.
+  final int total;
+
+  /// ⛔ THE ONLY PREDICATE EITHER CONSUMER MAY USE.
+  bool get isComplete => willExport == total;
+}
+
+/// The export sheet's header, given what that export will contain.
+///
+/// ⛔ A TOP-LEVEL FUNCTION OF THE PAIR, beside [exportFilenamePrefix], and
+/// that pairing is the point. The two are the app's only scope statements, they
+/// answer the same question, and a test can now hold BOTH to the SAME input and
+/// assert they cannot disagree — which is impossible while one is a private
+/// method reading screen state and the other is a pure function.
+///
+/// ⚠️ THE NOUN AGREES WITH `total`, NOT `willExport`. Both strings place it
+/// immediately after `total`, so it is the head of the "of N" phrase and agrees
+/// with that number: *Export 1 of 71 events*. Agreeing with `willExport` put a
+/// singular noun next to a plural number — *Export 1 of 71 event*.
+String exportSheetTitle(ExportScope scope) {
+  final noun = scope.total == 1 ? 'event' : 'events';
+  // ⛔ `isComplete`, NOT a narrowed-ness flag. The old predicate asked whether
+  // the user had adjusted anything; this asks whether the file is complete.
+  // They diverge in BOTH directions now: a record hidden with no filter set
+  // makes an UNADJUSTED export incomplete, and *Show hidden* with no other
+  // filter makes an ADJUSTED one complete.
+  return scope.isComplete
+      ? 'Export all ${scope.total} $noun'
+      : 'Export ${scope.willExport} of ${scope.total} $noun';
+}
+
+/// The filename prefix for an export, given what that export will contain.
+///
+/// ⚠️ TAKES THE SCOPE, NOT A `narrowed` FLAG. A flag read from
+/// `activeFilters` answers *did the user adjust something*, and that is a
+/// different question from *is this file complete* — they came apart the
+/// moment a widening toggle joined that set, and they were already apart for a
+/// record hidden with no filter on.
+String exportFilenamePrefix(ExportScope scope) => scope.isComplete
+    ? 'medical_event_recorder_all'
+    : 'medical_event_recorder_filtered';
 
 /// The date windows offered by the range filter.
 ///
@@ -82,6 +146,20 @@ enum FilterKind {
   /// wizard-completed record with fields skipped is exactly the one being
   /// hunted for.
   incomplete,
+
+  /// ⛔ THE ONE WIDENING MEMBER, AND THE ONLY REASON IT BELONGS IN THIS SET
+  /// IS THAT THE USER TURNS IT ON.
+  ///
+  /// Hiding a record must NEVER join `activeFilters`: the badge and the banner
+  /// are CLEARABILITY claims — `filter_sheet_test.dart:148`, *"so the user
+  /// knows what to clear"* — and a hidden record is not clearable from
+  /// there. Revealing one is. **The state is not a filter; the choice to see it
+  /// is.**
+  ///
+  /// ⚠️ It WIDENS, so it must not fold into [FilterKindLabel.lineLabel]'s
+  /// "filtered by" list — see [FilterKindLabel.narrows]. A widening toggle in
+  /// a narrowing sentence asserts the user narrowed by something that widened.
+  showHidden,
 }
 
 /// What each reads as on the applied-filters line. Short, because several
@@ -94,6 +172,30 @@ extension FilterKindLabel on FilterKind {
       case FilterKind.referral:  return 'referral';
       case FilterKind.dateRange: return 'date';
       case FilterKind.incomplete: return 'needs details';
+      case FilterKind.showHidden: return 'hidden shown';
+    }
+  }
+
+  /// Whether this kind REDUCES what is shown.
+  ///
+  /// ⛔ The applied-filters sentence is built from the narrowing members
+  /// only. `showHidden` is an adjustment the user made and can clear — so it
+  /// belongs in `activeFilters`, the badge and Clear-all — but it is not
+  /// something they filtered BY, and a sentence saying so would be a category
+  /// error in the one place the user reads to understand the list.
+  ///
+  /// ⭐ No `default` arm, deliberately: a kind added to the enum fails to
+  /// compile here until someone decides which way it cuts.
+  bool get narrows {
+    switch (this) {
+      case FilterKind.search:
+      case FilterKind.eventType:
+      case FilterKind.referral:
+      case FilterKind.dateRange:
+      case FilterKind.incomplete:
+        return true;
+      case FilterKind.showHidden:
+        return false;
     }
   }
 }
@@ -140,6 +242,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _searchText      = '';
   bool   _referralOnly    = false;
   bool   _incompleteOnly  = false;
+  /// Reveals hidden records. FALSE is the default and Clear-all returns here.
+  bool   _showHidden      = false;
   _DateRange _dateRange   = _DateRange.all;
   final Set<String> _selectedTypes = {};
 
@@ -164,9 +268,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final from = _dateRange.startFrom(DateTime.now());
 
     // ⛔ THE ONE SEAM. Hiding composes with the user's filters HERE and
-    // nowhere else, and `_records` itself stays complete because `:149`
-    // is written back through `onRecordsChanged` -- see `:149`.
-    return _records.visible.where((r) {
+    // nowhere else, and `_records` itself stays complete because `:149` is
+    // written back through `onRecordsChanged`.
+    return _scopePopulation.where((r) {
       // Referral filter
       if (_referralOnly && !r.referralRequired) return false;
 
@@ -282,6 +386,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         FilterKind.referral => _referralOnly,
         FilterKind.dateRange => _dateRange != _DateRange.all,
         FilterKind.incomplete => _incompleteOnly,
+        FilterKind.showHidden => _showHidden,
       };
       if (active) out.add(k);
     }
@@ -289,6 +394,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   bool get _isNarrowed => activeFilters.isNotEmpty;
+
+  /// The population the current view is drawn from, before the user's
+  /// narrowing filters are applied.
+  ///
+  /// ⚠️ NOT unconditionally `_records.visible`. That is right whenever
+  /// *Show hidden* is off — the overwhelming case, and the one the banner's
+  /// denominator rule was written for — but with the toggle ON the view is
+  /// drawn from the complete set, and a denominator of the visible population
+  /// would render **"Showing 20 of 15"**.
+  ///
+  /// ⭐ The property that holds in BOTH states is *what this view is drawn
+  /// from*, and it coincides with the visible population exactly when nothing
+  /// is being revealed.
+  List<EventRecord> get _scopePopulation =>
+      _showHidden ? _records : _records.visible;
+
+  /// How many records are being WITHHELD from the view right now.
+  ///
+  /// Zero while *Show hidden* is on, because nothing is being withheld then —
+  /// the records are still flagged, but saying "5 events hidden" beside five
+  /// visible rows would be false.
+  int get _hiddenWithheld =>
+      _showHidden ? 0 : _records.length - _records.visible.length;
+
+  /// ⛔ THE PAIR BOTH SCOPE STATEMENTS READ. See [ExportScope].
+  ExportScope get exportScope => ExportScope(
+        willExport: _filteredRecords.length,
+        total: _records.length,
+      );
 
   /// Sheet header. States what is actually being exported, and distinguishes a
   /// narrowed export from the whole set.
@@ -302,13 +436,64 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// Reachable whenever exactly one record shows out of many, which the "Needs
   /// details" queue makes ordinary rather than rare: working the queue down
   /// ENDS at one, so the last export before it empties is the broken reading.
-  String _exportSheetTitle() {
-    final shown = _filteredRecords.length;
-    final total = _records.length;
-    final noun  = total == 1 ? 'event' : 'events';
-    return _isNarrowed
-        ? 'Export $shown of $total $noun'
-        : 'Export all $total $noun';
+
+  /// The empty-state message, ALL FOUR CASES, including the two that are
+  /// unchanged.
+  ///
+  /// ⛔ THE MATRIX IS WRITTEN OUT RATHER THAN THE NEW CASE BEING ADDED TO
+  /// A TERNARY, so the next reader sees the whole decision instead of
+  /// inferring it from one new branch sitting beside two old ones nobody
+  /// re-read.
+  ///
+  ///     records   filters   anything visible   message
+  ///     -------   -------   ----------------   -------
+  ///     none      —         —                  No events yet — UNCHANGED
+  ///     some      yes       none               no match — UNCHANGED, AND IT WINS
+  ///     some      no        none, all hidden   No events to show. N hidden.
+  ///     some      yes       none, hidden exist no match · N hidden.
+  ///
+  /// ## ⭐ WHY THE FILTERS MESSAGE WINS WHEN BOTH APPLY
+  ///
+  /// Filters are what the user SET and what they can CLEAR. Leading with
+  /// the hidden count would name the thing they did not do and cannot act
+  /// on from here, ahead of the thing they did.
+  ///
+  /// ## ⛔ WHY THE THIRD ROW EXISTS AT ALL
+  ///
+  /// Without it a user with everything hidden sees a screen INDISTINGUISHABLE
+  /// FROM A FRESH INSTALL — the Help screen's Windows section, exactly: a
+  /// user who finds nothing cannot tell whether it is missing or absent.
+  ///
+  /// ⚠️ A STATE, NOT A PLACE. D6's register throughout — *"22 hidden"*,
+  /// *"Nothing is deleted"*. There is no bin and no destination screen, so
+  /// the copy names no place to go to.
+  String _emptyStateMessage() {
+    // 1. Nothing has ever been recorded.
+    if (_records.isEmpty) {
+      return 'No events yet.\n'
+          'Tap "Record Event" to get started.';
+    }
+
+    final withheld = _hiddenWithheld;
+    final noun = withheld == 1 ? 'event' : 'events';
+
+    // 2 and 4. Filters are set. The filters message WINS, and the hidden
+    // count is appended only when records are actually being withheld.
+    if (_isNarrowed) {
+      const base = 'No events match your search\nor filters.';
+      return withheld == 0 ? base : '$base\n$withheld $noun hidden.';
+    }
+
+    // 3. No filters, and everything there is has been hidden.
+    if (withheld > 0) {
+      return 'No events to show.\n$withheld $noun hidden.';
+    }
+
+    // ⚠️ UNREACHABLE, AND NAMED RATHER THAN FOLDED INTO A BRANCH ABOVE.
+    // Records exist, no filter is set and nothing is withheld, so the list
+    // cannot be empty. Returning the fresh-install copy here would be a
+    // false claim if it were ever reached; this says what happened.
+    return 'No events to show.';
   }
 
   /// Flattens a newest-first list into day headers followed by their events.
@@ -437,6 +622,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             _incompleteOnly = false;
                             _selectedTypes.clear();
                             _dateRange = _DateRange.all;
+                            // Same reset as `_clearFilters`, same reason.
+                            _showHidden = false;
                           }),
                           icon: const Icon(Icons.filter_alt_off_outlined,
                               size: 16),
@@ -546,6 +733,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         'Show only events that required medical referral'),
                     onChanged: (v) => update(() => _referralOnly = v),
                   ),
+
+                  // ⛔ A TOGGLE, NOT A CHIP, by this sheet's own rule stated
+                  // above: filter VALUES are chips, filter MODES are toggles.
+                  // This changes which population is shown, so it is a mode.
+                  //
+                  // ⚠️ PLACED LAST, AFTER the referral switch, for two
+                  // reasons. It is the only WIDENING control here, so grouping
+                  // it with the narrowing chips would suggest it belongs to
+                  // them; and `filter_sheet_test` taps the referral switch as
+                  // `find.byType(Switch).first`, which this must not displace.
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _showHidden,
+                    title: const Text('Show hidden'),
+                    subtitle: const Text(
+                        'Include events you have hidden from this list'),
+                    onChanged: (v) => update(() => _showHidden = v),
+                  ),
                 ],
               );
             },
@@ -563,6 +768,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       _incompleteOnly = false;
       _selectedTypes.clear();
       _dateRange = _DateRange.all;
+      // ⛔ THE DEFAULT IS HIDDEN-HIDDEN, so Clear-all must return here.
+      // Omitting this line is the INERT-CONTROL defect: the banner and badge
+      // would keep reporting an adjustment the clear control did not clear,
+      // and the control would visibly do nothing. Guarded by a test.
+      _showHidden = false;
     });
   }
 
@@ -739,12 +949,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
             // containing every deviation ever recorded.
             //
             // The whole-record export lives in Your data and carries both.
-            onPressed: () => showExportOptions(
-              context,
-              shown,
-              filenamePrefix: exportFilenamePrefix(narrowed: _isNarrowed),
-              sheetTitle: _exportSheetTitle(),
-            ),
+            onPressed: () {
+              // ⛔ ONE SCOPE, READ ONCE, FEEDING BOTH STATEMENTS. Two reads
+              // would be two derivations again, which is the defect this
+              // consolidation removes rather than a style preference.
+              final scope = exportScope;
+              showExportOptions(
+                context,
+                shown,
+                filenamePrefix: exportFilenamePrefix(scope),
+                sheetTitle: exportSheetTitle(scope),
+              );
+            },
           ),
         ],
       ),
@@ -774,7 +990,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
               _AppliedFiltersBanner(
                 active: activeFilters,
                 shown: shown.length,
-                total: _records.length,
+                // ⛔ THE SCOPE POPULATION, NOT `_records.length`. The banner
+                // is a CLEARABILITY claim, so its denominator must describe
+                // what the clear control returns the user to — never the
+                // complete set, which clearing cannot reach. The sheet title
+                // beside it is a COMPLETENESS claim and uses the complete set:
+                // the two differing is correct, not a gap.
+                total: _scopePopulation.length,
                 onClear: _clearFilters,
               ),
               const SizedBox(height: 10),
@@ -808,11 +1030,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: shown.isEmpty
                   ? Center(
                       child: Text(
-                        _records.isEmpty
-                            ? 'No events yet.\n'
-                              'Tap "Record Event" to get started.'
-                            : 'No events match your search\n'
-                              'or filters.',
+                        _emptyStateMessage(),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
@@ -958,18 +1176,44 @@ class _AppliedFiltersBanner extends StatelessWidget {
   final int total;
   final VoidCallback onClear;
 
-  /// "Filtered by search" / "Filtered by search and type" / "…, type and date".
+  /// "filtered by search" / "filtered by search and type" /
+  /// "filtered by type · hidden shown" / "hidden shown".
   ///
   /// Enumerated from [FilterKind.values] rather than from `active` so the
   /// order is stable — a line whose words reorder as filters toggle is harder
   /// to read at a glance than one that always reads the same way.
+  ///
+  /// ## ⛔ THE WIDENING TOGGLE IS APPENDED, NEVER FOLDED IN
+  ///
+  /// `activeFilters` is ONE set answering ONE question — *what can I clear* —
+  /// and this sentence answers a different one: *what did I do*. Folding a
+  /// widening toggle into the "filtered by" list would assert the user narrowed
+  /// by something that widened, in the one place they read to understand why
+  /// the list is short.
+  ///
+  /// ⭐ Split on [FilterKindLabel.narrows], so the two halves cannot drift:
+  /// a kind added to the enum must declare which way it cuts before this
+  /// compiles.
   String get _reason {
-    final names = <String>[
+    final narrowing = <String>[
       for (final k in FilterKind.values)
-        if (active.contains(k)) k.lineLabel,
+        if (k.narrows && active.contains(k)) k.lineLabel,
     ];
-    if (names.length == 1) return names.single;
-    return '${names.take(names.length - 1).join(', ')} and ${names.last}';
+    final widening = <String>[
+      for (final k in FilterKind.values)
+        if (!k.narrows && active.contains(k)) k.lineLabel,
+    ];
+
+    final parts = <String>[];
+    if (narrowing.isNotEmpty) {
+      final list = narrowing.length == 1
+          ? narrowing.single
+          : '${narrowing.take(narrowing.length - 1).join(', ')} '
+              'and ${narrowing.last}';
+      parts.add('filtered by $list');
+    }
+    parts.addAll(widening);
+    return parts.join(' · ');
   }
 
   @override
@@ -996,7 +1240,7 @@ class _AppliedFiltersBanner extends StatelessWidget {
               child: Text(
                 // ONE sentence. The count and the cause are read together, so
                 // "showing 12 of 74" can never be seen without "filtered by".
-                'Showing $shown of $total — filtered by $_reason',
+                'Showing $shown of $total — $_reason',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

@@ -124,6 +124,10 @@ void main() {
         await tester.tap(inSheet(find.text('Last 30 days')).first);
       case FilterKind.incomplete:
         await tester.tap(inSheet(find.text('Needs details')).first);
+      case FilterKind.showHidden:
+        // By LABEL, not `find.byType(Switch).first` — that anchor belongs to
+        // the referral toggle and a second switch must not be able to steal it.
+        await tester.tap(inSheet(find.text('Show hidden')).first);
     }
     await tester.pumpAndSettle();
     await closeSheet(tester);
@@ -136,14 +140,32 @@ void main() {
       testWidgets('1.${kind.index} ${kind.name} alone raises the banner',
           (tester) async {
         await pump(tester);
-        expect(find.textContaining('filtered by'), findsNothing,
-            reason: 'precondition: nothing is filtered yet');
+        expect(find.byType(Semantics), findsWidgets);
+        expect(find.textContaining('Showing '), findsNothing,
+            reason: 'precondition: the banner is absent, so its presence below '
+                'is caused by this kind and nothing else. Anchored on the '
+                'banner itself rather than on "filtered by", which a widening '
+                'kind never renders');
 
         await apply(tester, kind);
 
-        expect(find.textContaining('filtered by'), findsOneWidget,
-            reason: '${kind.name} narrows the list and the export, so it must '
-                'raise the banner');
+        // ⛔ THE ASSERTION SPLITS ON `narrows`, AND THAT IS THE POINT RATHER
+        // THAN AN ACCOMMODATION.
+        //
+        // Every kind must raise the banner and be NAMED in it — that is the
+        // clearability contract and it is unchanged. But a WIDENING kind must
+        // NOT appear behind "filtered by": that sentence would assert the user
+        // narrowed by something that widened. Asserting "filtered by" for every
+        // kind would force exactly that category error to keep the test green.
+        if (kind.narrows) {
+          expect(find.textContaining('filtered by'), findsOneWidget,
+              reason: '${kind.name} narrows the list and the export, so it '
+                  'must raise the banner and say so');
+        } else {
+          expect(find.textContaining('filtered by'), findsNothing,
+              reason: '${kind.name} WIDENS. A "filtered by" clause here would '
+                  'tell the user they narrowed by something that widened');
+        }
         expect(find.textContaining(kind.lineLabel), findsWidgets,
             reason: 'and the banner must NAME it, so the user knows what to '
                 'clear rather than only that something is set');
@@ -313,8 +335,15 @@ void main() {
       //
       // Update it when a kind is added. Do NOT relax it to `greaterThan`: the
       // point is that adding one is a deliberate act with a visible cost.
-      expect(FilterKind.values.length, 5,
-          reason: 'adding a sixth must fail the loop in group 1 until it is '
+      //
+      // ⚠️ IT MOVED AGAIN, 17 September 2026, and it earned its keep a
+      // second time. `showHidden` is the SIXTH kind and the first WIDENING
+      // one. Adding it failed here, failed the `apply` switch below, and
+      // failed the generated loop in group 1 — which is what forced the
+      // narrows/widens split to be decided rather than assumed, instead of a
+      // widening toggle quietly inheriting a "filtered by" sentence.
+      expect(FilterKind.values.length, 6,
+          reason: 'adding a seventh must fail the loop in group 1 until it is '
               'wired, rather than shipping a silent filter');
     });
 
@@ -434,13 +463,13 @@ void main() {
       // mapping. Restating the two strings here would agree with the source by
       // construction and pass through the very change this is meant to catch.
       await pump(tester);
-      final unfiltered = exportFilenamePrefix(narrowed: narrowedNow(tester));
+      final unfiltered = exportFilenamePrefix(scopeNow(tester));
       expect(find.textContaining('Export all 3'), findsNothing,
           reason: 'precondition: the sheet is not open, so the screen state is '
               'what is being read');
 
       await apply(tester, FilterKind.search);
-      final filtered = exportFilenamePrefix(narrowed: narrowedNow(tester));
+      final filtered = exportFilenamePrefix(scopeNow(tester));
 
       expect(find.textContaining('Showing 1 of 3'), findsOneWidget,
           reason: 'positive control: the list really is narrowed, so the two '
@@ -470,4 +499,17 @@ void main() {
 bool narrowedNow(WidgetTester tester) {
   final state = tester.state(find.byType(HistoryScreen)) as dynamic;
   return (state.activeFilters as Set<FilterKind>).isNotEmpty;
+}
+
+/// The live screen's own export scope.
+///
+/// ⛔ REPLACES `narrowedNow` AS THE FILENAME'S INPUT, and the change is the
+/// finding rather than plumbing. `activeFilters` answers *did the user adjust
+/// something*; the filename must answer *is this file complete*. Those come
+/// apart in both directions now — a record hidden with no filter set makes an
+/// UNADJUSTED export incomplete, and *Show hidden* alone makes an ADJUSTED one
+/// complete.
+ExportScope scopeNow(WidgetTester tester) {
+  final state = tester.state(find.byType(HistoryScreen)) as dynamic;
+  return state.exportScope as ExportScope;
 }
