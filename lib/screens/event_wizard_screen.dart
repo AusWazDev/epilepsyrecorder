@@ -10,6 +10,7 @@ import '../widgets/bounded_chip_wrap.dart';
 import '../models/vocabulary_store.dart';
 import '../widgets/occurred_at_field.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// Guided detail entry: one section per screen, a summary before saving.
 ///
@@ -452,11 +453,11 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         children: [
           Text(title,
               style: const TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.w600)),
+                  fontSize: MERType.heading,
+                  fontWeight: MERType.emphasis)),
           const SizedBox(height: 6),
           Text(hint,
-              style: const TextStyle(
-                  fontSize: 14, color: MERColours.onSurfaceMuted)),
+              style: MERType.captionOnSurfaceMuted),
           const SizedBox(height: 20),
         ],
       );
@@ -471,8 +472,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
                 'Recorded as ${durationLabel(_bucket!)}',
-                style: const TextStyle(
-                    fontSize: 13, color: MERColours.onSurfaceMuted),
+                style: MERType.captionOnSurfaceMuted,
               ),
             ),
           Row(
@@ -534,7 +534,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           // record" — a record is one event, so that phrasing implies a
           // record contains several.
           const Text('Compared with the others here',
-              style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
+              style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 10),
           _chips<EventSeverity>(
             EventSeverity.values,
@@ -640,7 +640,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           ..._rescueSection(),
           const SizedBox(height: 24),
           const Text('Medical referral required?',
-              style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
+              style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 10),
           _chips<bool>(
             const [false, true],
@@ -685,7 +685,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     final showChildren = rescueChildrenVisible(_draftForVisibility());
     return <Widget>[
       const Text('Rescue medication',
-          style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
+          style: MERType.captionUpperOnSurfaceMuted),
       const SizedBox(height: 10),
       _chips<bool>(
         const [false, true],
@@ -705,7 +705,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       if (showChildren) ...<Widget>[
         const SizedBox(height: 16),
         const Text('Did it help?',
-            style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
+            style: MERType.captionUpperOnSurfaceMuted),
         const SizedBox(height: 10),
         _chips<RescueResponse>(
           RescueResponse.values,
@@ -715,7 +715,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         ),
         const SizedBox(height: 16),
         const Text('Second dose',
-            style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
+            style: MERType.captionUpperOnSurfaceMuted),
         const SizedBox(height: 10),
         _chips<bool>(
           const [false, true],
@@ -847,10 +847,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
             padding: const EdgeInsets.only(bottom: 6, top: 4),
             child: Text(
               _conditionNames[entry.key] ?? 'Not set',
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: MERColours.onSurfaceMuted),
+              style: MERType.bodyStrongOnSurfaceMuted,
             ),
           ),
           Wrap(
@@ -1103,7 +1100,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         ),
         ...lines.map((l) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: Text('• $l', style: const TextStyle(fontSize: 15)),
+              child: Text('• $l', style: MERType.bodyInherit),
             )),
       ],
     );

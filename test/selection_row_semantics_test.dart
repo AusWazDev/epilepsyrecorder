@@ -213,51 +213,71 @@ void main() {
     // the block grows by roughly 19 points, and V5 already has it landing
     // 268 below the fold, so S3 inherits a slightly taller block than it
     // was scoped against.
+    // ⚠️ RECAPTURED 17 September 2026 FOR THE ANSWER WORDING, and the
+    // change is a HEIGHT change rather than a move. Two chips — *Partly
+    // helped* and *Didn't help* — now WRAP TO TWO LINES at 375: a rect of
+    // 105.3x19.0 becomes 105.3x38.0.
+    //
+    // ⛔ NOT A TRUNCATION — the 200% gate's ellipsis census is clean, and
+    // wrapping is what a chip is supposed to do with a longer label. But
+    // the block grows by roughly 19 points, and V5 already has it landing
+    // 268 below the fold, so S3 inherits a slightly taller block than it
+    // was scoped against.
+    // ⚠️ RECAPTURED 17 September 2026 FOR THE ANSWER WORDING, and the
+    // change is a HEIGHT change rather than a move. Two chips — *Partly
+    // helped* and *Didn't help* — now WRAP TO TWO LINES at 375: a rect of
+    // 105.3x19.0 becomes 105.3x38.0.
+    //
+    // ⛔ NOT A TRUNCATION — the 200% gate's ellipsis census is clean, and
+    // wrapping is what a chip is supposed to do with a longer label. But
+    // the block grows by roughly 19 points, and V5 already has it landing
+    // 268 below the fold, so S3 inherits a slightly taller block than it
+    // was scoped against.
     // ⛔ BASELINE CAPTURED FROM THE UNPATCHED CODE and pasted here. Regenerate
     // by running this test on a tree without the Semantics wrapper and reading
     // the printed rects.
     const baseline = <int, List<String>>{
       375: <String>[
-        '17.5,555.7 103.3x19.0',
-        '130.8,546.2 105.3x38.0',
-        '245.2,555.7 105.3x19.0',
-        '16.5,1270.2 162.5x19.0',
-        '189.0,1270.2 160.5x19.0',
-        '17.5,1372.7 103.3x19.0',
-        '130.8,1363.2 105.3x38.0',
-        '245.2,1363.2 105.3x38.0',
-        '17.5,1475.2 160.5x19.0',
-        '188.0,1475.2 162.5x19.0',
-        '17.5,1589.2 160.5x19.0',
-        '188.0,1589.2 162.5x19.0',
+        '17.5,549.2 103.3x20.0',
+        '130.8,539.2 105.3x40.0',
+        '245.2,549.2 105.3x20.0',
+        '16.5,1251.2 162.5x20.0',
+        '189.0,1251.2 160.5x20.0',
+        '17.5,1355.2 103.3x20.0',
+        '130.8,1345.2 105.3x40.0',
+        '245.2,1345.2 105.3x40.0',
+        '17.5,1459.2 160.5x20.0',
+        '188.0,1459.2 162.5x20.0',
+        '17.5,1574.2 160.5x20.0',
+        '188.0,1574.2 162.5x20.0',
       ],
       430: <String>[
-        '17.5,543.4 121.7x19.0',
-        '149.2,543.4 123.7x19.0',
-        '281.8,543.4 123.7x19.0',
-        '16.5,1189.4 190.0x19.0',
-        '216.5,1189.4 188.0x19.0',
-        '17.5,1291.9 121.7x19.0',
-        '149.2,1282.4 123.7x38.0',
-        '281.8,1282.4 123.7x38.0',
-        '17.5,1394.4 188.0x19.0',
-        '215.5,1394.4 190.0x19.0',
-        '17.5,1488.4 188.0x19.0',
-        '215.5,1488.4 190.0x19.0',
+        '17.5,540.4 121.7x20.0',
+        '149.2,540.4 123.7x20.0',
+        '281.8,540.4 123.7x20.0',
+        '16.5,1185.4 190.0x20.0',
+        '216.5,1185.4 188.0x20.0',
+        '17.5,1289.4 121.7x20.0',
+        '149.2,1279.4 123.7x40.0',
+        '281.8,1279.4 123.7x40.0',
+        '17.5,1393.4 188.0x20.0',
+        '215.5,1393.4 190.0x20.0',
+        '17.5,1488.4 188.0x20.0',
+        '215.5,1488.4 190.0x20.0',
       ],
       800: <String>[
-        '141.5,565.5 162.3x19.0',
-        '313.8,565.5 164.3x19.0',
-        '487.2,565.5 164.3x19.0',
-        '140.5,1172.5 251.0x19.0',
-        '401.5,1172.5 249.0x19.0',
-        '141.5,1275.0 162.3x19.0',
-        '313.8,1265.5 164.3x38.0',
-        '487.2,1275.0 164.3x19.0',
-        '141.5,1377.5 249.0x19.0',
-        '400.5,1377.5 251.0x19.0',
-        '141.5,1471.5 249.0x19.0',
-        '400.5,1471.5 251.0x19.0',
+        '141.5,561.5 162.3x20.0',
+        '313.8,561.5 164.3x20.0',
+        '487.2,561.5 164.3x20.0',
+        '140.5,1152.5 251.0x20.0',
+        '401.5,1152.5 249.0x20.0',
+        '141.5,1256.5 162.3x20.0',
+        '313.8,1246.5 164.3x40.0',
+        '487.2,1256.5 164.3x20.0',
+        '141.5,1360.5 249.0x20.0',
+        '400.5,1360.5 251.0x20.0',
+        '141.5,1455.5 249.0x20.0',
+        '400.5,1455.5 251.0x20.0',
       ],
     };
 

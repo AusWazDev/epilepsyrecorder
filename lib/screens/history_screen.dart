@@ -7,6 +7,7 @@ import '../models/vocabulary_store.dart';
 import '../screens/event_wizard_screen.dart';
 import '../screens/log_event_screen.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 class HistoryScreen extends StatefulWidget {
   final List<EventRecord> records;
@@ -649,7 +650,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       const Expanded(
                         child: Text('Filters',
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w600)),
+                                fontSize: MERType.heading,
+                fontWeight: MERType.emphasis)),
                       ),
                       if (_isNarrowed)
                         TextButton.icon(
@@ -966,18 +968,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           children: [
             Text(
               'History',
-              style: TextStyle(
-                fontSize:   15,
-                fontWeight: FontWeight.w600,
-                color:      MERColours.onPrimary,
-              ),
+              style: MERType.subheadOnPrimary,
             ),
             Text(
               'Medical Event Recorder',
-              style: TextStyle(
-                fontSize: 10,
-                color:    MERColours.onPrimaryMuted,
-              ),
+              style: MERType.microOnPrimaryMuted,
             ),
           ],
         ),
@@ -1010,12 +1005,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       child: Text(
                         '${activeFilters.length}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: MERColours.onFill,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          height: 1,
-                        ),
+                        style: MERType.captionStrongOnFill.copyWith(height: 1),
                       ),
                     ),
                   ),
@@ -1248,8 +1238,8 @@ class _NeedsDetailsChip extends StatelessWidget {
             Text(
               'Needs details',
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                fontSize: MERType.caption,
+                fontWeight: selected ? MERType.emphasis : MERType.regular,
                 color: selected ? MERColours.onPrimary : MERColours.onSurface,
               ),
             ),
@@ -1338,11 +1328,7 @@ class _AppliedFiltersBanner extends StatelessWidget {
                 // ONE sentence. The count and the cause are read together, so
                 // "showing 12 of 74" can never be seen without "filtered by".
                 'Showing $shown of $total — $_reason',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: MERColours.infoOnContainer,
-                ),
+                style: MERType.bodyStrongInfoOnContainer,
               ),
             ),
             TextButton(
@@ -1421,7 +1407,7 @@ class _EventTypeFilterChips extends StatelessWidget {
             child: Text(
               eventTypeLabel(type),
               style: TextStyle(
-                fontSize:   12,
+                fontSize:   MERType.caption,
                 fontWeight: isSelected
                     ? FontWeight.w600
                     : FontWeight.w400,
@@ -1617,10 +1603,7 @@ class _EventListTile extends StatelessWidget {
             // now describes the content line only.
             Text(
               gaps,
-              style: const TextStyle(
-                fontSize: 12,
-                color: MERColours.onSurfaceMuted,
-              ),
+              style: MERType.captionOnSurfaceMuted,
             ),
           ],
         );
@@ -1721,11 +1704,7 @@ class _EventTypeBadge extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize:   11,
-          fontWeight: FontWeight.w500,
-          color:      _fg,
-        ),
+        style: MERType.captionStrongInherit.copyWith(color: _fg),
       ),
     );
   }
@@ -1766,12 +1745,7 @@ class _DayHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
-          fontSize:      11,
-          fontWeight:    FontWeight.w700,
-          letterSpacing: 0.6,
-          color:         MERColours.primary,
-        ),
+        style: MERType.bodyStrongPrimary.copyWith(letterSpacing: 0.6),
       ),
     );
   }

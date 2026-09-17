@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// The two ways to get a copy of your events off this device.
 ///
@@ -41,15 +42,11 @@ class YourDataScreen extends StatelessWidget {
           children: [
             Text(
               'Your data',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: MERColours.onPrimary,
-              ),
+              style: MERType.subheadOnPrimary,
             ),
             Text(
               'Medical Event Recorder',
-              style: TextStyle(fontSize: 10, color: MERColours.onPrimaryMuted),
+              style: MERType.microOnPrimaryMuted,
             ),
           ],
         ),
@@ -63,17 +60,13 @@ class YourDataScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.fromLTRB(4, 0, 4, 16),
                     child: Text(
                       'Your events are stored on this device only. These are '
                       'the two ways to get a copy off it — they do different '
                       'jobs.',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.45,
-                        color: MERColours.onSurfaceMuted,
-                      ),
+                      style: MERType.bodyOnSurfaceMuted.copyWith(height: 1.45),
                     ),
                   ),
 
@@ -131,17 +124,13 @@ class YourDataScreen extends StatelessWidget {
                   const SizedBox(height: 18),
 
                   // ── FOOTER ──
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
                     child: Text(
                       'Notiva never receives your events and cannot recover '
                       'them for you. A file you have saved somewhere else is '
                       'the only copy that survives losing this phone.',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.45,
-                        color: MERColours.onSurfaceMuted,
-                      ),
+                      style: MERType.bodyOnSurfaceMuted.copyWith(height: 1.45),
                     ),
                   ),
                 ],
@@ -210,11 +199,7 @@ class _DataCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w700,
-                    color: MERColours.onSurface,
-                  ),
+                  style: MERType.bodyStrongOnSurface,
                 ),
               ),
             ],
@@ -223,11 +208,7 @@ class _DataCard extends StatelessWidget {
           for (final paragraph in body) ...[
             Text(
               paragraph,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.45,
-                color: MERColours.onSurfaceMuted,
-              ),
+              style: MERType.bodyOnSurfaceMuted.copyWith(height: 1.45),
             ),
             const SizedBox(height: 10),
           ],

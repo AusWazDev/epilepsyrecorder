@@ -13,6 +13,7 @@ import '../models/backup.dart';
 import '../models/condition.dart';
 import '../models/medication_note.dart';
 import '../models/event_record.dart';
+import '../theme/mer_type.dart';
 
 /// Backup and restore, driven entirely by the system file picker.
 ///
@@ -259,7 +260,7 @@ Future<void> showBackupOptions(
             padding: EdgeInsets.fromLTRB(20, 18, 20, 4),
             child: Text(
               'Back up now',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: MERType.bodyStrongInherit,
             ),
           ),
           const Padding(
@@ -271,7 +272,7 @@ Future<void> showBackupOptions(
             child: Text(
               'Saves every event to a file you can share or store. Keep it '
               'somewhere off this device.',
-              style: TextStyle(fontSize: 13),
+              style: MERType.bodyInherit,
             ),
           ),
           // ── SAVE (non-iOS only) ──

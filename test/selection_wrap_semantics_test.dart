@@ -170,24 +170,28 @@ void main() {
     addTearDown(tester.view.reset);
     // ⛔ BASELINE CAPTURED FROM UNPATCHED CODE. This test therefore passes in
     // BOTH states, which is what makes it a proof rather than a formality.
+    // ⚠️ ALL THREE WIDTHS RECAPTURED 17 September 2026 for the type
+    // scale. Every shift is VERTICAL -- x and both extents are unchanged
+    // at every width -- which is what says the type moved and the layout
+    // did not.
     const baseline = <int, List<String>>{
       375: <String>[
-        '30.5,717.2 92.8x19.0',
-        '160.3,717.2 79.5x19.0',
-        '30.5,1023.2 79.5x19.0',
-        '147.0,1023.2 132.5x19.0',
+        '30.5,708.2 99.8x20.0',
+        '167.3,708.2 85.5x20.0',
+        '30.5,1007.2 85.5x20.0',
+        '153.0,1007.2 142.5x20.0',
       ],
       430: <String>[
-        '30.5,676.4 92.8x19.0',
-        '160.3,676.4 79.5x19.0',
-        '30.5,962.4 79.5x19.0',
-        '147.0,962.4 132.5x19.0',
+        '30.5,670.4 99.8x20.0',
+        '167.3,670.4 85.5x20.0',
+        '30.5,955.4 85.5x20.0',
+        '153.0,955.4 142.5x20.0',
       ],
       800: <String>[
-        '154.5,698.5 92.8x19.0',
-        '284.3,698.5 79.5x19.0',
-        '154.5,945.5 79.5x19.0',
-        '271.0,945.5 132.5x19.0',
+        '154.5,674.5 99.8x20.0',
+        '291.3,674.5 85.5x20.0',
+        '154.5,922.5 85.5x20.0',
+        '277.0,922.5 142.5x20.0',
       ],
     };
 

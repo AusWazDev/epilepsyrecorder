@@ -375,7 +375,16 @@ void main() {
       // naming problem with no role token behind it. `onPrimaryMuted` is
       // muted PROSE on primary and a progress indicator is not prose, so it
       // is named here rather than absorbed by the nearest token that fits.
-      'lib/main.dart:185':
+      // ⚠️ THIS KEY IS A LINE NUMBER AND IT HAS NOW DRIFTED ONCE.
+      // 185 -> 178 on 17 September 2026, when the type scale removed seven
+      // lines above it. `CLAUDE.md` already states the rule this breaks —
+      // *do not cite a line number; cite a symbol or a quoted phrase* — and
+      // the allowlist is the one place in this checker that does.
+      //
+      // ⛔ The failure mode is the RIGHT one: an unrecognised literal fails
+      // loudly rather than a recognised one passing silently. But it will drift
+      // again, and keying on the quoted source line would not.
+      'lib/main.dart:178':
           'splash spinner, white 50% on primary — 3.3779, passes as non-text',
     };
 

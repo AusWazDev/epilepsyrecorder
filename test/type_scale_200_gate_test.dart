@@ -263,8 +263,23 @@ void main() {
 
   testWidgets('HOME at 200% — the primary screen, and it was MISSING', (tester) async {
     // ⛔ HOME WAS ABSENT FROM THE BRIEF U BASELINE, and that omission hid a
-    // live defect: `home_screen.dart:952`'s app-bar Row overflows by 138 px at
-    // 200% on unmodified code. A baseline that skips the app's primary screen
+    // figure worth having: `home_screen.dart:952`'s app-bar Row reports an
+    // overflow at 200% on unmodified code.
+    //
+    // ⚠️ THAT FIGURE IS A HARNESS ARTEFACT AND MUST NOT BE READ AS A DEVICE
+    // CONDITION. `FontLoader` registers a family NAMED Roboto and corrects only
+    // a style that resolves to it; the app-bar title names no `fontFamily` and
+    // inherits none, so it measures in the engine's one-em-per-glyph font.
+    //
+    // ⛔ IT MOVED 138.2 -> 226.7 WHEN THE TITLE WENT 13 -> 16, AND THAT IS NOT
+    // A REGRESSION. In Roboto, laid out free, the same change is 182.2 -> 224.2
+    // against a MEASURED Row constraint of 335.0 here and 307.0 on the
+    // disclaimer. `CLAUDE.md`: where a claim turns on glyph width the real
+    // render is authoritative and the widget test is not. The free measurement
+    // lives in `type_scale_200_measure_test.dart`.
+    //
+    // ⭐ The figure is still printed, because a CHANGE in it is worth seeing
+    // even when its absolute value is not a device number. A baseline that skips the app's primary screen
     // is reporting on its own reach, which is the rule this file already
     // states about the two instruments.
     await probe(tester, 'home', const HomeScreen());

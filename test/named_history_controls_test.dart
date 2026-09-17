@@ -84,9 +84,9 @@ void main() {
     expect(
         iconRects(tester, const [Icons.visibility_off_outlined]),
         <String>[
-          '356.0,152.0 24.0x24.0',
-          '356.0,225.0 24.0x24.0',
-          '356.0,298.0 24.0x24.0',
+          '356.0,156.0 24.0x24.0',
+          '356.0,229.0 24.0x24.0',
+          '356.0,302.0 24.0x24.0',
         ],
         reason: 'adding a tooltip must not move a delete icon');
 

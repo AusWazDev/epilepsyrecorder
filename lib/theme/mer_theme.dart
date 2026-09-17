@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'mer_type.dart';
+
 /// The colour system. 35 tokens, role-named.
 ///
 /// ## ⛔ FOUR RULES. They are part of the set, not commentary on it.
@@ -250,11 +252,7 @@ class MERTheme {
       // home's app-bar Row has 335.0 of constraint against 274.2 required, and
       // the disclaimer's 307.0 against the same 274.2. The other seven titles
       // move UP to join it.
-      titleTextStyle:  TextStyle(
-        fontSize:   16,
-        fontWeight: FontWeight.w600,
-        color:      Colors.white,
-      ),
+      titleTextStyle: MERType.subheadOnPrimary,
     ),
 
     // ⛔ THE SIX STEPS, AND THE SLOT EACH ONE LIVES IN.
@@ -300,17 +298,33 @@ class MERTheme {
     // ⛔ `bodyLarge` IS RESERVED AND UNUSED BY ANY CLASS. Kept on the scale
     // so a future 16/w400 need does not invent a seventh size; nothing assigns
     // it today.
+    // ⛔ BUILT FROM `MERType`, NOT BESIDE IT. Every entry below is one of the
+    // constants in `mer_type.dart` — not a copy of its values. One definition,
+    // two access paths: a widget with a context reads the theme, a const widget
+    // reads `MERType`, and **divergence is not expressible** because there is
+    // only one object.
+    //
+    // ⚠️ THE SLOT MAPPING IS A DECISION, NOT A MEASUREMENT. The scale fixes
+    // six sizes and three weights; Material's `TextTheme` has fixed slot names,
+    // and which step lives in which name is a choice. Made here, once.
+    //
+    // ⛔ `labelLarge` AND `labelMedium` ARE THE SAME STEP and differ only in
+    // tracking. Deliberate: `labelLarge` is the UPPERCASE register and carries
+    // it; a badge is not uppercase and must not inherit it.
+    //
+    // ⚠️ `bodyLarge` is the one slot with no class assigned to it. Kept on
+    // the scale so a future 16/regular need does not invent a seventh size.
     textTheme: const TextTheme(
-      displayLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: MERColours.onSurface),
-      titleLarge:   TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: MERColours.onSurface),
-      titleMedium:  TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: MERColours.onSurface),
-      titleSmall:   TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: MERColours.onSurface),
-      bodyLarge:    TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: MERColours.onSurface),
-      bodyMedium:   TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
-      bodySmall:    TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
-      labelLarge:   TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: MERColours.onSurfaceMuted, letterSpacing: 0.8),
-      labelMedium:  TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: MERColours.onSurfaceMuted),
-      labelSmall:   TextStyle(fontSize: 10, fontWeight: FontWeight.w400, color: MERColours.onSurfaceMuted),
+      displayLarge: MERType.displayOnPrimary,
+      titleLarge:   MERType.headingOnSurface,
+      titleMedium:  MERType.subheadOnSurface,
+      titleSmall:   MERType.bodyStrongOnSurface,
+      bodyLarge:    MERType.subheadInherit,
+      bodyMedium:   MERType.bodyOnSurfaceMuted,
+      bodySmall:    MERType.captionOnSurfaceMuted,
+      labelLarge:   MERType.captionUpperOnSurfaceMuted,
+      labelMedium:  MERType.captionStrongOnSurfaceMuted,
+      labelSmall:   MERType.microOnSurfaceMuted,
     ),
 
     cardTheme: CardThemeData(
@@ -332,10 +346,7 @@ class MERTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
         ),
-        textStyle: const TextStyle(
-          fontSize:   14,
-          fontWeight: FontWeight.w600,
-        ),
+        textStyle: MERType.bodyStrongInherit,
       ),
     ),
 
@@ -348,10 +359,7 @@ class MERTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
         ),
-        textStyle: const TextStyle(
-          fontSize:   14,
-          fontWeight: FontWeight.w600,
-        ),
+        textStyle: MERType.bodyStrongInherit,
       ),
     ),
 
@@ -363,10 +371,8 @@ class MERTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
         ),
-        textStyle: const TextStyle(
-          fontSize:   14,
-          fontWeight: FontWeight.w500,
-        ),
+        // ⚠️ w500 retires into `emphasis`, per the scale's three weights.
+        textStyle: MERType.bodyStrongInherit,
       ),
     ),
 
@@ -385,14 +391,8 @@ class MERTheme {
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: MERColours.focusRing, width: 1.5),
       ),
-      labelStyle: const TextStyle(
-        color:    MERColours.onSurfaceMuted,
-        fontSize: 13,
-      ),
-      hintStyle: const TextStyle(
-        color:    MERColours.onSurfaceMuted,
-        fontSize: 13,
-      ),
+      labelStyle: MERType.captionOnSurfaceMuted,
+      hintStyle: MERType.captionOnSurfaceMuted,
     ),
 
 chipTheme: ChipThemeData(
@@ -410,8 +410,10 @@ chipTheme: ChipThemeData(
       // in the wizard, which is the first time this app ever selected a
       // FilterChip. Every earlier selected chip was a ChoiceChip, which the
       // secondary style covers, so the defect had never been reachable.
+      // ⚠️ SIZE FROM `MERType`, colour still state-resolved: a chip's label
+      // colour depends on selection and cannot be a constant.
       labelStyle: TextStyle(
-        fontSize: 13,
+        fontSize: MERType.caption,
         color: WidgetStateColor.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? Colors.white
@@ -419,9 +421,9 @@ chipTheme: ChipThemeData(
         ),
       ),
       // Kept for ChoiceChip and InputChip, which do use it.
-      secondaryLabelStyle: const TextStyle(
-        fontSize:   13,
-        fontWeight: FontWeight.w600,
+      secondaryLabelStyle: TextStyle(
+        fontSize:   MERType.caption,
+        fontWeight: MERType.emphasis,
         color:      Colors.white,
       ),
       side: const BorderSide(color: MERColours.outline, width: 1.0),

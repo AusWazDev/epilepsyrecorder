@@ -8,6 +8,7 @@ import '../constants.dart';
 import '../services/notification_service.dart';
 import '../theme/mer_theme.dart';
 import 'walkthrough_screen.dart';
+import '../theme/mer_type.dart';
 
 class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});
@@ -79,18 +80,11 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
           children: [
             Text(
               'Help',
-              style: TextStyle(
-                fontSize:   15,
-                fontWeight: FontWeight.w600,
-                color:      MERColours.onPrimary,
-              ),
+              style: MERType.subheadOnPrimary,
             ),
             Text(
               'Medical Event Recorder',
-              style: TextStyle(
-                fontSize: 10,
-                color:    MERColours.onPrimaryMuted,
-              ),
+              style: MERType.microOnPrimaryMuted,
             ),
           ],
         ),
@@ -573,7 +567,7 @@ class _StandingSwitch extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           title: const Text('Quick-log notification',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              style: MERType.bodyInherit),
           subtitle: Text(
             // Both states say what is still TRUE, so turning it off does not
             // read as turning the app off.
@@ -582,7 +576,7 @@ class _StandingSwitch extends StatelessWidget {
                     'recorded without unlocking the phone.'
                 : 'Off. Events are still recorded in the app, and an event in '
                     'progress still shows its controls.',
-            style: const TextStyle(fontSize: 12, color: MERColours.onSurfaceMuted),
+            style: MERType.captionOnSurfaceMuted,
           ),
         ),
       ),

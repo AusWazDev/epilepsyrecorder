@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/medication_note.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// The regular-medication stream: a list of DEVIATIONS, and a way to add one.
 ///
@@ -120,9 +121,9 @@ class _MedicationScreenState extends State<MedicationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Medication', style: TextStyle(fontSize: 16)),
+            Text('Medication', style: MERType.subheadInherit),
             Text('Medical Event Recorder',
-                style: TextStyle(fontSize: 11, color: MERColours.onPrimaryMuted)),
+                style: MERType.microOnPrimaryMuted),
           ],
         ),
       ),
@@ -199,14 +200,14 @@ class _Explainer extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         color: MERColours.surface,
-        child: const Text(
+        child: Text(
           // THE COPY THAT KEEPS THE STREAM EXCEPTIONS-ONLY. Without it a user
           // reasonably assumes they are meant to log every dose, does it for a
           // fortnight, stops, and the list becomes misleading rather than empty.
           'Record only the doses you missed, took late, or changed. '
           'There is no need to log the ones you took as normal — '
           'the exceptions are what a specialist needs to see.',
-          style: TextStyle(fontSize: 13, height: 1.4),
+          style: MERType.bodyInherit.copyWith(height: 1.4),
         ),
       );
 }
@@ -224,10 +225,7 @@ class _KindChip extends StatelessWidget {
         ),
         child: Text(
           medicationDeviationLabel(kind),
-          style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: MERColours.primary),
+          style: MERType.captionStrongPrimary,
         ),
       );
 }
@@ -312,10 +310,11 @@ class _RecordSheetState extends State<_RecordSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Record a deviation',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              style: TextStyle(
+                  fontSize: MERType.heading, fontWeight: MERType.emphasis)),
           const SizedBox(height: 16),
           const Text('What happened?',
-              style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted)),
+              style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -329,7 +328,7 @@ class _RecordSheetState extends State<_RecordSheet> {
           ),
           const SizedBox(height: 16),
           const Text('When?',
-              style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted)),
+              style: MERType.captionUpperOnSurfaceMuted),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _pickWhen,

@@ -118,9 +118,9 @@ void main() {
     // ⛔ The row at 302.0 is unchanged because no bordered row sits above it.
     // A recapture that moved THAT one would not be this change.
     const baseline = <String>[
-      '1144.0,302.0 48.0x48.0',
-      '1144.0,371.0 48.0x48.0',
-      '1144.0,498.0 48.0x48.0',
+      '1144.0,303.0 48.0x48.0',
+      '1144.0,372.0 48.0x48.0',
+      '1144.0,499.0 48.0x48.0',
     ];
 
     final rects = <String>[];

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// "When it happened", for a record written after the fact.
 ///
@@ -101,15 +102,11 @@ class OccurredAtField extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('When it happened',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: MERColours.onSurface)),
+                    style: MERType.captionUpperOnSurface),
                 const SizedBox(height: 2),
                 Text(
                   _fmt.format(value ?? fallback),
-                  style: const TextStyle(
-                      fontSize: 15, color: MERColours.onSurface),
+                  style: MERType.captionOnSurface,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -121,8 +118,7 @@ class OccurredAtField extends StatelessWidget {
                       ? 'Recorded later than this.'
                       : 'The time this was recorded. Change it if it happened '
                           'earlier.',
-                  style: const TextStyle(
-                      fontSize: 11, color: MERColours.onSurfaceMuted),
+                  style: MERType.captionOnSurfaceMuted,
                 ),
               ],
             ),

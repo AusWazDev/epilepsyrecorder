@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// Hide and show the entries the three pickers offer.
 ///
@@ -187,9 +188,9 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Your lists', style: TextStyle(fontSize: 16)),
+            Text('Your lists', style: MERType.subheadInherit),
             Text('Medical Event Recorder',
-                style: TextStyle(fontSize: 11, color: MERColours.onPrimaryMuted)),
+                style: MERType.microOnPrimaryMuted),
           ],
         ),
         actions: [
@@ -249,8 +250,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
             Expanded(
               child: Text(
                 sel.isEmpty ? 'Select entries' : '${sel.length} selected',
-                style: const TextStyle(
-                    fontSize: 14, color: MERColours.onSurface),
+                style: MERType.captionStrongOnSurface,
               ),
             ),
             // Each action is enabled only when the selection CONTAINS a row in
@@ -318,15 +318,12 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(s.title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: MERColours.onSurface)),
+                style: MERType.bodyStrongOnSurface),
             const SizedBox(height: 2),
             Text(
               hidden == 0 ? s.blurb : '${s.blurb}  $hidden hidden.',
               style:
-                  const TextStyle(fontSize: 12, color: MERColours.onSurfaceMuted),
+                  MERType.captionOnSurfaceMuted,
             ),
           ],
         ),
@@ -369,13 +366,11 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                 // The count is stated whether open or closed, so the disclosure
                 // never reads as "there might be something here".
                 '$count replaced by newer wording',
-                style: const TextStyle(
-                    fontSize: 14, color: MERColours.onSurfaceMuted),
+                style: MERType.captionStrongOnSurfaceMuted,
               ),
             ),
             Text(isOpen ? 'Hide' : 'Show',
-                style: const TextStyle(
-                    fontSize: 14, color: MERColours.link)),
+                style: MERType.bodyStrongLink),
           ],
         ),
       ),
@@ -405,11 +400,7 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                   // The glyph belongs here for the same reason it belongs on a
                   // chip: this screen IS the picker's contents.
                   e.display,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color:
-                        visible ? MERColours.onSurface : MERColours.onSurfaceMuted,
-                  ),
+                  style: MERType.bodyInherit.copyWith(color: visible ? MERColours.onSurface : MERColours.onSurfaceMuted),
                 ),
                 if (!visible)
                   Text(
@@ -417,12 +408,11 @@ class _VocabularyScreenState extends State<VocabularyScreen> {
                           ? 'Replaced by newer wording — still shown on records '
                               'that use it'
                           : 'Hidden — still shown on records that use it',
-                      style: const TextStyle(
-                          fontSize: 11, color: MERColours.onSurfaceMuted)),
+                      style: MERType.captionOnSurfaceMuted),
                 if (visible && e.isProtected)
                   const Text('Cannot be hidden',
                       style:
-                          TextStyle(fontSize: 11, color: MERColours.onSurfaceMuted)),
+                          MERType.captionOnSurfaceMuted),
               ],
             ),
           ),
@@ -490,14 +480,14 @@ class _Explainer extends StatelessWidget {
         children: [
           Text(
             'Hiding stops an entry being offered when you record something new.',
-            style: TextStyle(fontSize: 14, color: MERColours.onSurface),
+            style: MERType.bodyOnSurface,
           ),
           SizedBox(height: 6),
           Text(
             'Nothing is deleted. Records that already use a hidden entry keep '
             'showing it, and it still appears in your exports. You can show it '
             'again at any time.',
-            style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted),
+            style: MERType.bodyOnSurfaceMuted,
           ),
         ],
       ),

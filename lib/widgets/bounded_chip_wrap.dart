@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// How many rows of chips a COLLAPSED picker shows.
 ///
@@ -175,12 +176,11 @@ Widget _disclosure({
           const SizedBox(width: 8),
           Expanded(
             child: Text(count,
-                style: const TextStyle(
-                    fontSize: 14, color: MERColours.onSurfaceMuted)),
+                style: MERType.captionStrongOnSurfaceMuted),
           ),
           Text(expanded ? 'Show fewer' : 'Show all',
               style:
-                  const TextStyle(fontSize: 14, color: MERColours.link)),
+                  MERType.bodyStrongLink),
         ],
       ),
     ),

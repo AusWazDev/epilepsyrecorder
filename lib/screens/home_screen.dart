@@ -36,6 +36,7 @@ import '../screens/vocabulary_screen.dart';
 import '../screens/walkthrough_screen.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
+import '../theme/mer_type.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -953,26 +954,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             MERIconWidget(size: 40, style: MERIconStyle.mark),
             SizedBox(width: 10),
-            Column(
+            // ⛔ FLEXIBLE, ADDED 17 September 2026 WITH THE TYPE SCALE.
+            //
+            // Unconstrained, this Column had infinite width available, so the
+            // ROW overflowed rather than the text ellipsising -- true before
+            // the scale and recorded in the 200% baseline. `Flexible` makes
+            // the overflow unreachable and turns it into an ellipsis, which is
+            // what a title that does not fit should do.
+            //
+            // ⚠️ It does not change whether the title FITS. Measured in
+            // Roboto at the 1.34 title clamp: 274.2 required into a 335.0 Row
+            // constraint. Flexible only decides the failure mode.
+            Flexible(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize:       MainAxisSize.min,
               children: [
                 Text(
                   kAppName,
-                  style: TextStyle(
-                    fontSize:   13,
-                    fontWeight: FontWeight.w600,
-                    color:      MERColours.onPrimary,
-                  ),
+                  style: MERType.subheadOnPrimary,
                 ),
                 Text(
                   'Record · Review · Share',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color:    MERColours.onPrimaryMuted,
-                  ),
+                  style: MERType.microOnPrimaryMuted,
                 ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -1210,7 +1217,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             child: const Text(
                               'Record Event',
                               style: TextStyle(
-                                fontSize:   26,
+                                fontSize:   MERType.display,
                                 fontWeight: FontWeight.w700,
                                 color:      MERColours.onCapture,
                               ),
@@ -1233,10 +1240,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           child: Text(
                             'Tap to timestamp now',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: MERColours.onSurfaceMuted,
-                            ),
+                            style: MERType.captionOnSurfaceMuted,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -1258,10 +1262,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              textStyle: const TextStyle(
-                                fontSize:   14,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              textStyle: MERType.bodyStrongInherit,
                             ),
                           ),
                         ),
@@ -1401,18 +1402,11 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
               children: [
                 const Text(
                   'Event in progress',
-                  style: TextStyle(
-                    fontSize:   14,
-                    fontWeight: FontWeight.w700,
-                    color:      MERColours.criticalOnContainer,
-                  ),
+                  style: MERType.bodyStrongCriticalOnContainer,
                 ),
                 Text(
                   'Started $timeStr · $elapsedStr ago',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color:    MERColours.criticalOnContainer,
-                  ),
+                  style: MERType.captionCriticalOnContainer,
                 ),
                 // The iOS-only line that used to sit here — "End this event
                 // from the Lock Screen or the notification." — is DELETED, not
@@ -1432,10 +1426,7 @@ class _ActiveEventBannerState extends State<_ActiveEventBanner> {
               style: FilledButton.styleFrom(
                 backgroundColor: MERColours.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                textStyle: const TextStyle(
-                  fontSize:   13,
-                  fontWeight: FontWeight.w600,
-                ),
+                textStyle: MERType.bodyStrongInherit,
               ),
               child: const Text('End Event'),
             ),
@@ -1497,11 +1488,7 @@ class _FailedWriteBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Some events aren't saved yet",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: MERColours.cautionOnContainer,
-                  ),
+                  style: MERType.bodyStrongCautionOnContainer,
                 ),
               ),
             ],
@@ -1513,15 +1500,11 @@ class _FailedWriteBanner extends StatelessWidget {
           // _records. So a backup taken while this banner is up DOES contain
           // the unsaved events. Verified by test; if the backup path is ever
           // changed to read from storage, this sentence must go.
-          const Text(
+          Text(
             "They're in your list, but this device hasn't stored them. Tap "
             'Retry, and avoid closing the app until it succeeds. If it keeps '
             'failing, use Back up now to save a copy.',
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: MERColours.cautionOnContainer,
-            ),
+            style: MERType.bodyCautionOnContainer.copyWith(height: 1.4),
           ),
           const SizedBox(height: 10),
           Align(
@@ -1612,7 +1595,9 @@ class _StorageFallbackBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: MERColours.cautionAccent, width: 1.0),
       ),
-      child: const Column(
+      // ⚠️ NOT const: a paragraph below carries a per-site `height`, and
+      // `copyWith` is not a constant expression.
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -1624,11 +1609,7 @@ class _StorageFallbackBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   'This launch could not open its stored records.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: MERColours.cautionOnContainer,
-                  ),
+                  style: MERType.bodyStrongCautionOnContainer,
                 ),
               ),
             ],
@@ -1638,11 +1619,7 @@ class _StorageFallbackBanner extends StatelessWidget {
             'Your history is not showing, or is showing only partly. '
             'Nothing has been deleted — the records are still on this '
             'device. Closing and reopening the app usually resolves it.',
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: MERColours.cautionOnContainer,
-            ),
+            style: MERType.bodyCautionOnContainer.copyWith(height: 1.4),
           ),
         ],
       ),
@@ -1684,11 +1661,7 @@ class _BackupReminderBanner extends StatelessWidget {
                 child: Text(
                   '$count ${count == 1 ? "event" : "events"} since your last '
                   'backup',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: MERColours.positiveOnContainer,
-                  ),
+                  style: MERType.bodyStrongPositiveOnContainer,
                 ),
               ),
               IconButton(
@@ -1716,12 +1689,10 @@ class _BackupReminderBanner extends StatelessWidget {
           //
           // "device", not "phone": this app ships on the Microsoft Store, and
           // the word already on screen here and in the share sheet is "device".
-          const Text(
+          Text(
             'A backup is your own copy — the only one that moves to a new '
             'device. Save it somewhere lasting.',
-            style: TextStyle(
-                fontSize: 13, height: 1.4,
-                color: MERColours.positiveOnContainer),
+            style: MERType.bodyPositiveOnContainer.copyWith(height: 1.4),
           ),
           const SizedBox(height: 10),
           Align(
@@ -1778,19 +1749,11 @@ class _SettingsNudgeCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize:   13,
-                    fontWeight: FontWeight.w700,
-                    color:      iconColor,
-                  ),
+                  style: MERType.bodyStrongInherit.copyWith(color: iconColor),
                 ),
                 Text(
                   body,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color:    iconColor.withValues(alpha: 0.85),
-                    height:   1.4,
-                  ),
+                  style: MERType.bodyInherit.copyWith(color: iconColor.withValues(alpha: 0.85), height:   1.4),
                 ),
               ],
             ),
@@ -1807,10 +1770,7 @@ class _SettingsNudgeCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: const TextStyle(
-                    fontSize:   12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  textStyle: MERType.bodyStrongInherit,
                 ),
                 child: const Text('Open Settings'),
               ),
@@ -1821,7 +1781,7 @@ class _SettingsNudgeCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: const TextStyle(fontSize: 11),
+                  textStyle: MERType.bodyStrongInherit,
                 ),
                 child: const Text('Help →'),
               ),
@@ -1915,7 +1875,7 @@ class _StatCell extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize:   20,
+              fontSize:   MERType.heading,
               fontWeight: FontWeight.w600,
               color:      valueColor ?? MERColours.primary,
             ),
@@ -1924,10 +1884,7 @@ class _StatCell extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 9,
-              color:    MERColours.onSurfaceMuted,
-            ),
+            style: MERType.microOnSurfaceMuted,
           ),
         ],
       ),
@@ -2004,20 +1961,12 @@ class _LastEventCard extends StatelessWidget {
           // ── TIMESTAMP ──
           Text(
             timeStr,
-            style: const TextStyle(
-              fontSize:   13,
-              fontWeight: FontWeight.w500,
-              color:      MERColours.onSurface,
-            ),
+            style: MERType.captionOnSurface,
           ),
           const SizedBox(height: 2),
           Text(
             'Tap edit to update details',
-            style: TextStyle(
-              fontSize:  10,
-              color:     MERColours.onSurfaceMuted.withOpacity(0.7),
-              fontStyle: FontStyle.italic,
-            ),
+            style: MERType.captionInherit.copyWith(color: MERColours.onSurfaceMuted.withOpacity(0.7), fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 10),
 
@@ -2048,12 +1997,11 @@ class _LastEventCard extends StatelessWidget {
                           color: MERColours.primary,
                         ),
                         SizedBox(width: 5),
-                        Text(
-                          'Edit details',
-                          style: TextStyle(
-                            fontSize:   11,
-                            fontWeight: FontWeight.w500,
-                            color:      MERColours.primary,
+                        Flexible(
+                          child: Text(
+                            'Edit details',
+                            overflow: TextOverflow.ellipsis,
+                            style: MERType.bodyStrongPrimary,
                           ),
                         ),
                       ],
@@ -2082,12 +2030,11 @@ class _LastEventCard extends StatelessWidget {
                           color: MERColours.onPrimary,
                         ),
                         SizedBox(width: 5),
-                        Text(
-                          'All history',
-                          style: TextStyle(
-                            fontSize:   11,
-                            fontWeight: FontWeight.w500,
-                            color:      MERColours.onPrimary,
+                        Flexible(
+                          child: Text(
+                            'All history',
+                            overflow: TextOverflow.ellipsis,
+                            style: MERType.bodyStrongOnPrimary,
                           ),
                         ),
                       ],

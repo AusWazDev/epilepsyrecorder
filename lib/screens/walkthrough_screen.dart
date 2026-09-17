@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// The first-run walkthrough. See `docs/WALKTHROUGH-SPEC.md`.
 ///
@@ -268,13 +269,16 @@ class _StepPage extends StatelessWidget {
           ],
           Text(
             step.title,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+            // 24 collapses into `display`; the scale has no step between
+            // heading and display.
+            style: const TextStyle(
+                fontSize: MERType.display, fontWeight: MERType.emphasis),
           ),
           const SizedBox(height: 18),
           ...step.paragraphs.map(
             (p) => Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: Text(p, style: const TextStyle(fontSize: 16, height: 1.45)),
+              child: Text(p, style: MERType.bodyInherit.copyWith(height: 1.45)),
             ),
           ),
         ],

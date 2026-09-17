@@ -12,6 +12,7 @@ import '../widgets/bounded_chip_wrap.dart';
 import '../models/vocabulary_store.dart';
 import '../widgets/occurred_at_field.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 class LogEventScreen extends StatefulWidget {
   final EventRecord? existing;
@@ -545,18 +546,11 @@ appBar: AppBar(
             children: [
               Text(
                 _isNew ? 'Log new event' : 'Edit event',
-                style: const TextStyle(
-                  fontSize:   15,
-                  fontWeight: FontWeight.w600,
-                  color:      MERColours.onPrimary,
-                ),
+                style: MERType.subheadOnPrimary,
               ),
               const Text(
                 'Medical Event Recorder',
-                style: TextStyle(
-                  fontSize: 10,
-                  color:    MERColours.onPrimaryMuted,
-                ),
+                style: MERType.microOnPrimaryMuted,
               ),
             ],
           ),
@@ -602,10 +596,7 @@ appBar: AppBar(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
                               'Recorded as ${durationLabel(_duration!)}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: MERColours.onSurfaceMuted,
-                              ),
+                              style: MERType.captionOnSurfaceMuted,
                             ),
                           ),
                         Row(
@@ -851,7 +842,7 @@ appBar: AppBar(
                             onPressed: _save,
                             child: Text(
                               _isNew ? 'Save event' : 'Save changes',
-                              style: const TextStyle(fontSize: 15),
+                              style: MERType.bodyStrongInherit,
                             ),
                           ),
                         ),
@@ -892,7 +883,7 @@ class _SectionHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted),
+      style: MERType.captionOnSurfaceMuted,
     );
   }
 }
@@ -1052,7 +1043,7 @@ class _EventTypeButton extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize:   12,
+                  fontSize:   MERType.caption,
                   fontWeight: isSelected
                       ? FontWeight.w600
                       : FontWeight.w400,
@@ -1142,7 +1133,7 @@ class _SelectionRow<T> extends StatelessWidget {
                   labelFor(option),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize:   13,
+                    fontSize:   MERType.body,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.w500,
@@ -1244,7 +1235,7 @@ class _SelectionWrap extends StatelessWidget {
             child: Text(
               labelFor?.call(option) ?? option,
               style: TextStyle(
-                fontSize:   13,
+                fontSize:   MERType.body,
                 fontWeight: isSelected
                     ? FontWeight.w600
                     : FontWeight.w400,
@@ -1277,8 +1268,7 @@ class _SelectionWrap extends StatelessWidget {
                   const Icon(Icons.add, size: 16, color: MERColours.primary),
                   const SizedBox(width: 6),
                   Text(addLabel,
-                      style: const TextStyle(
-                          fontSize: 13, color: MERColours.primary)),
+                      style: MERType.bodyStrongPrimary),
                 ],
               ),
             ),

@@ -13,6 +13,7 @@ import 'models/storage_boot.dart';
 import 'models/storage_migration.dart';
 import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
+import 'theme/mer_type.dart';
 
 void main() async {
   // Binding only — this is local setup, not a platform-channel round trip, and
@@ -146,7 +147,7 @@ class _SplashLoadingScreen extends StatelessWidget {
             const Text(
               'MER',
               style: TextStyle(
-                fontSize:      28,
+                fontSize:      MERType.display,
                 fontWeight:    FontWeight.w800,
                 color:         MERColours.onPrimary,
                 letterSpacing: 4,
@@ -157,22 +158,14 @@ class _SplashLoadingScreen extends StatelessWidget {
             // ── APP NAME ──
             const Text(
               kAppName,
-              style: TextStyle(
-                fontSize:   16,
-                fontWeight: FontWeight.w600,
-                color:      MERColours.onPrimary,
-              ),
+              style: MERType.displayOnPrimary,
             ),
             const SizedBox(height: 4),
 
             // ── TAGLINE ──
-            const Text(
+            Text(
               'TRACK · RECORD · UNDERSTAND',
-              style: TextStyle(
-                fontSize:      10,
-                color:         MERColours.onPrimaryMuted,
-                letterSpacing: 1.8,
-              ),
+              style: MERType.captionOnPrimaryMuted.copyWith(letterSpacing: 1.8),
             ),
             const SizedBox(height: 48),
 
@@ -190,10 +183,7 @@ class _SplashLoadingScreen extends StatelessWidget {
             // ── VERSION ──
             Text(
               'Version ${AppInfo.versionLabel}',
-              style: const TextStyle(
-                fontSize: 11,
-                color:    MERColours.onPrimaryMuted,
-              ),
+              style: MERType.captionOnPrimaryMuted,
             ),
           ],
         ),

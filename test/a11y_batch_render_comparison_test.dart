@@ -51,6 +51,13 @@ const List<double> kWidths = <double>[375, 430, 800];
 /// Regenerate ONLY when a change is MEANT to move text, and say so in the
 /// commit that does.
 ///
+/// ⚠️ RECAPTURED AGAIN, SAME DAY, FOR THE SUBSTITUTION. The theme pass
+/// moved every paragraph resolving to a `textTheme` slot; this pass moved
+/// the 103 sites that carried a LOCAL style and now name a `MERType`
+/// constant. ⭐ PARAGRAPH COUNTS UNCHANGED AGAIN at 29/111/18/26, across
+/// both passes — text moved twice and nothing appeared or disappeared
+/// either time.
+///
 /// ⚠️ ALL FOUR SCREENS RECAPTURED 17 September 2026 FOR THE TYPE SCALE,
 /// and this is the largest "change that is MEANT to move text" the rule
 /// above has covered. The theme's six steps replace seven sizes between
@@ -98,12 +105,12 @@ const List<double> kWidths = <double>[375, 430, 800];
 /// `ButtonStyle.textStyle` that names no family.** The after figure is the
 /// real one.
 const Map<String, String> kBaseline = <String, String>{
-  'about@375': '29|25efebc496e3f7e9',
-  'about@430': '29|7ac8f405aa10d66e',
-  'about@800': '29|53f07013ba106fc0',
-  'form@375': '111|6689fb5c1b0976f1',
-  'form@430': '111|33d8e3107a763aee',
-  'form@800': '111|1b170d4e15469739',
+  'about@375': '29|02511aa5c288620a',
+  'about@430': '29|25ce74635aecd66d',
+  'about@800': '29|2104bac54e69c174',
+  'form@375': '111|56ece42ea2561b54',
+  'form@430': '111|01961f3a33b9a433',
+  'form@800': '111|1bfce1dcaf07c456',
   // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
   // "change that is MEANT to move text" in the sense the rule above requires.
   //
@@ -118,12 +125,12 @@ const Map<String, String> kBaseline = <String, String>{
   // PASSED against the old baselines — so the tooltip and the colour move no
   // glyph, and the whole delta is the codepoint. The paragraph COUNT is
   // unchanged at 18 in every case, which is the second half of the same check.
-  'history@375': '18|7c40e11117f6e250',
-  'history@430': '18|46d4640f1f9c5575',
-  'history@800': '18|49c30ce6377c0830',
-  'home@375': '26|74db9701ff542025',
-  'home@430': '26|4a22a1b29bfefc15',
-  'home@800': '26|662b22c9276fa98a',
+  'history@375': '18|5b9a6e7eb59bde87',
+  'history@430': '18|00b7a64db41605a1',
+  'history@800': '18|51b8a4a60ef0f99c',
+  'home@375': '26|11ff9fc06c3f4b04',
+  'home@430': '26|797ecb4fea786548',
+  'home@800': '26|4e7775de03f9b076',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.

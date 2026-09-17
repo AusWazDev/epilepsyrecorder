@@ -5,6 +5,7 @@ import '../app_info.dart';
 import '../constants.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
+import '../theme/mer_type.dart';
 
 class AboutScreen extends StatelessWidget {
   final VoidCallback? onReset;
@@ -20,18 +21,11 @@ class AboutScreen extends StatelessWidget {
           children: [
             Text(
               'About',
-              style: TextStyle(
-                fontSize:   15,
-                fontWeight: FontWeight.w600,
-                color:      MERColours.onPrimary,
-              ),
+              style: MERType.subheadOnPrimary,
             ),
             Text(
               'Medical Event Recorder',
-              style: TextStyle(
-                fontSize: 10,
-                color:    MERColours.onPrimaryMuted,
-              ),
+              style: MERType.microOnPrimaryMuted,
             ),
           ],
         ),
@@ -83,27 +77,20 @@ class AboutScreen extends StatelessWidget {
                   const Text(
                     kAppName,
                     style: TextStyle(
-                      fontSize:   18,
-                      fontWeight: FontWeight.w700,
+                      fontSize:   MERType.heading,
+                      fontWeight: MERType.emphasis,
                       color:      MERColours.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Version ${AppInfo.version}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color:    MERColours.onPrimaryMuted,
-                    ),
+                    style: MERType.captionOnPrimaryMuted,
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     'Record · Review · Share',
-                    style: TextStyle(
-                      fontSize:      11,
-                      color:         MERColours.onPrimaryMuted,
-                      letterSpacing: 1.5,
-                    ),
+                    style: MERType.captionOnPrimaryMuted.copyWith(letterSpacing: 1.5),
                   ),
                 ],
               ),

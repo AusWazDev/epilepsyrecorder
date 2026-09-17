@@ -15,6 +15,7 @@ import 'medication_note.dart';
 import '../theme/mer_theme.dart';
 import 'vocabulary.dart';
 import 'vocabulary_store.dart';
+import '../theme/mer_type.dart';
 
 /* ===========================
    ENUMS
@@ -1682,12 +1683,7 @@ Future<void> showExportOptions(
                   Expanded(
                     child: Text(
                       sheetTitle ?? 'Export events',
-                      style: const TextStyle(
-                        fontSize:   13,
-                        fontWeight: FontWeight.w600,
-                        color:      MERColours.onSurfaceMuted,
-                        letterSpacing: 0.4,
-                      ),
+                      style: MERType.bodyStrongOnSurfaceMuted.copyWith(letterSpacing: 0.4),
                     ),
                   ),
                   const SizedBox(width: 8),

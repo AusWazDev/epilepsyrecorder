@@ -4,6 +4,7 @@ import '../models/condition.dart';
 import '../models/vocabulary.dart';
 import '../models/vocabulary_store.dart';
 import '../theme/mer_theme.dart';
+import '../theme/mer_type.dart';
 
 /// Name what you track, and say which event types belong to each.
 ///
@@ -106,9 +107,9 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('What you track', style: TextStyle(fontSize: 16)),
+            Text('What you track', style: MERType.subheadInherit),
             Text('Medical Event Recorder',
-                style: TextStyle(fontSize: 11, color: MERColours.onPrimaryMuted)),
+                style: MERType.microOnPrimaryMuted),
           ],
         ),
       ),
@@ -232,8 +233,7 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
           children: [
             Expanded(
               child: Text(t.label,
-                  style: const TextStyle(
-                      fontSize: 15, color: MERColours.onSurface)),
+                  style: MERType.bodyOnSurface),
             ),
             DropdownButton<int?>(
               value: _conditions.any((c) => c.id == t.conditionId)
@@ -241,16 +241,16 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
                   : null,
               underline: const SizedBox.shrink(),
               hint: const Text('Not set',
-                  style: TextStyle(fontSize: 14, color: MERColours.onSurfaceMuted)),
+                  style: MERType.captionOnSurfaceMuted),
               items: <DropdownMenuItem<int?>>[
                 const DropdownMenuItem<int?>(
                   value: null,
-                  child: Text('Not set', style: TextStyle(fontSize: 14)),
+                  child: Text('Not set', style: MERType.bodyInherit),
                 ),
                 for (final c in _conditions)
                   DropdownMenuItem<int?>(
                     value: c.id,
-                    child: Text(c.name, style: const TextStyle(fontSize: 14)),
+                    child: Text(c.name, style: MERType.bodyInherit),
                   ),
               ],
               onChanged: widget.store.canPersist
@@ -267,14 +267,10 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: MERColours.onSurface)),
+                style: MERType.bodyStrongOnSurface),
             const SizedBox(height: 2),
             Text(blurb,
-                style: const TextStyle(
-                    fontSize: 12, color: MERColours.onSurfaceMuted)),
+                style: MERType.captionOnSurfaceMuted),
           ],
         ),
       );
@@ -289,12 +285,10 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title,
-                style: const TextStyle(
-                    fontSize: 15, color: MERColours.onSurface)),
+                style: MERType.bodyOnSurface),
             const SizedBox(height: 2),
             Text(subtitle,
-                style: const TextStyle(
-                    fontSize: 12, color: MERColours.onSurfaceMuted)),
+                style: MERType.captionOnSurfaceMuted),
           ],
         ),
       );
@@ -313,7 +307,7 @@ class _Explainer extends StatelessWidget {
           children: [
             Text(
               'Name what you track, and say which event types belong to each.',
-              style: TextStyle(fontSize: 14, color: MERColours.onSurface),
+              style: MERType.bodyOnSurface,
             ),
             SizedBox(height: 6),
             Text(
@@ -321,7 +315,7 @@ class _Explainer extends StatelessWidget {
               'already recorded is changed or reassigned by anything on this '
               'screen. Recording an event still takes one tap and never asks '
               'which condition it was.',
-              style: TextStyle(fontSize: 13, color: MERColours.onSurfaceMuted),
+              style: MERType.bodyOnSurfaceMuted,
             ),
           ],
         ),

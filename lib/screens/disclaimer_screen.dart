@@ -6,6 +6,7 @@ import '../constants.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 import 'home_screen.dart';
+import '../theme/mer_type.dart';
 
 class DisclaimerScreen extends StatelessWidget {
   const DisclaimerScreen({super.key});
@@ -29,26 +30,23 @@ class DisclaimerScreen extends StatelessWidget {
           children: [
             MERIconWidget(size: 40, style: MERIconStyle.mark),
             SizedBox(width: 10),
-            Column(
+            // ⛔ FLEXIBLE, same fix and same reason as home's app bar: an
+            // unconstrained Column in a Row overflows instead of ellipsising.
+            Flexible(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize:       MainAxisSize.min,
               children: [
                 Text(
                   'Medical Event Recorder',
-                  style: TextStyle(
-                    fontSize:   13,
-                    fontWeight: FontWeight.w600,
-                    color:      MERColours.onPrimary,
-                  ),
+                  style: MERType.subheadOnPrimary,
                 ),
                 Text(
                   'Medical & Legal Disclaimer',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color:    MERColours.onPrimaryMuted,
-                  ),
+                  style: MERType.microOnPrimaryMuted,
                 ),
               ],
+              ),
             ),
           ],
         ),
@@ -338,7 +336,7 @@ class DisclaimerScreen extends StatelessWidget {
                   onPressed: () => _accept(context),
                   child: const Text(
                     'I Understand and Agree',
-                    style: TextStyle(fontSize: 16),
+                    style: MERType.bodyStrongInherit,
                   ),
                 ),
               ),
@@ -364,7 +362,7 @@ class _DisclaimerBullet extends StatelessWidget {
           Text(
             '•  ',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: MERType.heading,
               color:    MERColours.onSurfaceMuted,
             ),
           ),
