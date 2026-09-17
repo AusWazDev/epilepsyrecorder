@@ -1207,14 +1207,15 @@ is affected, this one points at it and the earlier wording stands.
 >
 > | | status | evidence |
 > |---|---|---|
-> | **(a)** 🔴 | UNKNOWN* | document claims FIXED; no citing code commit |
+> | **(a)** 🔴 | SHIPPED | `0847646` — resolved by CONTENT 18 Sep 2026; the commit never names the letter |
 > | **(b)** | UNKNOWN* | document claims SHIPPED; no citing code commit |
 > | **(c)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(d)** | SHIPPED | 5b37478 |
 > | **(e)** | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
 > | **(f)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(g)** | UNKNOWN | no citing commit, no dated resolution in the finding |
-> | **(h)** 🔴 | UNKNOWN* | document claims FIXED/RESOLVED/SHIPPED; no citing code commit |
+> | **(h)** 🔴 | SHIPPED | `9ee1539` — resolved by CONTENT 18 Sep 2026; the commit never names the letter |
+> | **(h-ii)** ⚪ | ⛔ **NO STATUS — and the reason is the table's, not the finding's** | see the derivation note beneath this table |
 > | **(i)** | UNKNOWN* | document claims RESOLVED; no citing code commit |
 > | **(j)** | SHIPPED | 5b37478 |
 > | **(k)** | UNKNOWN | no citing commit, no dated resolution in the finding |
@@ -1227,12 +1228,12 @@ is affected, this one points at it and the earlier wording stands.
 > | **(r)** | UNKNOWN* | document claims CLOSED/FIXED/RESOLVED/SHIPPED; no citing code commit |
 > | **(s)** 🔴 | SHIPPED | a0d3bf8 |
 > | **(t)** | UNKNOWN* | document claims CLOSED/FIXED/SHIPPED; no citing code commit |
-> | **(u)** 🔴 | UNKNOWN* | document claims CLOSED; no citing code commit |
+> | **(u)** 🔴 | SHIPPED (measured, ⛔ **not passed**) | `c4220f2` — resolved by CONTENT 18 Sep 2026 |
 > | **(v)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(w)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(x)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(y)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
-> | **(z)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(z)** 🔴 | SHIPPED | `3718531` + `f6032ea` — resolved by CONTENT 18 Sep 2026 |
 > | **(aa)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(ab)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(ac)** | SHIPPED | 0d57f09 |
@@ -1240,9 +1241,9 @@ is affected, this one points at it and the earlier wording stands.
 > | **(ae)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(af)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(ag)** | UNKNOWN | no citing commit, no dated resolution in the finding |
-> | **(ah)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(ah)** 🔴 | SHIPPED | `7004acb` — resolved by CONTENT 18 Sep 2026 |
 > | **(ai)** | UNKNOWN* | document claims FIXED; no citing code commit |
-> | **(aj)** 🔴 | UNKNOWN* | document claims FIXED/RESOLVED/SHIPPED; no citing code commit |
+> | **(aj)** 🔴 | UNKNOWN — **permanently, and for a STRUCTURAL reason** | the subject is the audit's own capture instrument, which is **not in this repository**. ⛔ **No commit here can ever cite it.** Not an escape-clause UNKNOWN |
 > | **(ak)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(al)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(am)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
@@ -1257,12 +1258,12 @@ is affected, this one points at it and the earlier wording stands.
 > | **(av)** | SHIPPED | 2ea1fa4 |
 > | **(aw)** | UNKNOWN* | document claims FIXED/SHIPPED; no citing code commit |
 > | **(ax)** | UNKNOWN* | document claims CLOSED; no citing code commit |
-> | **(ay)** 🔴 | UNKNOWN* | document claims FIXED/SHIPPED; no citing code commit |
+> | **(ay)** 🔴 | SHIPPED | `3e7738e` — resolved by CONTENT 18 Sep 2026 |
 > | **(az)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(ba)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bb)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bc)** 🔴 | SHIPPED | 5b37478 |
-> | **(bd)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED; no citing code commit |
+> | **(bd)** 🔴 | OPEN | ⛔ **FALSE POSITIVE IN THIS TABLE, corrected 18 Sep 2026.** The finding says *"NONE OF THESE IS CLOSED"* and *"STILL OPEN, STILL UNTRIGGERED, AND STILL NOT FIXED"* — **the marker regex matched CLOSED and FIXED inside their own negations** |
 > | **(be)** 🔴 | OPEN | its own text: "THE HIGHEST-PRIORITY OPEN ITEM IN THIS DOCUMENT" |
 > | **(bf)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bg)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
@@ -1278,11 +1279,32 @@ is affected, this one points at it and the earlier wording stands.
 > | **(bq)** | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(br)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bs)** | UNKNOWN | no citing commit, no dated resolution in the finding |
-> | **(bt)** 🔴 | UNKNOWN* | document claims CLOSED; no citing code commit |
+> | **(bt)** 🔴 | 🔴 **LIVE — re-confirmed at HEAD 18 Sep 2026** | the guard in `writeEventPayload` still justifies itself by a write path retired at `4ba63e1`. **Stopped on, not fixed** |
 > | **(bu)** | UNKNOWN | no citing commit, no dated resolution in the finding |
-> | **(bv)** 🔴 | UNKNOWN* | document claims SHIPPED; no citing code commit |
+> | **(bv)** 🔴 | SHIPPED | `dbe9086` + `5e4af17` — resolved by CONTENT 18 Sep 2026 |
 > | **(bw)** | UNKNOWN* | document claims FIXED; no citing code commit |
-> | **(bx)** 🔴 | UNKNOWN* | document claims CLOSED/FIXED/SHIPPED; no citing code commit |
+> | **(bx)** 🔴 | SHIPPED | `c4220f2` — resolved by CONTENT 18 Sep 2026 |
+
+> ⛔ **WHY (h-ii) HAD NO ROW, RECORDED 18 September 2026 — THE TABLE'S SCOPE WAS DECLARED BY ITS
+> GENERATOR, NOT DERIVED FROM THE DOCUMENT.**
+>
+> The generator matched headings against `^### \(([a-z]{1,2})\)`. ⭐ **`(h-ii)` is the only
+> heading in §13 whose label is not one or two bare letters**, so it was the only one the pattern
+> could not see. **90 rows against 91 headings**, and nothing in the output said so.
+>
+> ⚠️ **IT IS NOT A TYPO IN THE PATTERN. It is the declared-scope class the workspace rules already
+> name**: the pattern encodes what its author EXPECTED the labels to look like, so it reports
+> cleanly on everything shaped that way and is silent about everything else. ⛔ **A count of 90 is
+> indistinguishable from complete when the denominator is never stated.**
+>
+> ⭐ **THE CHEAP REPAIR IS THE ONE THE RULE ALREADY PRESCRIBES: count the headings first, count the
+> rows after, and fail the run when they differ.** `grep -c '^### ('` against
+> `grep -c '^> | \*\*('` would have caught it in one line, before the table was ever read.
+>
+> ⚠️ **AND (h-ii) IS LEFT WITHOUT A STATUS ON PURPOSE.** It is four capture-derived vocabulary
+> items deferred as ONE, against §10's component-vocabulary work — **a deferral, not a defect with
+> a fix to find.** Giving it SHIPPED or OPEN would assert something this pass did not establish.
+> **The row exists so the gap is visible; the status stays blank because nothing has measured it.**
 > | **(by)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(bz)** 🔴 | UNKNOWN | no citing commit, no dated resolution in the finding |
 > | **(ca)** | UNKNOWN* | document claims FIXED; no citing code commit |
@@ -1374,6 +1396,18 @@ reusing it for the exit would have prompted on an untouched blank form. The exit
 **`_isDirty = !_isNew && _hasChanges`**. ⛔ **Recorded as a DECISION, not a derivation** — production
 cannot reach that branch, so nothing in the code settles what it should do. `_hasChanges` itself is
 unchanged.
+
+> ✅ **THE CITATION THIS FINDING NEVER HAD, SUPPLIED 18 September 2026 — `0847646`
+> *"log_event_screen: name the rescue fields, and stop discarding edits silently"*, 8 September.**
+>
+> ⭐ **FOUND BY CONTENT, NOT BY CITATION**, which is the only way it could be found: **no commit
+> in this repository names the letter `(a)`**, and that absence is what marked the row UNKNOWN in
+> the first place. The match is on what the commit DOES against what the finding asked for.
+>
+> ⚠️ **A CITATION SUPPLIED AFTER THE FACT IS WEAKER EVIDENCE THAN ONE WRITTEN AT THE TIME, and it
+> is recorded as such.** It establishes that a commit exists whose content answers this finding.
+> **It does not establish that the commit was made IN RESPONSE to it**, and nothing in the history
+> can now settle that.
 
 ### (b) Exit behaviour is not uniform, and the wizard already has the right pattern
 
@@ -1736,6 +1770,10 @@ disagreed on the previous copy's line count at 375, 3 against 2.** ⭐ **Two ins
 quantity is what found it; they now agree to 0.0 at every width.** The 18.1% is still an upper bound
 on the font difference, since the reference capture's Dynamic Type setting is unknown and §13(u)
 records that this app never reads `textScaler`.
+
+> ✅ **CITATION SUPPLIED 18 September 2026 — `9ee1539` *"home: rewrite the backup banner body; add
+> (bb)"*, 9 September.** Found by content; **no commit names `(h)`.** ⚠️ **Same limit as `(a)`: it
+> shows a commit whose content answers the finding, not that it was made in response to it.**
 
 ### (h-ii) Four capture-derived vocabulary items, deferred as one
 
@@ -2750,6 +2788,12 @@ exist yet.**
 
 ---
 
+> ✅ **CITATION SUPPLIED 18 September 2026 — `c4220f2`, which adds `test/a11y_batch_measure_test.dart`.**
+> ⛔ **AND THE FINDING'S OWN QUALIFIER GOVERNS THE STATUS: *CLOSED AS MEASURED, NOT AS PASSED.***
+> ⭐ **The gap this finding recorded was the ABSENCE OF A MEASUREMENT, and a measurement now
+> exists** — so the finding closes. **It does not follow that the app passes at 200%**, and the
+> row is worded to stop that reading.
+
 ### (v) ✅ FLASH CONTENT — CLEAN, and recorded as a positive result
 
 > ⛔ **QUALIFIED THE SAME DAY BY §13(ah) — 8 September 2026. The verdict below is left as
@@ -3437,6 +3481,12 @@ on iOS, because nothing here was seen on iOS.**
 
 ---
 
+> ✅ **CITATION SUPPLIED 18 September 2026 — `3718531` *"log_event: announce selection state on the
+> edit form"* and `f6032ea` *"log_event: announce selection on `_SelectionWrap`"*, both 9
+> September.** ⚠️ **TWO commits, and the second is not a tidy-up** — the first announces on the
+> form, the second on the wrapper the pickers share. **A single-commit citation here would have
+> been incomplete rather than merely terse.**
+
 ### (aa) 🔴 THE WIDTH STRATEGY IS INCONSISTENT, NOT ABSENT
 
 **Code-verified, 8 Sep 2026.** ⛔ **An earlier claim in this session — that content is capped at
@@ -3898,6 +3948,9 @@ recorded here as such so a later reader can reject the inference while keeping t
 
 ---
 
+> ✅ **CITATION SUPPLIED 18 September 2026 — `7004acb` *"home_screen: bound the Record Event flash
+> to one onset per 500ms"*, 8 September.** Found by content; **no commit names `(ah)`.**
+
 ### (ai) THE DISCARD DIALOG, ASSESSED ON THE DEVICE
 
 **Seen directly at all three widths, 8 Sep 2026, 1x proxies** —
@@ -4144,6 +4197,28 @@ answered record in seconds, and no widget test has ever rendered the review step
 instrument's use, a reader asking "how did a capture mislead" arrives at this entry, and it extends
 this entry's own table rather than §13(r)'s. **There is no §13(r) instance inside it** — the
 knowledge that the lines were conditional was in the code, not in a rule that failed to travel.
+
+> ⛔ **THIS ONE CANNOT BE CITED, AND THAT IS STRUCTURAL RATHER THAN AN OVERSIGHT — established
+> 18 September 2026.**
+>
+> **The subject of this finding is the AUDIT'S OWN CAPTURE INSTRUMENT.** It is not code in `lib/`,
+> so reading `lib/` at HEAD cannot answer it either. ⭐ **The instrument was ad-hoc and was never
+> committed**: the only capture script tracked in this repository is `capture_screenshots.ps1`,
+> whose entire history is `2d171ca` *"Add Google Play phone screenshots and capture scripts"* — an
+> unrelated store-screenshot tool that predates this audit and contains **no subject verification
+> at all** (`grep -nE 'SetForegroundWindow|GetForegroundWindow|GetWindowText'` returns nothing).
+>
+> ⚠️ **SO THE STATUS IS UNKNOWN AND WILL REMAIN UNKNOWN, AND IT IS A DIFFERENT UNKNOWN FROM THE
+> ESCAPE CLAUSE.** The escape clause covers findings that would need behaviour re-tested. **This
+> one needs an artefact that does not exist in the repository** — no future commit can resolve it,
+> because there is nothing here for a commit to touch. ⛔ **Counting it with the escape-clause
+> cases would overstate how much this pass could not reach.**
+>
+> ⭐ **WHAT DOES EXIST IS THE METHOD CHANGE, and it is recorded rather than cited**: `296a144`
+> *"retract (al), correct (am), and make the capture rule explicit"* and `9b1f708` *"audit every
+> capture-derived finding against the geometry rule"*, both of which change the AUDIT rather than
+> the instrument. **The rule they installed is in `CLAUDE.md` under *CAPTURES ANSWER "HOW DOES IT
+> LOOK"*.** ⚠️ **That is a rule, not a repair — the instrument itself remains unverified.**
 
 ### (ak) THE APP REQUESTS A WINDOW LARGER THAN A COMMON LAPTOP DISPLAY CAN SHOW
 
@@ -5481,6 +5556,11 @@ licence.**
 
 ---
 
+> ✅ **CITATION SUPPLIED 18 September 2026 — `3e7738e`, the only commit introducing a `Flexible`
+> into `home_screen.dart`.** ⚠️ **READ THIS FINDING'S OWN RETRACTION FIRST.** `7a3b42a` retracted
+> the app-bar half as a test-font artefact; the citation above is for what survived the
+> retraction, **not for the retracted claim.**
+
 ### (az) ⛔ THE APPARATUS WAS FLAWLESS AND THE INPUT WAS WRONG — EVERY CHECK THIS SESSION BUILT OPERATES DOWNSTREAM OF THE INPUT
 
 **9 September 2026.** ⭐ **Recorded as its own entry rather than appended to §13(aj), and the reason
@@ -5871,6 +5951,21 @@ differently-shaped change than this finding or §13(bc) anticipated.
 `history_screen.dart:633` remains the only `whenHappened` sort in the app.
 
 ---
+
+> ⛔ **THIS FINDING WAS NEVER CLOSED, AND THE STATUS TABLE SAID OTHERWISE BY ACCIDENT —
+> CORRECTED 18 September 2026.**
+>
+> **The table's marker regex searched this section for CLOSED / FIXED / RESOLVED / SHIPPED and
+> found them — inside their own negations.** The finding's text reads *"NONE OF THESE IS CLOSED"*
+> and *"STILL OPEN, STILL UNTRIGGERED, AND STILL NOT FIXED."*
+>
+> ⭐ **THE INSTRUMENT MATCHED THE WORD AND MISSED THE CLAIM**, which is the
+> token-versus-claim failure the workspace rules already name — **a mechanical match is right
+> about the token and wrong about the sentence containing it.** ⚠️ **It surfaced here as a
+> FALSE CLOSURE, the direction that costs most: a live finding presented as resolved.**
+>
+> ⛔ **NOTHING IN THIS FINDING CHANGES. The correction is to the table, not to the finding**, and
+> the row now reads OPEN.
 
 ### (be) 🔴 ONE EVENT RECORD WAS LOST ON 30 AUGUST 2026 — UNRECOVERABLE, AND THE STORAGE MODEL CANNOT SAY HOW
 
@@ -7888,6 +7983,37 @@ entry: read, not annotated — `STATUS.md` is append-only and this is recorded h
 
 ---
 
+> 🔴 **RE-CONFIRMED AT HEAD, 18 September 2026 — THIS IS A LIVE FINDING, AND THIS PASS STOPS ON IT
+> RATHER THAN FIXING IT.**
+>
+> **What the guard still says.** `writeEventPayload` in `lib/models/event_record.dart` carries a
+> DO NOT REMOVE comment justifying the absence of an iOS rollback copy on the grounds that
+> *"AppDelegate.handleQuickLogStart writes flutter.epilepsy_event_records_v1 in UserDefaults
+> directly, and EndMEREventIntent … mutates it again."*
+>
+> ⛔ **NEITHER HALF OF THAT IS TRUE AT HEAD.** `[read]`, with a control, across `ios/`:
+>
+> | probe | hits |
+> |---|---|
+> | `epilepsy_event_records_v1` | **0** |
+> | `forKey: kStorageKey` | **0** |
+> | `kAppGroupId` — **the control** | **2 files** |
+>
+> ⭐ **THE CONTROL IS WHAT MAKES THE TWO ZEROS MEAN ANYTHING.** A search that returns nothing
+> because it never ran looks identical to one that searched everywhere; the control returning 2
+> establishes the apparatus was live over the same corpus.
+>
+> **The write path was retired at `4ba63e1`** *"iOS transport: Swift posts facts, Dart writes the
+> record list"*, 24 August. ⚠️ **So iOS has carried no rollback copy for three weeks on a
+> justification that stopped being true when that commit landed** — and the comment reads as
+> current, deliberate and load-bearing, which is exactly why nothing has questioned it.
+>
+> ⛔ **NOT FIXED, AND DELIBERATELY SO. Whether to restore the iOS rollback copy is a behaviour
+> change with its own risk, and it is a scheduling decision rather than this pass's.** ⚠️ **What
+> is recorded here is the STALE JUSTIFICATION, which is established by reading. Whether the
+> rollback copy should now exist is NOT established** — that needs the data-loss question
+> answered, not a grep.
+
 ### (bu) THE RECOVERY AXIS — BUILDABLE WHERE THE LAST THREE WERE NOT, AND ITS OBVIOUS SHAPE STILL FAILS ITS OWN DISPROOF
 
 **Scoped 11 September 2026, read-only.** ⛔ **Nothing built, nothing wired, nothing proposed.** Three
@@ -7993,6 +8119,11 @@ read. The SDK's `_InputPadding` (buttons) and `_ChipRedirectingHitDetectionWidge
 `/c/Flutter/flutter`. The four dependent tests: read. `mer_theme.dart` unchanged at 64bc09e8.
 
 ---
+
+> ✅ **CITATION SUPPLIED 18 September 2026 — `dbe9086` (S3, tap target 43→48) and `5e4af17` (the
+> event-type picker, the last hand-rolled one).** ⚠️ **TWO commits, and the finding is not closed
+> by either alone** — the first fixes the size, the second removes the last site that bypassed the
+> shared component.
 
 ### (bw) FOUR FAILURES ALREADY PRESENT AT 1.0 — DIFFERENT WORK FROM TEXT SCALE, SEPARATED BY THE CONTROL COLUMN
 
@@ -8147,6 +8278,11 @@ font into the harness does not correct an app-bar measurement. See the method no
 `CLAUDE.md` on this date.
 
 ---
+
+> ✅ **CITATION SUPPLIED 18 September 2026 — `c4220f2`, History's badge and title row.** ⚠️ **Read
+> alongside this finding's own annotation of 13 September**, which is where the app-bar clamping
+> and `FontLoader` limits were established; **the citation is for the fix, not for the
+> measurement method.**
 
 ### (by) 🔴 HISTORY'S EXPORT OMITS MEDICATION NOTES — TWO ENTRY POINTS, TWO DIFFERENT FILES FOR THE SAME EVENTS
 
