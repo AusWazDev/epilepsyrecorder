@@ -6068,6 +6068,44 @@ larger and differently-shaped piece of work than §13(bc) anticipated.
 
 ---
 
+⚠️ **ANNOTATED 17 September 2026, read at `a0d3bf8`. THE ENUMERATION HELD AND IS NOT WITHDRAWN.**
+Three of its four sweeps re-derived **exactly**, and its classification is about ORDER, which is
+still true. Two citation corrections and one moved count, below. **Nothing in the table above is
+annotated as wrong.**
+
+    SWEEP                                              AS WRITTEN        RE-DERIVED 17-Sep-26
+    1. List<EventRecord> declarations/params in lib/   37 in 8 files     37 in 8 files      HELD
+    2. load() call sites for the EVENT store           1                 1 (home:353)       HELD
+    3. reads of _records                              28 home, 12 Hist   35 home, 12 Hist   MOVED
+    4. .sort( on an EventRecord list                   8                 8                  HELD
+
+⭐ **Sweep 2's qualifier is load-bearing and re-earned it.** Three `.load()` call sites exist in
+`lib/` today; two are the CONDITIONS store and the MEDICATION NOTES store. The event store still has
+exactly one, at `home_screen.dart:353` (`:351` when this was written). Sweep 4 likewise: sixteen
+`.sort(` calls exist in `lib/`, of which exactly **eight** are on `List<EventRecord>` — the other
+eight sort instructions, keys, CSV rows and vocabulary.
+
+**⛔ `mergeBackup` DOES NOT EXIST, AND NEVER DID — the name in row 5 only.** `grep -rn mergeBackup
+lib/ test/` returns nothing. **The function is `planRestore`** (`backup.dart:487`), and row 5's cited
+sort at `:554` is inside it: `final merged = [...existing, ...additions]..sort((a, b) =>
+b.timestamp.compareTo(a.timestamp))`. **Same site, same comparator, same conclusion** — the row's
+finding is untouched, only its name was wrong.
+
+**⚠️ SWEEP 3 MOVED, 28 → 35 IN HOME, AND `history_screen.dart` HELD AT 12 EXACTLY.** Counted the
+same way both times: **distinct lines mentioning the field**, which is what reconciles 35 and 12 (
+home carries 37 occurrences on 35 lines — `:177` and `:292` hold two each). ⛔ **The seven new lines
+are drift in the SCREEN, not error in the sweep**, and the sweep being the only one of four to move
+is itself the signal: `home_screen.dart` is where this list is handled and the other seven files are
+not.
+
+⛔ **AND THE AXIS WARNING, because this table has already been misused once. SEE §13(cj)'s
+ANNOTATION.** This table classifies its 24 consumers by **ORDER DEPENDENCE**. It is **NOT** a roster
+for any other question, and specifically **NOT a filtering roster**. §13(cj) reused it as one and
+inherited a data-destroying error at row 12 — the two axes are orthogonal and cross in both
+directions. **Reuse the METHOD, re-derive the SET.**
+
+---
+
 ### (bh) 🔴 THE WRITE PATH VERIFIES NOTHING, AND THE VERIFICATION IT NEEDS ALREADY EXISTS TWENTY LINES AWAY
 
 **Code-verified 9 September 2026** at `73e0598`. ⛔ **`save()` cannot detect that it has just written
@@ -8579,6 +8617,87 @@ marked as such: the bin tile's rendering, the Your Data export's list, the resto
 be scoped without running the app: whether any drain END replay occurs against a hidden id on the
 device; whether the developer realises a mis-delete later at all (§13(ch)); whether `_countUsage`
 weighting by hidden events is noticeable.
+
+---
+
+## 🔴 ANNOTATION, 17 September 2026 — ROW 12 OF THE CLASSIFICATION ABOVE IS WRONG BY THIS SECTION'S OWN RULE, AND THE ERROR DESTROYS DATA
+
+⛔ **The table above places `history_screen.dart` `initState` — §13(bg)'s row 12 — in the
+"must FILTER hidden" column. It is INTEGRITY. A filter there empties the bin.**
+
+**THE TRACE, read at `a0d3bf8`, three hops from the filter to the permanent write:**
+
+    history_screen.dart:149   _records = List<EventRecord>.from(widget.records)
+    history_screen.dart:600   widget.onRecordsChanged(_records)      <- after a delete
+    history_screen.dart:644   widget.onRecordsChanged(_records)      <- after an edit
+    home_screen.dart:885      setState(() => _records = updated)
+    home_screen.dart:886      _persist()
+    home_screen.dart:492      persistEvents(_store, _records)
+
+⛔ **History's local list is not a view. It REACHES `save`.** Filter at `:149`, and the next History
+delete or edit writes the filtered list through to storage — **every hidden record deleted
+permanently.**
+
+⚠️ **THAT IS THIS SECTION'S OWN FAILURE MODE (a), "THE BIN WOULD EMPTY ITSELF"**, which states the
+rule it is broken by: *"the hidden rows must stay in the list that gets written."* ⭐ **The rule was
+right, correctly written down, and then contradicted three paragraphs later by the table beneath
+it** — so this is not a missing rule, it is a rule that was not applied to a site nobody noticed was
+a writer. Same shape as the closed-list-versus-reasoning entries in `C:\dev\CLAUDE.md`.
+
+**THE CORRECTION, and it splits a row the table treats as atomic:**
+
+| §13(bg) row | site | table above says | actually |
+|---|---|---|---|
+| 12 | `history_screen.dart:149` `initState` | must FILTER | ⛔ **INTEGRITY — must NOT filter** |
+| 13 | `history_screen.dart:166` `_filteredRecords` | must FILTER | ✅ **RENDER — correct, and it is the ONE seam where the hide filter composes** |
+| 14 | `history_screen.dart` `_groupByDay` | must FILTER | ✅ **RENDER — correct, downstream of 13** |
+
+---
+
+### ⭐ WHY IT WAS INVISIBLE, WHICH IS THE DURABLE HALF
+
+⛔ **A CLASSIFICATION IS ONLY AS FINE AS THE UNIT IT ENUMERATES.**
+
+Rows 12, 13 and 14 read as **one homogeneous History block at 24-CONSUMER granularity** — three
+entries, one file, one screen, one apparent job. **At READ-SITE granularity they split across the
+seam**, and the seam is the one that can destroy data: `:149` integrity, `:166` render. **Nothing
+about the coarser unit was inaccurate. It simply could not express the distinction that matters
+here**, and a reader generalising from the block had no cue that one third of it was a writer.
+
+⚠️ **The error entered by REUSING §13(bg)'s TABLE as a filtering roster.** That table classifies by
+ORDER DEPENDENCE. Order-dependence and hide-filtering are **orthogonal axes that cross in both
+directions**, established by re-classifying all 47 read sites in `home_screen.dart` and
+`history_screen.dart` on 17 September 2026:
+
+  · **Same order class, opposite filter class** — rows 12/13/14 are one block under §13(bg)
+    (*"changes visibly, and all six of those ARE the defects"*) and split across the filter seam.
+  · **Opposite order class, same filter class** — row 5 `planRestore` (*silently undoes*) and row 16
+    `persistEvents` (*unaffected*) are both INTEGRITY, unconditionally.
+  · **§13(bg) reaches 8 consumers a records-field sweep cannot see at all** — both drains,
+    `planRestore`, `buildBackupJson`, `buildCsv`, `eventsSinceLastBackup` and the pass-throughs live
+    in six other files.
+
+⛔ **§13(bg)'s TABLE MUST NOT BE REUSED AS A FILTERING ROSTER. That reuse is where this defect came
+from.** Reuse the METHOD — enumerate, classify every item, state the denominator — and **re-derive
+the SET** for each new question.
+
+---
+
+### ⚠️ AND THE DENOMINATOR ITSELF IS SHORT, BY CONSTRUCTION
+
+**`exportFilenamePrefix(narrowed: _isNarrowed)` (`history_screen.dart:742`) names the file
+`medical_event_recorder_all` when nothing is filtered.** With records hidden and no filter set,
+`_isNarrowed` is false and **the file is named `_all` while omitting them.** ⛔ **The filename is a
+scope claim, and it is the part that survives after the sheet is gone.**
+
+⭐ **No sweep of the records field could ever have reached it:** `_isNarrowed` reads `activeFilters`,
+which reads five pieces of filter state and **never touches the records field.** Recorded because it
+is the same shape as the composite contrast failures — **a defect with no name to search for.**
+
+*Sourcing: `history_screen.dart` `:149 :166 :600 :644 :742`, `home_screen.dart` `:492 :885 :886`,
+all read directly at `a0d3bf8`. The 47-site classification and the orthogonality finding are from
+the 17 September 2026 read-site pass; the escape-clause outcome for wiring hiding into
+`activeFilters` is recorded in the session brief, not here, because no code was changed.*
 
 ---
 
