@@ -156,9 +156,19 @@ const Map<String, String> kBaseline = <String, String>{
   // one paragraph — recasing a label must not split or merge one, and a
   // ripple that had missed a quoting site would show up as a count change on
   // whichever screen still said the old name.
-  'home@375': '26|680aa3b95bd039a4',
-  'home@430': '26|5e8b430f8b8f1928',
-  'home@800': '26|0fe9ec35e9ad5a56',
+  //
+  // ⛔ MOVED AGAIN FOR §10 FIX 4 — HOME IS NOW ANCHORED TO THE TOP. `Center`
+  // became `Align.topCenter` and the Column starts rather than centres, so
+  // EVERY glyph on home moved up. This is the largest deliberate movement on
+  // this screen and it is the fix, not a regression: the content no longer
+  // floats when a banner appears or disappears.
+  //   Amendment 1.2  26|680aa3b95bd039a4  26|5e8b430f8b8f1928  26|0fe9ec35e9ad5a56
+  //
+  // ⭐ COUNT STILL 26 at every width, across three separate changes now.
+  // Anchoring moves paragraphs; it must not create or destroy one.
+  'home@375': '26|0311d5988de3e462',
+  'home@430': '26|6e840b2ee1728db9',
+  'home@800': '26|52789e80c2f9064c',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.

@@ -851,10 +851,17 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               style: MERType.bodyStrongOnSurfaceMuted,
             ),
           ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
+          // ⛔ §10 FIX 5 — BOUNDED PER GROUP. One condition's event types can
+          // grow like any other vocabulary, so a group is a picker and gets
+          // the cap.
+          //
+          // ⚠️ PER GROUP, because `BoundedChipWrap` takes a FLAT chip list and
+          // has no notion of groups — bounding the grouped set as a whole
+          // would mean passing the condition headings in as chips, which
+          // would corrupt `pinned` and both counts. Per-group is what the
+          // widget can serve without being changed, and it is not changed.
+          BoundedChipWrap(
+            chips: <Widget>[
               for (final e in entry.value)
                 ChoiceChip(
                   label: Text(e.label),
@@ -862,6 +869,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
                   onSelected: (_) => onTap(e),
                 ),
             ],
+            pinned: <bool>[for (final e in entry.value) isSel(e)],
+            totalCount: entry.value.length,
+            selectedCount: entry.value.where(isSel).length,
           ),
           const SizedBox(height: 12),
         ],
@@ -923,28 +933,48 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       return _groupedVocabChips(
           table, groups, isSel, onTap, addPrompt, orphanValue, known);
     }
+    // ⛔ §10 FIX 5 — BOUNDED. This is the UNGROUPED event-type picker, the
+    // path that runs at one condition or none, which is most devices. It is a
+    // real picker over a vocabulary that GROWS: seeded types plus everything
+    // the user has ever added. Unbounded, it is the chip wall §2 diagnosed.
+    //
+    // ⭐ `BoundedChipWrap` already carries pinned-and-counted and is NOT
+    // reimplemented here. Pinned: the selected type, the orphan, and the add
+    // pill — a value the record holds must never be hidden by the cap, and an
+    // action must never be collapsed out of reach.
+    final chips = <Widget>[];
+    final pinned = <bool>[];
+    for (final e in entries) {
+      pinned.add(isSel(e));
+      chips.add(ChoiceChip(
+        label: Text(e.label),
+        selected: isSel(e),
+        onSelected: (_) => onTap(e),
+      ));
+    }
+    if (orphanValue != null && !known) {
+      pinned.add(true);
+      chips.add(ChoiceChip(
+        label: Text(eventTypeLabel(orphanValue)),
+        selected: true,
+        onSelected: (_) {},
+      ));
+    }
+    if (_addingIn != table) {
+      pinned.add(true);
+      chips.add(_addRow(table, addPrompt, (e) => onTap(e)));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final e in entries)
-              ChoiceChip(
-                label: Text(e.label),
-                selected: isSel(e),
-                onSelected: (_) => onTap(e),
-              ),
-            if (orphanValue != null && !known)
-              ChoiceChip(
-                label: Text(eventTypeLabel(orphanValue)),
-                selected: true,
-                onSelected: (_) {},
-              ),
-            if (_addingIn != table)
-              _addRow(table, addPrompt, (e) => onTap(e)),
-          ],
+        BoundedChipWrap(
+          chips: chips,
+          pinned: pinned,
+          // The add pill is an ACTION and is excluded from the count, the same
+          // way `_vocabMultiChips` excludes it.
+          totalCount: entries.length + (orphanValue != null && !known ? 1 : 0),
+          selectedCount: entries.where(isSel).length,
         ),
         if (_addingIn == table) _addRow(table, addPrompt, (e) => onTap(e)),
       ],
@@ -1071,15 +1101,37 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       lines.add('Second dose: ${secondDoseLabel(_rescueSecondDose!)}');
     }
     if (_referral) lines.add('Medical referral required');
-    if (_notesController.text.trim().isNotEmpty) lines.add('Notes added');
+    // ⛔ THE NOTES TEXT, NOT A FLAG. This read `'Notes added'`, which told the
+    // user that a thing existed without letting them check it — on the step
+    // whose entire job is checking.
+    //
+    // ⭐ SAME CLASS AS §13(m): two rescue fields were omitted from the save
+    // confirmation, and a field the user filled in that the review step does
+    // not review is a field they cannot catch a mistake in. Notes is the one
+    // free-text field in the record, so it is the one a typo survives.
+    //
+    // ⚠️ NOT TRUNCATED. A note long enough to wrap is a note long enough to
+    // be worth reading back, and the summary's lines already wrap.
+    final notes = _notesController.text.trim();
+    if (notes.isNotEmpty) lines.add('Notes: $notes');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // NOT "nothing is saved until you tap Save" — that would be false.
-        // The partial is already kept; Save is what marks it finished.
-        _heading('Check and save',
-            'Save to finish. What you have entered is kept either way.'),
+        // ⛔ §10 FIX 2 — THE IN-BODY HEADING IS GONE. `'Check and save'` was
+        // rendered twice: here, and at `:379` as the app-bar title, which
+        // names the step CONDITIONALLY (`onSummary ? 'Check and save' :
+        // 'Add details'`). The conditional one is the one carrying the step's
+        // identity, so the body stops repeating it and gets on with the
+        // summary.
+        //
+        // ⚠️ THE HINT STAYS, and it is not the heading. It states something
+        // the app bar cannot and that is easy to get wrong: NOT "nothing is
+        // saved until you tap Save", which would be false — the partial is
+        // already kept, and Save is what marks it finished.
+        const Text('Save to finish. What you have entered is kept either way.',
+            style: MERType.captionOnSurfaceMuted),
+        const SizedBox(height: 20),
         // ⛔ ON THE SUMMARY, NOT ON STEP 1, AND THAT IS THE DESIGN.
         //
         // Step 1 asks how long it lasted, and "when" would sit naturally

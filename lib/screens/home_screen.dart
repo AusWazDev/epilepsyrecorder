@@ -1094,11 +1094,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight - 40,
                 ),
-                child: Center(
+                // ⛔ §10 FIX 4 — ANCHORED TO THE TOP. `Align.topCenter`, not
+                // `Center`, and the Column starts rather than centres.
+                //
+                // ⚠️ **THE `Center` WAS DOING TWO JOBS and only one of them
+                // was wanted.** Horizontally the column is capped at 520 and
+                // must stay centred on a wide screen; vertically it floated,
+                // so every banner that appeared or disappeared moved EVERY
+                // glyph on the screen by half its height. `topCenter` keeps
+                // the horizontal job and drops the vertical one.
+                //
+                // ⭐ **THIS CLOSES A DEBT RATHER THAN ADDING A REFINEMENT.**
+                // C3 and L both accepted glyph movement on home as a known
+                // consequence, on the stated grounds that §10 fix 4 would
+                // anchor it — an acceptance made against work that had not
+                // happened.
+                //
+                // ⚠️ On a tall screen the void now sits BELOW the content
+                // instead of splitting above and below it. That is the fix.
+                child: Align(
+                  alignment: Alignment.topCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
