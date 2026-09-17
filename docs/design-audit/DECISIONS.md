@@ -638,3 +638,81 @@ and that is the annotate-never-rewrite rule working correctly, not a defect in t
 of re-marking fixes it** — re-marking would destroy the historical record the convention exists to
 protect. **The table needs a different INPUT: the dated annotations, not the heading glyph.**
 **Nothing was re-marked.**
+
+---
+
+## The tablet migration test — two corrections and one unreadable number, 18 September 2026
+
+⛔ **RECORDED DURING BRIEF 52, WHICH STOPPED AT ITS OWN VERSION-CODE GATE BEFORE INSTALLING
+ANYTHING.** The tablet's records are untouched.
+
+### ⚠️ CORRECTION — the backup path's durability, and where the incomplete claim actually lives
+
+⛔ **THE BRIEF ASKED FOR AN IN-PLACE ANNOTATION OF A CLAIM IN THIS DESIGN RECORD. THE CLAIM IS
+NOT HERE.** `[read]`, with a control: `backupShare` returns **0 hits** across `docs/` and the
+project `CLAUDE.md`, while the same search returns **5 hits** in `lib/` — so the apparatus was
+live and the null is real. ⭐ **Recorded as a new dated entry rather than dressed up as an
+annotation of something that does not exist**, because an in-place annotation implies a prior
+claim a later reader would go looking for.
+
+**THE INCOMPLETE CLAIM IS IN THE PROJECT `CLAUDE.md`, under CSV export, and it is FLAGGED HERE
+AND DELIBERATELY NOT EDITED:**
+
+> *"No file path dependencies — uses system share sheet"*
+
+⚠️ **It is a function-level fact stated as a feature-level one** — the travelling-term class
+already recorded on 18 September for the scroll-viewport fold. **Measured on the device this
+morning, both surfaces offer a DURABLE save, and neither depends on the share sheet completing:**
+
+| surface | durable option | what happened |
+|---|---|---|
+| **Back up your history** | **`Save to a file`** | wrote straight to `Downloads`, with an on-screen confirmation naming the file: *"Backup saved to Downloads/mer_backup_20260918_020715.json"* |
+| **Export a spreadsheet** | **`Save to device`** — subtitle *"Choose location and file name"* | wrote `medical_event_recorder_all_20260918_020750.v7.csv` to `Downloads` |
+
+⭐ **Both files were pulled to the PC and verified there** — 74 records / 74 distinct ids in the
+backup, 75 CSV data rows over 17 columns — **so durability is established by the filesystem, not
+inferred from a toast.**
+
+### ⛔ AND THE CODE ASSERTS A CONSISTENCY IT DOES NOT HAVE
+
+`backup_service.dart` carries, beside its sheet:
+
+> *"Same wording as the export sheet for the same action. Two labels for one thing read as two
+> different features."*
+
+⛔ **THE WORDING IS NOT THE SAME.** `[read]`: backup renders `'Save to a file'` with no subtitle;
+export renders `'Save to device'` with the subtitle *'Choose location and file name'*.
+⭐ **The comment states the rule correctly and then records compliance that was never achieved**
+— which is worse than no comment, because it is the exact thing a reader would check the comment
+to avoid checking. ⚠️ **REPORTED, NOT FIXED — this brief authorises no code change.**
+
+### 🔴 THE NUMBER THAT CANNOT BE READ, AND WHAT THAT COSTS
+
+⛔ **AS AT 18 SEPTEMBER 2026 THE ON-DEVICE SQLite `user_version` IS UNREADABLE.** The installed
+build is not debuggable — `run-as: package not debuggable` — so the database file cannot be
+reached, and **nothing in the app surfaces the schema version.**
+
+⚠️ **"SCHEMA VERSION" NAMES TWO DIFFERENT NUMBERS AND ONLY THE WRONG ONE IS AVAILABLE:**
+
+| | source | value | is it the migration's schema? |
+|---|---|---|---|
+| `kBackupSchemaVersion` | the backup envelope, `backup.dart:31` | **4** on the device | ⛔ **NO** — it versions the backup FILE FORMAT |
+| `kSqliteSchemaVersion` | `event_store_sqlite.dart:66` | **11** in source at `b777fc3` | ✅ yes — and it cannot be read from the device |
+
+⛔ **SO THE FIRST SQLite MIGRATION AGAINST A POPULATED DATABASE IS VERIFIABLE BY CONTENT ONLY.**
+⭐ **Substituting the envelope number for it would be the travelling-term failure a third time in
+one day** — a real number, correctly read, answering a question nobody asked.
+
+⚠️ **A WANT AROSE FROM THIS AND IS RECORDED AS A WANT, NOT AS WORK:** surface `user_version` on a
+user-visible screen, so a migration can be verified without a debuggable build. **It is not in
+this brief and nothing has been built for it.**
+
+### ⭐ The standing rule this test produced
+
+⛔ **ANY FIGURE USED AS A PASS/FAIL GATE IS RE-READ AT THE TIME OF THE TEST AND NEVER CARRIED
+FROM A PRIOR REPORT.** The gate said *"it must be 72"*, which was a true reading of **29 August**.
+The device held **74** this morning. ⚠️ **Had the migration lost two records, the app would have
+reported 72 and the stale gate would have scored it a PASS** — ⭐ **a stale criterion does not
+merely fail to catch a fault, it converts the fault into a confirmation.** **Second instance of
+the dated-observation-as-live-status class, after the §13 status table deriving current state
+from a frozen heading marker.**
