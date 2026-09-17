@@ -553,6 +553,47 @@ against the axes it did not.**
 FORWARD AFFORDANCE, not density — a user mid-capture sees no way to proceed without scrolling.**
 ⭐ **It outranks the notes overhang that opened this thread.**
 
+> ⛔ **RETRACTED 18 September 2026 — THE CLAIM ABOVE IS FALSE, AND THE FINDING IS WITHDRAWN. Its
+> text and its 🔴 are left exactly as written**, per this corpus's annotate-never-rewrite rule: a
+> record of what was concluded must stay true, and the reasoning is the transferable part.
+>
+> **The claim, quoted so it is recognisable wherever it is met:**
+>
+> > 🔴 *"BOTH NAVIGATION BUTTONS ARE BELOW THE FOLD ON THE PRIMARY CAPTURE PATH."*
+>
+> ⭐ **MEASURED AT `b9a241d`, at 375×667 under Roboto: `Back` and `Review` occupy 599…647 against a
+> screen bottom of 667. FULLY ON SCREEN, AND ALWAYS WERE.** `event_wizard_screen`'s `_footer` is a
+> **direct sibling of the `Expanded(SingleChildScrollView(...))`**, not a child of it — **a
+> persistent footer already, and no navigation work was ever needed.**
+>
+> ⛔ **THE CAUSE IS A CLASS, NOT A TYPO, AND THAT IS WHY IT IS WORTH THE SPACE.** ⭐ **The NUMBER
+> was right. The QUESTION attached to it was not.** `notes_reachability_test` defines its fold as
+> `tester.getRect(scrollable).bottom` — **the SCROLL VIEWPORT's bottom**, which is exactly right for
+> the question that test was built to ask: *does raising the notes field bury another field inside
+> the scrolling content?* ⚠️ **The word was then carried into a different question — what the user
+> can SEE — and a pinned footer sits between the two boundaries by design.**
+>
+> ⛔ **THE RULE: a metric is defined by the question its instrument was built to answer. Reusing it
+> for a different question silently redefines it, and the number carries its old authority into its
+> new falsehood.**
+>
+> ⚠️ **THIRD INSTANCE IN TWO DAYS, recorded together because separately they read as three typos:**
+>
+> | the term | its home context | where it became false |
+> |---|---|---|
+> | *without **opening*** | the architecture matrix's own row | read as *without **unlocking***, and reached the store copy draft |
+> | *the audit's **fifteen work items*** | the audit | read as *the fifteen **conditions*** |
+> | *a **scroll-viewport** fold* | `notes_reachability_test` | read as *a **screen** fold*, producing this retracted 🔴 |
+>
+> ⭐ **In each case a term correct in its home context became false the moment it travelled**, and
+> in none of them was the underlying measurement wrong.
+>
+> ✅ **THE CONFIRMATION STEP CAUGHT IT BEFORE ANY CODE MOVED.** Brief 49 was a build brief; its
+> instruction to confirm the row's location before changing it is the whole reason `lib/` was never
+> touched. ⭐ **And `test/wizard_nav_reachability_test.dart` at `b9a241d` now asserts the footer's
+> reachability at 100% and 200%, with a control that reproduces the 613-against-591 reading and
+> requires it to fire — so the property is PINNED even though it was never broken.**
+
 ### ✅ And the figure that was outstanding when this split was written is now measured
 
 **The form's scroll distance at 375×667, `test/form_scroll_distance_test.dart`, under Roboto:**

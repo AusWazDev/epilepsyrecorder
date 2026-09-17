@@ -1056,7 +1056,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

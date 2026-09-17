@@ -164,9 +164,26 @@ const Map<String, String> kBaseline = <String, String>{
   // PASSED against the old baselines — so the tooltip and the colour move no
   // glyph, and the whole delta is the codepoint. The paragraph COUNT is
   // unchanged at 18 in every case, which is the second half of the same check.
-  'history@375': '18|5b9a6e7eb59bde87',
-  'history@430': '18|00b7a64db41605a1',
-  'history@800': '18|51b8a4a60ef0f99c',
+
+// ⛔ RE-BASELINED 18 September 2026 — THE SPACING SCALE, NOT A LAYOUT CHANGE.
+//
+// `home` 20 → 16 and `history` 14 → 16 horizontal body inset. ⭐ THE DISPLACEMENT
+// IS A PURE TRANSLATION AND THAT IS WHY THESE WERE RE-BASELINED RATHER THAN
+// INVESTIGATED: every paragraph COUNT is unchanged (home 26, history 18, at
+// every width), every size is unchanged, and only x moved — home left by 4,
+// history right by 2. Nothing re-wrapped.
+//
+// ⚠️ `home@800` DID NOT MOVE and keeps its original baseline. That is not luck:
+// above 560 the `maxWidth: 520` cap binds and the body inset goes inert, which
+// is §13(aa)'s measurement confirming itself from the other direction.
+//
+// PREVIOUS VALUES, preserved so the move is auditable:
+//   history@375  18|5b9a6e7eb59bde87    home@375  26|0311d5988de3e462
+//   history@430  18|00b7a64db41605a1    home@430  26|6e840b2ee1728db9
+//   history@800  18|51b8a4a60ef0f99c
+  'history@375': '18|1a406a316c5807c3',
+  'history@430': '18|505ffac4fb98c4f0',
+  'history@800': '18|41816790020f9797',
   // ⚠️ HOME RECAPTURED 17 September 2026 for Amendment 1.2, which recased
   // `Record Event` to `Record event`. A label the census measures changed its
   // glyphs, so the hash moves — this is a change that is MEANT to move text.
@@ -186,8 +203,8 @@ const Map<String, String> kBaseline = <String, String>{
   //
   // ⭐ COUNT STILL 26 at every width, across three separate changes now.
   // Anchoring moves paragraphs; it must not create or destroy one.
-  'home@375': '26|0311d5988de3e462',
-  'home@430': '26|6e840b2ee1728db9',
+  'home@375': '26|0f4328a65b772386',
+  'home@430': '26|4213dbc43d975993',
   'home@800': '26|52789e80c2f9064c',
 };
 

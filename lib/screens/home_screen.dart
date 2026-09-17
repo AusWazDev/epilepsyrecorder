@@ -1089,7 +1089,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight - 40,

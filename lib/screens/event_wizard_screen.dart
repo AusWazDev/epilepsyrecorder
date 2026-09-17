@@ -429,7 +429,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
                 ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                   child: onSummary ? _summary() : _stepBody(),
                 ),
               ),

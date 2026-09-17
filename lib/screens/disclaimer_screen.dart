@@ -53,7 +53,7 @@ class DisclaimerScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
         child: Column(
           children: [
             Expanded(

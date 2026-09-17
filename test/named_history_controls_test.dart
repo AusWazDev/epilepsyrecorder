@@ -84,9 +84,15 @@ void main() {
     expect(
         iconRects(tester, const [Icons.visibility_off_outlined]),
         <String>[
-          '356.0,156.0 24.0x24.0',
-          '356.0,229.0 24.0x24.0',
-          '356.0,302.0 24.0x24.0',
+          // ⛔ 356.0 -> 354.0, RE-BASELINED 18 September 2026. `history`'s
+          // horizontal body inset went 14 -> 16, so the row's right edge moves
+          // LEFT by 2. ⭐ y and the 24x24 size are UNCHANGED, which is what
+          // makes this a translation rather than the movement this test guards
+          // against — its subject is whether adding a TOOLTIP moves the icon,
+          // and that remains untested by the change.
+          '354.0,156.0 24.0x24.0',
+          '354.0,229.0 24.0x24.0',
+          '354.0,302.0 24.0x24.0',
         ],
         reason: 'adding a tooltip must not move a delete icon');
 
