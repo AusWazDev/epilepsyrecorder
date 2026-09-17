@@ -152,7 +152,20 @@ void main() {
 
       final after = written.firstWhere((r) => r.id == 'a');
       expect(after.hidden, isTrue, reason: 'positive control: it was hidden');
-      expect(after.toMap()..remove('hidden'), before.toMap()..remove('hidden'),
+      // ⚠️ TWO EXCLUSIONS AS OF v11, and the second is the rule rather than
+      // an accommodation: hiding is a user action, so it STAMPS `updatedAt`.
+      // A test that still demanded it unchanged would be demanding the field
+      // not work.
+      expect(after.updatedAt, isNotNull,
+          reason: 'positive control: the hide stamped it, so excluding it below '
+              'is excluding something that actually changed');
+      final b = before.toMap()
+        ..remove('hidden')
+        ..remove('updatedAt');
+      final a = after.toMap()
+        ..remove('hidden')
+        ..remove('updatedAt');
+      expect(a, b,
           reason: 'withHidden destroyed a field it was not meant to touch');
     });
   });

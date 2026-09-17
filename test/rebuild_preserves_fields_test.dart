@@ -84,11 +84,26 @@ void main() {
     // The one field this path exists to set.
     expect(after.durationSeconds, 187);
 
-    // ⛔ EVERYTHING ELSE, compared as a whole. `durationSeconds` is the only
-    // exclusion, and it is named here rather than being one of a list nobody
-    // maintains.
-    final b = before.toMap()..remove('durationSeconds');
-    final a = after.toMap()..remove('durationSeconds');
+    // ⛔ EVERYTHING ELSE, compared as a whole. TWO exclusions as of v11, both
+    // named here rather than being items on a list nobody maintains.
+    //
+    // ⚠️ `updatedAt` JOINED THE EXCLUSIONS BECAUSE THE DRAIN IS SUPPOSED TO
+    // CHANGE IT. An end instruction is a user action — somebody tapped End on
+    // a notification, a Live Activity, or the in-app banner — and the rule is
+    // that it stamps the INSTRUCTION'S `at`. Demanding it unchanged here would
+    // be demanding the field not work.
+    //
+    // ⭐ That it is stamped from the instruction and not from `now` has its own
+    // control, in `updated_at_drain_end_test.dart`.
+    expect(after.updatedAt, isNotNull,
+        reason: 'positive control: the drain stamped it, so excluding it below '
+            'excludes something that actually changed');
+    final b = before.toMap()
+      ..remove('durationSeconds')
+      ..remove('updatedAt');
+    final a = after.toMap()
+      ..remove('durationSeconds')
+      ..remove('updatedAt');
     expect(a, b,
         reason: 'the rebuild destroyed a field it was not meant to touch');
   });

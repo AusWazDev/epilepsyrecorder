@@ -847,7 +847,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final original = _records[index];
     if (original.hidden) return;
 
-    setState(() => _records[index] = original.withHidden(true));
+    // The moment of the TAP. Hiding is a change the user made, and their
+    // most recent intent is what the field records.
+    setState(() =>
+        _records[index] = original.withHidden(true, at: DateTime.now()));
     await widget.onRecordsChanged(_records);
     if (!mounted) return;
 

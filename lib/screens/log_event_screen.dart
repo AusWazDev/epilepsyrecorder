@@ -382,6 +382,10 @@ class _LogEventScreenState extends State<LogEventScreen> {
       if (ok != true) return;
     }
 
+    // ⛔ `updatedAt` IS THE MOMENT OF THIS EDIT; `timestamp` is untouched.
+    // The original log time must not drift, which is exactly why this field
+    // is needed: without it nothing on a record says when it last changed.
+    final now = DateTime.now();
     final record = EventRecord(
       id:               widget.existing?.id ?? _uuid.v4(),
       timestamp:        widget.existing?.timestamp ?? DateTime.now(),
@@ -406,6 +410,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
       // completed", not "the wizard specifically was used" — which is also
       // why the wizard sets it at _finish only, never on a Skip.
       detailsCompleted: true,
+      // Carried, not reset: editing a hidden record must not reveal it.
+      hidden:           widget.existing?.hidden ?? false,
+      updatedAt:        now,
     );
 
     if (mounted) Navigator.pop(context, record);

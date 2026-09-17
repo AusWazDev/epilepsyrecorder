@@ -267,6 +267,11 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
         // hidden record could silently unhide", on the pathway the developer
         // names as the most used.
         hidden:               existing.hidden,
+        // ⛔ CARRIED, NOT STAMPED. This fold has NO user behind it -- it
+        // recovers a duration from a retired mirror on the next foreground.
+        // Stamping here would let a device that merely launched outrank a
+        // device where somebody edited something.
+        updatedAt:            existing.updatedAt,
       );
       durationsRecovered.add(m.id);
     }

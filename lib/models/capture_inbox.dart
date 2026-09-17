@@ -174,6 +174,11 @@ InboxDrainResult applyInbox(
       // is reserved for the records that predate the concept, and writing it
       // here would deny every new event the guided path it exists for.
       detailsCompleted: false,
+      // ⛔ THE INSTRUCTION'S `at`, NOT `DateTime.now()`. This is a CREATION,
+      // so it equals `timestamp` by construction -- both are `instruction.at`.
+      // The drain runs whenever the app next wakes; the user tapped when the
+      // instruction was written.
+      updatedAt: instruction.at,
     );
     order.add(instruction.id);
     changed = true;
@@ -254,6 +259,12 @@ InboxDrainResult applyInbox(
       // landed. It is the first field added since that test existed, and the
       // test caught it before the field had a reader.
       hidden: record.hidden,
+      // ⛔ THE INSTRUCTION'S `at`. A user ended an event -- from the
+      // notification, the Live Activity, or the in-app banner -- and all three
+      // reach storage through this drain. `DateTime.now()` here would record
+      // the foreground, not the tap, which is the defect the rule exists to
+      // prevent.
+      updatedAt: instruction.at,
     );
     changed = true;
   }

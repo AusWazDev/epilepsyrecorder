@@ -235,15 +235,19 @@ void main() {
           onUpgrade: upgradeSchema,
         ),
       );
-      expect(await getMeta(db, kMetaSchemaVersion), '10',
+      expect(await getMeta(db, kMetaSchemaVersion), '$kSqliteSchemaVersion',
           reason: 'the upgrade ran to completion rather than throwing part way');
       expect(await columnsOf(db), contains('hidden'));
       await db.close();
     });
 
-    test('3. the schema version actually advanced to 10', () async {
+    test('3. the schema version actually advanced', () async {
       final db = await openV1ThenUpgrade(nextPath());
-      expect(await getMeta(db, kMetaSchemaVersion), '10',
+      // ⚠️ READ FROM THE CONSTANT, not a literal. This assertion has now been
+      // updated twice for a bump it is not about — v10 added `hidden`, v11
+      // added `updated_at` — and each time it failed for the right reason and
+      // the wrong file. The constant is the thing this test means.
+      expect(await getMeta(db, kMetaSchemaVersion), '$kSqliteSchemaVersion',
           reason: 'positive control: the upgrade ran to completion');
       await db.close();
     });

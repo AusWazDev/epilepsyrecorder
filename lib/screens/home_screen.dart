@@ -584,9 +584,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _quickRecord() {
     HapticFeedback.heavyImpact();
 
+    // A CREATION, so `updatedAt` equals `timestamp` by construction -- one
+    // clock read, used twice, so the two cannot disagree by a millisecond.
+    final at = DateTime.now();
     final rec = EventRecord(
       id:               _uuid.v4(),
-      timestamp:        DateTime.now(),
+      timestamp:        at,
+      updatedAt:        at,
       // A one-tap timestamp measures nothing, so it asserts nothing. This read
       // "< 1 minute" because lt1 is the first enum value, not because anything
       // observed it — and a clinician reading the export had no way to tell.

@@ -268,6 +268,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   bool? get _capturedCompletion =>
       widget.existing == null ? false : widget.existing!.detailsCompleted;
 
+  /// ⚠️ `updatedAt` is stamped at BUILD time -- when the user pressed the
+  /// button that produced this record. `timestamp` is preserved from the
+  /// original where one exists, so the log time does not drift.
   EventRecord _build({bool completed = false}) => EventRecord(
         id: _id,
         timestamp: _timestamp,
@@ -284,6 +287,8 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         rescueMedHelped: _rescueHelped,
         rescueMedSecondDose: _rescueSecondDose,
         detailsCompleted: completed ? true : _capturedCompletion,
+        hidden: widget.existing?.hidden ?? false,
+        updatedAt: DateTime.now(),
       );
 
   /// Materialises the partial. The timestamp is the one fact that cannot be

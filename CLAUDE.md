@@ -348,6 +348,45 @@ record count on the home screen against the database before trusting the build.*
 
 ---
 
+## Working Rules — formatting
+
+### ⛔ `dart format` IS NEVER RUN ON THIS CODEBASE. FLAT PROHIBITION, NO EXCEPTIONS.
+
+**This codebase's alignment is HAND-MAINTAINED**, and the formatter destroys it.
+Column-aligned named arguments are used deliberately throughout —
+`tooltip:   'Hide this event',` beside `color:     MERColours.onSurfaceMuted,`
+— and several comments in the source refer to that alignment as the thing
+being preserved.
+
+⛔ **The prohibition covers the whole file, not the part you edited.**
+`dart format` reformats a file, not a range, so running it to tidy one
+insertion rewrites everything around it.
+
+**WHAT IT COST, 17 September 2026.** One `dart format lib/screens/home_screen.dart`,
+run to tidy a hand-added `Flexible`, produced **197 insertions and 240
+deletions** in a file whose changeset should have been about twenty lines. The
+diff was unreviewable and the intended change was invisible inside it.
+
+⭐ **Recovered because a pre-change file copy existed** — the file was restored
+from it and the edit redone by hand, so the committed diff is the change alone.
+⚠️ **That recovery is the only reason this is a formatting note rather than a
+lost afternoon**, and it is the same backup discipline the control-substitution
+rule already requires.
+
+**1. MUST NOT: run `dart format`, `flutter format`, or an editor's format-on-save
+against anything in this repository.** If an IDE is doing it automatically, turn
+it off before editing.
+
+**2. MUST: hand-format to match the surrounding block.** Match the alignment
+that is there. If a block is column-aligned, align to it; if it is not, do not
+introduce alignment.
+
+**3. MUST: copy a file before any bulk or scripted edit**, so an unintended
+rewrite is recoverable. Not `git checkout` — that discards uncommitted work in
+the same file, which has already cost one re-do.
+
+---
+
 ## Working Rules — verification
 
 ### ⛔ A WIDGET TEST'S TEXT WIDTHS ARE NOT REAL TEXT WIDTHS

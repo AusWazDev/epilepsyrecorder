@@ -59,7 +59,11 @@ import 'vocabulary.dart';
 /// records predate the concept. ⚠️ **v10 is additive and non-destructive on the
 /// same terms, but it is the first whose new column is not NULL** — the
 /// distinction is in the entry above, not a departure from this rule.
-const int kSqliteSchemaVersion = 10;
+/// 11 since a record can say when the user last changed it: `event.updated_at`.
+///   NULLABLE, and absent means UNKNOWN rather than "never changed" — every
+///   record predating the column genuinely has no modification history.
+///   See [EventRecord.updatedAt].
+const int kSqliteSchemaVersion = 11;
 
 const String kSqliteDbFileName = 'mer_events.db';
 
@@ -139,7 +143,12 @@ const String createEventSql = 'CREATE TABLE event ('
     //
     // The default is stated HERE as well as in the ALTER, so a database born at
     // v10 and one walked up to it are identical. See [EventRecord.hidden].
-    'hidden INTEGER NOT NULL DEFAULT 0)';
+    'hidden INTEGER NOT NULL DEFAULT 0, '
+    // ⚠️ NULLABLE, unlike `hidden`, and for the opposite reason. Not-hidden
+    // is a fact about a record nobody has touched; "last changed" is NOT
+    // knowable for a record that predates the column, so NULL means UNKNOWN
+    // and the nullable discipline the rest of this table uses applies.
+    'updated_at TEXT)';
 
 const String createEventIdIndexSql = 'CREATE INDEX idx_event_id ON event(id)';
 const String createEventLoggedAtIndexSql =
@@ -319,6 +328,12 @@ Future<void> upgradeSchema(Database db, int from, int to) async {
     await db.execute(
         'ALTER TABLE event ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0');
   }
+  // Same guarded shape as v10, and for the same reason: six fixtures build the
+  // `event` table with `createEventSql`, which always emits the CURRENT column
+  // list, so a version bound alone cannot say whether the work is done.
+  if (from < 11 && to >= 11 && !await hasColumn(db, 'event', 'updated_at')) {
+    await db.execute('ALTER TABLE event ADD COLUMN updated_at TEXT');
+  }
   await putMeta(db, kMetaSchemaVersion, '$kSqliteSchemaVersion');
 }
 
@@ -426,6 +441,7 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       // No null arm, unlike every line above: the field is non-nullable, so
       // there is nothing to collapse. See [EventRecord.hidden].
       'hidden': r.hidden ? 1 : 0,
+      'updated_at': r.updatedAt?.toIso8601String(),
     };
 
 List<String> decodeStringList(Object? raw) {
@@ -501,6 +517,11 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     // still the honest reading. Matches `fromMap`'s absent-key fallback, as
     // this function's own contract requires.
     hidden: row['hidden'] == 1,
+    // Same `.toLocal()` normalisation the other two times get. A row written
+    // before the column reads NULL, which is UNKNOWN.
+    updatedAt: row['updated_at'] is String
+        ? DateTime.tryParse(row['updated_at'] as String)?.toLocal()
+        : null,
   );
 }
 

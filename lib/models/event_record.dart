@@ -484,6 +484,48 @@ class EventRecord {
   /// that worked is a different event from one dose that worked.
   final bool? rescueMedSecondDose;
 
+  /// WHEN THE USER LAST CHANGED THIS RECORD. Null means UNKNOWN.
+  ///
+  /// ## ⛔ IT RECORDS WHEN THE USER ACTED, NOT WHEN THE APP WROTE
+  ///
+  /// The distinction is the whole field. A drain runs whenever the app next
+  /// wakes; the user acted when they tapped. So an instruction applied by a
+  /// drain stamps **the instruction's own `at`**, never `DateTime.now()` —
+  /// otherwise a device that merely came to the foreground would beat a device
+  /// where somebody actually edited something.
+  ///
+  ///     direct edit                    the moment of the edit
+  ///     instruction applied by a drain THE INSTRUCTION'S OWN `at`
+  ///     creation                       equal to [timestamp]
+  ///     hiding                         the moment of the tap
+  ///
+  /// ⛔ NOT SET WHERE NO USER ACTION IS ATTRIBUTABLE —
+  /// `reconcileLegacySharedRecords`, restore's merge, or any path folding a
+  /// mirror. Those rebuild a record with nobody behind them.
+  ///
+  /// ⚠️ "NOT SET BY A DRAIN" WOULD HAVE BEEN WRONG, and the reason is worth
+  /// keeping: `_endActiveEvent` is a button tapped INSIDE the app, and it
+  /// routes through the inbox deliberately — to keep Dart's main isolate the
+  /// single writer of the record list. Three end surfaces on two platforms all
+  /// reach storage through the drain. Drain does not mean no user.
+  ///
+  /// ## ⭐ IT JOINS A FAMILY THIS MODEL ALREADY HAS
+  ///
+  /// [timestamp] is when it was LOGGED, [occurredAt] is when it HAPPENED, and
+  /// this is when it was last CHANGED. Three "when"s about three different
+  /// events, and **none of them means "when the row was written"**.
+  ///
+  /// ## ⚠️ ABSENT MEANS UNKNOWN, NOT "NEVER CHANGED"
+  ///
+  /// Every record predating the column genuinely has no modification history
+  /// and must read that way. Null is the honest value and there is no
+  /// derivation — `timestamp` is when it was logged, which is a different
+  /// fact.
+  ///
+  /// ⭐ INERT AS AT THIS CHANGE. Written, read, round-tripped, and looked at by
+  /// nothing — exactly [hidden] at v10.
+  final DateTime? updatedAt;
+
   /// Whether this record is hidden from the lists the user reads.
   ///
   /// ## ⛔ NOT NULLABLE, AND IT IS THE ONLY FIELD HERE THAT IS NOT
@@ -535,6 +577,7 @@ class EventRecord {
     this.rescueMedHelped,
     this.rescueMedSecondDose,
     this.hidden = false,
+    this.updatedAt,
   });
 
   /// This record with [hidden] set, and every other field carried verbatim.
@@ -556,7 +599,11 @@ class EventRecord {
   /// ⭐ UNDO DOES NOT USE THIS. Un-hiding restores the ORIGINAL OBJECT that
   /// was captured before the hide, so nothing is rebuilt on the way back and
   /// there is no second chance to drop a field.
-  EventRecord withHidden(bool value) => EventRecord(
+  /// ⚠️ [at] IS REQUIRED, because hiding is a user action and the rule is
+  /// that a user action stamps [updatedAt]. Making it a parameter rather than
+  /// calling `DateTime.now()` in here keeps the clock at the call site, where
+  /// the tap happened.
+  EventRecord withHidden(bool value, {required DateTime at}) => EventRecord(
         id: id,
         timestamp: timestamp,
         occurredAt: occurredAt,
@@ -573,6 +620,7 @@ class EventRecord {
         rescueMedHelped: rescueMedHelped,
         rescueMedSecondDose: rescueMedSecondDose,
         hidden: value,
+        updatedAt: at,
       );
 
   /// Parses a stored timestamp and normalises it to local wall-clock time.
@@ -638,6 +686,10 @@ class EventRecord {
         // would make an older build REFUSE the whole file, losing everything to
         // protect a flag.
         'hidden': hidden,
+        // Travels in the backup for the same reason `hidden` does: restore is
+        // merge-by-id and add-only, so on a fresh install the file is a full
+        // reconstruction.
+        'updatedAt': updatedAt?.toIso8601String(),
       };
 
   /// Parses a stored record, or returns null if it cannot be trusted.
@@ -725,6 +777,11 @@ class EventRecord {
       // `rebuild_preserves_fields_test.dart` test 3 asserts it for every field
       // and covers this one without being edited.
       hidden: (map['hidden'] is bool) ? map['hidden'] as bool : false,
+      // Reuses the timestamp parser, so a stored UTC value comes back local
+      // like the other two times. Absent reads as null, which is the
+      // constructor default — `rebuild_preserves_fields_test` test 3 holds the
+      // two to each other and covers this field without being edited.
+      updatedAt: _parseTimestamp(map['updatedAt']),
     );
   }
 }
