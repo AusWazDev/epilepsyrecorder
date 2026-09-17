@@ -27,7 +27,18 @@ Record an event as it happens. Each entry is timestamped and structured: event
 type, duration, how severe it was, possible triggers, and any notes you want to
 add.
 
-Start an event from the Lock Screen or notification shade — one tap, without unlocking.
+<!-- ⛔ THE PLATFORM NAMES IN THE SENTENCE BELOW ARE LOAD-BEARING. DO NOT SIMPLIFY.
+     This body text goes to THREE listings unchanged (see the same-text rule above),
+     so the sentence has to be true on all three at once rather than true on average.
+       · Naming iPhone, iPad and Android keeps a MICROSOFT STORE reader from being
+         told the desktop app does something it does not — ARCHITECTURE.md's platform
+         matrix records start-and-stop-without-opening as "No" for Windows, where the
+         notification implementation is "none".
+       · Scoping the unlock caveat to iPhone and iPad keeps an ANDROID reader from
+         being told ending needs an unlock — both Android actions are
+         ActionType.SilentAction, no authentication either way.
+     Dropping either scope reintroduces a false claim on one of the three. -->
+On iPhone, iPad and Android, start an event from the Lock Screen or notification shade — one tap, without unlocking.
 On iPhone and iPad, ending an event asks you to unlock first.
 
 Export your full record as a CSV file — open it in a spreadsheet, keep it as a backup,
