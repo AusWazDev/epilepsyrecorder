@@ -111,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // ── BACKUP REMINDER STATE ──
   // The capture path is load-bearing: the banner must never gate, delay or
   // obstruct logging an event. Each of these suppresses it outright.
-  bool _openedFromNotification = false; // cold-started by a notification action
 
   /// Guards the "open the latest event" funnel against a double push.
   ///
@@ -126,7 +125,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// open and clears when the user closes it. A genuinely new tap later is still
   /// honoured.
   bool _openingLatest = false;
-  bool _loggedThisSession      = false; // an event was logged in this session
   bool _backupBannerDismissed  = false; // user dismissed it
 
   /// Whether this launch fell back to the shared_preferences store.
@@ -151,11 +149,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// The backup reminder is advisory; the unsaved-write warning is about data at
   /// risk right now. When both would apply the reminder yields, so the two never
   /// compete for the same space.
+  /// ⛔ THE CAPTURE FLAGS ARE NOT GATES, AND ARE NOT FLIPPED INTO GATES.
+  /// Removed 19 September 2026.
+  ///
+  /// This read `!_openedFromNotification && !_loggedThisSession`. Both are set
+  /// by capture and both last the whole session, so between them the reminder
+  /// could only appear in a session where the user opened the app and captured
+  /// NOTHING. ⚠️ **In an app whose purpose is capture, that is the population
+  /// with the LEAST new data at risk.** Neither gate was wrong alone; the pair
+  /// was.
+  ///
+  /// ⛔ **INVERTING THEM WAS TRIED AND WITHDRAWN, and the reason is worth more
+  /// than the outcome.** Making them PERMIT instead of SUPPRESS does not close
+  /// the blind spot, it MOVES it: the excluded session becomes "user opens the
+  /// app, captures nothing, has ten or more events already at risk" — which is
+  /// the BETTER session to prompt in. That user is not mid-task, has attention
+  /// to spare, and carries risk accumulated from earlier sessions.
+  /// ⭐ `backup_banner_copy_measure_test` encodes exactly that user and caught
+  /// it.
+  ///
+  /// ⭐ BOTH ORIGINAL GOALS SURVIVE WITHOUT A GATE:
+  ///   * *do not interrupt capture* — nothing renders during the flow;
+  ///   * *capture should cause it* — `_refreshBackupCount()` already runs
+  ///     after `_persist()`, so a completed capture TRIGGERS A RE-CHECK rather
+  ///     than granting permission.
+  ///
+  /// ⛔ `!_writeFailed` GOES TOO. It PERSISTED — sourced from
+  /// `hasFailedWrite()` at load — so a device that had ever failed a write
+  /// suppressed this across restarts until a write succeeded, silencing the
+  /// preservation prompt precisely on the devices that had already
+  /// demonstrated their storage is unreliable. ⭐ Its stated reason was "the
+  /// backup reminder is advisory", which is the misclassification that put
+  /// this banner in the exclusive chain at all. Removing the classification
+  /// removes the gate: now that both stack, the two messages are complementary
+  /// rather than competing — unsaved data is exactly when a backup matters
+  /// most.
+  ///
+  /// ⚠️ ACCEPTED CASE, recorded rather than left to be rediscovered: a
+  /// dismissal followed by ten further captures within one long session stays
+  /// suppressed. Acceptable because dismissal is per-session and a later cold
+  /// start shows it again. ⛔ Do NOT add a second threshold rule to cover it.
   bool get _showBackupReminder =>
       _loaded &&
-      !_writeFailed &&
-      !_openedFromNotification &&
-      !_loggedThisSession &&
       !_backupBannerDismissed &&
       _eventsSinceBackup >= kBackupReminderThreshold;
 
@@ -179,7 +214,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (await _openEventFromNotification(prefs)) break;
           if (prefs.getBool('mer_open_latest_event') ?? false) {
             await prefs.remove('mer_open_latest_event');
-            _openedFromNotification = true;
             if (mounted && _records.isNotEmpty) {
               _openDetails(_records.first);
             }
@@ -244,7 +278,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final id = prefs.getString('mer_open_event_id');
     if (id == null) return false;
     await prefs.remove('mer_open_event_id');
-    _openedFromNotification = true;
 
     final i = _records.indexWhere((r) => r.id == id);
     if (i < 0) {
@@ -281,7 +314,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // change and is not in this brief.
       if (reload) await _loadRecords();
       if (!mounted || _records.isEmpty) return;
-      _openedFromNotification = true;
       await _openDetails(_records.first);
     } finally {
       _openingLatest = false;
@@ -691,7 +723,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     setState(() {
       _records.insert(0, rec);
-      _loggedThisSession = true;
       if (mayOnset) _buttonFlash = true;
     });
 
@@ -760,7 +791,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (!mounted) return;
 
     setState(() {
-      _loggedThisSession = true;
       final i = _records.indexWhere((r) => r.id == result.id);
       if (i >= 0) {
         _records[i] = result;
@@ -789,7 +819,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (result == null) return;
 
     setState(() {
-      _loggedThisSession = true;
       if (existing == null) {
         _records.insert(0, result);
       } else {
@@ -1291,6 +1320,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           const SizedBox(height: 12),
                         ],
 
+                        // ── BACKUP REMINDER ──
+                        //
+                        // ⛔ IT STACKS, moved out of the chain below on
+                        // 19 September 2026. This applies the app's own stated
+                        // criterion rather than a new one — the unsaved-write
+                        // banner already records it: "Data at risk and an event
+                        // in progress are both worth showing, so this stacks."
+                        //
+                        // ⭐ A backup prompt, in an app with no backend, no
+                        // account and no sync, where an uninstall destroys
+                        // everything, IS data at risk. It met that criterion
+                        // and was filed as advisory, which is why it sat last
+                        // in a chain that hides whatever it displaces.
+                        //
+                        // ⚠️ THE CHAIN ITSELF IS UNCHANGED. It keeps its 6 May
+                        // priority order for the three advisory nudges it was
+                        // designed for. This is one item leaving, not a
+                        // redesign — and because this renders ABOVE the chain
+                        // rather than in it, the active-event banner and its
+                        // End button are not displaced.
+                        if (_showBackupReminder) ...[
+                          _BackupReminderBanner(
+                            count: _eventsSinceBackup,
+                            onBackUp: () async {
+                              await showBackupOptions(context, _records);
+                              await _refreshBackupCount();
+                            },
+                            onDismiss: () =>
+                                setState(() => _backupBannerDismissed = true),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         // ── SETTINGS NUDGE / ACTIVE EVENT BANNER ──
                         if (!_notificationsAllowed && !Platform.isWindows) ...[
                           _SettingsNudgeCard(
@@ -1334,17 +1396,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 .toLocal(),
                             onEnd:         _endActiveEvent,
                             showEndButton: true,
-                          ),
-                          const SizedBox(height: 12),
-                        ] else if (_showBackupReminder) ...[
-                          _BackupReminderBanner(
-                            count: _eventsSinceBackup,
-                            onBackUp: () async {
-                              await showBackupOptions(context, _records);
-                              await _refreshBackupCount();
-                            },
-                            onDismiss: () =>
-                                setState(() => _backupBannerDismissed = true),
                           ),
                           const SizedBox(height: 12),
                         ],

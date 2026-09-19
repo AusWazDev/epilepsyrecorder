@@ -976,3 +976,85 @@ the reminder.**
 events, which changes the developer's records. ⭐ **What the device does support: the last backup
 was 04:33 on 18 September, no events since, so the count is 0 and no banner should show — and
 none did.** **Consistent, but not a threshold test.**
+
+---
+
+## The backup reminder stacks, and its gates go — 19 September 2026
+
+⭐ **The reminder leaves the exclusive chain and its suppressors are removed. The chain itself is
+untouched.** ⛔ **Recorded together with a withdrawn remedy, because the withdrawal is the more
+transferable half.**
+
+### ⭐ WHAT THE PREDICATE BECAME
+
+`_loaded && !_backupBannerDismissed && _eventsSinceBackup >= 10`
+
+**From six gates to three**, and the three that remain are readiness, an explicit user
+preference, and the risk threshold itself.
+
+### ⛔ THE CLASS — A GATE THAT SUPPRESSES A WARNING ON EXACTLY THE POPULATION THE WARNING IS FOR
+
+| gate | who it silenced |
+|---|---|
+| `!_writeFailed` — **persisted**, from `hasFailedWrite()` at load | 🔴 **devices with PROVEN storage failure**, across restarts, until a write succeeded — the devices most likely to lose data |
+| `!_loggedThisSession` | 🔴 **users generating the most unsaved data** |
+| `!_openedFromNotification` | users arriving from a completed capture |
+
+⛔ **Each was individually reasoned. Each inverted the prompt against its own purpose.**
+⚠️ **Related to "a safeguard implemented only on the path where it was least needed" — and
+worse: that one was ABSENT where needed; this one was ACTIVELY SUPPRESSED where needed.**
+
+### 🔴 THE WITHDRAWN REMEDY, AND WHY IT IS THE PART WORTH KEEPING
+
+**Struck, quoted so the record stays true:**
+
+> *"INVERTED — `!_loggedThisSession` and `!_openedFromNotification`. Do not simply delete them.
+> Change the trigger: the reminder appears WHEN A CAPTURE COMPLETES… Today capture SUPPRESSES
+> the prompt. It should CAUSE it."*
+
+⛔ **The inversion did not close the blind spot. It MOVED it.** Making the flags permit rather
+than suppress excludes a different session: **user opens the app, captures nothing, already has
+ten or more events at risk.** ⭐ **That is the BETTER session to prompt in** — not mid-task,
+attention to spare, risk accumulated from earlier sessions.
+
+⭐ **BOTH ORIGINAL GOALS SURVIVED WITHOUT ANY GATE:** *do not interrupt capture* — nothing
+renders during the flow; *capture should cause it* — `_refreshBackupCount()` already runs after
+`_persist()`, so a completed capture triggers a RE-CHECK rather than granting permission.
+
+### ⛔ A REMEDY SHAPED BY THE DEFECT'S OWN STRUCTURE
+
+**The finding was "this gate suppresses the wrong population". The proposed remedy was "make
+the gate permit instead of suppress" — still a gate.** ⭐ **The correct remedy was that the
+category should not exist at all.**
+
+⚠️ **Same family as a principle applied without verifying its precondition: both are failures to
+examine the FRAME being reasoned inside.** ⛔ **Here the frame was inherited from the code and
+its sign was flipped, which FEELS like a redesign and is not one.**
+
+⭐ **AND IT WAS A TEST THAT CAUGHT IT, NOT THE NAMED CLASS.**
+`backup_banner_copy_measure_test` seeds twelve records, no `kLastBackupKey`, and no capture —
+**it encodes precisely the user the inversion would have dropped**, and it went red.
+🔴 **Second instance in one day of a test catching what a documented class did not. Knowing a
+class does not prevent committing it. Only a check does.**
+
+### ⚠️ AND THE JUDGEMENT SITS UNDER A PERMANENT MEASUREMENT GAP
+
+⛔ **No telemetry can ever say whether this prompt works.** `sendDefaultPii = false`, no
+analytics package, and all five `Sentry.captureMessage` sites concern storage and capture-inbox
+conditions. ⭐ **A banner render is UNOBSERVABLE BY CONSTRUCTION — a property of the privacy
+design, not a gap in instrumentation.**
+
+⭐ **Hence the standing bias, stated so it governs later changes too: WHEN IN DOUBT, IT FIRES.**
+⛔ **An unobservable safety prompt that errs toward silence cannot be caught erring — nothing
+will ever report its absence.**
+
+### ⚠️ ACCEPTED CASES, recorded rather than left to be rediscovered
+
+* **A dismissal followed by ten further captures within one long session stays suppressed.**
+  Acceptable: dismissal is per-session and a later cold start shows it again. ⛔ **Do NOT add a
+  second threshold rule to cover it.**
+* **The counter counts NEW EVENTS ONLY** — `r.timestamp.isAfter(last)`. Adding detail to twenty
+  existing records after a backup leaves the count at zero. **Recorded; not fixed here.**
+* **A scheduled notification cannot be the remedy.** ⛔ **Windows has no notification path at
+  all — `init()` returns before any channel is created.** Recorded so the obvious answer is
+  foreclosed before it is proposed.
