@@ -882,3 +882,97 @@ direction of ranking the non-defect first.
 `exportSheetTitle`. **The rule widened from two consumers to three, with the banner's exclusion
 ENUMERATED in the doc comment** — because an enumerated exclusion is what stops the next reader
 repeating the misreading.
+
+---
+
+## The backup reminder: no notification exists, and the banner is gated nine ways
+
+**Finding established 18 September 2026; recorded 19 September 2026.**
+
+### ⛔ THE ABSENCE, WITH ITS CONTROL
+
+🔴 **THERE IS NO BACKUP REMINDER NOTIFICATION, AND THERE NEVER HAS BEEN.**
+
+⚠️ **An absence claim is the one result whose output is identical whether the search was
+exhaustive or never ran, so the control is recorded with it:**
+
+| probe | result |
+|---|---|
+| `NotificationInterval`, `NotificationCalendar`, `schedule:`, `repeats` across `lib/` | **0 scheduled notifications** — the two `repeat` hits are unrelated prose in comments |
+| **CONTROL** — `NotificationContent` in `notification_service.dart` | **3** |
+
+⭐ **The control establishes the apparatus finds notifications when they exist.** The zero is a
+fact about the app, not about the search.
+
+**What exists instead is an in-app BANNER:** `_BackupReminderBanner`, gated by
+`_showBackupReminder`, with `kBackupReminderThreshold = 10`. ⛔ **Nothing schedules it. It is a
+render-time condition, not a reminder in the notification sense.**
+
+### ⛔ AND A SCHEDULED NOTIFICATION COULD NEVER BE THE UNIVERSAL ANSWER
+
+| platform | notification path |
+|---|---|
+| Android | `awesome_notifications`, used **only** for the live quick-log notification |
+| iOS | native Swift, quick-log and Live Activity **only** |
+| **Windows** | ⛔ **NONE. `init()` returns before any channel is created.** |
+
+🔴 **So even if a scheduled reminder were built, Windows could not receive it. THE BANNER HAS TO
+WORK.** ⭐ **Recorded because it forecloses the obvious remedy before anyone proposes it.**
+
+### 🔴 WHY THE BANNER IS SUPPRESSED — AND IT IS NOT AN OVERSIGHT
+
+**The chain's exclusivity has a stated origin.** `55e3354`, 6 May 2026:
+
+> *"Settings nudge card **replaces banner slot** with **priority order**: 1. Notifications off
+> 2. Show Previews not set 3. Active event in progress"*
+
+⭐ **So it is a deliberate priority order over ONE REPURPOSED SLOT.** ⛔ **NOT vertical space and
+NOT banner stacking** — which matters, because it means this is **not** the same decision as
+`6fd3f1c` (the home composition) wearing two hats. **They are unrelated.**
+
+⚠️ **AND THE HARM IS ALREADY DOCUMENTED IN THE CODE, BY THE PEOPLE WHO ESCAPED IT.** Two banners
+sit ABOVE the chain rather than in it, and the comment says why:
+
+> ⛔ *"The chain is exclusive, so putting this in it would hide whichever banner it displaced —
+> including the active-event banner, whose End button is the only way to end an event on
+> Android. Data at risk and an event in progress are both worth showing, so this stacks.
+> **The advisory backup reminder yields to it instead.**"*
+
+🔴 **SO THE BACKUP REMINDER WAS REASONED ABOUT AND DELIBERATELY LEFT IN.** The escape hatch was
+used twice — storage-fallback and unsaved-write both stack — **and not a third time, because the
+reminder was classified as ADVISORY.**
+
+⭐ **THE ERROR IS THE CLASSIFICATION, NOT THE CHAIN.** ⛔ **In an app with no backend, no account
+and no sync, where an uninstall destroys everything, a backup prompt is not advisory — it is the
+only preservation path there is.** ⚠️ **Every other banner it yields to describes a condition
+the user can still act on afterwards. This one describes the window in which acting is still
+possible at all.**
+
+### ⚠️ AND THE BANNER IS GATED NINE WAYS
+
+**Six in its own predicate:** `_loaded` · `!_writeFailed` · `!_openedFromNotification` ·
+`!_loggedThisSession` · `!_backupBannerDismissed` · `_eventsSinceBackup >= 10`.
+**Three more by chain position:** the notifications nudge, the iOS previews nudge, the
+active-event banner.
+
+🔴 **`!_loggedThisSession` IS THE ONE TO LOOK AT TWICE.** ⛔ **Logging an event suppresses the
+reminder — so the more the app is used, the less likely its only preservation prompt appears.**
+⭐ **Defensible per-session as "do not interrupt capture", and perverse in aggregate: the user
+generating the most unsaved data is the one least likely to be told.**
+
+⚠️ **Reported, not fixed. The remedy is a decision and it is not this brief's.**
+
+### ⭐ THE COUNTER ITSELF IS SOUND, AND ONE GAP SITS BESIDE IT
+
+`eventsSinceLastBackup` is **derived on every refresh** from the record list against
+`kLastBackupKey` — there is no stored counter, so there is no increment to miss and no drift to
+accumulate. **That class of defect cannot occur here.**
+
+⛔ **But it counts `r.timestamp.isAfter(last)` — NEW EVENTS ONLY.** ⚠️ **Add substantial detail
+to twenty existing records after a backup and the count stays at zero. Edits are invisible to
+the reminder.**
+
+⛔ **NOT VERIFIED ON THE DEVICE, AND DELIBERATELY.** Firing the threshold requires creating ten
+events, which changes the developer's records. ⭐ **What the device does support: the last backup
+was 04:33 on 18 September, no events since, so the count is 0 and no banner should show — and
+none did.** **Consistent, but not a threshold test.**
