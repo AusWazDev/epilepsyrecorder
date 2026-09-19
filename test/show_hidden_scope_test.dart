@@ -246,7 +246,7 @@ void main() {
     // prove the CONSOLIDATION: that there is one derivation rather than two
     // that currently agree.
 
-    test('the filename and the title never disagree, over every shape', () {
+    test('the filename, the title and the HEADER never disagree', () {
       // Exhaustive over a small grid rather than three chosen cases, so a
       // boundary cannot be the one that was not tried.
       var complete = 0, partial = 0;
@@ -256,6 +256,22 @@ void main() {
               ExportScope(willExport: willExport, total: total);
           final saysAll = exportSheetTitle(scope).startsWith('Export all');
           final namedAll = exportFilenamePrefix(scope).endsWith('_all');
+
+          // ⛔ THE THIRD CONSUMER, ADDED 19 September 2026. The list header
+          // joined this pair when it stopped reading `shown.length` alone, so
+          // it joins the agreement too — otherwise the doc comment on
+          // ExportScope claims three consumers cannot disagree while only two
+          // are held to it, which is a compliance asserted and never achieved.
+          //
+          // ⭐ The header says "all" by saying ONLY the total — no "of" clause
+          // — so completeness is the absence of the pair rather than a word.
+          final headerAll = !listCountLabel(scope).contains(' of ');
+          expect(headerAll, namedAll,
+              reason: 'willExport=$willExport total=$total — the list header '
+                  'and the filename made different claims about the same '
+                  'population. The header is what the user reads before '
+                  'deciding whether an export is worth taking');
+
           expect(saysAll, namedAll,
               reason: 'willExport=$willExport total=$total — the title and '
                   'the filename made different claims about the same file. '
@@ -289,9 +305,21 @@ void main() {
           reason: 'the filename must take THAT scope, not its own derivation');
       expect(src, contains('sheetTitle: exportSheetTitle(scope),'),
           reason: 'and so must the title');
-      expect('exportScope'.allMatches(src).length, 2,
-          reason: 'the getter declaration and its ONE use at the call site. A '
-              'third occurrence is a second derivation appearing');
+      // ⛔ RAISED 2 -> 3, 19 September 2026, AND THE REASON MATTERS MORE THAN
+      // THE NUMBER. This guard FIRED when the list header started reading the
+      // pair, which is exactly what it is for — a new read site cannot appear
+      // silently. It is raised because the third occurrence was ADJUDICATED as
+      // a legitimate consumer, not because the assertion was inconvenient.
+      //
+      // ⭐ The three: the getter declaration, the export call site, and the
+      // list header. Any FOURTH is a second derivation appearing and must be
+      // adjudicated the same way rather than absorbed by bumping this again.
+      expect('exportScope'.allMatches(src).length, 3,
+          reason: 'the getter declaration, the export call site, and the list '
+              'header. A fourth occurrence is a second derivation appearing');
+      expect(src, contains('listCountLabel(exportScope)'),
+          reason: 'and the header is the third consumer, reading the same pair '
+              'rather than counting the visible list itself');
     });
   });
 

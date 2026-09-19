@@ -62,9 +62,29 @@ class HistoryScreen extends StatefulWidget {
 /// *Export 15 of 20 events* — and a predicate throws away the half it needs.
 /// That is why this is a pair rather than the `narrowed` flag it replaces.
 ///
-/// ⭐ [isComplete] is the ONE question both consumers ask, so "the file is
-/// named `_all`" and "the title says *all*" are now the same fact rather than
-/// two facts that agree.
+/// ⭐ [isComplete] is the ONE question every consumer asks, so "the file is
+/// named `_all`", "the title says *all*" and "the header says 74" are one fact
+/// rather than three facts that agree.
+///
+/// ## ⛔ THREE CONSUMERS, WIDENED 19 September 2026 — AND ONE DELIBERATE
+/// ## EXCLUSION
+///
+/// **Governed by this pair, because each makes a COMPLETENESS claim:**
+/// [exportSheetTitle] · [exportFilenamePrefix] · [listCountLabel].
+///
+/// ⛔ **THE APPLIED-FILTERS BANNER IS EXCLUDED, AND THAT IS NOT AN OVERSIGHT.**
+/// It takes `_scopePopulation.length`, not [total]. ⭐ **It is a CLEARABILITY
+/// claim: its denominator must describe what the Clear control returns the user
+/// to, and clearing filters does NOT reveal hidden records.** With 74 records
+/// and 3 hidden it correctly says *"Showing 12 of 71"* — 71 is what Clear
+/// reaches, and 74 is unreachable from there.
+///
+/// ⚠️ **THIS EXCLUSION IS ENUMERATED BECAUSE THE MISREADING HAS ALREADY
+/// HAPPENED.** On 19 September 2026 the banner was reported as a misstatement
+/// "saying 12 of 71 when 74 exist", and a severity ranking was built on it that
+/// placed it ABOVE the real defect. ⭐ **The number was correct for its own
+/// question and was judged against a different one.** Anyone proposing to
+/// "align the banner with the other three" is making that mistake again.
 class ExportScope {
   const ExportScope({required this.willExport, required this.total});
 
@@ -102,6 +122,27 @@ String exportSheetTitle(ExportScope scope) {
   return scope.isComplete
       ? 'Export all ${scope.total} $noun'
       : 'Export ${scope.willExport} of ${scope.total} $noun';
+}
+
+/// The list header's count, given what the list is currently showing.
+///
+/// ⭐ THE THIRD COMPLETENESS STATEMENT, and a top-level function of the pair
+/// like the other two, so a test can hold ALL THREE to the same input and
+/// assert they cannot disagree.
+///
+/// ⛔ ADDED 19 September 2026 TO CLOSE AN OMISSION. The header read
+/// `'${shown.length} events'` unconditionally, so with records withheld it
+/// said *71 events* while 74 existed and named neither the 74 nor the 3. It
+/// was silent rather than wrong — see the class note on the difference.
+///
+/// ⚠️ SAME FORM AS [exportSheetTitle], deliberately. A third phrasing for the
+/// same claim is how four surfaces end up each computing their own version of
+/// one fact. The noun agrees with `total` for the reason given there.
+String listCountLabel(ExportScope scope) {
+  final noun = scope.total == 1 ? 'event' : 'events';
+  return scope.isComplete
+      ? '${scope.total} $noun'
+      : '${scope.willExport} of ${scope.total} $noun';
 }
 
 /// The filename prefix for an export, given what that export will contain.
@@ -1312,10 +1353,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 6),
                 child: Text(
+                  // ⛔ THE COMPLETE-SET DENOMINATOR, 19 September 2026 — the
+                  // same one `ExportScope.total` already used, not a new
+                  // computation. This said "71 events" with three withheld and
+                  // named neither figure.
                   shown.isEmpty
                       ? 'No events yet'
-                      : '${shown.length} '
-                        '${shown.length == 1 ? "event" : "events"}',
+                      : listCountLabel(exportScope),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

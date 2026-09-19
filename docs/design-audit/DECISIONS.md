@@ -798,3 +798,87 @@ BEFORE RAISING ANYTHING INSIDE IT.** ⛔ **A defect list generated from a broken
 mostly a list of symptoms of that layout**, and each item will arrive with its own plausible
 explanation attached. ⭐ **The tell is the direction: three independent premises, all wrong, all
 favouring the app, is not three coincidences — it is one cause.**
+
+---
+
+## Two classes from the part D correction — 19 September 2026
+
+⭐ **Both came out of one exchange in which a real defect was found, a false one was invented
+beside it, and the false one was ranked HIGHER.** ⛔ **The record keeps the false claim rather
+than deleting it, because the reasoning is the transferable part.**
+
+**Struck, and quoted so the record stays true:**
+
+> 🔴 *"Banner: a MISSTATEMENT. It says 'Showing 12 of 71' when 74 exist. That is a false claim
+> rendered on screen, not a missing one."*
+> *"If the two are ever separated — by cost, by risk, by anything — the banner goes first."*
+
+⛔ **FALSE. The banner is correct.** Its denominator is `_scopePopulation.length`, and the code
+says why in a comment written BEFORE the misreading: *"the banner is a CLEARABILITY claim, so
+its denominator must describe what the clear control returns the user to — never the complete
+set, which clearing cannot reach."* **Clearing the filters returns the user to 71. 74 is
+unreachable from there.**
+
+⚠️ **PROVENANCE, RECORDED RATHER THAN SMOOTHED OVER.** The CLI's part D report said the banner
+*"under-reports"* — a clearability number judged against a completeness question. The chat then
+built a severity ranking on that report **without checking whether the two surfaces answer the
+same question.** ⭐ **Two errors, one shape, and the second was downstream of the first.**
+
+### ⛔ CLASS 1 — A PRINCIPLE APPLIED WITHOUT VERIFYING ITS PRECONDITION
+
+**"Four surfaces independently computing the same pair is duplication" is SOUND.** It required
+exactly one prior fact: **that they compute the same pair.** ⛔ **They do not — two
+denominators, by design, for two different questions.**
+
+⭐ **A principle is an instrument, and an instrument used outside its conditions returns a
+confident wrong answer rather than an error.** ⚠️ **The tell is that the principle was correct,
+the reasoning from it was valid, and the conclusion was still false** — so nothing in the
+argument itself could have caught it. **Only the precondition could.**
+
+**PRACTICAL FORM: before applying a consolidation argument, establish that the things being
+consolidated answer the SAME QUESTION.** ⛔ **Same computation is not the same question.** Same
+family as reusing a metric across a question boundary — the third instance of that family in
+two days, after *without opening* / *without unlocking* and the scroll-viewport fold.
+
+### ⛔ CLASS 2 — TWO KINDS OF COMMENT, AND ONLY ONE EARNS ITS PLACE
+
+| | what it does | what happened |
+|---|---|---|
+| the **banner** comment | **EXPLAINS A DISTINCTION** and pre-empts a specific misreading | ⭐ **It did its job.** The misreading happened only because nobody read it |
+| the **`backupShare`** comment | **ASSERTS A COMPLIANCE** that was never achieved | ⛔ **It stopped readers checking** — it is the thing a reader consults INSTEAD of the thing itself |
+
+⭐ **THE DIFFERENCE IS NOT LENGTH OR CARE. It is whether the comment states something a reader
+can VERIFY AGAINST THE CODE IN FRONT OF THEM, or something they must take on trust.** The
+banner comment names a distinction and the reason for it; the `backupShare` comment names a
+state of the world elsewhere in the file.
+
+⛔ **GUIDANCE FOR THE BRIEF 57 SWEEP, and this is the operative part:** wherever a contract
+comes back **"convention, not enforced"**, its prose must look like the BANNER comment — naming
+the distinction and the misreading it guards against — and **never** like the `backupShare`
+one. ⚠️ **An unenforced contract that asserts compliance is strictly worse than no contract:
+it is a claim with nothing behind it, sitting where a reader looks for assurance.**
+
+### ⭐ And the reason this was caught at all, recorded because it generalises
+
+**`ExportScope` got it right, and one of three surfaces being correct is what exposed the other
+two.** ⛔ **Care arrives where the consequence is VISIBLE.** Export is a data-out path where
+completeness is obviously load-bearing, so someone thought about it. **The header and the banner
+looked cosmetic, and were not thought about** — and of those two, one turned out to be fine by
+accident of a different rule and the other was the real defect.
+
+⚠️ **Same shape as the withheld-count disclosure built only into the EMPTY state** — the one
+case where the user can already tell something is missing. ⭐ **The dangerous cases are
+consistently the ones that look harmless, which makes "does this look important" a bad filter
+for where to apply rigour.**
+
+### The remaining defect, and what closed it
+
+⛔ **ONE defect: the header, an OMISSION.** It read `'71 events'` with three withheld and named
+neither the 74 nor the 3. ⭐ **An omission and a misstatement are different classes and a review
+that lumps them together will mis-prioritise** — which is exactly what happened here, in the
+direction of ranking the non-defect first.
+
+**Closed by `listCountLabel`,** a third top-level function of the same pair, in the same form as
+`exportSheetTitle`. **The rule widened from two consumers to three, with the banner's exclusion
+ENUMERATED in the doc comment** — because an enumerated exclusion is what stops the next reader
+repeating the misreading.
