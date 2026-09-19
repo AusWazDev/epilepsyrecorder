@@ -548,20 +548,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int get _thisMonthCount {
     final now   = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
-    return _records.visible
+    // CLASSIFICATION: RENDER.
+    // ⛔ COMPLETE LIST, changed 19 September 2026. This read `.visible`, which
+    // made a hidden record silently reduce a count the user reads as "how many
+    // events did I have". 4292288: "The complete list stays complete
+    // everywhere. ONE derived view excludes hidden rows" — and that one view is
+    // History's list, not this.
+    return _records
         .where((r) => r.whenHappened.isAfter(start))
         .length;
   }
 
   int get _daysSinceLastEvent {
-    if (_records.visible.isEmpty) return 0;
+    // CLASSIFICATION: RENDER.
+    // ⛔ COMPLETE LIST, 19 September 2026. Reading `.visible` here produced the
+    // sharpest self-contradiction on the screen: "Days since 0" beside a card
+    // showing an event from days earlier under the heading LAST EVENT.
+    if (_records.isEmpty) return 0;
     return DateTime.now()
-        .difference(_records.visible.first.timestamp)
+        .difference(_records.first.timestamp)
         .inDays;
   }
 
   int get _referralCount =>
-      _records.visible.where((r) => r.referralRequired).length;
+      // CLASSIFICATION: RENDER. Complete list, 19 September 2026.
+      _records.where((r) => r.referralRequired).length;
 
   // ── QUICK RECORD ──
   /// Records an event. Synchronous by design.
@@ -1358,18 +1369,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         if (_loaded)
                           _StatsRow(
                             thisMonth:  _thisMonthCount,
-                            totalSaved: _records.visible.length,
+                            // CLASSIFICATION: RENDER. Complete list,
+                            // 19 September 2026.
+                            totalSaved: _records.length,
                             daysFree:   _daysSinceLastEvent,
                             referrals:  _referralCount,
                           ),
                         const SizedBox(height: 12),
 
                         // ── LAST EVENT ──
-                        if (_loaded && _records.visible.isNotEmpty)
+                        // CLASSIFICATION: RENDER (the card) + ROUTING (its
+                        // onEdit).
+                        //
+                        // ⛔ COMPLETE LIST, 19 September 2026. The card read
+                        // `.visible`, so with the newest record hidden it
+                        // presented an OLDER event under the heading LAST
+                        // EVENT with nothing saying so. ⭐ It now shows the
+                        // most recent record full stop, and MARKS it when that
+                        // record is hidden — hiding stays visibly in effect,
+                        // and the card stops lying about which event was last.
+                        if (_loaded && _records.isNotEmpty)
                           _LastEventCard(
-                            record:    _records.visible.first,
+                            record:    _records.first,
                             onEdit:    () =>
-                                _openDetails(_records.visible.first),
+                                _openDetails(_records.first),
                             onHistory: _openHistory,
                           ),
 
@@ -2032,6 +2055,26 @@ class _LastEventCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               SectionLabel('Last event'),
+              // ⛔ THE HIDDEN MARKER, 19 September 2026. TWO CARRIERS, never
+              // colour alone — 1.4.1. The crossed-eye GLYPH and the word
+              // HIDDEN, the same pair the History row uses, so one idiom
+              // covers both places a hidden record can surface.
+              //
+              // ⭐ WHY THE CARD SHOWS A HIDDEN RECORD AT ALL: it reads the
+              // COMPLETE list, so "last event" means last event. Hiding stays
+              // visibly in effect — it is disclosed here rather than silently
+              // changing which event the card names.
+              if (record.hidden) ...[
+                const Icon(
+                  Icons.visibility_off_outlined,
+                  size:  14,
+                  color: MERColours.onSurfaceMuted,
+                ),
+                const SizedBox(width: 4),
+                const Text('HIDDEN',
+                    style: MERType.captionOnSurfaceMuted),
+                const Spacer(),
+              ],
               const Icon(
                 Icons.access_time_rounded,
                 size:  14,
