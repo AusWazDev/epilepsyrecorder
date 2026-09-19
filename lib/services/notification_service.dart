@@ -132,7 +132,22 @@ class NotificationService {
     if (action.buttonKeyPressed.isEmpty &&
         action.payload?['action'] == 'openLatest') {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('mer_open_latest_event', true);
+      final id = action.payload?['id'];
+
+      // ⛔ THE LEGACY BOOLEAN IS KEPT, AND IT CARRIES A REMOVAL CONDITION.
+      // A notification posted by a PRE-ID build carries no 'id', and one can
+      // still be sitting in the tray across an upgrade. Those taps fall back
+      // to the boolean and resolve by position.
+      //
+      // 🔴 REMOVABLE once no pre-id notification can still be in flight — i.e.
+      // after one release has fully rolled. Recorded 19 September 2026.
+      // ⭐ A compatibility shim without an expiry is how temporary becomes
+      // architecture.
+      if (id != null && id.isNotEmpty) {
+        await prefs.setString('mer_open_event_id', id);
+      } else {
+        await prefs.setBool('mer_open_latest_event', true);
+      }
       return;
     }
 
@@ -232,7 +247,13 @@ class NotificationService {
         title:   'Event ended · $elapsed',
         body:    'Open MER to add details',
         timeout: null,
-        payload: {'action': 'openLatest'},
+          // ⛔ THE ID TRAVELS, 19 September 2026. This carried only
+        // {'action': 'openLatest'} while `eventId` sat in scope four lines
+        // above, so the tap resolved by POSITION on the receiving side.
+        // ⭐ A notification concerns a SPECIFIC event; which event that is
+        // must not depend on a view preference, or on nothing else having
+        // been recorded in between.
+        payload: {'action': 'openLatest', 'id': eventId},
       );
     }
 

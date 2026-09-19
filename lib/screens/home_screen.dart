@@ -173,11 +173,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         final prefs = await SharedPreferences.getInstance();
         for (int i = 0; i < 8; i++) {
           await prefs.reload();
+          // CLASSIFICATION: ROUTING. Id first; the boolean is the legacy
+          // pre-id path and carries the removal condition recorded in
+          // notification_service.
+          if (await _openEventFromNotification(prefs)) break;
           if (prefs.getBool('mer_open_latest_event') ?? false) {
             await prefs.remove('mer_open_latest_event');
             _openedFromNotification = true;
-            if (mounted && _records.visible.isNotEmpty) {
-              _openDetails(_records.visible.first);
+            if (mounted && _records.isNotEmpty) {
+              _openDetails(_records.first);
             }
             break;
           }
@@ -221,14 +225,64 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// drain sites have. Reloading again would put a second reconciliation and
   /// inbox drain on the cold-start path, where four of the seven historical
   /// notification failures lived.
+  /// CLASSIFICATION: ROUTING.
+  ///
+  /// Opens the event a notification NAMED, resolved by id against the COMPLETE
+  /// record list. Returns true when a tap was consumed.
+  ///
+  /// ⛔ THE FAILURE CASE IS DECIDED AND IT IS NOT A FALLBACK. When the id
+  /// resolves to nothing — the record was deleted between the notification
+  /// firing and the tap — this opens NOTHING and SAYS SO. It does not open the
+  /// most recent record instead: silently opening something else is the exact
+  /// defect this path exists to remove, and it is worse than the original bug
+  /// because the user asked for a specific event and got a different one with
+  /// no signal.
+  ///
+  /// ⚠️ Doing nothing silently was rejected too — a tap that produces no
+  /// response reads as a broken app.
+  Future<bool> _openEventFromNotification(SharedPreferences prefs) async {
+    final id = prefs.getString('mer_open_event_id');
+    if (id == null) return false;
+    await prefs.remove('mer_open_event_id');
+    _openedFromNotification = true;
+
+    final i = _records.indexWhere((r) => r.id == id);
+    if (i < 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('That event is no longer on this device.'),
+          ),
+        );
+      }
+      return true;
+    }
+    if (mounted) _openDetails(_records[i]);
+    return true;
+  }
+
   Future<void> _openLatestEvent({required bool reload}) async {
     if (_openingLatest) return;
     _openingLatest = true;
     try {
+      // CLASSIFICATION: ROUTING.
+      //
+      // ⛔ COMPLETE LIST, 19 September 2026 — it read `.visible`, so a hidden
+      // newest record silently routed the tap to an OLDER event and the user
+      // added details to the wrong one.
+      //
+      // 🔴 STILL POSITION-AS-IDENTITY, AND THAT IS AN OPEN DEFECT RATHER THAN A
+      // SOLVED ONE. This is the path the iOS native channel uses
+      // (`getPendingOpenLatest` returns a BOOL, carrying no id), and the
+      // legacy pre-id Android fallback. `.first` is wrong whenever the list
+      // order changes for ANY reason — a record created between the
+      // notification firing and the tap already breaks it today, hidden or
+      // not. ⭐ Closing it needs the id on the iOS side too, which is a Swift
+      // change and is not in this brief.
       if (reload) await _loadRecords();
-      if (!mounted || _records.visible.isEmpty) return;
+      if (!mounted || _records.isEmpty) return;
       _openedFromNotification = true;
-      await _openDetails(_records.visible.first);
+      await _openDetails(_records.first);
     } finally {
       _openingLatest = false;
     }
@@ -291,10 +345,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final prefs = await SharedPreferences.getInstance();
       for (int i = 0; i < 8; i++) {
         await prefs.reload();
+        // CLASSIFICATION: ROUTING. Same order as the cold-start path.
+        if (await _openEventFromNotification(prefs)) return;
         if (prefs.getBool('mer_open_latest_event') ?? false) {
           await prefs.remove('mer_open_latest_event');
-          if (mounted && _records.visible.isNotEmpty) {
-            _openDetails(_records.visible.first);
+          if (mounted && _records.isNotEmpty) {
+            _openDetails(_records.first);
           }
           return;
         }
