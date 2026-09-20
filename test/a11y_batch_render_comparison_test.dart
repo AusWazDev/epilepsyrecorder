@@ -147,9 +147,29 @@ const Map<String, String> kBaseline = <String, String>{
   // PINNED, so a value the record holds can never be hidden — but an
   // unselected type costs one tap at 375. The wizard's picker behaves
   // identically (**4 of 5** at 375), which is what B1 set out to achieve.
-  'form@375': '114|6ab040606e0afa76',
-  'form@430': '114|28fb9b5df8b0c24c',
-  'form@800': '111|24c6846d23152844',
+  // ⚠️ RECAPTURED 20 September 2026 FOR BRIEF 62 D, and the count moved by
+  // EXACTLY −1 at all three widths: 114 → 113, 114 → 113, 111 → 110.
+  //
+  //   B62 before  114|6ab040606e0afa76  114|28fb9b5df8b0c24c  111|24c6846d23152844
+  //
+  // ⭐ THE −1 IS RECONCILED, NOT ACCEPTED. The selected type chip's avatar was
+  // an `Icon` — and this file's own note below says it plainly: *"An `Icon` is
+  // a glyph in an icon font, so it IS a paragraph here."* The selected chip now
+  // carries a CHECKMARK instead, which `RawChip` PAINTS as a path rather than
+  // rendering as text. **One icon glyph removed from one selected chip = one
+  // paragraph fewer**, at every width, which is what the delta shows.
+  //
+  // ⛔ WHY THE ICON WENT: supplying both an avatar and a checkmark draws BOTH,
+  // superimposed. Build 59 shipped that and the tablet showed an illegible
+  // glyph — a tick on top of the waveform. The avatar is now dropped when
+  // selected, so the slot holds the tick alone.
+  //
+  // ⚠️ THE WIDTH DID NOT MOVE. One leading glyph either way, 237.3 x 48.0 both
+  // before and after, pinned by `type_chip_carrier_test` tests 1 and 1b — so
+  // this is a paragraph-count change with no reflow behind it.
+  'form@375': '113|3d454eaa83488e32',
+  'form@430': '113|1714b4416f2dd6ec',
+  'form@800': '110|500a04d6502ae9a8',
   // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
   // "change that is MEANT to move text" in the sense the rule above requires.
   //

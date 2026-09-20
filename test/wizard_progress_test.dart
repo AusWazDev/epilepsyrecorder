@@ -24,10 +24,15 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 /// ⚠️ **CONTRAST, MEASURED — and one figure does NOT reach 3:1:**
 ///
 ///     filled focusRing #1A8FCB vs track infoContainer #E3F2FD   3.15:1  ✅
-///     filled                   vs the page below      #F4F7F9   8.02:1  ✅
+///     filled                   vs the page below      #F4F7F9   3.34:1  ✅
 ///     filled                   vs the AppBar above    #0D4F82   2.37:1  ⛔
 ///
-/// ⛔ **THE THIRD IS UNREACHABLE, NOT UNATTEMPTED, and the arithmetic is
+/// ⭐ **AND THE THIRD FIGURE WAS RETIRED RATHER THAN ACCEPTED, 20 September
+/// 2026 (R2): a 4pt gap of page background now sits between the AppBar and the
+/// strip, so the AppBar is no longer an adjacent colour. The figure below is
+/// kept because it explains WHY the gap exists, not because it still binds.**
+///
+/// ⛔ **THE THIRD WAS UNREACHABLE, NOT UNATTEMPTED, and the arithmetic is
 /// pinned in test 4 so nobody re-opens it as an oversight.** Clearing 3:1
 /// against the AppBar needs relative luminance ≥ 0.3187; clearing 3:1 against
 /// any light track needs ≤ 0.2784. **The demands do not overlap**, so no
@@ -123,14 +128,29 @@ void main() {
         reason: 'the boundary carrying the state information must clear '
             '1.4.11. Measured 3.15:1');
     expect(contrast(filled, page), greaterThanOrEqualTo(3.0),
-        reason: 'and the strip must be visible against the page. 8.02:1');
+        reason: 'and the strip must be visible against the page. 3.34:1');
 
     // ⛔ STATED AS A FAILING FIGURE ON PURPOSE. Asserting it clears would be
     // false; asserting nothing would let a reader assume it does.
     expect(contrast(filled, appBar), lessThan(3.0),
-        reason: 'HONEST LIMIT: 2.37:1 against the AppBar. If a future change '
-            'makes this clear 3.0, that is an improvement — update this test '
-            'and the comment, do not delete them');
+        reason: 'HONEST LIMIT: 2.37:1 against the AppBar. Kept as a pinned '
+            'figure even though a 4pt gap now separates the two, because it '
+            'is the REASON the gap exists — delete this and the next reader '
+            'removes the gap as decoration');
+  });
+
+  testWidgets('5. R2 — the strip is SEPARATED from the AppBar', (tester) async {
+    await pump(tester, 1.0);
+    final barTop = tester.getTopLeft(find.byType(LinearProgressIndicator)).dy;
+    final appBarBottom =
+        tester.getBottomLeft(find.byType(AppBar).first).dy;
+    expect(barTop - appBarBottom, greaterThan(0),
+        reason: 'the AppBar must not be an ADJACENT COLOUR of the filled '
+            'portion. A gap of page background between them retires the '
+            '2.37:1 figure instead of accepting it');
+    expect(barTop - appBarBottom, 4.0,
+        reason: 'CONTROL: the gap is the intended 4pt and not an accident of '
+            'some other widget drifting between them');
   });
 
   test('4. and that limit is ARITHMETIC, not a failure to search', () {

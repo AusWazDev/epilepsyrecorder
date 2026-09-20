@@ -1122,10 +1122,13 @@ class _EventTypeGrid extends StatelessWidget {
       // of two identical renders differs by **0**. Without that control the
       // 1,014 would have proved nothing.
       chips.add(ChoiceChip(
-        avatar: Icon(_iconFor(e.value),
-            size: 18,
-            color: isSel ? MERColours.onFill : MERColours.onSurfaceMuted),
-        // ⛔ `showCheckmark: false` REMOVED — it is now the default `true`.
+        // ⛔ THE AVATAR IS DROPPED WHEN SELECTED, and that is not optional.
+        // Corrected on the device, 20 September 2026 — see the note above.
+        // Supplying BOTH an avatar and a checkmark draws BOTH, superimposed.
+        avatar: isSel
+            ? null
+            : Icon(_iconFor(e.value),
+                size: 18, color: MERColours.onSurfaceMuted),
         showCheckmark: true,
         checkmarkColor: MERColours.onFill,
         label: Text(e.label),
@@ -1144,8 +1147,8 @@ class _EventTypeGrid extends StatelessWidget {
       // generic (`edit_note`, "a type from elsewhere") rather than
       // per-type, so losing it to the tick costs less here than above.
       chips.add(ChoiceChip(
-        avatar: const Icon(Icons.edit_note_outlined,
-            size: 18, color: MERColours.onFill),
+        // Always selected, so the checkmark always holds the slot and no
+        // avatar is supplied — same rule as the value chips above.
         showCheckmark: true,
         checkmarkColor: MERColours.onFill,
         label: Text(eventTypeLabel(orphan)),

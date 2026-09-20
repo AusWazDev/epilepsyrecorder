@@ -23,6 +23,28 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 /// and the identity fill still carries the colour. The icon's job is scanning
 /// the options, which is an unselected-state job.
 ///
+/// 🔴 **THE PARAGRAPH ABOVE WAS FALSE ON THE DEVICE AND IS ANNOTATED, NOT
+/// DELETED. Corrected 20 September 2026 from a tablet capture.**
+/// *"The checkmark wins it"* is **not** what Flutter does when BOTH an avatar
+/// and a checkmark are supplied: **it draws BOTH, superimposed.** The shipped
+/// chip rendered a tick on top of the waveform glyph and the result was
+/// illegible — worse than either carrier alone.
+///
+/// ⛔ **AND TEST 2 PASSED THROUGHOUT.** It asserted that `showCheckmark`
+/// CHANGED THE PIXELS, and it did — by 1,014 bytes. **A superimposed tick
+/// changes the pixels exactly as a replacing tick does.** The test proved the
+/// tick PAINTS; it never proved the avatar STOPPED painting, which is the
+/// half the accepted cost rested on. ⭐ **A measurement that is true about
+/// something adjacent to the question** — the class this corpus already
+/// records, arrived at again by asserting a difference instead of asserting
+/// WHAT the difference was.
+///
+/// ⚠️ **THE REPAIR: the avatar is now dropped when selected**, so the slot
+/// holds the checkmark alone. **Test 5 is the control that was missing** — it
+/// asserts the selected chip renders IDENTICALLY to a chip that never had an
+/// avatar, which is the only form of the claim that cannot be satisfied by a
+/// superimposition.
+///
 /// ⭐ **THE ALTERNATIVE WAS BUILT AND MEASURED FIRST, NOT ARGUED AWAY.**
 /// Moving the icon into `label` keeps BOTH carriers — and costs 24.0 logical
 /// points of width per chip (237.3 → 261.3), which forced an extra wrap row,
@@ -38,15 +60,32 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 /// a non-deterministic renderer would prove nothing.
 
 void main() {
-  ChoiceChip typeChip({required bool showCheck, required bool selected}) =>
+  /// Mirrors the real chip: the avatar is supplied ONLY when unselected.
+  ChoiceChip typeChip(
+          {required bool showCheck,
+          required bool selected,
+          bool avatarWhenSelected = false}) =>
       ChoiceChip(
-        avatar: Icon(Icons.bolt,
-            size: 18,
-            color: selected ? MERColours.onFill : MERColours.onSurfaceMuted),
+        avatar: (selected && !avatarWhenSelected)
+            ? null
+            : Icon(Icons.bolt,
+                size: 18,
+                color:
+                    selected ? MERColours.onFill : MERColours.onSurfaceMuted),
         showCheckmark: showCheck,
         checkmarkColor: MERColours.onFill,
         label: const Text('Seizure / fit'),
         selected: selected,
+        selectedColor: MERColours.identitySeizureOn,
+        onSelected: (_) {},
+      );
+
+  /// A chip carrying the checkmark and NOTHING else in the leading slot.
+  ChoiceChip tickOnly() => ChoiceChip(
+        showCheckmark: true,
+        checkmarkColor: MERColours.onFill,
+        label: const Text('Seizure / fit'),
+        selected: true,
         selectedColor: MERColours.identitySeizureOn,
         onSelected: (_) {},
       );
@@ -84,16 +123,32 @@ void main() {
     return n;
   }
 
-  testWidgets('1. the fix costs NO layout', (tester) async {
-    final (before, _) =
-        await render(tester, typeChip(showCheck: false, selected: true));
-    final (after, _) =
+  testWidgets('1. the fix costs NO layout, against the PRE-FIX chip',
+      (tester) async {
+    // The pre-fix selected chip: type icon in the avatar slot, no tick.
+    final (preFix, _) = await render(tester,
+        typeChip(showCheck: false, selected: true, avatarWhenSelected: true));
+    // The shipped selected chip: no avatar, tick in the slot.
+    final (shipped, _) =
         await render(tester, typeChip(showCheck: true, selected: true));
-    expect(after, before,
-        reason: 'the checkmark shares the avatar slot, so the chip does not '
-            'grow. 237.3x48.0 both ways when this was written — if this ever '
-            'fails, the layout cost the alternative was rejected for has '
+    expect(shipped, preFix,
+        reason: 'one leading glyph either way, so the chip does not change '
+            'size. 237.3x48.0 both when this was written — if this fails, the '
+            'layout cost the label-Row alternative was rejected for has '
             'arrived by another route');
+  });
+
+  testWidgets('1b. and SELECTING a chip does not resize it', (tester) async {
+    // ⭐ THE USER-VISIBLE FORM OF THE SAME CLAIM, and the one that would show
+    // as reflow: unselected carries the type icon, selected carries the tick,
+    // and both occupy one leading slot.
+    final (unselected, _) =
+        await render(tester, typeChip(showCheck: true, selected: false));
+    final (selected, _) =
+        await render(tester, typeChip(showCheck: true, selected: true));
+    expect(selected, unselected,
+        reason: 'a chip that resized on selection would reflow the Wrap under '
+            'the user\'s finger');
   });
 
   testWidgets('2. ⛔ THE TICK IS ACTUALLY PAINTED', (tester) async {
@@ -112,10 +167,13 @@ void main() {
             'identical renders differ, the non-zero result below says nothing '
             'about the checkmark');
     expect(diff(off, on), greaterThan(0),
-        reason: 'showCheckmark must CHANGE THE PIXELS beside an avatar. If it '
-            'does not, the avatar wins the slot, no tick is drawn, and the '
-            '1.4.1 fix is a no-op that reads as done. 1,014 bytes differed '
-            'when this was written');
+        reason: 'showCheckmark must CHANGE THE PIXELS. If it does not, no tick '
+            'is drawn and the 1.4.1 fix is a no-op that reads as done.\n\n'
+            '⚠️ NOTE WHAT THIS DOES AND DOES NOT PROVE: it proves the tick '
+            'PAINTS. It does NOT prove the avatar stopped painting — a tick '
+            'drawn ON TOP of the avatar satisfies it identically, and that is '
+            'exactly what shipped in build 59 and was caught on the tablet. '
+            'Test 5 is the assertion that closes that gap');
   });
 
   testWidgets('3. and the carrier is not colour — an UNSELECTED chip differs '
@@ -140,6 +198,37 @@ void main() {
         reason: 'the selected chip WITH a tick must differ from the selected '
             'chip WITHOUT one — that difference IS the second carrier, and if '
             'it ever reaches zero the chip is back to colour alone');
+  });
+
+  testWidgets('5. ⛔ THE AVATAR IS GONE WHEN SELECTED, not drawn under the tick',
+      (tester) async {
+    // 🔴 THE CONTROL THAT WAS MISSING, and the one the device found. Test 2
+    // asserts the tick paints; a tick drawn ON TOP of the avatar satisfies it
+    // just as well as a tick that replaced the avatar, and that is what
+    // shipped in build 59 — an illegible superimposed glyph.
+    //
+    // ⭐ THE ONLY FORM OF THE CLAIM A SUPERIMPOSITION CANNOT SATISFY: the
+    // selected chip must render BYTE-IDENTICALLY to a chip that never carried
+    // an avatar at all.
+    final (_, real) =
+        await render(tester, typeChip(showCheck: true, selected: true));
+    final (_, tick) = await render(tester, tickOnly());
+    expect(diff(real, tick), 0,
+        reason: 'the selected chip must paint exactly what a tick-only chip '
+            'paints. Any difference is the avatar still being drawn beneath '
+            'the checkmark — which is what the tablet showed, and what test 2 '
+            'could not see');
+
+    // POSITIVE CONTROL: force the avatar back on and confirm the comparison
+    // CAN fail. Without this, a zero above is indistinguishable from a
+    // comparison that is not looking.
+    final (_, superimposed) = await render(tester,
+        typeChip(showCheck: true, selected: true, avatarWhenSelected: true));
+    expect(diff(superimposed, tick), greaterThan(0),
+        reason: 'CONTROL: supplying both an avatar and a checkmark must '
+            'DIFFER from tick-only. If this is zero the comparison is dead '
+            'and the '
+            'assertion above proves nothing');
   });
 
   test('4. the source no longer disables the checkmark on a type chip', () {
@@ -175,6 +264,29 @@ void main() {
         reason: 'CONTROL: the property is still named explicitly rather than '
             'silently dropped, so this scan is asserting a decision and not '
             'the absence of a line');
+
+    // 🔴 THE ASSERTION NOTHING ELSE HERE MAKES, added 20 September 2026 after
+    // the device found the superimposition.
+    //
+    // ⛔ NEITHER TEST 4's ORIGINAL SCAN NOR TEST 5 WOULD HAVE CAUGHT WHAT
+    // SHIPPED IN BUILD 59. The defect carried `showCheckmark: true` — so the
+    // scan above passed — and test 5 exercises a FIXTURE, so it passes
+    // whatever this screen does. ⭐ A mechanism proven in a fixture and a
+    // screen that uses it are two claims, and only one of them was checked.
+    //
+    // The live shape must keep the avatar CONDITIONAL on selection, because
+    // supplying both an avatar and a checkmark draws both.
+    expect(live.contains('avatar: isSel'), isTrue,
+        reason: 'the type chip must drop its avatar when selected. An '
+            'unconditional `avatar:` beside `showCheckmark: true` renders the '
+            'tick ON TOP of the type glyph — illegible, and exactly what the '
+            'tablet showed on build 59');
+    expect(
+        RegExp(r'avatar:\s*Icon\(_iconFor').hasMatch(live), isFalse,
+        reason: 'CONTROL on the assertion above, stated as its negation: an '
+            'UNCONDITIONAL type icon in the avatar slot is the defect itself. '
+            'If the guard is ever rewritten in a form `avatar: isSel` does not '
+            'match, this catches it from the other side');
   });
 }
 

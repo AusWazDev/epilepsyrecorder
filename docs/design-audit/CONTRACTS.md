@@ -152,6 +152,12 @@ does not exist for them anywhere in the model"*. **Three of the four still canno
 An empty observation list means both "asked, none" and "never asked", and an empty `notes` means
 both "left blank" and "never shown".
 
+⛔ **AND THE THREE ARE NOT THE SAME DEFECT — scoped 20 September 2026 (R5) so the parallel does
+not promote them.** `referralRequired` wrote the WORD `No`: a positive claim, in a medical
+export, about a clinical follow-up that may have happened. **An empty observations cell asserts
+nothing.** The remaining ambiguity is real and misleads nobody into a false positive, which is
+the axis on which referral was urgent.
+
 ⚠️ **THE MISREADING IT GUARDS: a green test here does NOT mean the app no longer answers on the
 user's behalf.** It means one field stopped. ⭐ **And the reason the other three are harder is
 worth stating: a nullable list and a nullable string are ambiguous in their own way** — code

@@ -1454,7 +1454,7 @@ of the AppBar and read as no progress bar at all.
 **CONTRAST, MEASURED, and one figure does NOT reach 3:1:**
 
     filled focusRing #1A8FCB  vs track infoContainer #E3F2FD    3.15:1   ✅ 1.4.11
-    filled                    vs the page below      #F4F7F9    8.02:1   ✅
+    filled                    vs the page below      #F4F7F9    3.34:1   ✅
     filled                    vs the AppBar above    #0D4F82    2.37:1   ⛔
 
 ⛔ **THE THIRD IS UNREACHABLE, NOT UNATTEMPTED, AND THE ARITHMETIC IS PINNED IN A TEST SO NOBODY
@@ -1523,3 +1523,143 @@ SnackBar outliving navigation.
 sheet with its Undo behind a scrim. **Promote it if the follow-up slips.**
 
 ⛔ **These ship with the menu consolidation and the Help accessibility audit.**
+
+---
+
+## Brief 62 amendment and revision — 20 September 2026
+
+### A3 — 🔴 the default was worse than part A stated, and the intent is what shows it
+
+**The developer's intent for the field, stated:** *"To capture whether further action was taken
+— went to a specialist post the event, went to a doctor, went to hospital. Not to capture the
+detail, but whether further action happened after/during the event. Reporting only, so the
+specialist can see where they can follow up."*
+
+⛔ **Against that intent, a pre-answered "No" asserts NO FURTHER ACTION WAS TAKEN.** An event
+where the person went to hospital would carry *"no further action"* into the record a specialist
+reads **in order to decide where to follow up** — without anyone choosing it, and on the one
+field whose entire purpose is to flag follow-up.
+
+⭐ **SO THE UNSET-BY-DEFAULT FIX IS NOT A CONSISTENCY CHANGE.** Part A justified it by the
+rescue-medication idiom sitting six pixels above with neither option selected. That reasoning was
+correct and far too weak: **the defaulted value was the exact inverse of the field's purpose,
+aimed at the exact reader the field exists to serve.**
+
+⚠️ **AND THE ADVISER ROUTING IS WITHDRAWN, with the reason worth keeping.** The chat read the
+LABEL and inferred the field's purpose from it. *"Required?"* asks for a judgement about
+necessity; **the field asks what happened.** ⭐ **The wording strays from the regulatory line —
+the field does not.** A reword that replaces a judgement with a fact IMPROVES the regulatory
+position, so it does not wait on the adviser; the final wording goes into the next batch as a
+confirmation, not a gate.
+
+🔴 **THE TRANSFERABLE PART: a label can misrepresent its own field well enough to misroute the
+work.** Two passes treated this as adviser territory because the label asked a clinical
+question. The stored fact was never clinical.
+
+### R1 — 🔴 A FINDING THAT NAMES A TYPE-LEVEL IMPOSSIBILITY READS AS A CONSTRAINT, NOT A TASK
+
+**Five prior findings saw the referral defect and none fixed it:**
+
+    §13(bl), 10 Sep            "WRITES `No` ON A RECORD THAT WAS NEVER ASKED ... The file
+                               states something the app does not know."  Routed to the
+                               adviser.  NOT DECIDED.
+    §13(cd), 11 Sep            "A non-nullable bool has no absent state at all ... the `No`
+                               §13(bl) flagged is not a bad rendering choice - it is the ONLY
+                               value the type can hold."
+    buildCsv's comment         "⛔ THE ONE KNOWN EXCEPTION."
+    csv_no_blank_test test 2   pinned the defect AS CORRECT BEHAVIOUR
+    log_event_screen's `yn`    "NULL IS NOT 'No' HERE" - then names referral as the field
+                               that could not follow that rule
+
+⭐ **§13(cd) IS A COMPLETE AND CORRECT DIAGNOSIS, AND IT WAS FILED AS A FINDING.** *"The model
+cannot express this"* sounds like a fact about the world. **It is a work item.** The sentence
+that fully explains a defect is the sentence most likely to end the investigation, because
+nothing about it feels unfinished.
+
+⛔ **AND ALL FIVE OBSERVERS WERE LOOKING AT THE SAME LAYER — THE RENDERER.** Each asked what the
+CSV should print. No renderer change could have fixed it; the missing state was in the type, one
+level down, where nobody was looking because the renderer is where the symptom appears.
+
+⚠️ **PRACTICAL FORM: when a defect survives repeated observation, check whether every observer
+was looking at the same layer.** Repetition of a finding is evidence about the observers'
+vantage point, not confirmation of the finding. ⭐ **Five independent sightings of one symptom
+is not five investigations — it is one investigation performed five times.**
+
+⚠️ **Related but distinct from the stale-authoritative-label class:** nothing here was wrong.
+Every one of the five was accurate. **Accuracy is not what was missing.**
+
+### R3 — existing records cannot be repaired, and the marker is the only thing that says so
+
+⛔ **STATED PLAINLY: every record written before 20 September 2026 carries `referralRequired =
+false`, and its export reads `No` whether or not anyone was ever asked.** On the tablet that is
+**75 of 75 records.**
+
+⭐ **Correctly not back-filled.** An existing `false` is not separable from an answered No — the
+information to split them was never recorded. Inventing a split would be reconstruction, which
+this corpus's standing rule forbids, and it would put a fabricated distinction into a medical
+export.
+
+⭐ **THE v7 → v8 MARKER IS THE ONLY THING THAT TELLS A READER THOSE CELLS ARE AMBIGUOUS.** A
+reader who sees `No` in a v8 file cannot tell whether it was answered or defaulted; the marker is
+what lets them ask when the file was written. **That is precisely the job a shape marker was
+specified for, and this is the first time it has been needed for a value whose meaning changed
+underneath a stable column name.**
+
+⚠️ **CONTRACTS note D FIRED FOR THE FIRST TIME AND HELD, 20 September 2026.**
+`sweep_contracts_test` went red on the bump and **its own failure message prescribed the repair
+verbatim**: *"If you bumped the marker WITHOUT changing columns: update `marker` here. The rule
+permits that ... and this test cannot see it, which is why that half stays a convention."*
+⭐ **The honest reading: the test did not detect the value change — it cannot, and it says so.
+It detected the MARKER MOVING and forced a human to say whether the move was legitimate.** Had
+the marker not been bumped, nothing would have gone red and the file's meaning would have changed
+in silence.
+
+### R5 — the three remaining non-nullable fields are NOT this defect
+
+**`feelings`, `triggers` and `notes` still cannot express "never asked"** — §13(cd) enumerates
+all four together and note H keeps that scoped.
+
+⛔ **THE DIFFERENCE THAT MATTERS: referral wrote the WORD `No` — a positive claim, in a medical
+export, about a clinical follow-up that may have happened.** An empty observations cell asserts
+nothing; a reader sees a blank and knows only that it is blank.
+
+⚠️ **Do not let the parallel promote them to ship-blocking. Do not let the difference retire
+them either.** They remain a real gap — a blank that means both "asked, none" and "never asked"
+is still ambiguous — but it is an ambiguity that MISLEADS NOBODY into a false positive, and that
+is the axis on which referral was urgent.
+
+⭐ **They are also harder, and the reason is worth recording before someone costs it as "the same
+change again": a nullable list and a nullable string are ambiguous in their own right.** Code
+throughout treats empty and null alike, so the work is not a type edit but a sweep of every
+reader.
+
+### R2 — the progress strip is SEPARATED from the chrome, and one figure was wrong
+
+⭐ **THE CHAT'S 1.4.11 POSITION IS CORRECT AND NO CRITERION BINDS AT THAT BOUNDARY.** The state
+information is the filled/track boundary and it clears at **3.15:1**; the component is
+identifiable by its own edge against the page at **3.34:1**. The AppBar is a neighbour.
+
+⛔ **BUT THE STATED REASON FOR THE FIX NO LONGER HELD, AND IS CORRECTED HERE.** R2 said the strip
+*"merges with the chrome and reads as absent, which is the original defect returning."* **That
+was true of the OLD colour and not of the new one.** The original defect was `#0D4F82` on
+`#0D4F82` — **1.00:1, literally the same colour.** The replacement is `#1A8FCB`, a hue shift at
+2.37:1, which is plainly visible. **The defect had not returned; it had been reduced to a
+below-threshold figure.**
+
+⭐ **THE FIX WAS APPLIED ANYWAY, AND FOR A BETTER REASON THAN THE ONE GIVEN.** A 4pt gap of page
+background between the AppBar and the strip **removes the AppBar from the adjacency set
+entirely** — it does not improve the 2.37:1 figure, it retires it. **Accepting a number and
+removing the question are different outcomes**, and only the second one stays true if the palette
+changes.
+
+🔴 **AND A FIGURE IN THE 20 September RECORD WAS WRONG. CORRECTED, NOT DELETED.** The entry above
+this one reported *"filled vs the page below #F4F7F9 — 8.02:1"*. ⛔ **The true figure is
+3.34:1.** 8.02 was `surfaceSunken` TRACK against the APPBAR, read off a neighbouring column of
+the same search output and carried into a claim about a different pair. It was corrected in the
+code comment, the test's docstring, the test's own failure message and the record.
+
+⚠️ **THE CONCLUSION SURVIVED — 3.34 still clears 3:1 — WHICH IS WHY IT WENT UNCHECKED.** ⭐
+**A wrong number that supports the right conclusion is the kind nothing re-derives**, and this
+is the same class as the working-memory figures already recorded: *a figure that was correct
+about something, reused where it did not apply.* **It was caught only because R2 forced the
+boundary to be re-examined, not by any check.**

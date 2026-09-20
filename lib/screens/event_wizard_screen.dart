@@ -456,7 +456,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               //
               //   filled focusRing #1A8FCB  vs track infoContainer #E3F2FD
               //                                            3.15:1   ✅ 1.4.11
-              //   filled                    vs page below  #F4F7F9  8.02:1  ✅
+              //   filled                    vs page below  #F4F7F9  3.34:1  ✅
               //   filled                    vs app bar above #0D4F82 2.37:1  ⛔
               //
               // ⛔ AND THE THIRD ONE IS UNREACHABLE, not unattempted. To clear
@@ -470,6 +470,16 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
               // an adjacent colour. ⚠️ THAT IS A DESIGN DECISION AND IS NOT
               // TAKEN HERE; the boundary that actually carries the state
               // information is filled-against-track, and it clears.
+              // ⭐ SEPARATED FROM THE CHROME, 20 September 2026, Brief 62 R2.
+              // A 4pt gap of page background above the strip, so the AppBar is
+              // no longer an adjacent colour at all. **This does not improve
+              // the 2.37:1 figure — it retires it**, which is the difference
+              // between accepting a number and removing the question.
+              //
+              // ⚠️ A GAP, NOT A COLOUR. A darker track would have raised the
+              // fill/AppBar figure and made the REMAINING portion the loud one
+              // again, which is the defect this whole entry is about.
+              if (!onSummary) const SizedBox(height: 4),
               if (!onSummary)
                 LinearProgressIndicator(
                   value: (_step + 1) / (_lastStep + 1),
