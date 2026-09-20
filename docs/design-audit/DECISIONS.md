@@ -29,6 +29,21 @@ defect.**
 
 1. **One colour token per role, and no widget names a colour directly.** A literal outside the token
    set fails a check rather than being noticed.
+
+   > ⛔ **THE SECOND SENTENCE WAS FALSE WHEN WRITTEN AND STAYED FALSE. Annotated in place
+   > 20 September 2026; the wording above is unchanged.** *"A literal outside the token set fails a
+   > check rather than being noticed"* asserted an enforcement that **did not exist**.
+   > `colour_system_test` verifies the TOKENS' contrast ratios and has never scanned for literals
+   > outside the set.
+   >
+   > ⚠️ **Rule 2 beside it — the type scale — HAS had exactly that scan the whole time**
+   > (`type_system_test`, "no literal fontSize outside MERType", with its own can-fail control).
+   > ⭐ **So this was not a hard problem left undone. It was a claim nobody checked, sitting one
+   > line above a working example of the thing it claimed.**
+   >
+   > 🔴 **THIRD INSTANCE OF THE `backupShare` CLASS — a comment asserting a compliance that was
+   > never achieved — and the first one found IN THE DECISION RECORD ITSELF.** That is the worst
+   > place for it: a reader consults the register precisely to avoid re-checking the code.
 2. **One type step per element class, and no literal size or weight outside `MERType`.**
 3. **One selection idiom.** The form and the wizard do not use different controls for the same field.
 4. **One removal model: hidden is a state, reversible, and it is never called a place.**
@@ -1152,3 +1167,106 @@ and now **an idiom travelling between FEATURES.**
 covering that other feature must be re-read and its SUBJECT checked.** ⭐ **"Same idiom, same
 app" is precisely the sentence to stop at** — it asserts a transfer without naming what is being
 transferred, and an app is not a unit over which decisions automatically hold.
+
+---
+
+## The sweep closes — and the colour scan found a live violation on its first run
+
+**Recorded 20 September 2026.**
+
+### 🔴 `DECISIONS.md` RULE 1 IS NOW TRUE — third step of three
+
+⭐ **The annotation on rule 1 above records that its second sentence was false. It is now
+accurate**, and the sequence is recorded because the ORDER was the point: annotate the false
+claim first, build the scan, then annotate again. ⛔ **Between step one and step two the record
+was asserting an enforcement that did not exist, and saying so while it was still untrue is what
+stops a reader trusting it in the interval.**
+
+**`colour_literal_scan_test`, built 20 September 2026,** scans every non-comment line of `lib/`
+for `Color(0x…)` and `Colors.*`, excluding the theme and `Colors.transparent`. **Both exclusions
+are enumerated in the file, and one has its own control proving it is load-bearing.**
+**Demonstrated failing** by injecting a literal into `about_screen`.
+
+### ⛔ AND IT CAUGHT A REAL VIOLATION IMMEDIATELY — `lib/main.dart:178`
+
+    color: Colors.white.withOpacity(0.5),
+
+**The splash spinner.** ⭐ **The app's FIRST SCREEN.**
+
+⚠️ **This is the proof the rule needed, and the shape of it matters: rule 1 claimed "a literal
+outside the token set fails a check rather than being noticed" — and for as long as that claim
+stood unchecked, this sat in plain sight.** ⛔ **The claim did not merely fail to catch it. The
+claim is why nobody looked.**
+
+🔴 **REPORTED, NOT FIXED**, per the brief. It is enumerated in
+`_kKnownViolations` with the set marked **SHRINK-ONLY**: adding a path there is a rule being
+weakened and needs a decision. ⭐ **Removing this entry is a one-line change once a token is
+chosen for the splash spinner — which is a colour decision, and not the CLI's to make.**
+
+### ⚠️ TWO SELF-INFLICTED ERRORS IN THIS PASS, BOTH CAUGHT BY CONTROLS
+
+**Recorded because both are classes already on the list, committed while building the checks
+against them.**
+
+1. ⛔ **A shell string executed three backticked names as commands and wrote the annotation with
+   them EMPTY.** `colour_system_test`, `type_system_test` and `backupShare` all vanished from a
+   record about false claims. ⭐ **The project rule — multi-paragraph content goes to a file via
+   `Write`, never through a shell string — exists precisely for this, and was not followed.**
+   Repaired, and verified by scanning the block for residual scars rather than by re-reading it.
+
+2. ⛔ **A CSV column was pinned FROM MEMORY and was wrong.** `updated_at` was written into the
+   contract; the real column is `medication_kind`. ⭐ **The test's own CONTROL — "the recorded
+   columns really are the header" — caught it on the first run.** ⚠️ **Exactly the
+   figure-in-working-memory class: a name that felt certain, was never derived, and was wrong.**
+
+⭐ **BOTH WERE CAUGHT BY APPARATUS, NOT BY CARE.** That is the whole thesis of the sweep,
+demonstrated on its own author twice in one pass.
+
+### ⛔ A MIGRATION CONTROL THAT FAILED FOR THE WRONG REASON
+
+**Recorded because a control failing wrongly is indistinguishable, in its output, from a control
+working.** The first attempt to demonstrate `migration_contract_test`'s chaining check injected
+`} else if` naively and **broke Dart syntax** — the run failed at LOAD time. ⭐ **A compile error
+is not the check firing, and reading "Some tests failed" as success would have been a false
+discharge.** Redone by chaining two steps validly: `analyze` reports **0 errors** and the test
+still fails.
+
+⚠️ **Same family as the sentence-integrity control that reported APPARATUS DEAD twice for its own
+reasons.** ⛔ **A control needs its own control — and the cheap form of that is to check the
+failure is the one you meant.**
+
+### ⭐ A GUARD THAT FIRED AND WAS ADJUDICATED RATHER THAN BUMPED
+
+`show_hidden_scope_test` asserts `exportScope` appears exactly N times in the source. **The list
+header's new read made it N+1 and the guard went red — which is exactly its job**, since a new
+read site appearing silently is the mechanism behind the fourteen unclassified `.visible`
+readers. ⛔ **It was raised only after the third occurrence was adjudicated a legitimate
+consumer, and the site says any FOURTH must be adjudicated the same way rather than absorbed by
+bumping again.**
+
+### The classes referenced, not restated
+
+⛔ **Checked against what is already recorded before writing.** Every class listed in Brief 60
+part E is already in this register with its own dated entry — the travelling-term family across
+three axes, the principle applied without verifying its precondition, the remedy shaped by the
+defect's own structure, the relative change read as absolute, the broken composition degrading
+every element inside it, the safeguard built only where it was least needed, the gate that
+suppresses a warning on exactly its own population, gates individually defensible and
+collectively perverse, the correct rule with a wrong classification, the two kinds of comment,
+and a rule written and diverged from the same day.
+
+⭐ **Nothing above restates them.** ⚠️ **One provenance claim in this repo already needed
+correcting in four files because it was duplicated prose, and an index of classes would acquire
+the same defect.** **The new material in this entry is the four incidents above, each of which
+is an INSTANCE of a class already named rather than a new class.**
+
+### ⭐ WHERE THE SWEEP LANDED
+
+**Ten of fourteen structures are enforced; four are conventions with their coverage stated.**
+`docs/design-audit/CONTRACTS.md` is the index, and it points at tests rather than describing
+them — so it cannot drift without something going red.
+
+⛔ **The four conventions are conventions because no available instrument can check them, not
+because nobody got round to them** — except `#10` Help rows, where the mechanism was costed at
+~30 lines and **declined on the 28 judgements it would require**, with the recommendation that
+it attach to the Help accessibility audit already queued.
