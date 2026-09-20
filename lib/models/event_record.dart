@@ -1652,6 +1652,18 @@ List<String> _medicationCells(
 ///            Yes            further attention happened
 ///            No             it did not - AND SEE BELOW
 ///            Not Captured   the question was never displayed
+///          ⛔ **v8 CARRIES TWO CHANGES, NOT ONE. Added 20 Sep 2026
+///          (Brief 63 C-3) so the marker's meaning is never
+///          reconstructed from only one of them:**
+///            1. THE VALUE CONVENTION above (Brief 62), and
+///            2. THE HEADER RENAME `referral_required` ->
+///               `further_attention` (Brief 63), position 15 of 17
+///               and the column set otherwise unchanged.
+///          ⭐ FOLDED INTO ONE BUMP because v8 had not shipped when the
+///          rename landed. A rename after release costs a SECOND bump
+///          and a second round of consumer breakage; before release it
+///          costs nothing. ⚠️ A reader who finds `referral_required` in
+///          a file is reading v7 or earlier.
 ///          ⛔ `No` HAS TWO WRITERS AND A READER CANNOT SEPARATE THEM.
 ///          The SINGLE FORM preselects No, so a record edited there and
 ///          saved without touching the field writes No from a default

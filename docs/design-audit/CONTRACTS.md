@@ -22,7 +22,7 @@ rule's reasoning, it points at it.
 
 ---
 
-## The seventeen
+## The eighteen
 
 | # | structure | invariant — what must remain TRUE | outcome | checked by |
 |---|---|---|---|---|
@@ -34,7 +34,8 @@ rule's reasoning, it points at it.
 | **6** | type scale | No widget specifies a font size or weight numerically; every one resolves through `MERType` | **TESTED — source scan** | `type_system_test` |
 | **7** | colour tokens | No widget names a colour directly; every colour resolves to a token | **TESTED — source scan** | `colour_system_test` test 12 — ⭐ **was already enforced; see note G** |
 | **8** | spacing scale | Every screen's horizontal body inset is 0, 16 or 24; 24 is reserved to the walkthrough | **CONVENTION**, 20 Sep 2026 | note C — **coverage 2 of 12** |
-| **9** | CSV columns | Any change to the column set, or to what a cell holds for the same stored state, bumps the shape marker | **TESTED — source scan** (column set only) | `sweep_contracts_test` ⚠️ **half the rule is convention — note D** |
+| **9** | CSV columns | Any change to the column set, or to what a cell holds for the same stored state, bumps the shape marker | **TESTED — source scan + hash pin** | `sweep_contracts_test` · `csv_header_contract_test` ⚠️ **the VALUE half is still convention — note D** |
+| **18** | durable keys | The SQLite column names, the backup JSON keys and the legacy prefs keys never change, and no export header shares a string with any of them | **TESTED — source scan** | `durable_keys_test` |
 | **10** | Help rows | Help never describes behaviour the app does not have | **CONVENTION**, 20 Sep 2026 | note E |
 | **11** | SQLite migrations | Every step is additive, non-destructive and independently guarded, so a database at any version walks forward correctly in one open | **TESTED — source scan** | `migration_contract_test` |
 | **12** | backup envelope keys | A restore is never partially applied, and existing records always win | **TESTED — behaviour** (that clause) · **CONVENTION** (the key set) | `restore_outcomes_test` · note F |
@@ -97,7 +98,7 @@ the columns have not changed since the marker was pinned. A change to a cell's v
 still requires a bump, and nothing will tell you.
 
 ⭐ **THIS CONVENTION FIRED FOR THE FIRST TIME ON 20 September 2026 (Brief 62 A) AND HELD.**
-`referralRequired` became nullable, so `referral_required` began writing `Not Captured` where it
+`referralRequired` became nullable, so `further_attention` began writing `Not Captured` where it
 had written `No` — **a value change with no column change.** The marker went v7 → v8 and the
 source scan went red, because the pinned column set still belonged to v7. ⛔ **Its own failure
 message prescribed the repair verbatim:** *"If you bumped the marker WITHOUT changing columns:

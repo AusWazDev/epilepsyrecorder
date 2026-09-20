@@ -1812,3 +1812,179 @@ about which. That is the attributable-control rule in `CLAUDE.md`, applied to a 
 spuriously erodes the one thing this week built** — that green means something. **An unexplained
 red is worth less than a red with a cause, and far more than a red that was never written
 down.**
+
+---
+
+## Brief 63 — the CSV header rename, and what it exposed — 20 September 2026
+
+### The decision, with its reasoning
+
+⛔ **The CSV export header `referral_required` became `further_attention`.** Position 15 of 17,
+column count unchanged, values unchanged, shape marker **not** bumped a second time.
+
+**Three reasons, all of which had to hold:**
+
+1. ⭐ **The capture surfaces stopped asking about a referral and the header did not.** Brief 62
+   reworded both editors to *"Further medical attention?"*. Left alone, the export would have
+   asked a question **no screen asks**, permanently, in the file a specialist reads.
+2. ⭐ **v8 had already moved this cycle and had not shipped.** A rename folded into a bump that
+   is already happening costs **nothing**. A rename after release costs a second bump and a
+   second round of consumer breakage. ⛔ **The window was open and closing.**
+3. ⭐ **The header is not a durable key.** Nothing reads a CSV back — established in Part A with
+   a control, **checked 20 September 2026**, and that date is the date of the CHECK, not of the
+   property.
+
+⚠️ **NOT bumping to v9 is itself the decision, not an omission.** v8 now carries **two**
+changes — the value convention from Brief 62 and this rename — and the marker note says so
+explicitly, so its meaning cannot later be reconstructed from only one of them.
+
+### 🔴 THE HAZARD, recorded so the DDL pin is self-explanatory
+
+⛔ **The CSV header string was BYTE-IDENTICAL to the SQLite column name.** Both were
+`referral_required`. They were separate literals in separate files — `buildCsv`'s header list,
+and `event_store_sqlite.dart`'s DDL, write and read — so the rename was possible.
+
+🔴 **A repository-wide find-and-replace on that string would have renamed the database column
+and orphaned every existing user's data.** The SQLite column is the first entry under Brief 63's
+own *"What must NOT change"*.
+
+⚠️ **AND THE SAME COLLISION EXISTED IN THE TEST SUITE, where it was quieter and nastier.**
+Seventeen test row fixtures and **five test DDL declarations** carry the same string. Renaming
+those would not have touched user data at all — the suite would simply have gone green against a
+schema production does not have. ⭐ **A suite that has quietly stopped testing the thing is worse
+than one that fails**, because nothing announces it.
+
+⭐ **THE REMEDY IS A TEST, NOT A NOTE.** `test/durable_keys_test.dart` pins the DDL column, its
+read and write sides, the backup JSON key, the legacy prefs drain, and the fact that the export
+header no longer shares a string with the schema. **Demonstrated failing by performing the exact
+mistake it exists for.** ⛔ **The CSV header is deliberately NOT pinned there** — it is not
+durable, and asserting a permanence it does not have would block the next legitimate rename.
+
+### 🔴 CLASS: A BRIEF THAT NAMED AN IMMUTABLE THING, THEN ASKED A QUESTION INCAPABLE OF DETECTING IT CHANGING
+
+**Observed 20 September 2026.** Brief 63 listed the SQLite column under *"What must NOT change"*
+and, in the same document, asked Part A whether a shared **constant** fed both the backup key and
+the CSV header. ⛔ **It never asked whether the header's STRING collided with a durable key's
+STRING** — which is the only form the danger actually took.
+
+⭐ **NAMING A THING THAT MUST NOT CHANGE IS NOT THE SAME AS AIMING A CHECK AT IT.** The
+prohibition and the check were both present, both carefully written, and **pointed at different
+things**. The rename was safe because one reader noticed the collision while doing something
+else; nothing in the process was arranged to notice it.
+
+⚠️ **PRACTICAL FORM: for every item on a must-not-change list, name the check that would catch it
+changing.** If the answer is "someone would spot it", that is the gap. ⛔ **A prohibition with no
+detector is a hope.**
+
+### 🔴 CLASS: A FACT RESTATED FROM MEMORY WHEN THE RECORD WAS ONE READ AWAY
+
+**Observed 20 September 2026.** Brief 63 described the CSV values as *"empty for not asked, and
+the two written values"*. ⛔ **Both halves were wrong.** There are **three** written values, and
+the unasked state is the literal `Not Captured`, never empty:
+
+    String yesNoCsv(bool? v) => v == null ? kCsvNotCaptured : (v ? 'Yes' : 'No');
+
+⚠️ **The convention had been specified one day earlier, in Brief 62, by the same author.** It was
+restated from memory rather than read, and the restatement inverted the very property the
+previous brief had been written to establish.
+
+⭐ **WHAT STOPPED IT PROPAGATING WAS AN INSTRUCTION, NOT A CHECK**: *"Quote the two written
+values from the code rather than from me."* **The brief was wrong and simultaneously carried the
+instruction that prevented its own error from landing.** That is worth more than being right:
+a brief that says *read it yourself* survives its author misremembering.
+
+⚠️ **Same family as the working-memory entry already recorded here** — a figure that was correct
+about something, reused where it did not apply. **The distinguishing feature: the source was in
+the same repository, in a file the author had written the day before.** Proximity is not
+consultation.
+
+### 🔴 CLASS: CLASSIFIED BY SURFACE FORM RATHER THAN BY ROLE
+
+**Observed 20 September 2026, in my own Part A report.** Five test-side SQLite DDL lines —
+`'referral_required INTEGER'` — were classified as **identifier in code** rather than **durable
+key**. ⛔ **The classifier keyed on a punctuation shape** (a trailing quote-colon, as in
+`'referral_required':`) that a DDL declaration does not have.
+
+⚠️ **THE BUCKET THEY LANDED IN WAS LABELLED internal, not persisted, safe to rename.** They are
+schema. Renaming them would have left the test suite asserting against a schema production does
+not have, and **passing**.
+
+⭐ **ROLE DOES NOT FOLLOW SHAPE.** Two strings with the same spelling and different punctuation
+had opposite consequences; two with different punctuation had the same role. **A classifier that
+reads syntax is answering "what does this look like", and the question was "what does this do".**
+
+⚠️ **PRACTICAL FORM: where a classification drives a safety decision, verify the buckets by
+sampling their MEMBERS, not by trusting the rule that filled them.** The error surfaced only when
+a later pass re-enumerated the same lines with a different splitter and the counts disagreed.
+
+### 🔴 CLASS: A PREDICTED TEST FAILURE, ASSERTED RATHER THAN TESTED
+
+**Observed 20 September 2026.** Amendment 1 stated that `sweep_contracts_test` *"will go red and
+hand back its own prescribed repair, as it did at the v7→v8 bump — that is the contract working.
+Do not treat it as a defect and do not route around it."*
+
+⛔ **It did not go red.** Measured both ways rather than assumed:
+
+    pin left at the old name          red  — "the pinned column referral_required is not in the source"
+    pin updated as B-1 directs        GREEN, with no marker bump
+
+⭐ **THE PREDICTION REASONED BY ANALOGY** with v7→v8, which changed the column **set**. A rename
+that updates the pin and the source in one commit is invisible to a test that compares pin
+against source. ⚠️ **And the instruction "do not route around it" would have been unfollowable**:
+the same brief's B-1 required updating that very pin, which is what made it green.
+
+⚠️ **A claim that a test will fail is a prediction like any other.** ⛔ **The cost of asserting
+it: had the pass simply not seen red and moved on, the conclusion would have been "the contract
+checked this" when the contract had not.**
+
+### ⚠️ STANDING NOTE: A `git grep` COUNT IS A COUNT OF THE TRACKED SET
+
+**Observed 20 September 2026, twice from opposite directions.** Part A enumerated it as an
+exclusion — build artefacts, `.git` internals, three untracked working papers. Part B then met it
+as a **defect in its own measurement**: the newly written pin file was invisible to the
+post-change count until it was staged, and the reconciliation disagreed with its prediction until
+that was noticed.
+
+⭐ **Stage new files before counting**, or the measurement describes a repository that no longer
+exists.
+
+### What the rename did NOT touch, proved rather than asserted
+
+**All 14 files containing a durable site are absent from the diff** — checked mechanically
+against the diff's own file list, with a control confirming a changed file is detected. That is
+4 lib SQLite sites, 5 test DDL declarations and 17 test row fixtures, **26 durable live sites**.
+
+#### ⚠️ The Part A figure, superseded in place — 20 September 2026
+
+⛔ **Part A's own words, quoted so the classification's movement stays visible:**
+
+> **1 · Durable key — 26 lines, immutable**
+
+⭐ **STANDING FIGURE: 26 durable LIVE sites of the snake_case string** — 4 lib SQLite, 5 test
+DDL declarations, 17 test row fixtures.
+
+🔴 **AND THE TWO 26s ARE NOT THE SAME SET, WHICH IS WHY THIS NEEDS SPELLING OUT RATHER THAN
+CORRECTING.** Part A's 26 counted **both spellings** — 5 camelCase backup and legacy-prefs keys,
+4 snake_case lib sites, 17 test fixtures — and put the 5 DDL declarations in the wrong bucket.
+The standing 26 counts **the snake_case string only** and includes those 5. **The figure is
+unchanged and the set beneath it is different.**
+
+⚠️ **THE `21` NAMED IN AMENDMENT 2 IS NOT A FIGURE PART A STATED.** Part A reported 26. The 21
+is the snake-only subset *implied* by Part A's classification — 4 lib + 17 fixtures, with the 5
+DDL lines excluded because they had been misfiled — and it was first written down in the Part B
+report, as the like-for-like comparison that exposed the error. ⭐ **Recorded this way because
+attributing a number to a document that never contained it is the same class of defect as the
+misclassification it describes**: a figure carried into a claim about a source that does not
+support it.
+
+⛔ **THE TRANSFERABLE PART IS NOT THE COUNT.** It is that a bucket labelled *internal, safe to
+rename* held five schema declarations, and that two identical totals can hide a changed set. See
+**CLASS: CLASSIFIED BY SURFACE FORM RATHER THAN BY ROLE** above.
+
+### Out of scope, as a decision rather than an oversight
+
+⛔ **The three untracked working documents that carry the retired term stay as they are**
+(`MER Refresh Chat content.txt`, two under `scratchpad/`). They are working papers superseded by
+the repository. ⭐ **They keep the old word rather than being quietly edited to look consistent**
+— a working paper that has been tidied to agree with the present is no longer evidence of what
+was thought at the time.

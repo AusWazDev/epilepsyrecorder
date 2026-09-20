@@ -549,11 +549,32 @@ collapsed when observations became user-extensible; the seven trigger columns
 collapsed in the same shape a stage later. **26 → 17 → 11 → 14 → 16 → 17 columns, the last figure being the live one as at 7 September 2026** *[this trail stopped at 14 until then]*. Order
 is unchanged: the delimited column sits where its one-hot block sat, and the
 three rescue-medication columns added on 27 August sit between `beforehand` and
-`referral_required`.
+`further_attention`.
+
+⚠️ **RENAMED 20 September 2026 (Brief 63). This sentence read *"sit between
+`beforehand` and `referral_required`"*.** The CSV column `referral_required`
+became **`further_attention`**; position unchanged at 15 of 17, column count
+unchanged, values unchanged. ⛔ **A reader holding a v7-or-earlier export will
+find the old header and should read it as the same column** — the capture
+surfaces had stopped asking about a referral and the header was still asking.
+
+⛔ **THE SQLITE COLUMN IS STILL `referral_required` AND DID NOT MOVE.** See the
+`event` column list earlier in this document, which is correct as written. The
+two strings were byte-identical before this rename, which is exactly why the
+database column now carries an enforced pin — `test/durable_keys_test.dart`.
 
 ⛔ **THE MARKER TRACKS THE HEADER ROW. Any change to the column set bumps it
 — added, removed, renamed or reordered. No judgement about whether a change is
-"real".** ⛔ **`kCsvShapeVersion` IN `event_record.dart` IS AUTHORITATIVE. EVERYTHING
+"real".**
+
+⚠️ **THAT RULE WAS UNENFORCED UNTIL 20 September 2026, AND A RENAME SLIPPED
+THROUGH IT.** `sweep_contracts_test` compares its pinned column list against the
+SOURCE, so a rename that updates both in one commit is invisible to it —
+measured during Brief 63: pin left at the old name went red, pin updated went
+**green, with no marker bump.** ⭐ **Now enforced by hash**, keyed on the marker
+value, in `test/csv_header_contract_test.dart`: a set change without a bump, and
+a bump without a recorded hash, both fail. ⛔ **The rename this release made was
+deliberate and is covered by v8; the gap it exposed is what the pin closes.** ⛔ **`kCsvShapeVersion` IN `event_record.dart` IS AUTHORITATIVE. EVERYTHING
 IN THIS SECTION ABOUT THE COLUMN SET AND THE MARKER IS A COPY, AND A COPY IS
 EXPECTED TO DRIFT.** Read the constant, not this section, whenever the answer
 matters.
