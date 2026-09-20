@@ -170,12 +170,38 @@ class _SplashLoadingScreen extends StatelessWidget {
             const SizedBox(height: 48),
 
             // ── LOADING ──
-            SizedBox(
+            // ⭐ `const` BECAME AVAILABLE WITH THE TOKEN. The old
+            // `Colors.white.withOpacity(0.5)` is a runtime call, so neither
+            // widget could be const; `MERColours.onPrimaryMuted` is a
+            // compile-time constant and both now can be. The analyzer said so
+            // the moment the literal went.
+            const SizedBox(
               width:  24,
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color:       Colors.white.withOpacity(0.5),
+                // ⛔ RESOLVED TO A TOKEN, 20 September 2026. This read
+                // `Colors.white.withOpacity(0.5)` and was the first — and so
+                // far only — violation found by `colour_literal_scan_test`.
+                //
+                // ⭐ IT WAS NOT A NECESSARY EXCEPTION. `[read]`: this widget
+                // renders INSIDE `MaterialApp(theme: MERTheme.light)`, and
+                // its own Scaffold one line above already uses
+                // `MERColours.primary`. The theme was available the whole
+                // time; the literal was an oversight, not a constraint.
+                //
+                // ⚠️ CONTRAST, MEASURED, because being a permitted token and
+                // being compliant are two different questions and only the
+                // first was being asked. A loading indicator is a non-text UI
+                // component under 1.4.11, which needs 3.0:1 against its
+                // background:
+                //
+                //   before  white@50% over primary = #86A7C0   3.38:1
+                //   now     onPrimaryMuted #B7CBDA             5.11:1
+                //
+                // ⭐ The old value PASSED, by 0.38. The token passes by 2.11
+                // and keeps the muted intent the 50% opacity was reaching for.
+                color:       MERColours.onPrimaryMuted,
               ),
             ),
             const SizedBox(height: 48),

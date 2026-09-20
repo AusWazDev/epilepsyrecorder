@@ -44,6 +44,29 @@ defect.**
    > 🔴 **THIRD INSTANCE OF THE `backupShare` CLASS — a comment asserting a compliance that was
    > never achieved — and the first one found IN THE DECISION RECORD ITSELF.** That is the worst
    > place for it: a reader consults the register precisely to avoid re-checking the code.
+
+   > ⛔ **THE ANNOTATION ABOVE IS ITSELF WRONG. Corrected in place 20 September 2026; its wording
+   > stays as written because a record of what was concluded must stay true.**
+   >
+   > ⭐ **RULE 1 WAS ENFORCED ALL ALONG.** `colour_system_test` test 12 — *"rule 2 is enforced
+   > over lib/, not described"* — has scanned every non-comment line of `lib/` for hex and named
+   > colour literals the whole time. **It is STRONGER than the scan built to replace it:** it
+   > separates CHROMATIC literals, which fail outright, from NEUTRAL ones, which are allowlisted
+   > **with their measured contrast**, and it enforces shrink-only in BOTH directions — a new
+   > literal fails, and a stale allowlist entry fails too.
+   >
+   > ⚠️ **AND `lib/main.dart:178` WAS NOT AN UNNOTICED VIOLATION.** It was in that allowlist, with
+   > its reason and its measurement: *"splash spinner, white 50% on primary — 3.3779, passes as
+   > non-text"*. ⛔ **The claim that it "sat in plain sight because nobody looked" was false in
+   > every clause: someone looked, measured it, wrote down the figure, and permitted it.**
+   >
+   > 🔴 **WHY IT WAS MISSED, because the mechanism is the transferable part: the search was
+   > KEYWORD-KEYED.** It looked for test names containing *"no literal"* and for the string
+   > `Color(0x` inside test files. **Test 12 is named for the RULE it enforces, not for what it
+   > scans, and it builds its pattern from a variable** — so neither probe could see it. ⭐ **The
+   > workspace rules already name this: a grep keyed on a word misses the class.** ⚠️ **The
+   > correct instrument was the one used minutes earlier on `.visible` — enumerate what is
+   > THERE and account for all of it, rather than searching for what you expect.**
 2. **One type step per element class, and no literal size or weight outside `MERType`.**
 3. **One selection idiom.** The form and the wizard do not use different controls for the same field.
 4. **One removal model: hidden is a state, reversible, and it is never called a place.**

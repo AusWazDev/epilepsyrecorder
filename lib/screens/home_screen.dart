@@ -63,6 +63,27 @@ enum _HomeMenuAction {
   help,
 }
 
+/// Which record a notification tap should open, given the id it carried and
+/// the COMPLETE record list.
+///
+/// ⛔ **A TOP-LEVEL FUNCTION, AND THAT IS THE POINT.** The two call sites that
+/// use it are behind `Platform.isAndroid` from `dart:io`, so neither runs on a
+/// Windows or macOS test host. ⭐ **Extracting the resolution puts the part that
+/// decides WHICH RECORD OPENS under test, while the platform gate — which only
+/// decides WHEN TO POLL — stays where it is.**
+///
+/// ⚠️ **`hadId` and a null `record` are DIFFERENT ANSWERS and the caller must
+/// not collapse them.** No id means this was not an id-carrying tap at all, and
+/// the legacy pre-id path should run. An id that resolves to nothing means the
+/// tap WAS for a specific event and that event is not here — which must report,
+/// never silently fall back to another record.
+({bool hadId, EventRecord? record}) resolveNotificationTarget(
+    List<EventRecord> records, String? id) {
+  if (id == null || id.isEmpty) return (hadId: false, record: null);
+  final i = records.indexWhere((r) => r.id == id);
+  return (hadId: true, record: i < 0 ? null : records[i]);
+}
+
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   static const _navChannel = MethodChannel('au.com.notiva.mer/navigation');
 
@@ -275,22 +296,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// ⚠️ Doing nothing silently was rejected too — a tap that produces no
   /// response reads as a broken app.
   Future<bool> _openEventFromNotification(SharedPreferences prefs) async {
-    final id = prefs.getString('mer_open_event_id');
-    if (id == null) return false;
+    // ⭐ THE RESOLUTION IS EXTRACTED so it can be tested. Both CALL SITES of
+    // this method sit behind `Platform.isAndroid` — `dart:io`, not
+    // `defaultTargetPlatform` — so on a Windows or macOS test host they never
+    // execute and the round trip cannot be driven end to end from `flutter
+    // test`. ⛔ The platform gate decides WHEN TO POLL; it has nothing to do
+    // with WHICH RECORD OPENS, and that is the part a defect corrupts.
+    final outcome =
+        resolveNotificationTarget(_records, prefs.getString('mer_open_event_id'));
+    if (!outcome.hadId) return false;
     await prefs.remove('mer_open_event_id');
 
-    final i = _records.indexWhere((r) => r.id == id);
-    if (i < 0) {
+    if (outcome.record == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('That event is no longer on this device.'),
+            // ⛔ WORDING CORRECTED 20 September 2026 — the old text was
+            // "That event is no longer on this device", which asserts a CAUSE
+            // this branch cannot know and which is usually FALSE.
+            //
+            // ⭐ THE CAUSE LIST, settled by reading: MER has NO DELETE PATH FOR
+            // EVENTS — hiding is the only removal, and routing reads the
+            // complete set, so a hidden record still resolves. ⚠️ So the
+            // realistic causes are that the record was NEVER SAVED (the
+            // notification fires from the capture path; `_persist()` is
+            // deliberately not awaited and can fail), or that the list was
+            // replaced by a restore. ⛔ In the first case the record was never
+            // on this device at all, so "no longer" is simply wrong — and it
+            // is the case that most needs the user to look.
+            content: Text('That event could not be found.'),
           ),
         );
       }
       return true;
     }
-    if (mounted) _openDetails(_records[i]);
+    if (mounted) _openDetails(outcome.record!);
     return true;
   }
 

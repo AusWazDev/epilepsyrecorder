@@ -30,7 +30,7 @@ rule's reasoning, it points at it.
 | **4** | `HiddenView` | The default withholds hidden records; every state is reachable from Filters and every hidden record restorable from `only`; a non-default view joins `activeFilters`, a record's `hidden` flag never does | **CONVENTION**, 20 Sep 2026 | verified by hand — see note A |
 | **5** | `_HomeMenuAction` | No data-out path appears in the overflow; export and backup live behind *Your data* | **CONVENTION**, 20 Sep 2026 | note B |
 | **6** | type scale | No widget specifies a font size or weight numerically; every one resolves through `MERType` | **TESTED — source scan** | `type_system_test` |
-| **7** | colour tokens | No widget names a colour directly; every colour resolves to a token | **TESTED — source scan** | `colour_literal_scan_test` ⚠️ **one known violation, enumerated** |
+| **7** | colour tokens | No widget names a colour directly; every colour resolves to a token | **TESTED — source scan** | `colour_system_test` test 12 — ⭐ **was already enforced; see note G** |
 | **8** | spacing scale | Every screen's horizontal body inset is 0, 16 or 24; 24 is reserved to the walkthrough | **CONVENTION**, 20 Sep 2026 | note C — **coverage 2 of 12** |
 | **9** | CSV columns | Any change to the column set, or to what a cell holds for the same stored state, bumps the shape marker | **TESTED — source scan** (column set only) | `sweep_contracts_test` ⚠️ **half the rule is convention — note D** |
 | **10** | Help rows | Help never describes behaviour the app does not have | **CONVENTION**, 20 Sep 2026 | note E |
@@ -107,6 +107,20 @@ queue.** ⛔ **Until then this is a convention, and two defects this week were e
 class** — *"Show hidden brings it back"* and *"deleting asks you to confirm first"*, both
 describing behaviour the app did not have. **In a capture tool, a user believing a record is
 recoverable when it is not is the worst copy defect available.**
+
+### G — `#7` colour was ALREADY enforced, and the sweep got it wrong
+
+⛔ **Brief 60 reported this structure as unenforced and as a third instance of the `backupShare`
+class. That was FALSE.** `colour_system_test` test 12 has scanned `lib/` for colour literals the
+whole time, and is stronger than the scan built to replace it — chromatic literals fail outright,
+neutral ones are allowlisted **with their measured contrast**, and a **stale** allowlist entry
+fails too.
+
+⚠️ **THE MISREADING IT GUARDS, and it is about searching rather than about colour: a test named
+for the RULE it enforces is invisible to a search keyed on what it SCANS.** ⭐ Test 12 is called
+*"rule 2 is enforced over lib/, not described"* — it contains neither the phrase that was searched
+for nor a literal `Color(0x`, because it builds its pattern from a variable. **Enumerate what is
+there; do not search for what you expect to find.**
 
 ### F — `#12` the envelope key SET
 

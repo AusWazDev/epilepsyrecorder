@@ -384,8 +384,21 @@ void main() {
       // ⛔ The failure mode is the RIGHT one: an unrecognised literal fails
       // loudly rather than a recognised one passing silently. But it will drift
       // again, and keying on the quoted source line would not.
-      'lib/main.dart:178':
-          'splash spinner, white 50% on primary — 3.3779, passes as non-text',
+      // ⭐ EMPTIED 20 September 2026. It held:
+      //
+      //   'lib/main.dart:178':
+      //       'splash spinner, white 50% on primary — 3.3779, passes as
+      //        non-text',
+      //
+      // The splash spinner now reads `MERColours.onPrimaryMuted` (5.11:1), so
+      // the site has no literal and the entry went stale — which this checker
+      // catches in the OTHER direction, and did: "the allowlist names a site
+      // that no longer has a literal. Delete the entry — a stale allowlist
+      // hides the next one."
+      //
+      // ⛔ THE ALLOWLIST BEING EMPTY IS NOT A LICENCE TO REMOVE IT. The next
+      // neutral literal must land here WITH ITS MEASUREMENT, or be given a
+      // token.
     };
 
     final chromatic = <String>[];
