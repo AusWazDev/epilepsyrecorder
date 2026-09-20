@@ -255,9 +255,9 @@ void main() {
       // Not because of this pass: v5 was the condition column, v6 the time
       // columns changing meaning. The COUNT above is what this file depends
       // on, and seventeen is still right — v6 added no column.
-      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
+      expect(kCsvShapeVersion, 'v8'); // v8: referral value convention, Brief 62 A
       expect(csvFilename(when: DateTime(2026, 8, 28, 9, 0, 0)),
-          'medical_event_recorder_20260828_090000.v7.csv');
+          'medical_event_recorder_20260828_090000.v8.csv');
     });
 
     test('8. an events-only export marks every row as an event', () {

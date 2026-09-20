@@ -700,7 +700,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   int get _referralCount =>
       // CLASSIFICATION: RENDER. Complete list, 19 September 2026.
-      _records.where((r) => r.referralRequired).length;
+      // `== true`. The statistic counts records that NEEDED a referral, so a
+      // record nobody asked must not be counted — and under the old
+      // non-nullable bool it could not have been anyway, since unasked read
+      // as false. The count is unchanged; what it MEANS is now true.
+      _records.where((r) => r.referralRequired == true).length;
 
   // ── QUICK RECORD ──
   /// Records an event. Synchronous by design.
@@ -740,7 +744,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // nothing.
       feelings:         const [],
       triggers:         const [],
-      referralRequired: false,
+      // ⛔ OMITTED, so NULL — NOT ASKED. Brief 62 A. Said `false`, which had
+      // the one-tap capture answer a clinical question on the user's behalf.
+      // The sibling comment above already says a one-tap capture "chooses
+      // nothing and compares nothing"; this field was the exception to that.
       notes:            '',
       // A PARTIAL, like every other quick capture — see capture_inbox. Not
       // null: null means the record predates the wizard, and this one does

@@ -373,7 +373,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // written back through `onRecordsChanged`.
     return _scopePopulation.where((r) {
       // Referral filter
-      if (_referralOnly && !r.referralRequired) return false;
+      // `!= true`, not `!`. Brief 62 A: the field is now `bool?` and NULL
+      // means never asked. A record nobody asked is not a referral record,
+      // so it stays filtered OUT — the same answer the old `false` gave,
+      // reached for a reason that is now stated rather than accidental.
+      if (_referralOnly && r.referralRequired != true) return false;
 
       // Needs-details filter. Catch-all: ANY unset field qualifies, because a
       // record missing only its severity is still incomplete.
@@ -452,7 +456,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         r.triggers
             .map((v) => Vocabularies.labelFor(kTriggerTable, v))
             .join(' '),
-        'referral: ${r.referralRequired ? "yes" : "no"}',
+        // Searchable on what the record HOLDS. An unasked record is no
+        // longer searchable as "referral: no", because it never was one.
+        'referral: ${yesNoDisplay(r.referralRequired)?.toLowerCase() ?? "not recorded"}',
         r.notes,
         // Searchable by WHEN IT HAPPENED, matching what the row displays.
         _uiTimeFmt.format(r.whenHappened),
@@ -1729,7 +1735,9 @@ class _EventListTile extends StatelessWidget {
       // string here while the picker showed the new label.
       if (r.triggers.isNotEmpty)
         'Beforehand: ${r.triggers.map((v) => Vocabularies.labelFor(kTriggerTable, v)).join(', ')}',
-      if (r.referralRequired)     'Referral: Yes',
+      // Unchanged in effect: still shown ONLY when the answer is Yes. `== true`
+      // because the field is now nullable — a null must not render here.
+      if (r.referralRequired == true) 'Referral: Yes',
       // ⛔ THE GAP LINE IS NO LONGER IN `parts`. IT MOVED TO ITS OWN LINE
       // BELOW - see the `subtitle` builder. `parts` is now CONTENT ONLY.
       //

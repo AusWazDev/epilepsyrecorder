@@ -253,7 +253,7 @@ void main() {
       // Asserted against the header the export actually writes.
       // This pass added nothing. The marker has moved twice since: v5 for the
       // condition column, v6 for the time columns changing MEANING.
-      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
+      expect(kCsvShapeVersion, 'v8'); // v8: referral value convention, Brief 62 A
     });
 
     test('11. condition_trigger is NOT built, and cannot be', () async {

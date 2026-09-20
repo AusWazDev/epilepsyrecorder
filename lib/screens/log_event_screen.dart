@@ -59,7 +59,14 @@ class _LogEventScreenState extends State<LogEventScreen> {
   late EventSeverity? _severity;
   late Set<String> _selectedFeelings;
   late Set<String> _selectedTriggers;
-  late bool _referralRequired;
+  // NULLABLE and no longer `late`: null is NOT ASKED. Brief 62 A. The form
+  // had the same defect as the wizard — `?? false` on the way in meant an
+  // unasked record opened showing `No` selected.
+  //
+  // ⭐ `_SelectionRow<T>` ALREADY TAKES A NULLABLE `selected` — the rescue
+  // rows three sections up pass `bool?` to it. Nothing in the control had
+  // to change here either.
+  bool? _referralRequired;
 
   // Originals for change detection
   late String? _origEventType;
@@ -122,7 +129,9 @@ class _LogEventScreenState extends State<LogEventScreen> {
         timestamp: DateTime(2000),
         duration: null,
         feelings: const <String>[],
-        referralRequired: false,
+        // Dropped with the `required`, Brief 62 A. This draft exists only to
+        // answer `rescueChildrenVisible`; it is never persisted and referral
+        // has no bearing on that gate.
         notes: '',
         rescueMedGiven: _rescueGiven,
         rescueMedHelped: _rescueHelped,
@@ -206,7 +215,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
   late EventSeverity? _origSeverity;
   late Set<String> _origFeelings;
   late Set<String> _origTriggers;
-  late bool _origReferral;
+  bool? _origReferral;
   bool? _origRescueGiven;
   RescueResponse? _origRescueHelped;
   bool? _origRescueSecondDose;
@@ -231,7 +240,7 @@ class _LogEventScreenState extends State<LogEventScreen> {
     _severity          = e?.severity;
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
-    _referralRequired  = e?.referralRequired ?? false;
+    _referralRequired  = e?.referralRequired;
     _rescueGiven       = e?.rescueMedGiven;
     _rescueHelped      = e?.rescueMedHelped;
     _rescueSecondDose  = e?.rescueMedSecondDose;
@@ -322,6 +331,18 @@ class _LogEventScreenState extends State<LogEventScreen> {
     // plain bool. NULL IS NOT "No" HERE -- it is "not asked", the distinction
     // this whole record model is built on, and it uses the same 'not recorded'
     // vocabulary the rest of this list uses for absence.
+    //
+    // ⛔ ANNOTATED 20 September 2026, Brief 62 A: *"where referral is a plain
+    // bool"* IS NO LONGER TRUE, and `yn` now renders referral too.
+    //
+    // ⭐ THIS COMMENT IS THE FIFTH PLACE THIS CODEBASE NOTICED THE ANOMALY -
+    // after §13(bl) finding 1, §13(cd)'s referral row, `buildCsv`'s "ONE
+    // KNOWN EXCEPTION", and `csv_no_blank_test`'s test 2. It states the
+    // governing rule - *"NULL IS NOT 'No' HERE"* - and then names referral as
+    // the field that could not follow it. ⚠️ `yn` HAD GONE DEAD in the
+    // meantime: the three rescue fields moved to their own answer vocabulary
+    // and left it with no caller, so the helper written for this exact
+    // distinction sat unused beside the one field that needed it.
     String yn(bool? v) => v == null ? 'not recorded' : (v ? 'Yes' : 'No');
 
     // ⚠️ THE ANSWER VOCABULARY, NOT `yn`. `yn` renders *Yes / No / not
@@ -351,7 +372,10 @@ class _LogEventScreenState extends State<LogEventScreen> {
     }
     if (_referralRequired != _origReferral) {
       changes.add(
-        'Medical referral: ${_origReferral ? "Yes" : "No"} → ${_referralRequired ? "Yes" : "No"}',
+        // `yn`, this file's own helper, for the reason its comment gives: a
+        // change log describes what the field HELD and must not assert a
+        // clinical value the record never carried.
+        'Medical referral: ${yn(_origReferral)} → ${yn(_referralRequired)}',
       );
     }
     if (!_sameSet(_selectedFeelings, _origFeelings)) {
@@ -1062,11 +1086,48 @@ class _EventTypeGrid extends StatelessWidget {
     for (final e in entries) {
       final isSel = selected == e.value;
       pinned.add(isSel);
+      // ⛔ THE TICK IS BACK. Brief 62 D, 20 September 2026.
+      //
+      // 🔴 WHY: every OTHER selected chip on this screen carries a ✓. This one
+      // changed only `selectedColor` and the icon's tint — and its UNSELECTED
+      // siblings carry icons too, so **selected-versus-unselected was conveyed
+      // by colour and nothing else.** That is 1.4.1, a compliance failure
+      // rather than an inconsistency, on the one control whose value names
+      // what the event WAS.
+      //
+      // ⚠️ THE COST, AND IT IS THE ONE THE BLOCK COMMENT ABOVE PREDICTED: the
+      // type icon is HIDDEN WHILE SELECTED. `RawChip` gives the avatar and the
+      // checkmark one slot, exactly as that comment says, and the checkmark
+      // wins it. Accepted — the selected chip is the one the user just chose,
+      // its label names the type, and its identity fill still carries the
+      // colour. The icon's job is scanning the options, which is an
+      // UNSELECTED-state job.
+      //
+      // ⭐ MEASURED BEFORE CHOOSING, not argued. Three shapes, rendered:
+      //
+      //   avatar icon, no tick   (before)        237.3 x 48.0
+      //   icon moved into the label, tick too    261.3 x 48.0   +24.0 WIDE
+      //   avatar icon + showCheckmark (this)     237.3 x 48.0   IDENTICAL
+      //
+      // Moving the icon into `label` keeps BOTH carriers and was written and
+      // measured first. It costs 24 logical points per chip, which forced an
+      // extra wrap row and shifted the whole form 40 points down — stale-ing
+      // three render baselines captured from unpatched code for an unrelated
+      // contract. ⛔ This form costs nothing and leaves every baseline honest.
+      //
+      // ⚠️ AND THE TICK WAS CONFIRMED TO ACTUALLY PAINT, because "the avatar
+      // wins the slot" and "the checkmark wins the slot" produce the SAME
+      // WIDTH and only one of them is a fix. Same canvas, pixels compared:
+      // **1,014 bytes differ** with `showCheckmark` on, and the control pair
+      // of two identical renders differs by **0**. Without that control the
+      // 1,014 would have proved nothing.
       chips.add(ChoiceChip(
         avatar: Icon(_iconFor(e.value),
             size: 18,
             color: isSel ? MERColours.onFill : MERColours.onSurfaceMuted),
-        showCheckmark: false,
+        // ⛔ `showCheckmark: false` REMOVED — it is now the default `true`.
+        showCheckmark: true,
+        checkmarkColor: MERColours.onFill,
         label: Text(e.label),
         selected: isSel,
         selectedColor: _colourFor(e.value),
@@ -1076,10 +1137,17 @@ class _EventTypeGrid extends StatelessWidget {
 
     if (orphan != null) {
       pinned.add(true);
+      // Same shape as the value chips above, for the same 1.4.1 reason — and
+      // it needs it MORE, not less: this chip is ALWAYS selected and has no
+      // unselected sibling anywhere on screen to be compared against, so
+      // colour alone had nothing to contrast with at all. ⚠️ Its icon is
+      // generic (`edit_note`, "a type from elsewhere") rather than
+      // per-type, so losing it to the tick costs less here than above.
       chips.add(ChoiceChip(
         avatar: const Icon(Icons.edit_note_outlined,
             size: 18, color: MERColours.onFill),
-        showCheckmark: false,
+        showCheckmark: true,
+        checkmarkColor: MERColours.onFill,
         label: Text(eventTypeLabel(orphan)),
         selected: true,
         selectedColor: _colourFor(orphan),

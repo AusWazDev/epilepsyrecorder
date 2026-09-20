@@ -164,7 +164,18 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   bool? _rescueSecondDose;
   final Set<String> _feelings = {};
   final Set<String> _triggers = {};
-  bool _referral = false;
+  // ⛔ NULLABLE, AND IT STARTS UNSET. Brief 62 A, 20 September 2026.
+  //
+  // This was `bool _referral = false`, so step 4 opened with `No` already
+  // filled navy with a tick — visually identical to an answer the user had
+  // given. Rescue medication sits six pixels above with NEITHER option
+  // selected, which is this app's idiom for "not asked", and referral was
+  // the only control on the screen that answered itself.
+  //
+  // ⭐ `_chips` NEEDED NO CHANGE. It selects on `_referral == b`, which is
+  // false for both options when the value is null — the unset rendering was
+  // already reachable and only the field's type prevented it.
+  bool? _referral;
   late String _id;
 
   @override
@@ -198,7 +209,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     _rescueSecondDose = e?.rescueMedSecondDose;
     _feelings.addAll(e?.feelings ?? const []);
     _triggers.addAll(e?.triggers ?? const []);
-    _referral = e?.referralRequired ?? false;
+    // Carried as-is, INCLUDING null — the same rule as event type and
+    // severity above, which this line was the lone exception to.
+    _referral = e?.referralRequired;
     _notesController.text = e?.notes ?? '';
     _draft = e;
 
@@ -341,7 +354,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
       _rescueSecondDose != null ||
       _feelings.isNotEmpty ||
       _triggers.isNotEmpty ||
-      _referral ||
+      _referral != null ||
       _notesController.text.trim().isNotEmpty;
 
   Future<bool> _onWillPop() async {
@@ -422,10 +435,47 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
             // filling the width for their own reasons.
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // ⛔ THE COLOURS ARE NAMED, NOT INHERITED. Brief 62 C,
+              // 20 September 2026.
+              //
+              // ⭐ THE VALUE WAS NEVER WRONG. `(_step + 1) / (_lastStep + 1)`
+              // is .25 / .50 / .75 / 1.00 across the four steps — correct on
+              // every one. **The defect was entirely chromatic**, which is why
+              // it survived: nothing about the arithmetic looks suspicious.
+              //
+              // With no colours given, M3 takes the filled portion from
+              // `colorScheme.primary` — `#0D4F82`, THE SAME NAVY AS THE APP
+              // BAR DIRECTLY ABOVE — and the track from a light container. So
+              // the portion that GREW was invisible and the portion that SHRANK
+              // was the visible one: a user saw a bright bar retreating from
+              // the left as they advanced, and at step 4, where the value is a
+              // correct 1.0, the strip became a seamless 3px extension of the
+              // app bar and read as no progress bar at all.
+              //
+              // ⚠️ CONTRAST, MEASURED, and the third figure does NOT reach 3:1:
+              //
+              //   filled focusRing #1A8FCB  vs track infoContainer #E3F2FD
+              //                                            3.15:1   ✅ 1.4.11
+              //   filled                    vs page below  #F4F7F9  8.02:1  ✅
+              //   filled                    vs app bar above #0D4F82 2.37:1  ⛔
+              //
+              // ⛔ AND THE THIRD ONE IS UNREACHABLE, not unattempted. To clear
+              // 3:1 against the app bar a fill needs relative luminance
+              // ≥ 0.3187; to clear 3:1 against ANY light track it needs
+              // ≤ 0.2784. **The two demands do not overlap, so no colour
+              // whatever satisfies both while the track stays light.** The only
+              // exits are a dark track — which makes the REMAINING portion the
+              // loud one, reinstating the defect in the other direction — or
+              // separating the strip from the chrome so the app bar stops being
+              // an adjacent colour. ⚠️ THAT IS A DESIGN DECISION AND IS NOT
+              // TAKEN HERE; the boundary that actually carries the state
+              // information is filled-against-track, and it clears.
               if (!onSummary)
                 LinearProgressIndicator(
                   value: (_step + 1) / (_lastStep + 1),
                   minHeight: 3,
+                  color: MERColours.focusRing,
+                  backgroundColor: MERColours.infoContainer,
                 ),
               Expanded(
                 child: SingleChildScrollView(
@@ -738,7 +788,9 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
         timestamp: DateTime(2000),
         duration: null,
         feelings: const <String>[],
-        referralRequired: false,
+        // Dropped with the `required`, Brief 62 A. This draft exists only to
+        // answer `rescueChildrenVisible`; it is never persisted and referral
+        // has no bearing on that gate.
         notes: '',
         rescueMedGiven: _rescueGiven,
         rescueMedHelped: _rescueHelped,
@@ -1062,15 +1114,34 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
   /// from nothing, so every answered field appears and unanswered ones stay
   /// silent — the same absence-reads-as-absence rule as the history row.
   Widget _summary() {
+    // ⛔ EVERY FIELD THE WIZARD ASKED ABOUT APPEARS, ANSWERED OR NOT.
+    // Brief 62 B, 20 September 2026. This list previously held Duration plus
+    // only those fields that had answers, so a blank record reviewed as two
+    // lines and seven questions vanished without trace.
+    //
+    // ⚠️ IT REVERSES A DECISION RECORDED HERE, AND THE OLD COMMENT IS KEPT
+    // BELOW RATHER THAN DELETED. It read:
+    //
+    //     Omitted when unanswered, like duration two lines up. A summary that
+    //     said "Event type: unknown" would read as a finding.
+    //
+    // ⭐ THE OBJECTION WAS TO THE WORD, AND IT WAS RIGHT ABOUT THE WORD.
+    // "Event type: unknown" does read as a finding — `unknown` is a value in
+    // this app's vocabulary and a clinician would read it as one. **"not
+    // recorded" is not a value; it is the absence of one**, and Duration has
+    // used it on this very screen since the summary existed. So the line
+    // below is not the thing that was rejected.
+    //
+    // 🔴 WHY IT HAD TO CHANGE: this is the review step before a write with NO
+    // DELETE PATH. An omitted field and an unanswered field rendered
+    // IDENTICALLY — as nothing — and only one of them is recoverable by
+    // tapping Back. A user checking what they are about to save could not
+    // tell "I skipped severity" from "severity was never on the screen".
     final lines = <String>[];
     final d = durationDisplay(_bucket, _enteredSeconds);
     lines.add('Duration: ${d ?? 'not recorded'}');
-    // Omitted when unanswered, like duration two lines up. A summary that said
-    // "Event type: unknown" would read as a finding.
-    final t = eventTypeDisplay(_eventType);
-    if (t != null) lines.add('Event type: $t');
-    final sev = severityDisplay(_severity);
-    if (sev != null) lines.add('Severity: $sev');
+    lines.add('Event type: ${eventTypeDisplay(_eventType) ?? 'not recorded'}');
+    lines.add('Severity: ${severityDisplay(_severity) ?? 'not recorded'}');
     // ⛔ LABELS, NOT STORED VALUES. These lines joined the raw strings, so a
     // record holding the retired `😵 Confused` — or its mis-decoded twin, which
     // is what all three observation records on the device actually hold —
@@ -1079,28 +1150,42 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     // `labelFor`, not `displayFor`: this is a Text widget in a style with no
     // emoji coverage, which is the exact combination that rendered mojibake in
     // History rows. The glyph belongs on a chip and nowhere a record is read.
-    if (_triggers.isNotEmpty) {
-      lines.add('Beforehand: ${_triggers.map(
+    lines.add('Beforehand: ${_triggers.isEmpty ? 'not recorded' : _triggers.map(
             (v) => Vocabularies.labelFor(kTriggerTable, v),
           ).join(', ')}');
-    }
-    if (_feelings.isNotEmpty) {
-      lines.add('Afterwards: ${_feelings.map(
+    lines.add('Afterwards: ${_feelings.isEmpty ? 'not recorded' : _feelings.map(
             (v) => Vocabularies.labelFor(kObservationTable, v),
           ).join(', ')}');
+    // ⚠️ THE OLD COMMENT, KEPT. It read:
+    //
+    //     Only when ANSWERED, like type and severity above. "Rescue
+    //     medication: no" on every summary would crowd out the lines that
+    //     carry information, and unanswered is not the same as no.
+    //
+    // Its second clause is still the rule and is still obeyed — unanswered
+    // renders "not recorded", never "No". Only the omission is reversed.
+    lines.add(
+        'Rescue medication: ${_rescueGiven == null ? 'not recorded' : rescueGivenLabel(_rescueGiven!)}');
+
+    // ⛔ THE TWO CHILDREN ARE GATED, NOT LISTED UNCONDITIONALLY, and this is
+    // the one place "every field appears" must NOT be read literally. They are
+    // only ASKED once rescue medication is Yes — `rescueChildrenVisible`, the
+    // same predicate that shows them on step 4. Listing them as "not
+    // recorded" when they were never on screen would assert a gap in a
+    // question nobody was entitled to be asked, which is the same defect in
+    // the opposite direction. §13(cd) calls this Not Applicable.
+    if (rescueChildrenVisible(_draftForVisibility())) {
+      lines.add(
+          'Did it help: ${rescueResponseDisplay(_rescueHelped) ?? 'not recorded'}');
+      lines.add(
+          'Second dose: ${_rescueSecondDose == null ? 'not recorded' : secondDoseLabel(_rescueSecondDose!)}');
     }
-    // Only when ANSWERED, like type and severity above. "Rescue medication:
-    // no" on every summary would crowd out the lines that carry information,
-    // and unanswered is not the same as no.
-    if (_rescueGiven != null) {
-      lines.add('Rescue medication: ${rescueGivenLabel(_rescueGiven!)}');
-    }
-    final helped = rescueResponseDisplay(_rescueHelped);
-    if (helped != null) lines.add('Did it help: $helped');
-    if (_rescueSecondDose != null) {
-      lines.add('Second dose: ${secondDoseLabel(_rescueSecondDose!)}');
-    }
-    if (_referral) lines.add('Medical referral required');
+
+    // ⛔ WAS `if (_referral) lines.add('Medical referral required')` — present
+    // only when true, so the summary showed nothing whether the answer was No
+    // or the question was never put. With the field nullable (Brief 62 A) the
+    // three states are now distinguishable and all three are shown.
+    lines.add('Medical referral: ${yesNoDisplay(_referral) ?? 'not recorded'}');
     // ⛔ THE NOTES TEXT, NOT A FLAG. This read `'Notes added'`, which told the
     // user that a thing existed without letting them check it — on the step
     // whose entire job is checking.
@@ -1113,7 +1198,7 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     // ⚠️ NOT TRUNCATED. A note long enough to wrap is a note long enough to
     // be worth reading back, and the summary's lines already wrap.
     final notes = _notesController.text.trim();
-    if (notes.isNotEmpty) lines.add('Notes: $notes');
+    lines.add('Notes: ${notes.isEmpty ? 'not recorded' : notes}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

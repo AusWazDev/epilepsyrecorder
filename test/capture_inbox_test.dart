@@ -250,7 +250,17 @@ void main() {
       expect(made.feelings, isEmpty);
       expect(made.triggers, isEmpty);
       expect(made.notes, '');
-      expect(made.referralRequired, isFalse);
+      // ⛔ `isNull`, NOT `isFalse`. Brief 62 A, 20 September 2026.
+      //
+      // ⭐ THE COMMENT ELEVEN LINES UP SAID type and severity *"were the
+      // last two fields still fabricating"*. THEY WERE NOT — this line was
+      // the third, asserting on every one-tap capture that no medical
+      // referral was needed, from a user who was shown no such question.
+      // It read as correct because a non-nullable bool has no other value
+      // to hold, which is exactly how the defect stayed invisible.
+      expect(made.referralRequired, isNull,
+          reason: 'a one-tap capture asks nothing, so referral is NOT '
+              'ASKED — not answered No');
 
       // Replay: a crash between the write and the delete must not duplicate.
       final second = applyInbox(first.merged, entries);

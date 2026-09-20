@@ -85,7 +85,7 @@ void main() {
               'meaning change');
       // v6 moved for this meaning change; v7 moved for the value convention
       // (§13(cc)) — the same test, applied twice.
-      expect(kCsvShapeVersion, 'v7');
+      expect(kCsvShapeVersion, 'v8'); // v8: referral value convention, Brief 62 A
     });
 
     test('5. events and medication notes now agree on what column 1 means',

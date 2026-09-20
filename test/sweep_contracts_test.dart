@@ -116,7 +116,17 @@ void main() {
     // same column — that half of the rule stays a convention, and saying so is
     // the point.
 
-    const marker = 'v7';
+    // ⛔ BUMPED TO v8 WITHOUT A COLUMN CHANGE, 20 September 2026, Brief 62 A.
+    // The column list below is UNCHANGED and deliberately so: `referral_required`
+    // still exists and still sits in the same position — what changed is what the
+    // cell HOLDS for a record that was never asked (`No` -> `Not Captured`).
+    //
+    // ⭐ THIS TEST'S OWN FAILURE MESSAGE PRESCRIBED THIS EDIT, verbatim: *"If you
+    // bumped the marker WITHOUT changing columns: update `marker` here. The rule
+    // permits that ... and this test cannot see it, which is why that half stays a
+    // convention."* CONTRACTS.md note D is that half. The convention was followed
+    // by a human decision, which is exactly what note D says it depends on.
+    const marker = 'v8';
     const columns = <String>[
       'timestamp_iso', 'date', 'time', 'record_kind', 'condition',
       'event_type', 'duration', 'duration_seconds', 'severity',

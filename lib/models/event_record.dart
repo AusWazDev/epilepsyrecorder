@@ -289,6 +289,18 @@ String? rescueResponseDisplay(RescueResponse? r) =>
 String rescueResponseCsv(RescueResponse? r) =>
     rescueResponseDisplay(r) ?? kCsvNotCaptured;
 
+/// What a SCREEN shows for a nullable yes/no, or null to show nothing.
+///
+/// ⭐ The display half of the pair `yesNoCsv` is the CSV half of — the same
+/// split `rescueResponseDisplay` / `rescueResponseCsv` already uses, and for
+/// the same reason: a screen showing nothing and a file writing `Not Captured`
+/// are the right answers to the same state in two different places.
+///
+/// Added 20 September 2026 with `referralRequired`'s nullability (Brief 62 A).
+/// Three callers: the wizard summary, the form's change log, and the history
+/// row's detail line.
+String? yesNoDisplay(bool? v) => v == null ? null : (v ? 'Yes' : 'No');
+
 /// A nullable yes/no, rendered for the CSV. Blank when unanswered.
 ///
 /// ⚠️ STILL USED BY `referralRequired`, which keeps *Yes / No*. The two
@@ -296,6 +308,15 @@ String rescueResponseCsv(RescueResponse? r) =>
 /// new answer wording, and the HEADERS do not. Different blast radius: a value
 /// change affects reading, a header change affects anyone whose spreadsheet
 /// matches on column names.
+///
+/// ⛔ **THE LINE ABOVE WAS FALSE WHEN WRITTEN, AND IS TRUE AS OF 20 SEPTEMBER
+/// 2026. Annotated, not rewritten.** `referralRequired` did NOT use this
+/// function: `buildCsv` wrote an inline `r.referralRequired ? 'Yes' : 'No'`,
+/// so this had **no caller at all** while its doc named one. ⭐ **The `bool?`
+/// parameter and the null branch were already here** — written for a field
+/// that could not yet be null, and unreachable for that reason. Brief 62 A
+/// made the field nullable and pointed `buildCsv` here, which is the first
+/// time either half of this function has run.
 String yesNoCsv(bool? v) => v == null ? kCsvNotCaptured : (v ? 'Yes' : 'No');
 
 /// The CSV cell for *rescue medication given*. Blank when unanswered.
@@ -433,7 +454,33 @@ class EventRecord {
   /// Nothing back-fills it. Only the wizard's summary step sets it true.
   final bool? detailsCompleted;
   final List<String> feelings;
-  final bool referralRequired;
+
+  /// NULL means NOT ASKED. Fourth field to take this rule, after `duration`,
+  /// `detailsCompleted` and `occurredAt`.
+  ///
+  /// ⛔ **WAS A NON-NULLABLE `bool` DEFAULTING TO `false`. Changed 20 September
+  /// 2026, Brief 62 A, and it closes a defect this codebase had already found
+  /// TWICE and left open both times.**
+  ///
+  /// §13(bl) finding 1, 10 September 2026: *"`referral_required` WRITES `No` ON
+  /// A RECORD THAT WAS NEVER ASKED … The file states something the app does not
+  /// know."* Flagged claim-adjacent, routed to the adviser, **not decided**.
+  /// §13(cd), 11 September 2026, costed it and named the cause: *"A
+  /// non-nullable bool has no absent state at all … the `No` §13(bl) flagged is
+  /// not a bad rendering choice — it is the ONLY value the type can hold."*
+  ///
+  /// ⭐ **So the renderer was never the defect and could never have been fixed
+  /// on its own. The missing state was in the TYPE**, which is why both passes
+  /// stopped at recording it. This is the model change those entries were
+  /// waiting for, and it is one of the four non-nullable fields §13(cd)
+  /// enumerates — `feelings`, `triggers`, `referralRequired`, `notes`. **The
+  /// other three are untouched and still cannot express "never asked".**
+  ///
+  /// ⚠️ **NOTHING IS BACK-FILLED.** A record already holding `false` keeps it
+  /// and still reads `No`. That `false` means *either* "answered No" *or*
+  /// "never asked", and the two are not separable after the fact — inventing a
+  /// split would be reconstruction, not recovery.
+  final bool? referralRequired;
   final String notes;
 
   // New fields — all have safe defaults for old saved records
@@ -568,7 +615,10 @@ class EventRecord {
     this.durationSeconds,
     this.detailsCompleted,
     required this.feelings,
-    required this.referralRequired,
+    // ⛔ NO LONGER `required`, and no default. Brief 62 A. Omitting it now
+    // means NOT ASKED, which is what every quick-log creation site means and
+    // what all four of them used to say `false` for.
+    this.referralRequired,
     required this.notes,
     this.eventType,
     this.severity,
@@ -725,7 +775,14 @@ class EventRecord {
       feelings: (feelingsRaw is List)
           ? feelingsRaw.map((e) => e.toString()).toList()
           : <String>[],
-      referralRequired: (referralRaw is bool) ? referralRaw : false,
+      // Absent means NULL, not false — the same rule as `detailsCompleted`
+      // eight lines up, which this line contradicted until 20 September 2026.
+      // A backup written before the field was asked must not come back
+      // asserting no referral was needed.
+      //
+      // ⚠️ AN OLD BUILD READING A NEW BACKUP DEGRADES SAFELY: `null` is not a
+      // `bool`, so it takes this same fallback and lands on the old default.
+      referralRequired: (referralRaw is bool) ? referralRaw : null,
       notes:            (notesRaw is String) ? notesRaw : '',
       // New fields — safe fallbacks for old records
       // Kept VERBATIM. The old code narrowed anything unrecognised to
@@ -1432,10 +1489,20 @@ String buildCsv(
       r.rescueMedSecondDose != null
           ? secondDoseCsv(r.rescueMedSecondDose)
           : (r.rescueMedGiven == false ? kCsvNotApplicable : kCsvNotCaptured),
-      // ⛔ THE ONE KNOWN EXCEPTION. A non-nullable bool: `No` is the only
-      // value the type can hold for a record that was never asked. Routed to
-      // the adviser, §13(bl). Not changed by the no-blank rule — §13(cd).
-      r.referralRequired ? 'Yes' : 'No',
+      // ⛔ THE EXCEPTION IS CLOSED. 20 September 2026, Brief 62 A.
+      //
+      // This read `r.referralRequired ? 'Yes' : 'No'` and was annotated as
+      // *"THE ONE KNOWN EXCEPTION. A non-nullable bool: `No` is the only value
+      // the type can hold for a record that was never asked."* ⭐ **That was
+      // true of the renderer and false of the file** — the type changed, so
+      // the exception went with it.
+      //
+      // ⚠️ `yesNoCsv` HAS ACCEPTED `bool?` SINCE IT WAS WRITTEN and had no
+      // caller. Its own doc says *"STILL USED BY `referralRequired`"*, which
+      // was already untrue — this site used an inline ternary instead. The
+      // writer the field needed was sitting unused beside the code that
+      // could not use it.
+      yesNoCsv(r.referralRequired),
       // Not Applicable on an event row, and `record_kind` says which.
       kCsvNotApplicable,
       // Non-nullable free text: empty is both "left blank" and "never shown".
@@ -1549,7 +1616,22 @@ List<String> _medicationCells(
 ///          reader cannot distinguish derived-and-unresolved from
 ///          never-answered and does not need to. After it, no cell in
 ///          the file renders `unknown`.
-const String kCsvShapeVersion = 'v7';
+///     v8   `referral_required` STOPS ASSERTING `No` ON A RECORD THAT       17
+///          WAS NEVER ASKED. v7's one stated exception is closed:
+///          `referralRequired` became `bool?`, so the column now writes
+///          `Not Captured` where the question was never put. No column
+///          added or removed - a MEANING change, and the sharpest kind
+///          this file has had: `No` previously meant *either* "answered
+///          No" *or* "never asked", and now means only the first.
+///          Brief 62 A, 20 Sep 2026; AUDIT.md §13(bl) finding 1 and
+///          §13(cd)'s referral row.
+///          ⛔ A READER CANNOT TELL v7's `No` FROM v8's `No` BY READING
+///          THE CELL - only the marker separates them, which is the
+///          whole reason this bump is not optional.
+///          ⚠️ EXISTING RECORDS ARE NOT BACK-FILLED, so a v8 file still
+///          carries `No` on rows saved before the change. The marker
+///          says what the WRITER now means, not what every row was.
+const String kCsvShapeVersion = 'v8';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.
 ///

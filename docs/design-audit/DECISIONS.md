@@ -1359,3 +1359,167 @@ is wrong.
 "repo", and as the frame that decided the answer before the evidence did.** ⭐ **The distinguishing
 feature here is that the SEARCH was wrong while the CONTROL passed, so nothing in the output
 looked doubtful.**
+
+---
+
+## Brief 62 — the four that blocked the release, and one accepted cost — 20 September 2026
+
+⛔ **All four came from the Brief 61 C appearance pass on build 58. Every one is fixed, tested,
+and carries a control that was demonstrated firing.** The deferred set is at the end and is
+recorded, not fixed.
+
+### A — 🔴 `referralRequired` could not say NOT ASKED
+
+**THE GATING READ, ANSWERED: IT WROTE.** The field was a non-nullable `bool`. The wizard wrote
+`_referral` into every record, SQLite stored `0`, and `buildCsv` wrote the literal word `No`.
+⛔ **A one-tap capture asserted, in a medical export, that no medical referral was needed — from
+a user who was shown no such question.** That is the serious branch of the read, not the
+display-only one.
+
+⭐ **AND THIS CODEBASE HAD ALREADY FOUND IT TWICE AND COULD NOT FIX IT.** Five places knew:
+
+    §13(bl) finding 1, 10 Sep   "WRITES `No` ON A RECORD THAT WAS NEVER ASKED ... The file
+                                states something the app does not know."  Routed to the
+                                adviser. NOT DECIDED.
+    §13(cd), 11 Sep             costed it: "A non-nullable bool has no absent state at all ...
+                                the `No` §13(bl) flagged is not a bad rendering choice - it is
+                                the ONLY value the type can hold."
+    buildCsv's own comment      "⛔ THE ONE KNOWN EXCEPTION."
+    csv_no_blank_test test 2    pinned the exception as correct behaviour
+    log_event_screen's `yn`     "these three are bool?, where referral is a plain bool.
+                                NULL IS NOT 'No' HERE"
+
+🔴 **THE REASON IT STAYED OPEN FOR TEN DAYS IS THE TRANSFERABLE PART: every one of those five
+was looking at the RENDERER, and no renderer change could have fixed it.** The missing state was
+in the TYPE. §13(cd) said so explicitly and still filed it as a finding rather than a change,
+because "the model cannot express this" reads like a constraint rather than a task.
+⭐ **A defect described accurately five times is still open until something changes.**
+
+**WHAT MOVED:** `bool` → `bool?`; `fromMap` absent-key `false` → `null` (matching
+`detailsCompleted` eight lines above it, which it had silently contradicted); SQLite write and
+read made three-way; the two real quick-log creation sites stopped passing `false`; the wizard
+and the form both start unset; `buildCsv` now calls `yesNoCsv`.
+
+⭐ **`yesNoCsv` ALREADY TOOK `bool?` AND HAD NO CALLER.** Its own doc claimed *"STILL USED BY
+`referralRequired`"* — untrue when written, because `buildCsv` used an inline ternary. **The
+writer the field needed had been sitting unused beside the code that could not use it.**
+
+⚠️ **NOT BACK-FILLED, DELIBERATELY.** A record already holding `false` keeps it. That `false`
+means *either* "answered No" *or* "never asked" and the two are not separable after the fact;
+splitting them would be reconstruction, not recovery.
+
+⚠️ **THE CSV SHAPE MARKER WENT v7 → v8**, and it had to. The column set is unchanged, so this is
+a MEANING change — and the sharpest this file has had: `No` previously meant *either* answer, and
+now means only one. ⛔ **A reader cannot tell v7's `No` from v8's `No` by reading the cell.**
+`sweep_contracts_test` caught the bump and its own failure message prescribed the edit verbatim:
+*"If you bumped the marker WITHOUT changing columns: update `marker` here ... this test cannot
+see it, which is why that half stays a convention."* **CONTRACTS.md note D is that half, and it
+worked exactly as documented.**
+
+⚠️ **THE FIELD'S WORDING AND ITS PRESENCE REMAIN ADVISER TERRITORY and were NOT touched.** The
+default was a consistency defect and needed no adviser; the question it asks still does.
+
+### B — 🔴 the summary reviewed almost nothing
+
+**It showed Duration plus only the fields that happened to have answers — two lines for a
+four-step questionnaire.** Seven fields were silently absent.
+
+⛔ **THE FAILURE WAS THAT OMITTED AND UNANSWERED RENDERED IDENTICALLY, AS NOTHING — and only one
+of them is recoverable by tapping Back.** This is the review step before a write with **no delete
+path**; a user could not tell "I skipped severity" from "severity was never asked".
+
+⚠️ **IT REVERSES A DECISION RECORDED IN THE CODE, AND THE OLD REASON WAS RIGHT ABOUT THE WORD IT
+OBJECTED TO.** The comment read *"A summary that said 'Event type: unknown' would read as a
+finding."* True — `unknown` is a value in this app's vocabulary. ⭐ **"not recorded" is not a
+value, it is the absence of one**, and Duration had rendered it on that very screen since the
+summary existed. **The objection does not reach the line that replaced it.** The old comment is
+kept in place, not deleted.
+
+⭐ **ONE PLACE "EVERY FIELD" IS NOT LITERAL:** *Did it help* and *Second dose* are gated behind
+rescue medication being Yes. Listing them as "not recorded" when they were never on screen would
+assert a gap in a question nobody was entitled to be asked — the same defect in the other
+direction. §13(cd) calls that Not Applicable.
+
+### C — 🔴 the progress bar was inverted, and absent on the last step
+
+⭐ **THE VALUE WAS NEVER WRONG, AND THAT IS WHY IT SURVIVED.** `(_step + 1) / (_lastStep + 1)` is
+.25 / .50 / .75 / **1.00** — correct on every step. Nothing about the arithmetic looks suspicious.
+
+⛔ **THE DEFECT WAS ENTIRELY CHROMATIC.** With no colours given, M3 takes the filled portion from
+`colorScheme.primary` — **the same navy as the AppBar one pixel above** — and the track from a
+light container. So the portion that GREW was invisible and the portion that SHRANK was the
+visible one. At step 4, where the value is a correct 1.0, the strip became a seamless extension
+of the AppBar and read as no progress bar at all.
+
+**CONTRAST, MEASURED, and one figure does NOT reach 3:1:**
+
+    filled focusRing #1A8FCB  vs track infoContainer #E3F2FD    3.15:1   ✅ 1.4.11
+    filled                    vs the page below      #F4F7F9    8.02:1   ✅
+    filled                    vs the AppBar above    #0D4F82    2.37:1   ⛔
+
+⛔ **THE THIRD IS UNREACHABLE, NOT UNATTEMPTED, AND THE ARITHMETIC IS PINNED IN A TEST SO NOBODY
+RE-OPENS IT AS AN OVERSIGHT.** Clearing 3:1 against the AppBar needs relative luminance ≥ 0.3187;
+clearing 3:1 against any light track needs ≤ 0.2784. **The demands do not overlap, so no colour
+whatever satisfies both while the track stays light.** The exits are a dark track — which makes
+the REMAINING portion loud again, reinstating the defect — or separating the strip from the
+chrome. ⚠️ **That is a design decision and was not taken here.** The boundary that carries the
+state information is filled-against-track, and it clears.
+
+### D — 🔴 the selected type chip was carried by colour alone
+
+**Every other selected chip on the form carries a ✓. The type chip changed only `selectedColor`
+and its icon's tint — and its unselected siblings carry icons too.** 1.4.1, on the one control
+whose value names what the event WAS.
+
+⭐ **THE ALTERNATIVE WAS BUILT AND MEASURED FIRST, THEN REJECTED ON A NUMBER.** Moving the icon
+into `label` keeps BOTH carriers:
+
+    avatar icon, no tick        (before)      237.3 x 48.0
+    icon moved into the label, tick too       261.3 x 48.0    +24.0 WIDE
+    avatar icon + showCheckmark (chosen)      237.3 x 48.0    IDENTICAL
+
+The label form cost 24 logical points per chip, forced an extra wrap row, shifted the whole form
+40 points down, stale-d three render baselines captured from unpatched code for an unrelated
+contract, **and regressed the form's chip overflow from a clean 175 to 325** until a `Flexible`
+was added. ⛔ **The geometry sweep caught that regression on the first run after the change —
+not a reading of it.**
+
+⚠️ **ACCEPTED COST: the type icon is hidden while selected.** `RawChip` gives the avatar and the
+checkmark one slot and the checkmark wins it, exactly as the screen's own block comment
+predicted. The selected chip is the one the user just chose, its label names the type, and the
+identity fill still carries the colour; the icon's job is scanning the options, an
+unselected-state job.
+
+🔴 **AND THE TICK WAS PROVED TO PAINT, BECAUSE IT HAD TO BE.** *"The avatar wins the slot"* and
+*"the checkmark wins the slot"* produce **the same width**, and only one of them is a fix — a
+width assertion cannot tell them apart. Pixels compared on an identical canvas: **1,014 bytes
+differ** with the checkmark on, and the control pair of two identical renders differs by **0**.
+⭐ **Without that control the 1,014 would have proved nothing.**
+
+### E — ✅ ACCEPTED, NOT CHANGED: `updatedAt` moves on a hide/unhide round trip
+
+**Found by the Brief 61 C closing diff:** hiding and then unhiding one record left exactly one
+field changed across all 75 — `updatedAt` on that record, moved to the moment of the unhide.
+
+**Defensible: hiding writes the record and the write stamps the field.** It does not reach the
+CSV, so it never leaves in an export — verified, `updatedAt` is not among the 17 columns.
+
+⛔ **THE CAVEAT, NAMED RATHER THAN LEFT IMPLICIT: after a hide and unhide, "last updated" no
+longer means "the content last changed".** ⚠️ **Someone reading a backup could infer a content
+change that did not happen.** Accepted because the alternative — special-casing the write to
+preserve the old stamp — costs more than the ambiguity, and because the ambiguity is confined to
+a field nothing user-facing renders.
+
+### Deferred — RECORDED, NOT FIXED, and they go to the follow-up release
+
+Two editors styled differently · time format differs between home and history · red carrying four
+meanings · three selection idioms on one screen · Help's chevron on QUICK LOG NOTIFICATION · the
+large voids in the wizard and Help · the cloud icon beside "Notiva never receives your events" ·
+the backup sheet's Cancel against the nav bar · History's transparent pinned count · the hide
+dialog not naming the event · chip group alignment · "34 to choose from" / "Show all" · the
+SnackBar outliving navigation.
+
+⚠️ **The SnackBar is the strongest of them** — it survived 60 seconds, navigation and a modal
+sheet with its Undo behind a scrim. **Promote it if the follow-up slips.**
+
+⛔ **These ship with the menu consolidation and the Help accessibility audit.**

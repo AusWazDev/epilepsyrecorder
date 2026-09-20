@@ -161,7 +161,7 @@ void main() {
       // the whole rule: v6 bumped with the column set untouched, because the
       // three time columns changed what they MEAN. A count cannot catch that.
       // Not because of this pass: v5 was the condition column.
-      expect(kCsvShapeVersion, 'v7'); // v7: value convention, §13(cc)
+      expect(kCsvShapeVersion, 'v8'); // v8: referral value convention, Brief 62 A
       expect(header(buildCsv(<EventRecord>[rec()])).length, 17,
           reason: 'the marker is DEFINED as this header. Changing one without '
               'the other is the drift the rule exists to prevent');

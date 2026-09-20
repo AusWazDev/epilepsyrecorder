@@ -424,7 +424,19 @@ Map<String, Object?> eventToRow(EventRecord r, int ordinal) => {
       'feelings_json': jsonEncode(r.feelings),
       'triggers_json': jsonEncode(r.triggers),
       'notes': r.notes,
-      'referral_required': r.referralRequired ? 1 : 0,
+      // ⛔ NULL-PRESERVING since 20 September 2026, Brief 62 A. This wrote
+      // `r.referralRequired ? 1 : 0` on a non-nullable bool, so a record that
+      // was never asked stored a 0 indistinguishable from an answered No.
+      // Takes the shape `details_completed` three lines below already had.
+      //
+      // ⚠️ NO SCHEMA CHANGE AND NO MIGRATION. `referral_required INTEGER`
+      // carries no NOT NULL and never did, so the column has always accepted
+      // this — `storage_migration.dart` has in fact been writing NULL into it
+      // for records whose backup omitted the field, and the READ below was
+      // flattening those to false. The column was ready; the model was not.
+      'referral_required': r.referralRequired == null
+          ? null
+          : (r.referralRequired! ? 1 : 0),
       'details_completed': r.detailsCompleted == null
           ? null
           : (r.detailsCompleted! ? 1 : 0),
@@ -479,7 +491,11 @@ EventRecord? eventFromRow(Map<String, Object?> row) {
     durationSeconds:
         (row['duration_seconds'] is int) ? row['duration_seconds'] as int : null,
     feelings: decodeStringList(row['feelings_json']),
-    referralRequired: row['referral_required'] == 1,
+    // THREE-WAY, not `== 1`. The old form mapped both NULL and 0 to false,
+    // which is how migrated records that never carried the field came back
+    // asserting no referral was needed.
+    referralRequired:
+        row['referral_required'] == null ? null : row['referral_required'] == 1,
     notes: row['notes'] is String ? row['notes'] as String : '',
     // Verbatim, like fromMap. A user-defined type is a string this code has
     // never seen, and narrowing it to a known one would rewrite the record.

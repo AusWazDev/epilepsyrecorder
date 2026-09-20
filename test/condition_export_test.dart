@@ -91,7 +91,7 @@ void main() {
       // and stays true; the constant simply is not owned by this file.
       // v5 for this column. v7 on 11 Sep 2026 for the no-blank value
       // convention (AUDIT.md §13(cc)) — a convention change bumps too.
-      expect(kCsvShapeVersion, 'v7');
+      expect(kCsvShapeVersion, 'v8'); // v8: referral value convention, Brief 62 A
     });
 
     test('2. an ATTRIBUTED record exports its condition NAME', () async {

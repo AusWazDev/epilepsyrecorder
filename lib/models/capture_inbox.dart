@@ -167,7 +167,12 @@ InboxDrainResult applyInbox(
       // gone from the constructor, so naming them here would only invite
       // someone to put a value back.
       feelings: const [],
-      referralRequired: false,
+      // ⛔ OMITTED, so NULL — NOT ASKED. Brief 62 A, 20 September 2026. This
+      // said `referralRequired: false`, which made a one-tap capture assert
+      // that no medical referral was needed. Nobody was asked anything.
+      //
+      // ⭐ Exactly the case §13(bl) finding 1 named: its worked example is a
+      // quick-log row carrying "five `unknown`s and one `No`".
       notes: '',
       // FALSE, not null. A quick-recorded event is a PARTIAL — created after
       // the wizard exists, carrying a timestamp and nothing anyone chose. Null
