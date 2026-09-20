@@ -131,7 +131,10 @@ void main() {
       'timestamp_iso', 'date', 'time', 'record_kind', 'condition',
       'event_type', 'duration', 'duration_seconds', 'severity',
       'observations', 'beforehand', 'rescue_med_given', 'rescue_med_helped',
-      'rescue_med_second_dose', 'referral_required', 'medication_kind', 'notes',
+      // ⛔ `referral_required` RENAMED to `further_attention`, Brief 63,
+      // 20 Sep 2026. The column SET is unchanged — same 17, same order —
+      // so this pin moves with the header rather than against it.
+      'rescue_med_second_dose', 'further_attention', 'medication_kind', 'notes',
     ];
 
     test('CONTROL: the recorded columns really are the header', () {

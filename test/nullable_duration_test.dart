@@ -296,7 +296,7 @@ void main() {
       const fixed = 10; // iso, date, time, record_kind, event_type, duration,
                         // duration_seconds, severity, observations, beforehand
       const rescue = 3; // given, helped, second_dose
-      const tail = 3; // referral_required, medication_kind, notes
+      const tail = 3; // further_attention, medication_kind, notes
       // DERIVED, never stored. A record's condition is a function of its event
       // type, so this column reads the type through the vocabulary and
       // `event.condition_id` stays NULL on every row.

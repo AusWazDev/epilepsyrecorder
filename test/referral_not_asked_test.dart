@@ -71,7 +71,7 @@ void main() {
         final csv = buildCsv([withReferral(v)]);
         final header = csv.split('\n').first.split(',');
         final row = csv.split('\n')[1].split(',');
-        return row[header.indexOf('referral_required')];
+        return row[header.indexOf('further_attention')];
       }
 
       expect(cell(true), 'Yes');
@@ -88,7 +88,7 @@ void main() {
       // ⚠️ Pinned because the marker bump (v7 -> v8) is a MEANING change, and
       // a reader who assumes a bump means new columns would be wrong.
       final header = buildCsv([withReferral(null)]).split('\n').first;
-      expect(header, contains('referral_required'));
+      expect(header, contains('further_attention'));
       expect(header.split(',').length, 17);
       expect(kCsvShapeVersion, 'v8');
     });

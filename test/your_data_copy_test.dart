@@ -274,7 +274,7 @@ void main() {
         'rescue_med_given',
         'rescue_med_helped',
         'rescue_med_second_dose',
-        'referral_required',
+        'further_attention',
         'medication_kind',
         'notes',
       ]);

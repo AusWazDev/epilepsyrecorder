@@ -170,12 +170,19 @@ void main() {
         reason: '${empties.length} empty cell(s): ${empties.join(', ')}');
   });
 
-  test('2. ⛔ THE ONE KNOWN EXCEPTION: referral_required still writes No '
+  // ⚠️ THE NAME BELOW IS SUPERSEDED TWICE OVER AND IS ANNOTATED RATHER
+  // THAN REWRITTEN, because the test still asserts exactly what it always
+  // asserted: a record holding `false` writes `No`.
+  //   · Brief 62 CLOSED the exception — the field became `bool?`, so an
+  //     UNASKED record now writes Not Captured. This fixture supplies an
+  //     explicit `false`, which is an ANSWERED no, so `No` is correct.
+  //   · Brief 63 renamed the column `referral_required` -> `further_attention`.
+  test('2. ⛔ THE ONE KNOWN EXCEPTION: further_attention still writes No '
       'on a record that was never asked', () {
     final csv = buildCsv(<EventRecord>[quickLog()]);
     final h = header(csv);
     final r = rows(csv).single;
-    expect(r[h.indexOf('referral_required')], 'No',
+    expect(r[h.indexOf('further_attention')], 'No',
         reason: 'a non-nullable bool has no absent state; routed to the '
             'adviser, not resolved here — §13(bl), §13(cd)');
     // and every OTHER unasked scalar on the same row says so
@@ -296,7 +303,7 @@ void main() {
     for (final col in [
       'event_type', 'duration', 'duration_seconds', 'severity',
       'observations', 'beforehand', 'rescue_med_given', 'rescue_med_helped',
-      'rescue_med_second_dose', 'referral_required',
+      'rescue_med_second_dose', 'further_attention',
     ]) {
       expect(r[h.indexOf(col)], _na, reason: col);
     }

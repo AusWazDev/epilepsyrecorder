@@ -1373,7 +1373,22 @@ String buildCsv(
     'rescue_med_given',
     'rescue_med_helped',
     'rescue_med_second_dose',
-    'referral_required',
+    // ⛔ RENAMED FROM `referral_required`, 20 September 2026, Brief 63.
+    // Position 15 of 17, unchanged. Values unchanged.
+    //
+    // ⭐ THE CAPTURE SURFACES STOPPED ASKING ABOUT A REFERRAL and this header
+    // did not, so the file asked a question no screen asks. Folded into the
+    // v8 bump already taken this cycle for the value convention, because a
+    // rename after release costs a second bump and a second round of
+    // consumer breakage.
+    //
+    // 🔴 DO NOT RENAME THIS WITH A FIND-AND-REPLACE. The retired string is
+    // BYTE-IDENTICAL to the SQLite column name, which is durable and must
+    // never change — `referral_required INTEGER` in the DDL, and the write
+    // and read either side of it. A global replace on that string renames the
+    // database column and orphans every existing user's data. `contract_
+    // durable_keys_test` now pins the DDL so this cannot happen silently.
+    'further_attention',
     // A COLUMN OF ITS OWN, not `event_type` reused. missed/late/changed is a
     // different question from what kind of event happened, and one column
     // holding two meanings is the defect `record_kind` exists to prevent.
@@ -1551,7 +1566,7 @@ List<String> _medicationCells(
       kCsvNotApplicable, // rescue_med_given
       kCsvNotApplicable, // rescue_med_helped
       kCsvNotApplicable, // rescue_med_second_dose
-      kCsvNotApplicable, // referral_required
+      kCsvNotApplicable, // further_attention
       medicationDeviationLabel(n.kind),
       n.notes.isEmpty ? kCsvNotCaptured : n.notes,
     ];

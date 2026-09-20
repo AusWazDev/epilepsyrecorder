@@ -115,7 +115,8 @@ const List<String> kCsvHeaderGolden = <String>[
   'rescue_med_given',
   'rescue_med_helped',
   'rescue_med_second_dose',
-  'referral_required',
+  // Renamed from `referral_required`, Brief 63, 20 Sep 2026.
+  'further_attention',
   'medication_kind',
   'notes',
 ];

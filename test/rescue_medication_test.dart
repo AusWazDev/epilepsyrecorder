@@ -112,7 +112,8 @@ void main() {
         'rescue_med_helped',
         'rescue_med_second_dose',
       ]);
-      expect(h[14], 'referral_required');
+      // Renamed Brief 63; POSITION UNCHANGED at index 14 / column 15.
+      expect(h[14], 'further_attention');
     });
 
     test('8. unanswered exports Not Captured, not blank and not "unknown"',
