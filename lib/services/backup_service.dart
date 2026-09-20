@@ -290,7 +290,10 @@ Future<void> showBackupOptions(
           if (!Platform.isIOS)
             ListTile(
               leading: const Icon(Icons.save_alt),
-              title: const Text('Save to a file'),
+              title: Text(kSaveToDeviceTitle),
+              subtitle: kSaveToDeviceSubtitle == null
+                  ? null
+                  : Text(kSaveToDeviceSubtitle!),
               onTap: () async {
                 Navigator.pop(sheet);
                 await backupSaveAs(context, records,
@@ -299,8 +302,24 @@ Future<void> showBackupOptions(
                     eventTypeConditions: eventTypeConditions);
               },
             ),
-          // Same wording as the export sheet for the same action. Two labels
-          // for one thing read as two different features.
+          // ⛔ THE RULE WAS TRUE AND THE COMPLIANCE WAS NOT. Corrected
+          // 19 September 2026.
+          //
+          // This read: "Same wording as the export sheet for the same action.
+          // Two labels for one thing read as two different features."
+          //
+          // ⭐ The RULE is right and is kept. ⚠️ The COMPLIANCE was never
+          // achieved: this sheet rendered 'Save to a file' while the export
+          // sheet rendered 'Save to device' with a subtitle promising a choice
+          // Android does not offer. ⛔ A comment asserting a compliance is the
+          // thing a reader checks INSTEAD of checking the code, which makes it
+          // worse than no comment — it is why the divergence survived.
+          //
+          // ⭐ IT IS TRUE NOW, AND STRUCTURALLY RATHER THAN BY AGREEMENT: both
+          // sheets read `kSaveToDeviceTitle` / `kSaveToDeviceSubtitle` from
+          // `constants.dart`, so they cannot diverge without one of them
+          // ceasing to read the pair. THIS SHARE ROW is the one label still
+          // duplicated by hand, and it is identical in both.
           ListTile(
             leading: const Icon(Icons.ios_share),
             title: const Text('Share to apps'),

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 const String kAppName           = 'Medical Event Recorder';
 const String kCompanyName       = 'Notiva';
 
@@ -279,3 +281,35 @@ const List<String> kTriggerOptions = [
   'Standing up',
   'Heat or hot weather',
 ];
+
+/* ===========================
+   THE SAVE-TO-DEVICE LABEL
+   =========================== */
+
+/// ⛔ ONE SOURCE, BECAUSE THE RULE WAS PREVIOUSLY A COMMENT AND THE COMMENT WAS
+/// FALSE. Added 19 September 2026.
+///
+/// `backup_service.dart` carried, beside its sheet: *"Same wording as the
+/// export sheet for the same action. Two labels for one thing read as two
+/// different features."* ⭐ **The rule was right. The compliance was never
+/// achieved** — backup rendered `'Save to a file'` while export rendered
+/// `'Save to device'` with a subtitle. A comment asserting a compliance is the
+/// thing a reader checks INSTEAD of checking the code, so it was worse than no
+/// comment.
+///
+/// ⚠️ **THE LABEL VARIES BY PLATFORM BECAUSE THE BEHAVIOUR DOES**, and the old
+/// export subtitle promised a choice that Android never offers:
+///
+///     Android            writes straight to Downloads, NO chooser
+///     Windows/macOS/Linux  getSaveLocation() — a real chooser
+///     iOS                the option is not shown at all; share only
+///
+/// ⭐ Both sheets read these, so "the same label on the same platform" is
+/// STRUCTURAL rather than a convention someone has to remember.
+String get kSaveToDeviceTitle =>
+    Platform.isAndroid ? 'Save to Downloads' : 'Save to device';
+
+/// Null on Android: there is no location to choose, so promising one is the
+/// defect this pair exists to remove.
+String? get kSaveToDeviceSubtitle =>
+    Platform.isAndroid ? null : 'Choose location and file name';

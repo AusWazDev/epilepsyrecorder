@@ -1847,15 +1847,15 @@ Future<void> showExportOptions(
                     color: MERColours.infoAccent,
                   ),
                 ),
-                title: const Text(
-                  'Save to device',
-                  style: TextStyle(
+                title: Text(
+                  kSaveToDeviceTitle,
+                  style: const TextStyle(
                     fontWeight: MERType.emphasis,
                   ),
                 ),
-                subtitle: const Text(
-                  'Choose location and file name',
-                ),
+                subtitle: kSaveToDeviceSubtitle == null
+                    ? null
+                    : Text(kSaveToDeviceSubtitle!),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await exportCsvSaveAs(
