@@ -156,6 +156,39 @@ remove.
 **The complete list stays complete everywhere. One derived view excludes hidden rows. Every read site
 is classified deliberately into render, integrity, or reconciling.**
 
+> ⛔ **A FOURTH BUCKET — ROUTING. Annotated in place 20 September 2026; the wording above is
+> unchanged and stays as written.**
+>
+> **The scheme above names THREE kinds of read site:**
+>
+> > *"Every read site is classified deliberately into **render, integrity, or reconciling**."*
+>
+> ⚠️ **A fourth was already in use when that was written, and the scheme had no name for it.**
+> Three sites in `home_screen` resolved WHICH RECORD TO OPEN from the filtered list — the
+> notification-tap path, the resume path, and the Last Event card's `onEdit`. ⛔ **Choosing a
+> record to open is not render, not integrity, and not reconciling. Those sites were never
+> CLASSIFIABLE, let alone classified.**
+>
+> 🔴 **AND THE CONSEQUENCE REACHED THE RECORD, NOT THE DISPLAY.** With the newest record hidden,
+> a notification about THAT event opened the PREVIOUS one, and details were added to the wrong
+> event with no signal. ⭐ **A misrouted write, not a wrong number on a screen.**
+>
+> ⭐ **ROUTING IS NOW A NAMED BUCKET, AND IT CARRIES ITS OWN RULE:** a routing site resolves a
+> record **by identity**, never by position in a list, and never from a filtered population.
+> ⚠️ **Position-as-identity is wrong whenever list order changes for ANY reason** — a record
+> created between a notification firing and its tap already breaks it, hidden or not.
+>
+> **Closed at `b5496de` (render sites) and `7c5fae7` (routing by id).** ⛔ **One routing site
+> remains position-based and is recorded as an OPEN defect at its own site rather than as
+> solved:** `_openLatestEvent`, which the iOS native channel reaches through
+> `getPendingOpenLatest` — a BOOL carrying no id. **Closing it needs the id on the Swift side.**
+>
+> ⚠️ **THE GENERAL POINT, AND IT IS WHY THIS IS ANNOTATED RATHER THAN QUIETLY EXTENDED: a
+> classification scheme with no bucket for something that is already happening does not produce
+> an unclassified site — it produces a site nobody can see is unclassified.** ⭐ **The manifest
+> test added with this annotation is what makes a new unclassified site impossible to add
+> silently.**
+
 ⛔ **The filter cannot live on the stored list.** ⚠️ **Confirm against the repo before relying on it:
 the store's write path is a full delete-and-reinsert, list position persists as an ordinal, and at
 least one screen's local list reaches that write path — so a filter at read empties the bin on the
@@ -1058,3 +1091,64 @@ will ever report its absence.**
 * **A scheduled notification cannot be the remedy.** ⛔ **Windows has no notification path at
   all — `init()` returns before any channel is created.** Recorded so the obvious answer is
   foreclosed before it is proposed.
+
+---
+
+## Two classes from the hidden-semantics divergence — 20 September 2026
+
+⭐ **Checked before writing: neither is already recorded.** The part D correction of 19 September
+holds two DIFFERENT classes — *a principle applied without verifying its precondition* and *two
+kinds of comment* — and these two are new. ⛔ **Cross-referenced rather than restated, because
+one provenance claim in this repo already needed correcting in four files after being
+duplicated as prose.**
+
+### 🔴 CLASS — A RULE CAN BE WRITTEN, DATED, COMMITTED, AND DIVERGED FROM THE SAME DAY
+
+**`4292288` and `a69f0a7` are both 17 September 2026.** One recorded *"the complete list stays
+complete everywhere; ONE derived view excludes hidden rows"*; the other shipped a hide control
+whose consequences were read through a filtered list in fourteen places. ⛔ **Hours apart, in
+the same repository, by the same effort.**
+
+⭐ **THE POINT IS NOT THAT SOMEONE WAS CARELESS. It is that writing a rule down does nothing
+mechanical.** A document cannot fail. ⚠️ **The divergence was not a decision to ignore the rule
+— it was the absence of anything that could notice.**
+
+⛔ **THIS IS THE WHOLE ARGUMENT FOR THE CONTRACT SWEEP, stated from the one case that proves
+it:** the rule existed, was current, was correct, was committed, and was violated the same day.
+⭐ **Every invariant therefore ends with a TEST or an honest label — never with prose that reads
+like enforcement.**
+
+⚠️ **Distinct from, and worse than, a STALE rule.** A stale rule was true once and can be dated.
+**This was never true after the commit that stated it.**
+
+### 🔴 CLASS — AN IDIOM BORROWED BETWEEN FEATURES CARRIES NO DECISION WITH IT
+
+**`a69f0a7`, quoted:**
+
+> *"vocabulary's hide already warns about nothing because nothing is destroyed. **Same idiom,
+> same app.**"*
+
+⛔ **The idiom transferred. The decision did not.** ⭐ **D6 governs VOCABULARY ENTRIES —
+*"Vocabularies are append-only. Entries are hidden, never deleted… Entries MER itself retired
+are not the user's to un-hide."*** ⚠️ **It says nothing about event records, and it could not:
+they are different objects.**
+
+| | vocabulary entry | event record |
+|---|---|---|
+| what it is | **a thing the user MAINTAINS** — a list they curate | **a thing that HAPPENED** — a fact about their health |
+| what hiding means | retire an option from a picker | withhold a clinical record from a view |
+| what a wrong hide costs | one picker entry to un-hide | ⛔ **a record missing from a count a clinician may read** |
+
+⭐ **SAME GESTURE, DIFFERENT OBJECT.** The eye icon, the reversibility argument and the
+"nothing is destroyed" copy all crossed over intact; **the reasoning about what the object IS
+did not cross with them, because it was never restated.**
+
+⚠️ **SAME FAMILY AS THE TRAVELLING-TERM CLASS, and the third axis on which it has now been
+seen:** a term travelling between DOCUMENTS (*without opening* / *without unlocking*), a metric
+travelling between QUESTIONS (the scroll-viewport fold; the banner's clearability denominator),
+and now **an idiom travelling between FEATURES.**
+
+⛔ **PRACTICAL FORM: when a feature is justified by pointing at another feature, the decision
+covering that other feature must be re-read and its SUBJECT checked.** ⭐ **"Same idiom, same
+app" is precisely the sentence to stop at** — it asserts a transfer without naming what is being
+transferred, and an app is not a unit over which decisions automatically hold.
