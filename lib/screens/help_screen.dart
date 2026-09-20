@@ -214,7 +214,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: _kSectionGap),
 
             const _Section(
               title: 'HISTORY & EXPORT',
@@ -298,7 +298,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: _kSectionGap),
 
             _Section(
               title: 'YOUR DATA — PLEASE READ',
@@ -356,7 +356,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: _kSectionGap),
 
             if (!Platform.isWindows)
             _Section(
@@ -510,7 +510,16 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 ),
                 children: [],
               ),
-            if (Platform.isWindows) const SizedBox(height: 12),
+            // ⛔ THE GUARD IS GONE. Brief 64 B-1, 20 September 2026.
+            // This read `if (Platform.isWindows) const SizedBox(height: 12)`,
+            // so on Android and iOS the gap was never built and the last two
+            // sections touched — measured at 0 against 12 for the other three.
+            //
+            // ⭐ AND REMOVING IT IS WHAT MAKES THE FIX TESTABLE. While the
+            // conditional existed, a widget test on a Windows host rendered
+            // the branch that was already correct and reported "uniform".
+            // One code path means the test exercises what Android runs.
+            const SizedBox(height: _kSectionGap),
 
             _Section(
               title: 'GETTING HELP',
@@ -783,6 +792,24 @@ class _StatusRow extends StatelessWidget {
 /// State is NOT persisted between visits, deliberately. Someone returning to
 /// Help usually has a different question, so a remembered layout is a remembered
 /// wrong answer.
+/// The vertical gap between the Help screen's expanding sections.
+///
+/// ⛔ **ONE CONSTANT, FOUR SITES, AND THAT IS THE POINT. Brief 64 B-1,
+/// 20 September 2026.** These four gaps were four independent literal `12`s.
+/// Values that must stay equal, maintained separately, diverge — and one did:
+/// the fourth sat inside `if (Platform.isWindows)`, so on Android and iOS it
+/// was never built and the last two sections touched.
+///
+/// ⚠️ **MEASURED, not inferred.** On the tablet at dpr 1.0 the gaps read
+/// **12, 12, 12, 0**, and at the last boundary the two 1px card borders were
+/// adjacent rows — y=549 and y=550 — with no page background between them.
+/// On Windows all four measured 12.0, which is why no test on a Windows host
+/// could see it.
+///
+/// ⭐ **A shared constant removes the CLASS, not just the instance.** A fifth
+/// section added later takes this value without anyone deciding it again.
+const double _kSectionGap = 12;
+
 class _Section extends StatefulWidget {
   final String       title;
   final List<Widget> children;
@@ -801,6 +828,14 @@ class _Section extends StatefulWidget {
 class _SectionState extends State<_Section> {
   bool _open = false;
 
+  /// Whether this section has anything to reveal.
+  ///
+  /// ⚠️ `children`, NOT `alwaysVisible`. A section can carry always-visible
+  /// content AND collapsible children — the non-Windows quick-log section does
+  /// exactly that. What makes a header a control is whether tapping it changes
+  /// anything, and only `children` can.
+  bool get _expandable => widget.children.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -812,23 +847,55 @@ class _SectionState extends State<_Section> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: () => setState(() => _open = !_open),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(widget.title,
-                        style: Theme.of(context).textTheme.labelLarge),
-                  ),
-                  Icon(
-                    _open ? Icons.expand_less : Icons.expand_more,
-                    size:  22,
-                    color: MERColours.onSurfaceMuted,
-                  ),
-                ],
+          // ⛔ B-4 AND B-5, 20 September 2026, AND THEY HAD TO BE ONE CHANGE.
+          //
+          // B-5: a section with nothing to expand must not present as an
+          // expander. The Windows replacement section is declared
+          // `children: []`, so its chevron promised content that does not
+          // exist — tapping it added 18.0 of empty padding and flipped the
+          // glyph, revealing nothing. ⚠️ A control that reveals nothing is
+          // worse than no control: a user cannot tell whether the content is
+          // missing or the feature is absent, which is the exact failure the
+          // Windows replacement-section pattern exists to prevent.
+          //
+          // B-4: the header carried NO ROLE. Measured — all five announced as
+          // bare `[tappable]`, no header, no button; the only HEADER on the
+          // screen was the app-bar title. Five tappable regions with no
+          // heading structure is a real barrier in a medical app.
+          //
+          // ⭐ WHY ONE CHANGE AND NOT TWO: the role depends on whether the
+          // thing IS a control. Announcing `button: true` on a section that
+          // does not expand would be the same lie B-5 removes, told to a
+          // screen reader instead of to the eye. So `_expandable` drives both.
+          Semantics(
+            header:   true,
+            button:   _expandable,
+            expanded: _expandable ? _open : null,
+            child: InkWell(
+              // NULL when there is nothing to expand: InkWell with a null
+              // onTap is not focusable and emits no tap action, so the
+              // section reads as content.
+              onTap: _expandable
+                  ? () => setState(() => _open = !_open)
+                  : null,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(widget.title,
+                          style: Theme.of(context).textTheme.labelLarge),
+                    ),
+                    // ⛔ NO CHEVRON WHERE THERE IS NOTHING TO REVEAL.
+                    if (_expandable)
+                      Icon(
+                        _open ? Icons.expand_less : Icons.expand_more,
+                        size:  22,
+                        color: MERColours.onSurfaceMuted,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -837,7 +904,7 @@ class _SectionState extends State<_Section> {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: widget.alwaysVisible,
             ),
-          if (_open)
+          if (_open && _expandable)
             Padding(
               padding: EdgeInsets.fromLTRB(
                   14, widget.alwaysVisible == null ? 0 : 4, 14, 14),

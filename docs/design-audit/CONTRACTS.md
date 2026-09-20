@@ -22,7 +22,7 @@ rule's reasoning, it points at it.
 
 ---
 
-## The eighteen
+## The nineteen
 
 | # | structure | invariant — what must remain TRUE | outcome | checked by |
 |---|---|---|---|---|
@@ -36,6 +36,7 @@ rule's reasoning, it points at it.
 | **8** | spacing scale | Every screen's horizontal body inset is 0, 16 or 24; 24 is reserved to the walkthrough | **CONVENTION**, 20 Sep 2026 | note C — **coverage 2 of 12** |
 | **9** | CSV columns | Any change to the column set, or to what a cell holds for the same stored state, bumps the shape marker | **TESTED — source scan + hash pin** | `sweep_contracts_test` · `csv_header_contract_test` ⚠️ **the VALUE half is still convention — note D** |
 | **18** | durable keys | The SQLite column names, the backup JSON keys and the legacy prefs keys never change, and no export header shares a string with any of them | **TESTED — source scan** | `durable_keys_test` |
+| **19** | Help section spacing | Every gap between Help's sections is equal to the others and drawn from one shared constant; no spacing widget sits inside a platform conditional | **TESTED — behaviour + source scan** | `help_section_spacing_test` · `help_no_platform_gap_test` ⚠️ **the behaviour half is host-bound — note J** |
 | **10** | Help rows | Help never describes behaviour the app does not have | **CONVENTION**, 20 Sep 2026 | note E |
 | **11** | SQLite migrations | Every step is additive, non-destructive and independently guarded, so a database at any version walks forward correctly in one open | **TESTED — source scan** | `migration_contract_test` |
 | **12** | backup envelope keys | A restore is never partially applied, and existing records always win | **TESTED — behaviour** (that clause) · **CONVENTION** (the key set) | `restore_outcomes_test` · note F |
@@ -179,6 +180,26 @@ fixed.
 ⚠️ **THE MISREADING IT GUARDS: this row says one control was repaired, not that the app is
 clean.** ⭐ No instrument here enumerates selection controls, so nothing will tell you when a
 new one is added carrying colour alone — which is exactly how this one arrived.
+
+### J — `#19` the behaviour half is HOST-BOUND, and the source scan is what protects it
+
+⛔ **`help_section_spacing_test` is a widget test on one machine, and this CLI host is Windows.**
+That is not a caveat about this test — **it is the entire Brief 64 defect.** The fourth section
+gap sat inside `if (Platform.isWindows)`, so every widget test on this host rendered the branch
+that was already correct and reported the screen uniform, while Android shipped a gap of 0.
+
+⚠️ **THE MISREADING IT GUARDS: "tested behaviourally" does not mean "tested on every platform".**
+It means tested on the platform the runner happened to be. ⭐ **While Help's spacing has ONE code
+path the two are the same thing** — and `#19`'s source-scan half exists to keep that true.
+
+🔴 **DEMONSTRATED, not argued.** Re-introducing the guard turns `help_no_platform_gap_test` red
+and leaves `help_section_spacing_test` **passing**. The branch does not break the behaviour test;
+it makes it irrelevant while it goes on passing.
+
+⚠️ **SCOPE: Help's SPACING, not Help's platform conditionals.** The screen legitimately branches
+on platform for CONTENT — the quick-log section genuinely differs on Android, iOS and Windows.
+**A check forbidding platform conditionals outright would be wrong about this screen and would be
+deleted by the first person who needed one.**
 
 ### F — `#12` the envelope key SET
 

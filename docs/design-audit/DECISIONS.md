@@ -2141,3 +2141,138 @@ on clinical-claim grounds — a different sentence for a different reason. The i
 anticipate the exclusion that mattered.
 
 **Observed 20 September 2026.**
+
+---
+
+## Brief 64 — the Help screen's spacing, and an instrument blind by construction — 20 September 2026
+
+### The defect
+
+⛔ **The gap between the last two Help sections was 0 on Android and iOS, and 12 everywhere else.**
+Its whole cause was one guard: `if (Platform.isWindows) const SizedBox(height: 12)`. On the two
+platforms that are not Windows the widget was never built.
+
+**MEASURED 20 September 2026**, tablet framebuffer at dpr 1.0 — device pixels, directly
+comparable with the Windows logical figures below:
+
+    RECORDING EVENTS -> HISTORY & EXPORT        12
+    HISTORY & EXPORT -> YOUR DATA               12
+    YOUR DATA        -> QUICK LOG NOTIFICATION  12
+    QUICK LOG        -> GETTING HELP             0    <- the defect
+
+⭐ **A PHOTOGRAPH, NOT AN INFERENCE.** Scanning down x=400 through that boundary: card interior
+at y=548, **border at y=549, border at y=550**, card interior at y=551. Two 1px card borders on
+adjacent rows with **no page background between them**. A healthy boundary shows twelve rows of
+`(245,248,251)`.
+
+### 🔴 THE CLASS: AN INSTRUMENT THAT SHARES A PLATFORM WITH ONE BRANCH IS BLIND TO THE OTHER BY CONSTRUCTION
+
+**Observed 20 September 2026.** The CLI host is Windows. `Platform.isWindows` is therefore true
+in every widget test, so a widget test rendered **the branch that was already correct**, measured
+`12, 12, 12, 12`, and reported the screen uniform.
+
+⛔ **IT DID NOT FAIL. IT REPORTED CONFIDENTLY ON THE BRANCH IT COULD SEE.** No error, no skip, no
+signal of any kind that a second code path existed and had not been looked at.
+
+⚠️ **AND THE PROOF IS IN THIS PASS'S OWN CONTROL.** With the guard deliberately re-introduced:
+
+    help_no_platform_gap_test    RED
+    help_section_spacing_test    STILL PASSES
+
+⭐ **The branch does not break the spacing test. It makes it IRRELEVANT, silently, while it goes
+on passing.** That is why B-3's source scan exists: not to prevent the bug being written again,
+but to prevent the spacing test's coverage being removed without anyone noticing.
+
+⚠️ **THIRD INSTANCE IN TWO BRIEFS OF AN APPARATUS RETURNING A WELL-FORMED WRONG ANSWER, AND THE
+FIRST WHERE THE CAUSE IS THE ENVIRONMENT RATHER THAN THE CODE.** The other two were a difference
+assertion that could not distinguish superimposition from replacement, and a figure carried from
+a neighbouring column. **This one no reading of the code would have caught**, because the code
+was correct on the host that read it.
+
+### The fix, and why it is one change with its own verifiability
+
+⭐ **REMOVING THE GUARD IS WHAT MAKES THE FIX TESTABLE.** While the conditional existed, no test
+on this machine could see the defect. One code path means a widget test here exercises what
+Android runs. **The untestability was a property of the guard, and the fix deletes the guard.**
+
+⛔ **AND THE FOUR LITERALS BECAME ONE CONSTANT — `_kSectionGap`.** Four values that must stay
+equal were maintained independently, which is what let one diverge. **A shared constant removes
+the class, not just the instance**: a fifth section added later takes the value without anyone
+deciding it again.
+
+⚠️ **CONFIRMED RATHER THAN ASSUMED, as the brief required.** With the guard removed, Windows
+measures `12.0, 12.0, 12.0, 12.0` and **nothing doubled to 24.0** — the escape clause's named
+failure did not occur. Part A's reading that the guarded widget *was* the Windows gap holds.
+
+⛔ **NOT VERIFIED BY A RE-CAPTURED BASELINE, DELIBERATELY.** A baseline records what is and
+treats it as correct by definition. Had one been taken while the gap was 0 it would now **guard
+the defect** — going red on the fix and silent indefinitely while it was wrong. ⭐ **Baselines
+catch regressions; they never catch a thing that was born wrong.**
+
+### B-4 and B-5 — both contained, and they had to be one change
+
+**The containment calls, made before acting.** `_Section` is file-private and `vocabulary_screen`'s
+identically-named class is an unrelated data class, so the blast radius is `help_screen.dart`
+alone — 7 instantiations, exactly 1 with `children: []`. **Neither fix needs a new widget type, an
+API change, or a screen restructure.** Both are changes inside `_SectionState.build`.
+
+**B-4 — the headers had no role.** Measured: all five announced as bare `[tappable]`; zero
+headers among them; the only `HEADER` on the screen was the app-bar title. Five tappable regions
+with no heading structure to navigate by, in a medical app.
+
+**B-5 — a chevron that revealed nothing.** The Windows replacement section is declared
+`children: []`, so tapping its header added **18.0 of empty padding** and flipped the glyph with
+no content appearing. ⛔ **A control that reveals nothing is worse than no control: a user cannot
+tell whether the content is missing or the feature is absent** — the exact failure the
+replacement-section pattern exists to prevent.
+
+⭐ **WHY THEY ARE ONE CHANGE AND NOT TWO.** The role depends on whether the thing IS a control.
+Announcing `button: true` on a section that does not expand would be **the same lie B-5 removes,
+told to a screen reader instead of to the eye.** One predicate, `_expandable`, drives the
+chevron, the tap handler and the semantics together.
+
+⚠️ **THE REPLACEMENT-SECTION PATTERN IS UNTOUCHED.** B-5 changed how it presents, never whether
+it exists; its content is still visible and still says *"Not available on Windows"*, asserted by
+a control in the test.
+
+### B-6 — the passes, dated and with their instrument named
+
+**MEASURED 20 September 2026.** These are the findings most likely to be assumed still true in
+six months, so the date and the instrument are part of the record.
+
+| measured | figure | instrument |
+|---|---|---|
+| header touch target height | **50.0**, all five, identical | widget test, logical px |
+| header text and expand icon | **`#447598` on `#FFFFFF` = 4.95:1** | computed from the theme tokens |
+| overflow, {1.0x, 2.0x} x {375, 800}, collapsed | **0**, 29 paragraphs, 0 errors | widget test, `FlutterError.onError` intercept |
+| overflow, same grid, one section expanded | **0**, 44 paragraphs, 0 errors | as above; at 2.0x/375 the expanded section reaches 4436.0 tall and still does not overflow |
+| focus traversal order | **matches visual order** | semantics tree walk |
+
+⚠️ **The contrast figure is one colour doing two jobs**: the header text and the chevron are both
+`onSurfaceMuted`. It clears 4.5 for text and 3.0 for the icon, so both pass — **on the same
+number**, which means a future change to that token moves both at once.
+
+### B-7 — deferred, with an expiry date on the absence
+
+⛔ **DEFERRED, RECORDED 20 September 2026 so the absence has a date rather than being silent:**
+a sweep enumerating **every platform conditional in `lib/`**, stating for each whether any test
+can actually see it.
+
+⭐ **THE REACH IS BEYOND HELP, AND MER IS DELIBERATELY PLATFORM-DIVERGENT.** iOS notifications
+are native Swift and the iOS capture path posts facts to an inbox rather than passing through the
+Dart write path; Windows has no notification path at all; the Android quick-log runs in a
+background isolate. **Every one of those branches is invisible to a test on a single host.**
+
+⚠️ **RECORDED NOW SPECIFICALLY SO THAT "we have tests for that" IS NOT LATER READ AS "that branch
+is covered".** The Help gap is the proof that those two sentences can both be true of a screen
+and still leave a defect shipping.
+
+### The sort, for the record
+
+**Shipped in this release:** the spacing (a value change), the shared constant, the header
+semantics, the Windows chevron. **Recorded as dated passes:** touch targets, contrast, overflow,
+traversal order. **Deferred:** the platform-conditional sweep.
+
+⭐ **NOTHING SORTED TO THE DEFERRED HELP ACCESSIBILITY AUDIT.** Nothing here required a statement
+about what the app does, new or changed copy, or a restructure — **the triage line held without
+needing to be softened**, and the audit keeps its claims register and its scope intact.
