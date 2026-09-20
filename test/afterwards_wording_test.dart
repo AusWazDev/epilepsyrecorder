@@ -220,7 +220,7 @@ void main() {
     for (final q in <String>[
       'WHAT HAPPENED?',
       'WHAT WAS HAPPENING BEFOREHAND?',
-      'MEDICAL REFERRAL REQUIRED?',
+      'FURTHER MEDICAL ATTENTION?',
     ]) {
       expect(find.text(q), findsOneWidget,
           reason: 'the column already contains this question');
@@ -285,16 +285,16 @@ void main() {
     testWidgets('10. step 4 labels BOTH its fields, not one of two',
         (tester) async {
       // The asymmetry that made the removal visible on the device: the chips
-      // had nothing above them while "Medical referral required?" two rows
+      // had nothing above them while "Further medical attention?" two rows
       // below kept its label, which read as an omission rather than a choice.
       await toAfterwardsStep(tester);
 
       expect(find.text(kAfterwardsHeading), findsOneWidget);
-      expect(find.text('MEDICAL REFERRAL REQUIRED?'), findsOneWidget);
+      expect(find.text('FURTHER MEDICAL ATTENTION?'), findsOneWidget);
 
       final obs = tester.getTopLeft(find.text(kAfterwardsHeading));
       final referral =
-          tester.getTopLeft(find.text('MEDICAL REFERRAL REQUIRED?'));
+          tester.getTopLeft(find.text('FURTHER MEDICAL ATTENTION?'));
       expect(referral.dy, greaterThan(obs.dy),
           reason: 'both labelled, in order, on the same step');
     });

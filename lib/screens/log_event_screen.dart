@@ -240,7 +240,11 @@ class _LogEventScreenState extends State<LogEventScreen> {
     _severity          = e?.severity;
     _selectedFeelings  = (e?.feelings        ?? []).toSet();
     _selectedTriggers  = (e?.triggers        ?? []).toSet();
-    _referralRequired  = e?.referralRequired;
+    // ⛔ `?? false` RESTORED 20 September 2026 (Brief 62 R3 §2), partially
+    // reversing `c4d5d0a` ON THIS SURFACE ONLY. See the reason beside the
+    // control below: the form is scanned, so a visible default is the v1
+    // decision and it stands. The WIZARD keeps no default.
+    _referralRequired  = e?.referralRequired ?? false;
     _rescueGiven       = e?.rescueMedGiven;
     _rescueHelped      = e?.rescueMedHelped;
     _rescueSecondDose  = e?.rescueMedSecondDose;
@@ -375,7 +379,8 @@ class _LogEventScreenState extends State<LogEventScreen> {
         // `yn`, this file's own helper, for the reason its comment gives: a
         // change log describes what the field HELD and must not assert a
         // clinical value the record never carried.
-        'Medical referral: ${yn(_origReferral)} → ${yn(_referralRequired)}',
+        'Further medical attention: ${yn(_origReferral)} → '
+        '${yn(_referralRequired)}',
       );
     }
     if (!_sameSet(_selectedFeelings, _origFeelings)) {
@@ -925,7 +930,32 @@ appBar: AppBar(
                         const SizedBox(height: 20),
 
                         // ── REFERRAL ──
-                        _SectionLabel('Medical referral required?'),
+                        // ⚠️ "No" IS PRESELECTED HERE, AND THE WIZARD
+                        // PRESELECTS NOTHING. THE TWO EDITORS DIFFER
+                        // DELIBERATELY — do not harmonise them.
+                        //
+                        // ⭐ THE RULE: a value is written when the user was
+                        // SHOWN the question. **This form shows everything at
+                        // once and is SCANNED**, so the default is visible on
+                        // the same screen as everything else and can be
+                        // changed in one tap. That is the v1 decision and it
+                        // stands: it was made to minimise admin for a patient
+                        // or carer, because most of the time no further
+                        // attention happened.
+                        //
+                        // ⚠️ ACCEPTED RESIDUAL: a record edited here cannot
+                        // distinguish "saw No and agreed" from "saw No and did
+                        // not engage with the question". Both export as No.
+                        // That is ordinary form behaviour and is NOT the
+                        // defect that was fixed — which was a claim written on
+                        // a path where nothing was ever displayed.
+                        _SectionLabel('Further medical attention?'),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Whether you saw a doctor, went to hospital, o'
+                          'r saw a specialist afterwards. Recorded so a clinician can see where to follow up.',
+                          style: MERType.captionOnSurfaceMuted,
+                        ),
                         const SizedBox(height: 8),
                         _SelectionRow<bool>(
                           options:    const [false, true],

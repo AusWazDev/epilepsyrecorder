@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
+import 'package:medical_event_recorder/screens/log_event_screen.dart';
 
 /// BRIEF 62 A — `referralRequired` can say NOT ASKED.
 ///
@@ -24,6 +25,26 @@ import 'package:medical_event_recorder/screens/event_wizard_screen.dart';
 /// ⚠️ **NOT BACK-FILLED, AND THAT IS ASSERTED BELOW.** A record already
 /// holding `false` keeps it. That `false` means *either* "answered No" *or*
 /// "never asked" and the two are not separable after the fact.
+///
+/// ⛔ **THE TWO EDITORS DIFFER DELIBERATELY, AND GROUP 5 IS WHY THIS FILE CAN
+/// NO LONGER ASSERT ONE RULE FOR BOTH.** Amended 20 September 2026 (R3 §2)
+/// after the developer supplied the v1 reasoning.
+///
+/// ⭐ **THE RULE: a value is written when the user was SHOWN the question.**
+///
+///     single form   "No" PRESELECTED - v1 stands. The form shows everything
+///                   at once and is SCANNED, so the default is visible on the
+///                   same screen and correctable in one tap
+///     wizard        NEITHER preselected. It ASKS one question at a time, and
+///                   a preselected answer on a screen built to put the
+///                   question in front of someone is an answer nobody gave
+///     quick-log     nothing written. The question is never displayed
+///     Skip to end   nothing written. Same reason
+///
+/// 🔴 **A SINGLE "STARTS UNSET" ASSERTION WOULD BE RIGHT IN ONE EDITOR AND
+/// WRONG IN THE OTHER, AND WOULD PASS WHILE HIDING EXACTLY WHAT THIS
+/// SEPARATES.** Group 5 demonstrates both directions, and both were shown
+/// failing before they were trusted.
 
 void main() {
   group('1. the three states exist and are distinguishable', () {
@@ -158,6 +179,103 @@ void main() {
           reason: 'CONTROL: an explicit false is still read as false, so the '
               'assertion above is about ABSENCE and not about the parser '
               'having stopped reading the key');
+    });
+  });
+
+  group('5. ⛔ THE TWO EDITORS DIFFER, AND BOTH DIRECTIONS ARE PINNED', () {
+    // The record every case below starts from: NOT ASKED.
+    EventRecord unasked() => EventRecord(
+          id: 'u',
+          timestamp: DateTime(2026, 9, 20, 9, 0),
+          duration: null,
+          feelings: const <String>[],
+          referralRequired: null,
+          notes: '',
+        );
+
+    bool chipSelected(WidgetTester tester, String label) =>
+        tester
+            .widget<ChoiceChip>(find.ancestor(
+                of: find.text(label), matching: find.byType(ChoiceChip)))
+            .selected;
+
+    testWidgets('5a. THE FORM preselects No on a record nobody was asked about',
+        (tester) async {
+      // A TALL VIEWPORT rather than a scroll: the whole form lays out at
+      // once, so the chips are found without driving the scroller. The same
+      // shape `selection_row_semantics_test` uses on this screen.
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(800, 2400);
+      await tester.pumpWidget(MaterialApp(
+        home: LogEventScreen(existing: unasked(), confirmOnSave: true),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(chipSelected(tester, 'No'), isTrue,
+          reason: 'V1 STANDS ON THIS SURFACE. The form shows everything at '
+              'once and is scanned, so a visible default is correctable in one '
+              'tap — the decision made to minimise admin for a patient or '
+              'carer, because most of the time no further attention happened');
+      expect(chipSelected(tester, 'Yes'), isFalse,
+          reason: 'CONTROL: only ONE option is preselected, so the assertion '
+              'above is about the default and not about both chips reading '
+              'as selected');
+    });
+
+    testWidgets('5b. THE WIZARD preselects nothing on the SAME record',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: EventWizardScreen(existing: unasked()),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Skip to end'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+
+      expect(chipSelected(tester, 'No'), isFalse,
+          reason: 'THE WIZARD ASKS. A preselected answer on a screen whose '
+              'whole purpose is to put the question in front of someone is an '
+              'answer nobody gave');
+      expect(chipSelected(tester, 'Yes'), isFalse);
+    });
+
+    testWidgets('5c. ⛔ SKIP TO END WRITES NOTHING — the path c4d5d0a never '
+        'named', (tester) async {
+      EventRecord? saved;
+      await tester.pumpWidget(MaterialApp(
+        home: Navigator(onGenerateRoute: (_) {
+          return MaterialPageRoute<EventRecord>(
+            builder: (ctx) => TextButton(
+              child: const Text('open'),
+              onPressed: () async {
+                saved = await Navigator.of(ctx).push<EventRecord>(
+                  MaterialPageRoute(
+                      builder: (_) => const EventWizardScreen()),
+                );
+              },
+            ),
+          );
+        }),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Skip to end'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(saved, isNotNull,
+          reason: 'CONTROL: a record WAS saved, so the null below is about the '
+              'referral field and not about the save having failed');
+      expect(saved!.detailsCompleted, isTrue,
+          reason: 'CONTROL: and it saved as COMPLETE, which is what Skip to '
+              'end plus Save means — so this is the real path, not a stall');
+      expect(saved!.referralRequired, isNull,
+          reason: 'the question was never displayed on any step the user saw, '
+              'so nothing may be written for it. Skip to end jumps straight '
+              'to the summary and materialises no draft');
     });
   });
 }

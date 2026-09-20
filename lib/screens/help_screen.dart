@@ -251,7 +251,13 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // a forgotten filter is what makes an exported history
                   // incomplete.
                   body:   'Your history can be narrowed — by a word you search for, by event '
-                          'type, by date range, or to just the events that needed a referral. '
+                          // ⛔ WAS "…or to just the events that needed a referral".
+                          // Reworded 20 September 2026 (Brief 62 R3 §1): "needed"
+                          // is the judgement word the field no longer asks for,
+                          // and Help must not describe a question the app has
+                          // stopped putting.
+                          'type, by date range, or to just the events where further medical '
+                          'attention happened. '
                           'The controls are not on the screen: they are behind the filter icon '
                           'at the top of History, so tap that to open them. A number on the icon '
                           'shows how many filters are on, and a red bar above the list says what '

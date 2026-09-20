@@ -95,7 +95,7 @@ void main() {
     final blockTop = rectOf('RESCUE MEDICATION');
     final helped = rectOf('DID IT HELP?');
     final second = rectOf('SECOND DOSE');
-    final referral = rectOf('MEDICAL REFERRAL REQUIRED?');
+    final referral = rectOf('FURTHER MEDICAL ATTENTION?');
 
     String line(String name, Rect? r) => r == null
         ? '  ${name.padRight(28)} NOT FOUND'
@@ -110,7 +110,7 @@ void main() {
         '${line("RESCUE MEDICATION", blockTop)}\n'
         '${line("DID IT HELP?", helped)}\n'
         '${line("SECOND DOSE", second)}\n'
-        '${line("MEDICAL REFERRAL REQUIRED?", referral)}');
+        '${line("FURTHER MEDICAL ATTENTION?", referral)}');
 
     expect(blockTop, isNotNull,
         reason: 'positive control: the rescue block is on the screen at all, '

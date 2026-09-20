@@ -2111,7 +2111,7 @@ class _StatsRow extends StatelessWidget {
           _StatDivider(),
           _StatCell(
             value: referrals.toString(),
-            label: 'Referrals',
+            label: 'Follow-ups',
           ),
         ],
       ),

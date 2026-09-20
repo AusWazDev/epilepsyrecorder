@@ -240,8 +240,26 @@ void main() {
         '261.7,1480.0 72.3x20.0',
         '53.0,1576.0 109.5x20.0',
         '234.0,1576.0 70.5x20.0',
-        '93.6,1692.0 28.2x20.0',
-        '248.1,1692.0 42.3x20.0',
+        // ⚠️ THESE TWO RECAPTURED 20 September 2026 FOR BRIEF 62 R3 §1, and
+        // they are the ONLY two of the twelve that moved.
+        //
+        //   before  '93.6,1692.0 28.2x20.0'   '248.1,1692.0 42.3x20.0'
+        //
+        // ⭐ RECONCILED RATHER THAN ACCEPTED, and the shape of the delta is
+        // the evidence: both moved DOWN BY EXACTLY 91.0, with **x unchanged
+        // and extents unchanged** — 28.2x20.0 and 42.3x20.0 before and after.
+        // **A pure translation.** They are the referral row's No and Yes, and
+        // helper text was inserted above them:
+        //   *"Whether you saw a doctor, went to hospital, or saw a specialist
+        //   afterwards. Recorded so a clinician can see where to follow up."*
+        //
+        // ⛔ THE OTHER TEN BOXES ARE BYTE-IDENTICAL, which is what makes this
+        // a recapture rather than a rebaseline: nothing above the insertion
+        // moved, nothing resized, and no box was gained or lost. A change that
+        // had wrapped or clipped a label would have altered an EXTENT, and
+        // none did.
+        '93.6,1783.0 28.2x20.0',
+        '248.1,1783.0 42.3x20.0',
       ],
       430: <String>[
         '60.1,631.0 56.4x20.0',
@@ -254,8 +272,10 @@ void main() {
         '298.3,1415.0 90.7x20.0',
         '53.0,1511.0 137.0x20.0',
         '275.3,1511.0 70.5x20.0',
-        '107.4,1607.0 28.2x20.0',
-        '289.4,1607.0 42.3x20.0',
+        // Same +91.0 translation as at 375, x and extents unchanged. @430.
+        //   before  '107.4,1607.0 28.2x20.0'   '289.4,1607.0 42.3x20.0'
+        '107.4,1698.0 28.2x20.0',
+        '289.4,1698.0 42.3x20.0',
       ],
       800: <String>[
         '204.5,554.0 56.4x20.0',
@@ -268,8 +288,14 @@ void main() {
         '503.7,1284.0 131.3x20.0',
         '205.5,1380.0 141.0x20.0',
         '490.8,1380.0 70.5x20.0',
-        '261.9,1476.0 28.2x20.0',
-        '504.9,1476.0 42.3x20.0',
+        // ⭐ AT 800 THE SHIFT IS +74.0, NOT +91.0, AND THE DIFFERENCE IS
+        // ITSELF THE CHECK: the helper text wraps to TWO lines at 375 and
+        // 430 and fits on ONE at 800, so the block above these options is
+        // one line shorter here. A wrapping caption that shifted by the
+        // same amount at every width would mean it was NOT wrapping.
+        //   before  '261.9,1476.0 28.2x20.0'   '504.9,1476.0 42.3x20.0'
+        '261.9,1550.0 28.2x20.0',
+        '504.9,1550.0 42.3x20.0',
       ],
     };
 

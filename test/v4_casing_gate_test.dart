@@ -24,7 +24,11 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 ///
 /// ⭐ **Uppercasing is the change most likely to truncate**: capitals are
 /// wider than lowercase at the same size, so a label that fitted in sentence
-/// case can stop fitting. `MEDICAL REFERRAL REQUIRED?` at 200% on a 375-wide
+/// case can stop fitting. `FURTHER MEDICAL ATTENTION?` at 200% on a 375-wide
+/// ⭐ RENAMED FROM `MEDICAL REFERRAL REQUIRED?` 20 September 2026 (Brief 62
+/// R3 §1). **The width concern is UNCHANGED and that was checked rather than
+/// assumed: both strings are EXACTLY 26 characters**, so the gate below is
+/// still measuring the same worst case it was built for.
 /// screen is the worst case in the set and is the reason this is measured
 /// rather than reasoned about.
 ///
@@ -64,7 +68,7 @@ List<String> truncated(WidgetTester tester) {
 /// The eight strings V4 moved into the uppercase register, as RENDERED.
 const kV4Strings = <String>[
   'COMPARED WITH THE OTHERS HERE',
-  'MEDICAL REFERRAL REQUIRED?',
+  'FURTHER MEDICAL ATTENTION?',
   'RESCUE MEDICATION',
   'DID IT HELP?',
   'SECOND DOSE',
@@ -189,7 +193,7 @@ void main() {
         reason: 'all FIVE wizard strings were rendered and measured at 200%');
     expect(seen, containsAll(<String>[
       'COMPARED WITH THE OTHERS HERE',
-      'MEDICAL REFERRAL REQUIRED?',
+      'FURTHER MEDICAL ATTENTION?',
       'RESCUE MEDICATION',
     ]), reason: 'the wizard strings V4 moved were actually rendered and '
         'measured, rather than merely not found');
@@ -209,7 +213,7 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final s in <String>[
-      'MEDICAL REFERRAL REQUIRED?',
+      'FURTHER MEDICAL ATTENTION?',
       'RESCUE MEDICATION',
       'DID IT HELP?',
       'SECOND DOSE',
@@ -221,7 +225,7 @@ void main() {
     // pass if BOTH were rendered — which is what a half-applied edit, or a
     // second copy of the label somewhere, would produce.
     for (final s in <String>[
-      'Medical referral required?',
+      'Further medical attention?',
       'Rescue medication',
       'Did it help?',
       'Second dose',

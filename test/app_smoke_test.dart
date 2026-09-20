@@ -80,7 +80,7 @@ void main() {
     expect(find.byIcon(Icons.ios_share), findsOneWidget);
 
     // ⚠️ THE FILTERS MOVED INTO A SHEET (26 Aug 2026, `b3c6012`), behind the
-    // AppBar filter icon. This assertion looked for "Referral required only" on
+    // AppBar filter icon. This assertion looked for "Further attention only" on
     // the History screen itself, where it had stopped being — so the test was
     // failing for a SECOND reason behind the disclaimer gate, and only the
     // first reason was ever recorded.
@@ -102,7 +102,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.filter_list));
     await tester.pumpAndSettle();
-    await pumpUntilFound(tester, find.text('Referral required only'));
-    expect(find.text('Referral required only'), findsOneWidget);
+    await pumpUntilFound(tester, find.text('Further attention only'));
+    expect(find.text('Further attention only'), findsOneWidget);
   });
 }

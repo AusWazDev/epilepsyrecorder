@@ -54,7 +54,7 @@ void main() {
       'Beforehand: not recorded',
       'Afterwards: not recorded',
       'Rescue medication: not recorded',
-      'Medical referral: not recorded',
+      'Further medical attention: not recorded',
       'Notes: not recorded',
     ];
     for (final line in expected) {
@@ -127,7 +127,7 @@ void main() {
     // perfectly — the bug being asserted against would still be present in
     // the opposite direction and nothing would say so.
     expect(got, contains('Severity: Severe'));
-    expect(got, contains('Medical referral: Yes'));
+    expect(got, contains('Further medical attention: Yes'));
     expect(got, contains('Notes: hit head'));
     expect(got, isNot(contains('Severity: not recorded')));
   });

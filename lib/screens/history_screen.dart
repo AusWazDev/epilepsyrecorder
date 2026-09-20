@@ -212,7 +212,7 @@ extension FilterKindLabel on FilterKind {
     switch (this) {
       case FilterKind.search:    return 'search';
       case FilterKind.eventType: return 'type';
-      case FilterKind.referral:  return 'referral';
+      case FilterKind.referral:  return 'further attention';
       case FilterKind.dateRange: return 'date';
       case FilterKind.incomplete: return 'needs details';
       case FilterKind.showHidden: return 'hidden shown';
@@ -458,6 +458,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
             .join(' '),
         // Searchable on what the record HOLDS. An unasked record is no
         // longer searchable as "referral: no", because it never was one.
+        // ⭐ BOTH VOCABULARIES, and the choice is deliberate. The haystack
+        // is invisible — it is a matching aid, not displayed copy — so
+        // carrying the retired word costs nothing on screen and keeps the
+        // records findable by it. ⚠️ THE OLD WORD IS STILL LIVE ELSEWHERE:
+        // the CSV header is `referral_required` (rename undecided) and the
+        // store listing still says referral, so a user searching from what
+        // they read in the export or on the store page types `referral`.
+        'further attention: ${yesNoDisplay(r.referralRequired)?.toLowerCase() ?? "not recorded"} '
         'referral: ${yesNoDisplay(r.referralRequired)?.toLowerCase() ?? "not recorded"}',
         r.notes,
         // Searchable by WHEN IT HAPPENED, matching what the row displays.
@@ -843,9 +851,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _referralOnly,
-                    title: const Text('Referral required only'),
+                    title: const Text('Further attention only'),
                     subtitle: const Text(
-                        'Show only events that required medical referral'),
+                        'Show only events where further medical attention '
+                        'happened'),
                     onChanged: (v) => update(() => _referralOnly = v),
                   ),
 
@@ -1737,7 +1746,7 @@ class _EventListTile extends StatelessWidget {
         'Beforehand: ${r.triggers.map((v) => Vocabularies.labelFor(kTriggerTable, v)).join(', ')}',
       // Unchanged in effect: still shown ONLY when the answer is Yes. `== true`
       // because the field is now nullable — a null must not render here.
-      if (r.referralRequired == true) 'Referral: Yes',
+      if (r.referralRequired == true) 'Further attention: Yes',
       // ⛔ THE GAP LINE IS NO LONGER IN `parts`. IT MOVED TO ITS OWN LINE
       // BELOW - see the `subtitle` builder. `parts` is now CONTENT ONLY.
       //

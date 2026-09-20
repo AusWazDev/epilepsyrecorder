@@ -1663,3 +1663,152 @@ code comment, the test's docstring, the test's own failure message and the recor
 is the same class as the working-memory figures already recorded: *a figure that was correct
 about something, reused where it did not apply.* **It was caught only because R2 forced the
 boundary to be re-examined, not by any check.**
+
+---
+
+## Brief 62 Revision 3 — the wording, the defaults, and two more classes — 20 September 2026
+
+### 1 — the v1 rationale, in the developer's words, written down at last
+
+▎ **"The default position for the referral question was no. This was decided in version 1 to
+▎ minimise the administration work for the patient or carer as most times referral didn't
+▎ happen. If it did, they'd select yes."**
+
+▎ **"Remember the default 'No' was on the single form for them to fill out. The wizard did not
+▎ exist. The wizard screen will ask and they will select either or."**
+
+⛔ **THIS IS THE POINT OF RECORDING IT: the reasoning was sound, and it existed only in one
+person's head.** Five findings and one fix treated the default as a defect — §13(bl), §13(cd),
+`buildCsv`'s "ONE KNOWN EXCEPTION", `csv_no_blank_test` test 2, `log_event_screen`'s `yn`
+comment, and `c4d5d0a`, which removed it from **both** editors.
+
+⭐ **NOBODY WAS WRONG TO INVESTIGATE.** A preselected clinical answer with no recorded
+justification is indistinguishable from an oversight, and every observer correctly reported it
+as one. **The cost of the unrecorded decision was not the investigation — it was that the
+investigation could not terminate**, because the evidence that would have stopped it was not in
+the corpus.
+
+### 2 — 🔴 CLASS: A DECISION SCOPED TO ONE SURFACE, INHERITED BY A SURFACE BUILT LATER
+
+⛔ **The v1 default was decided FOR THE SINGLE FORM, WHEN THE FORM WAS THE ONLY EDITOR.** The
+wizard did not exist. When it was built it took the default with it — and the reasoning behind
+that default (*"the form shows everything at once and is scanned, so a visible default is
+correctable in one tap"*) **does not survive the move to a screen that asks one question at a
+time.**
+
+⭐ **NOTHING WAS OVERRULED AND NOTHING DRIFTED.** The rule was true, stayed true, and was
+applied to a case it was never tested against. **That is why it is invisible to every check this
+corpus has**: a stale-value checker finds no stale value, a contradiction checker finds no
+contradiction, and the rule reads as deliberate at both sites because at one of them it is.
+
+⚠️ **SAME SHAPE AS THE BACKUP REMINDER** appended to a banner chain designed for two advisory
+nudges, and as the closed-list-versus-rule entry in the workspace rules — *a right rule whose
+justification stopped covering it as the corpus grew.*
+
+⛔ **PRACTICAL FORM: WHEN A NEW SURFACE REUSES AN EXISTING RULE, THE RULE'S ORIGINAL SCOPE IS
+PART OF WHAT MUST BE CHECKED — not just whether the rule is still true.** ⭐ **Ask what the rule
+was decided AGAINST, not only what it says.** A rule carries the shape of the problem it was
+made for, and that shape is usually not written down beside it.
+
+⚠️ **AND THE REPAIR IS NOT HARMONISATION.** The two editors now differ ON PURPOSE, and the
+reason sits at BOTH call sites so the next reader meets it wherever they arrive. **A future
+pass that "tidies" them into agreement would be this same class a third time.**
+
+### 3 — ACCEPTED, not reopened: the form's No has two writers
+
+⛔ **A record edited on the single form cannot distinguish "saw No and agreed" from "saw No and
+did not engage with the question".** Both export as `No`.
+
+⭐ **That is ordinary form behaviour and it is NOT the defect that was fixed**, which was a value
+written on a path where **nothing was ever displayed** — the quick-log capture, which asserted
+an answer to a question the user was never shown.
+
+⚠️ **RECORDED IN THE v8 MARKER NOTE, where an export reader will meet it**: `No` has two writers
+— a form default the user saw but may not have touched, and a wizard answer that is always
+chosen. **No further CSV bump**: v8 was taken for exactly this meaning change and now describes
+the three-state result in full.
+
+### 4 — 🔴 ASSERTING THAT THERE WAS A DIFFERENCE, RATHER THAN WHAT THE DIFFERENCE WAS
+
+⛔ **Brief 62 D's control fired, passed, and proved the wrong proposition.** `type_chip_carrier_test`
+test 2 asserted that `showCheckmark: true` **changed the pixels** beside an avatar. It did — by
+**1,014 bytes**, with a clean control showing two identical renders differ by 0.
+
+🔴 **SUPERIMPOSITION AND REPLACEMENT ARE INDISTINGUISHABLE TO THAT ASSERTION.** Flutter drew the
+checkmark ON TOP of the type icon, and the test could not tell that from the checkmark replacing
+it. **The accepted cost recorded beside it — "the type icon is hidden while selected" — was
+false, and the test that was supposed to establish it said nothing about it.** It shipped in
+build 59 and was caught by a tablet capture.
+
+⭐ **THE TEST WAS NOT WEAK. IT WAS ANSWERING A DIFFERENT QUESTION** — *does the tick paint* —
+and it answered correctly. The question that mattered was *does the avatar stop painting*, and
+nothing asked it.
+
+⛔ **PRACTICAL FORM: A DIFFERENCE ASSERTION IS ONLY AS STRONG AS THE ALTERNATIVE IT EXCLUDES.**
+Before trusting `expect(diff, greaterThan(0))`, name the outcomes that would ALSO satisfy it and
+check whether any of them is a defect. ⭐ **The repair here was to assert an IDENTITY instead of
+a difference**: the selected chip must render **byte-identically** to a chip that never had an
+avatar — the one form of the claim a superimposition cannot satisfy.
+
+⚠️ **Same family as the coverage-versus-consistency and count-versus-diff entries in the
+workspace rules: output that reads as assurance while measuring something adjacent to the
+question.** ⛔ **The distinguishing feature here is that a CONTROL was present and healthy.**
+A control proves the apparatus is live; it says nothing about whether the proposition is the
+one you needed.
+
+### 5 — 🔴 A WRONG FIGURE WHOSE CONCLUSION HOLDS IS NEVER RE-DERIVED
+
+⛔ **"filled vs the page below — 8.02:1" was wrong. The true figure is 3.34:1.** 8.02 was
+`surfaceSunken` **track** against the **AppBar** — a real number about a different pair, lifted
+from a neighbouring column of the same search output.
+
+⭐ **BOTH FIGURES CLEAR 3:1, SO THE CONCLUSION WAS RIGHT EITHER WAY.** It was written into a
+code comment, a test docstring, a test's own failure message and the register, and **nothing
+re-derived it** — because nothing had cause to. It surfaced only when R2 reopened that boundary
+for an unrelated reason.
+
+⚠️ **THE TELL, AND IT IS THE SAME ONE THE WORKING-MEMORY ENTRY ALREADY NAMES: a figure that was
+CORRECT ABOUT SOMETHING, reused where it did not apply.** 8.02 did not feel like a guess. It had
+been computed, printed, and read off a real table.
+
+⛔ **PRACTICAL FORM: a figure copied from a multi-column result must be re-stated with BOTH of
+its operands, at the moment it is copied.** *"8.02"* is unfalsifiable on the page; *"surfaceSunken
+track vs AppBar, 8.02:1"* cannot be silently attached to the wrong pair. ⭐ **Where a figure
+supports a threshold claim, the operands ARE the claim** — the number alone is not checkable by
+any reader, including the one who wrote it.
+
+⚠️ **AND THE HONEST LIMIT: no check would have caught this.** The assertion built on it passed,
+because 3.34 clears the same bar. **This is a discipline at the point of writing, not a gate.**
+
+### 6 — the flake: UNREPRODUCED after ten full runs, 20 September 2026
+
+⛔ **`wizard_summary_completeness_test` test 4 — *"an ANSWERED field shows its value, not 'not
+recorded'"* — failed ONCE, in a full-suite run on 20 September 2026.** It has not failed since.
+
+**THE CHASE, bounded as specified:**
+
+    full suite, ten consecutive runs   10 PASSED, 0 failed, 876 tests each
+    the file in isolation              passed every time it was run
+    targeted runs during the pass      passed every time
+
+🔴 **RECORDED AS UNREPRODUCED. NO CAUSE IS SUPPLIED, AND THAT IS DELIBERATE.**
+⭐ **The available explanation is not offered as the answer:** the failing run was the first
+after `type_chip_carrier_test` was added, and that file is the only one in the suite that
+rasterises real images (`toImage()` inside `tester.runAsync`), which is heavy and runs in
+parallel with everything else. ⛔ **That is a hypothesis with no evidence attached and it is
+named here only so a future reader does not think it went unconsidered.** This corpus already
+has the entry about a known defect offered as the cause of a new failure — *a hypothesis to
+TEST, not accept* — and ten green runs test nothing about it either way.
+
+⚠️ **WHAT IS ACTUALLY KNOWN: one red run, one test, no reproduction in ten attempts, and no
+mechanism identified.** A false OPEN costs a second look; a false CLOSED costs the finding. So
+this stays open as an observation rather than being written off.
+
+⛔ **IF IT RECURS, THE FIRST THING TO CAPTURE IS THE FAILING ASSERTION'S OWN MESSAGE, not the
+run's verdict** — test 4 makes four separate assertions and "the run went red" says nothing
+about which. That is the attributable-control rule in `CLAUDE.md`, applied to a flake.
+
+⭐ **AND THE REASON THIS IS RECORDED AT ALL RATHER THAN SHRUGGED OFF: a suite that can go red
+spuriously erodes the one thing this week built** — that green means something. **An unexplained
+red is worth less than a red with a cause, and far more than a red that was never written
+down.**

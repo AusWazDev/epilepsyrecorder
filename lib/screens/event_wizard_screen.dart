@@ -704,7 +704,28 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           const SizedBox(height: 24),
           ..._rescueSection(),
           const SizedBox(height: 24),
-          const SectionLabel('Medical referral required?'),
+          // ⚠️ NEITHER OPTION IS PRESELECTED HERE, AND THE FORM PRESELECTS
+          // "No". THE TWO EDITORS DIFFER DELIBERATELY — do not harmonise them.
+          //
+          // ⭐ THE RULE: a value is written when the user was SHOWN the
+          // question. **The wizard ASKS one question at a time, and asking is
+          // what it is for** — a preselected answer on a screen whose whole
+          // purpose is to put the question in front of someone is an answer
+          // nobody gave. The single form shows everything at once and is
+          // SCANNED, so a default there is visible and correctable, which is
+          // the v1 reasoning and it still holds on that surface.
+          //
+          // 🔴 THE V1 DECISION WAS NEVER ABOUT THIS SCREEN. It was made when
+          // the form was the only editor and the wizard did not exist; the
+          // wizard inherited a rule scoped to a surface that was not there
+          // when the rule was made. See DECISIONS.md, 20 September 2026.
+          const SectionLabel('Further medical attention?'),
+          const SizedBox(height: 6),
+          const Text(
+            'Whether you saw a doctor, went to hospital, or saw a spec'
+            'ialist afterwards. Recorded so a clinician can see where to follow up.',
+            style: MERType.captionOnSurfaceMuted,
+          ),
           const SizedBox(height: 10),
           _chips<bool>(
             const [false, true],
@@ -1195,7 +1216,8 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
     // only when true, so the summary showed nothing whether the answer was No
     // or the question was never put. With the field nullable (Brief 62 A) the
     // three states are now distinguishable and all three are shown.
-    lines.add('Medical referral: ${yesNoDisplay(_referral) ?? 'not recorded'}');
+    lines.add(
+        'Further medical attention: ${yesNoDisplay(_referral) ?? 'not recorded'}');
     // ⛔ THE NOTES TEXT, NOT A FLAG. This read `'Notes added'`, which told the
     // user that a thing existed without letting them check it — on the step
     // whose entire job is checking.

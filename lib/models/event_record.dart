@@ -1631,6 +1631,19 @@ List<String> _medicationCells(
 ///          ⚠️ EXISTING RECORDS ARE NOT BACK-FILLED, so a v8 file still
 ///          carries `No` on rows saved before the change. The marker
 ///          says what the WRITER now means, not what every row was.
+///          ⭐ THE THREE STATES v8 CAN WRITE, stated in full 20 Sep
+///          2026 and needing NO further bump - this is the same
+///          meaning change v8 was taken for, described completely:
+///            Yes            further attention happened
+///            No             it did not - AND SEE BELOW
+///            Not Captured   the question was never displayed
+///          ⛔ `No` HAS TWO WRITERS AND A READER CANNOT SEPARATE THEM.
+///          The SINGLE FORM preselects No, so a record edited there and
+///          saved without touching the field writes No from a default
+///          the user saw but may not have engaged with. The WIZARD
+///          preselects nothing, so its No is always chosen. Accepted -
+///          it is ordinary form behaviour, and it is not the defect v8
+///          closed, which was a value written where nothing was shown.
 const String kCsvShapeVersion = 'v8';
 
 /// The shape marker. `..._20260827_154500.v3.csv`.

@@ -167,9 +167,22 @@ const Map<String, String> kBaseline = <String, String>{
   // ⚠️ THE WIDTH DID NOT MOVE. One leading glyph either way, 237.3 x 48.0 both
   // before and after, pinned by `type_chip_carrier_test` tests 1 and 1b — so
   // this is a paragraph-count change with no reflow behind it.
-  'form@375': '113|3d454eaa83488e32',
-  'form@430': '113|1714b4416f2dd6ec',
-  'form@800': '110|500a04d6502ae9a8',
+  // ⚠️ RECAPTURED AGAIN 20 September 2026, FOR BRIEF 62 R3 §1. The count moved
+  // by EXACTLY +1 at all three widths: 113 → 114, 113 → 114, 110 → 111.
+  //
+  //   R3 before  113|3d454eaa83488e32  113|1714b4416f2dd6ec  110|500a04d6502ae9a8
+  //
+  // ⭐ THE +1 IS RECONCILED: the referral control gained HELPER TEXT beneath
+  // its section label — *"Whether you saw a doctor, went to hospital, or saw a
+  // specialist afterwards. Recorded so a clinician can see where to follow
+  // up."* One new `Text` = one new paragraph, at every width.
+  //
+  // ⚠️ THE LABEL ITSELF CHANGED TOO — `MEDICAL REFERRAL REQUIRED?` became
+  // `FURTHER MEDICAL ATTENTION?` — but that is a SUBSTITUTION and moves the
+  // hash without moving the count, which is why the delta is +1 and not +2.
+  'form@375': '114|7731d486bc84178d',
+  'form@430': '114|74aa3e8271ac2e2f',
+  'form@800': '111|43de69b7e3607f9f',
   // ⚠️ HISTORY RECAPTURED 17 September 2026 FOR BRIEF S, and this is a
   // "change that is MEANT to move text" in the sense the rule above requires.
   //
@@ -237,9 +250,23 @@ const Map<String, String> kBaseline = <String, String>{
 //   home@375  26|0f4328a65b772386
 //   home@430  26|4213dbc43d975993
 //   home@800  26|52789e80c2f9064c
-  'home@375': '26|0b86b546f29e3373',
-  'home@430': '26|15d4582aab01e8aa',
-  'home@800': '26|0fe9ec35e9ad5a56',
+  // ⚠️ RECAPTURED 20 September 2026 FOR BRIEF 62 R3 §1, and ⭐ THE COUNT DID
+  // NOT MOVE — 26 at every width, before and after.
+  //
+  //   R3 before  26|0b86b546f29e3373  26|15d4582aab01e8aa  26|0fe9ec35e9ad5a56
+  //
+  // ⭐ THAT IS THE RECONCILIATION: the home statistic's label changed from
+  // `Referrals` to `Follow-ups`, which is a SUBSTITUTION. One paragraph's text
+  // differs, so every hash moves and the count cannot. **A count change here
+  // would have meant something was added or removed, which nothing was.**
+  //
+  // ⚠️ GEOMETRY CHECKED SEPARATELY, because a longer label could clip: the
+  // home 200% sweep reports `overflowing rows: none` AND `truncated text:
+  // none` at every width. `Follow-ups` is one character longer than
+  // `Referrals` and costs nothing.
+  'home@375': '26|5bad0e9dbec5b815',
+  'home@430': '26|297a782f8d152207',
+  'home@800': '26|7ff66c403f44e8e3',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.
