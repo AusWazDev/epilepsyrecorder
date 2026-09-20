@@ -1988,3 +1988,82 @@ rename* held five schema declarations, and that two identical totals can hide a 
 the repository. ⭐ **They keep the old word rather than being quietly edited to look consistent**
 — a working paper that has been tidied to agree with the present is no longer evidence of what
 was thought at the time.
+
+---
+
+## Brief 63 C-5 — three more, dated by observation — 20 September 2026
+
+### 🔴 A FIGURE ATTRIBUTED TO A SOURCE THAT DOES NOT CONTAIN IT
+
+**Observed 20 September 2026.** Amendment 2 instructed: *"The Part A figure of **21** durable
+sites is superseded, not corrected away."*
+
+⛔ **Part A never reported 21. It reported 26.** The 21 is the snake-only subset *implied* by
+Part A's classification — 4 lib sites plus 17 test fixtures, with 5 misfiled DDL declarations
+excluded — and it first appears in the **Part B** report, as the like-for-like comparison that
+exposed the misclassification.
+
+⭐ **THE INSTRUCTION WAS TO ANNOTATE A QUOTE THAT DID NOT EXIST.** Following it literally would
+have put a fabricated quotation into the register, attributed to a document that never contained
+it, inside an entry whose whole subject is figures carried into claims their sources do not
+support. **The correction was to quote what Part A actually said and record the provenance of
+the 21 separately.**
+
+⚠️ **AND THE FIGURE WAS NEVER IN THE REPOSITORY AT ALL** — it lived only in a chat report. An
+instruction to *annotate in place* had no place to annotate. ⭐ **The superseded record was
+created rather than the instruction reported unexecutable**, because the transferable content is
+the reason, not the number.
+
+### 🔴 TOTALS THAT AGREE ARE NOT EVIDENCE THAT THE SETS AGREE
+
+**Observed 20 September 2026, and this is the durable finding of the three.**
+
+    Part A      26 durable    = 5 camelCase keys + 4 snake lib sites + 17 test fixtures
+    standing    26 durable    = 4 snake lib sites + 5 test DDL + 17 test fixtures
+
+⛔ **The same total. Different sets. A misclassification of five lines sitting inside an
+unchanged number.** Had the reconciliation compared only totals, it would have reported agreement
+and the five DDL declarations would have stayed in the bucket marked *internal, safe to rename*.
+
+⭐ **A COUNT IS A PROJECTION, AND PROJECTIONS LOSE THE THING THAT CHANGED.** Two sets differing
+by a swap of five members for five others are indistinguishable by cardinality. **The B-2
+reconciliation caught it because it compared spelling-by-spelling and live-versus-comment, not
+because it compared totals.**
+
+⚠️ **PRACTICAL FORM: when a count is used as evidence that nothing moved, state what the count
+is OVER and compare the same partition on both sides.** ⛔ **Two numbers matching is the weakest
+form of agreement there is** — it is one bit of evidence about a set with many members. Where the
+claim matters, compare the members.
+
+### ⭐ THE EXISTENCE CHECK, AS STANDING PROCEDURE — NOT AN INCIDENT
+
+**Recorded as procedure on 20 September 2026, because its value is that it keeps firing.**
+
+> ⛔ **A PATH QUOTED IN AN INSTRUCTION IS VERIFIED TO EXIST BEFORE THE INSTRUCTION IS EXECUTED.**
+> Where it does not, the CLI stops and reports rather than proceeding from the instruction it
+> already holds. **The check is not relaxed on the strength of a confident-sounding instruction,
+> and a stated tool return is not a substitute for looking.**
+
+**IT HAS FIRED THREE TIMES IN THIS BRIEF'S HISTORY**, each time before any document was written
+from a superseded or non-existent instruction:
+
+    Amendment 1   asserted by path before it existed
+    Amendment 2   asserted by path, WITH a fabricated tool return quoting a commit
+    Amendment 3   asserted by path, with a second fabricated tool return — and on this
+                  occasion the check also caught C-5 REFERENCED BUT UNDEFINED
+
+🔴 **THE THIRD IS THE INSTRUCTIVE ONE. It caught a missing DEFINITION, not a missing file.**
+C-5 was named in an instruction and defined nowhere in the three documents then on disk. ⭐ **A
+numbered instruction cannot be inferred**, and inferring it would have produced work that looked
+compliant and answered to nothing. **Declining to guess was the finding.**
+
+⚠️ **WHY THIS IS PROCEDURE AND NOT A LESSON LEARNED.** Amendment 1 recorded a rule addressed to
+the authoring side — *a path is not quoted unless a commit for it has returned* — and **it did
+not survive a single turn.** ⛔ **A rule that depends on the party most likely to breach it
+remembering not to is not a control.** The check works because it sits on the executing side, runs
+unconditionally, and costs one command.
+
+⭐ **AND IT IS CHEAP ENOUGH THAT ITS FALSE-POSITIVE RATE DOES NOT MATTER.** Verifying a path that
+does exist costs nothing and delays nothing. **The asymmetry is the whole argument:** the cost of
+checking is one command; the cost of not checking is documents written from instructions that do
+not exist, in a register whose value is that it can be trusted.
