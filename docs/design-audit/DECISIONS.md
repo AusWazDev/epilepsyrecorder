@@ -1221,6 +1221,25 @@ outside the token set fails a check rather than being noticed" — and for as lo
 stood unchecked, this sat in plain sight.** ⛔ **The claim did not merely fail to catch it. The
 claim is why nobody looked.**
 
+> ⛔ **THE PARAGRAPH ABOVE IS FALSE AND IS ANNOTATED, NOT DELETED. 20 September 2026.** Its
+> wording stays because a record of what was concluded must stay true.
+>
+> ⭐ **THE CLAIM "THE CLAIM IS WHY NOBODY LOOKED" MUST NOT BE CARRIED AS A GENERAL NOTE.** It was
+> false here in every clause: `colour_system_test` test 12 had scanned `lib/` for colour literals
+> the whole time, `lib/main.dart:178` was in its allowlist **with its measured contrast**, and the
+> figure recorded there — *3.3779* — is the same one computed independently a month later.
+> ⛔ **Someone looked, measured it, wrote it down, and permitted it.**
+>
+> ⚠️ **THE UNDERLYING POINT IS REAL, AND IT BELONGS TO `backupShare`, WHICH IS AN ACTUAL
+> INSTANCE:** a comment asserting a compliance that was never achieved is the thing a reader
+> consults INSTEAD of checking the code. ⭐ **That case earned the principle. This one did not,
+> and was made to carry it.**
+>
+> 🔴 **RECORDED AS ITS OWN ERROR: A FINDING WRONGLY ELEVATED INTO A PRINCIPLE.** One vivid case
+> was generalised before it was verified, and the generalisation then read as established because
+> it sat in the register beside a real instance. ⛔ **A principle drawn from a single unverified
+> case is weaker than the case, not stronger.**
+
 🔴 **REPORTED, NOT FIXED**, per the brief. It is enumerated in
 `_kKnownViolations` with the set marked **SHRINK-ONLY**: adding a path there is a rule being
 weakened and needs a decision. ⭐ **Removing this entry is a one-line change once a token is
@@ -1293,3 +1312,50 @@ them — so it cannot drift without something going red.
 because nobody got round to them** — except `#10` Help rows, where the mechanism was costed at
 ~30 lines and **declined on the 28 judgements it would require**, with the recommendation that
 it attach to the Help accessibility audit already queued.
+
+
+---
+
+## An absence search keyed to spelling, not to purpose — 20 September 2026
+
+⛔ **`#7` colour was reported as unenforced. It had been enforced all along.** The search that
+produced that finding could not have found the thing it was looking for.
+
+### ⭐ WHAT THE SEARCH DID
+
+It looked for **test names containing "no literal"** and for **the string `Color(0x` inside test
+files.** ⚠️ **Both probes encode an assumption about how the check would be SPELLED.**
+
+`colour_system_test` test 12 is named **"rule 2 is enforced over lib/, not described"** — named
+for the RULE IT ENFORCES rather than for the method it uses — and it builds its pattern from a
+variable, so the literal string never appears. ⛔ **Neither probe could see it, and no amount of
+re-running would have helped.**
+
+### 🔴 AND THE CONTROL DID NOT COVER THE FAILURE
+
+**A control was run and it passed.** ⛔ **It proved the apparatus could find SOMETHING. It did not
+prove the apparatus could find something NAMED UNEXPECTEDLY — which was the only way this search
+could fail.**
+
+⭐ **THE RULE: a control must be drawn against the SPECIFIC way the search could fail, not against
+the possibility that searching is broken in general.** ⚠️ **A control that confirms the tool runs
+is nearly free and nearly worthless; a control that would have failed for the same reason as the
+real probe is the one worth building.** **Here that would have been: take a check known to exist,
+name it in a way the probe does not expect, and confirm the probe still finds it.**
+
+### ⛔ AND THE WORKING INSTRUMENT WAS ALREADY IN USE, IN THE SAME BRIEF
+
+**`.visible` was settled minutes earlier by enumerating every reference site and accounting for
+every one of them** — the manifest. ⭐ **Colour was settled by guessing at spellings.** ⚠️ **Same
+session, same author, same kind of question, and the weaker instrument was reached for because
+the question felt smaller.**
+
+**PRACTICAL FORM: for any ABSENCE claim, enumerate the population and account for every member.**
+⛔ **Do not search for the thing you expect to find and report its absence** — that reports the
+absence of your expectation, which is a different claim and is always true when the expectation
+is wrong.
+
+⚠️ **Same family as the keyword sweep that missed a stale-state claim because the line never said
+"repo", and as the frame that decided the answer before the evidence did.** ⭐ **The distinguishing
+feature here is that the SEARCH was wrong while the CONTROL passed, so nothing in the output
+looked doubtful.**
