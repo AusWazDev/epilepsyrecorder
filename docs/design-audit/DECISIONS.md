@@ -2067,3 +2067,77 @@ unconditionally, and costs one command.
 does exist costs nothing and delays nothing. **The asymmetry is the whole argument:** the cost of
 checking is one command; the cost of not checking is documents written from instructions that do
 not exist, in a register whose value is that it can be trusted.
+
+---
+
+## Brief 63 Part D — the store bullet, and what is still divergent — 20 September 2026
+
+### What changed
+
+**`docs/Store Listing Copy — v1.1 revision.md`, one line.** It read:
+
+> • Whether a medical referral is needed
+
+It now reads:
+
+> • Whether further medical attention happened
+
+⛔ **TWO DEFECTS, NOT ONE.** *"referral"* was the retired term — the capture surfaces stopped
+asking about a referral in Brief 62 and now ask *"Further medical attention?"*. *"needed"*
+asserted a **clinical judgement the app never makes**; the field records whether something
+HAPPENED, not whether it was warranted.
+
+⭐ **THE WORDING CAME FROM THE CODE, NOT FROM A BRIEF**, as Part D required. It is the live label
+in declarative form, and it matches the History filter's subtitle word for word — so the store
+and the app read the same, and a user meeting both finds no seam.
+
+⚠️ **The old wording is quoted and dated in place, in an HTML comment.** That form was chosen
+because this document is a **paste source** for three store consoles: a visible annotation could
+be pasted into a listing along with the copy it annotates. The file already used that convention
+for the load-bearing platform names, so this follows it rather than inventing a second one.
+
+### 🔴 D-5 · OPEN ITEM, dated by the date CHECKED — 20 September 2026
+
+| surface | state as at 20 September 2026 |
+|---|---|
+| `docs/Store Listing Copy — v1.1 revision.md` | ✅ **carries the new wording** |
+| Apple App Store listing | ⚠️ **UNVERIFIED** — expected still to carry the retired wording |
+| Google Play listing | ⚠️ **UNVERIFIED** — expected still to carry the retired wording |
+| Microsoft Store listing | ⚠️ **UNVERIFIED** — expected still to carry the retired wording |
+| notiva.com.au | ⚠️ **UNVERIFIED** — expected still to carry the retired wording |
+
+⛔ **UNVERIFIED, NOT UNCHANGED.** The four surfaces above are console and website state. They are
+**not visible from this repository and nothing here can assert their contents** — neither that
+they still carry the old wording nor that they do not. **The expectation stated is an
+expectation, not a finding.**
+
+⛔ **UPDATING THEM IS CONSOLE AND WEBSITE WORK, NOT REPOSITORY WORK, AND IT HAS NOT BEEN DONE.**
+This release ends with the repo document and the live listings **divergent by design** — the
+divergence is recorded here so it is a known open item rather than a discovery.
+
+🔴 **THE WEBSITE IS THE SPECIFIC RISK, AND IT IS NAMED BECAUSE IT HAS HAPPENED BEFORE.** Copy
+written from the website rather than from the code is a documented past failure on this app.
+⭐ **If notiva.com.au becomes the surviving home of the retired wording, the next person writing
+copy has a plausible, findable, wrong source** — and the failure recurs through exactly the route
+it took last time. **The repo document is now correct; the website is the one that can still
+mislead.**
+
+⚠️ **AND THE STORE CONSOLES CARRY A SECOND, OLDER DIVERGENCE** already recorded at the head of
+that document: its character limits *"were NOT verified against the consoles"*. **Anyone opening
+a console to fix the wording should confirm the limits in the same visit**, because the two jobs
+share their only expensive step, which is getting into the console at all.
+
+---
+
+### ⭐ C-5, further entry — CLASS: WORDING SAFE ON AN EXPLANATORY SURFACE BECOMES A CLAIM ON A DESCRIPTIVE ONE
+
+The helper's first sentence defines what counts as further medical attention. That is legitimate
+where it sits, because its job is to explain a question. Placed under a heading reading WHAT IT
+RECORDS, the same words imply the app stores which of doctor, hospital or specialist was
+involved. It does not: the field holds yes, no, or not asked.
+
+Excluded on data-model grounds. Amendment 3 D-4 excluded only the helper's second sentence, and
+on clinical-claim grounds — a different sentence for a different reason. The instruction did not
+anticipate the exclusion that mattered.
+
+**Observed 20 September 2026.**

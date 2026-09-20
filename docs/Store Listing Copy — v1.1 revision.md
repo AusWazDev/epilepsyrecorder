@@ -50,7 +50,21 @@ WHAT IT RECORDS
 • Duration and severity
 • How you were feeling
 • Possible triggers
-• Whether a medical referral is needed
+<!-- ⚠️ REWORDED 20 September 2026 (Brief 63 Part D). This bullet read:
+       • Whether a medical referral is needed
+     TWO defects, not one. "referral" is the retired term — the capture surfaces
+     stopped asking about a referral and now ask "Further medical attention?" —
+     and "needed" asserts a clinical judgement the app never makes. The field
+     records whether something HAPPENED, not whether it was warranted.
+     ⭐ The replacement is the live LABEL in declarative form, and it matches the
+     History filter's subtitle word for word, so the store and the app read the
+     same. Taken from the code, not from a brief.
+     ⛔ NOT the helper text's first sentence — "Whether you saw a doctor, went to
+     hospital, or saw a specialist afterwards". That enumeration is correct where
+     it sits, explaining a question, but under WHAT IT RECORDS it would imply the
+     app stores WHICH of the three. It does not: the field holds yes, no, or not
+     asked. -->
+• Whether further medical attention happened
 • Free-text notes
 
 PRIVACY
