@@ -136,6 +136,8 @@ separate `[read]` line records what was checked, beside it.
 
 ## 2B. The four rules from the handover — three were already written down, one was not
 
+⚠️ **TWO MORE ADDED 20 September 2026 — (f) and (g), below the original four.** Both had been in use and unwritten, which is the same condition (e) was in when this section was created. ⛔ **The heading above describes the 17 September handover and is left as written; it is not a count of what this section now holds.**
+
 ⚠️ **CHECKED 17 September 2026 rather than assumed.** The claim reaching this document was that
 *"three of the four are in active use; whether they were ever written down is unknown."*
 ⭐ **Measured against this file:**
@@ -163,6 +165,62 @@ result that cannot be checked by reading it.
 *"0 hits over 1,006 rows"* whose controls **also** returned zero — the extractor was reading Word
 paragraphs rather than table rows and saw only each row's ID cell. **Without the control those two
 would have reported NULL CONFIRMED over a denominator of 1,006 and been completely wrong.**
+
+### ⛔ (f) VERIFY A PATH BEFORE EXECUTING THE INSTRUCTION THAT NAMES IT — recorded 20 September 2026, having been in use and unwritten
+
+> **Before executing any instruction that names a file path, verify that the file exists. If it
+> does not, stop and report rather than inferring what it would have said.**
+>
+> This applies to briefs, amendments, and any numbered instruction referenced but not supplied.
+> ⛔ **A numbered item that is referenced and undefined is the same failure as a missing file:**
+> it cannot be inferred, and inferring it is worse than stopping.
+>
+> ⭐ **The check carries its own control** — demonstrate the finder works by searching for
+> something known to exist — because a finder that silently matches nothing reports the same
+> result as a file that is absent.
+
+⚠️ **THE EVIDENCE, RECORDED SO THE RULE IS NOT LATER READ AS PEDANTRY.** On 20 September 2026,
+during Brief 63, **three file paths were quoted in instructions for files that had never been
+written.** Two of those instructions came with a **fabricated tool return claiming a successful
+commit.** A written rule against it, added after the first instance, **did not survive a single
+turn.**
+
+The check fired on all three, each time **before any document was written** from a superseded or
+non-existent instruction. On the third it also caught an instruction — `C-5` — that was
+referenced but defined nowhere.
+
+🔴 **THE REMEDY IS EXTERNAL BY DESIGN. THE FAILING SIDE CANNOT BE THE CHECKING SIDE.** ⛔ **This
+rule is not relaxed on the strength of a confident-sounding instruction, and a chat-side promise
+to be more careful is not a substitute for it.** ⭐ It works because it sits on the executing
+side, runs unconditionally, and costs one command — and the asymmetry is the whole argument:
+verifying a path that does exist delays nothing, while not verifying one produces documents
+written from instructions that do not exist.
+
+### ⛔ (g) PREDICT, THEN MEASURE — recorded 20 September 2026
+
+> **Any figure derived by pattern-matching has its expected value recorded BEFORE it is
+> computed.**
+
+⭐ **THE PREDICTION IS THE CHECK.** A number that survives its own measurement is worth more than
+either alone, because a pattern-match returns a well-formed answer whether or not it matched the
+right thing. ⛔ **Nothing in the output of a wrong scan looks wrong.**
+
+⚠️ **THREE WELL-FORMED WRONG ANSWERS IN TWO BRIEFS, EACH CAUGHT BY AN EXPECTATION HELD
+INDEPENDENTLY OF THE CHECK AND BY NOTHING ELSE:**
+
+    two column tables      a regex walk over source returned 37 columns, then 8 starting at the
+                           wrong one. An anchor on the FIRST and LAST column caught both
+    a bullet count         a section read as 5 bullets against an expected 7; the naive
+                           comment-strip had left a blank line the regex terminated on
+    a platform-bound       a widget test measured Help's gaps as uniform on a Windows host
+    measurement            while Android shipped a gap of 0
+
+⭐ **In all three the apparatus was working and the subject was wrong.** The expectation is what
+made the disagreement visible; re-reading the output would not have.
+
+⚠️ **AND WHERE A PREDICTION MISSES, SAY WHICH HALF MOVED.** A prediction of 27 against a measured
+26 was not a miss — the comparison included a line the measurement excluded. **A reconciliation
+that cannot name the delta has not reconciled.**
 
 ### ⚠️ And the fifth, which is not one of the four: READING IS NOT VERIFYING
 

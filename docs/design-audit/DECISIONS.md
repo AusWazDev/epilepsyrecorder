@@ -2037,6 +2037,16 @@ claim matters, compare the members.
 
 ### ⭐ THE EXISTENCE CHECK, AS STANDING PROCEDURE — NOT AN INCIDENT
 
+⛔ **PROMOTED TO THE WORKING AGREEMENT 20 September 2026 — `docs/WORKING-AGREEMENT.md` §2(f) IS
+NOW AUTHORITATIVE FOR THE RULE.** Brief 65 Part A asked for it in the method rules; it was already
+here, and a second independent copy is how one provenance claim on this project came to need
+correcting in four files at once.
+
+⭐ **WHAT SURVIVES HERE IS THE INCIDENT AND ITS EVIDENCE** — the three firings, the two fabricated
+tool returns, and the undefined `C-5`. ⛔ **Do not restate the rule below; it will drift.** The
+statement of the rule is in the working agreement, beside (e) and the other lettered rules a
+reader goes to for process.
+
 **Recorded as procedure on 20 September 2026, because its value is that it keeps firing.**
 
 > ⛔ **A PATH QUOTED IN AN INSTRUCTION IS VERIFIED TO EXIST BEFORE THE INSTRUCTION IS EXECUTED.**
