@@ -2,6 +2,7 @@ import AppIntents
 import ActivityKit
 import UserNotifications
 import Foundation
+import os.log
 
 @available(iOS 16.0, *)
 struct EndMEREventIntent: AppIntent {
@@ -9,16 +10,34 @@ struct EndMEREventIntent: AppIntent {
     static var isDiscoverable = false
     static var authenticationPolicy: IntentAuthenticationPolicy { .alwaysAllowed }
 
+    // Runner's AppDelegate.captureLog is private to the Runner TARGET and not
+    // visible here — MERWidget is a separate target, the same boundary that
+    // already forces MERActivityAttributes.swift to be duplicated. Same
+    // subsystem and category deliberately, so one Console.app filter shows both
+    // processes.
+    private static let captureLog = OSLog(subsystem: "au.com.notiva.mer",
+                                          category: "capture")
+
     func perform() async throws -> some IntentResult {
         let kAppGroupId   = "group.au.com.notiva.medicaleventrecorder"
         let kSharedActive = "mer_active_event"
         let kInboxPrefix  = "mer_inbox_"
+
+        // PRESERVATION ONLY. Nothing in the field reads these; the os_log below
+        // is a development reader over a cable. Names must match AppDelegate's
+        // kQuarantineKey / kQuarantineCountKey — same App Group, same keys, and
+        // the schema mirroring note above applies to these too.
+        let kQuarantineKey      = "mer_active_quarantine"
+        let kQuarantineCountKey = "mer_active_quarantine_count"
 
         guard let shared = UserDefaults(suiteName: kAppGroupId) else {
             return .result()
         }
 
         var elapsedStr = ""
+        // Set ONLY inside the if let body, so it separates "the chain succeeded"
+        // from "the marker was there and would not parse".
+        var endedCleanly = false
 
         if let activeRaw = shared.string(forKey: kSharedActive),
            let data      = activeRaw.data(using: .utf8),
@@ -63,6 +82,24 @@ struct EndMEREventIntent: AppIntent {
                let json = String(data: enc, encoding: .utf8) {
                 shared.set(json, forKey: "\(kInboxPrefix)\(UUID().uuidString)")
             }
+            endedCleanly = true
+        }
+
+        // MOVED ASIDE, NOT DELETED. The re-read is deliberate: activeRaw binds
+        // in the first clause above and is out of scope here, and the key is
+        // untouched until the removal below. A nil re-read means the chain failed
+        // at its FIRST clause — nothing to preserve — so nothing is written, and
+        // an empty entry never manufactures evidence of a loss that did not happen.
+        //
+        // ⛔ BUDGET: one read, two sets, one os_log. NO synchronize is added —
+        // the one below already existed. This is the tightest window of the three
+        // sites and nothing here may block it.
+        if !endedCleanly, let raw = shared.string(forKey: kSharedActive), !raw.isEmpty {
+            let count = shared.integer(forKey: kQuarantineCountKey) + 1
+            shared.set(raw,   forKey: kQuarantineKey)
+            shared.set(count, forKey: kQuarantineCountKey)
+            os_log("preserved unreadable active marker site=%{public}@ count=%{public}d",
+                   log: Self.captureLog, type: .default, "EndMEREventIntent", count)
         }
 
         shared.removeObject(forKey: kSharedActive)

@@ -30,6 +30,21 @@ import awesome_notifications
   // it too. Must match kInboxKeyPrefix in lib/models/capture_instruction.dart.
   private let kInboxPrefix = "mer_inbox_"
 
+  // ── Unreadable-marker quarantine ──────────────────────────────────────────
+  // PRESERVATION ONLY. Nothing in the field reads either key. They exist because
+  // bytes are cheap and deleting an active marker we could not parse is
+  // irreversible — that asymmetry is the whole justification and there is no
+  // other. The os_log beside each write is a DEVELOPMENT reader: Console.app
+  // over a cable, not durable across a reboot.
+  //
+  // Most-recent wins, so a second unreadable marker overwrites the first. That
+  // is deliberate: the marker is one event at a time, the payload is two fields,
+  // and unbounded growth on a store this path is already latency-sensitive about
+  // buys completeness nobody reads. The COUNT is what tells a later reader
+  // whether it recurred.
+  private let kQuarantineKey      = "mer_active_quarantine"
+  private let kQuarantineCountKey = "mer_active_quarantine_count"
+
   // ── Abandoned-event timeout ───────────────────────────────────────────────
   // Must equal _timeoutMins * 60 in lib/services/notification_service.dart. It
   // was an inline `30 * 60` compared in exact seconds while Dart compared
@@ -283,6 +298,32 @@ import awesome_notifications
   //
   // The active-state half it also did is kept, because that is a single key
   // where last-write-wins is the correct semantics for "what is running now".
+  //
+  // ── WHY THIS DELETES WITHOUT PRESERVING, AND WHY THAT IS SAFE ─────────────
+  // The rule is: no site deletes an active marker without first preserving what
+  // it could not read. This site satisfies it by an INVARIANT rather than by a
+  // call, and the body is deliberately unchanged.
+  //
+  // Both marker copies are written in ONE place, from ONE value, inside one
+  // guarded block — see handleQuickLogStart. The extension writes neither. So
+  // the standard copy this function deletes is always byte-identical to the App
+  // Group copy, and its guard `standardActive != nil && sharedActive == nil` is
+  // reached only after something else cleared the shared copy — which, on that
+  // path, is EndMEREventIntent, and EndMEREventIntent preserves before it
+  // clears. Either the shared copy still exists, or it was preserved. Nothing
+  // unique is ever lost here.
+  //
+  // ⛔ AND THE INVARIANT IS PINNED, because a scan cannot see an invariant:
+  // test/ios_active_marker_preserve_test.dart asserts exactly one write site per
+  // key. If that pin ever goes red, THIS function becomes lossy — with nothing
+  // else going red to say so.
+  //
+  // ⚠️ NOT widened to parse. Its guard is the SUCCESS signature for
+  // extension-ended events, so an unconditional preserve here would flood the
+  // quarantine with readable markers from normal operation and overwrite the
+  // rare unreadable one under most-recent-wins. The note above at "Deliberately
+  // here and not in clearStaleActiveStateIfEnded" already refused to widen this
+  // function once, for the same reason: two unrelated jobs and a name that lies.
   private func clearStaleActiveStateIfEnded() {
     guard let shared = UserDefaults(suiteName: kAppGroupId) else { return }
     let standard = UserDefaults.standard
@@ -297,6 +338,10 @@ import awesome_notifications
     }
   }
 
+  /// ⭐ CHECKED 21 September 2026 and found SAFE AS WRITTEN, recorded rather than
+  /// left silent. Its two removals sit inside a successful `if let` chain AND a
+  /// timeout test, so it can only ever delete a marker it has just parsed. It
+  /// never reaches an unreadable one, and therefore needs no preserve.
   private func restorePersistentNotification() {
     let defaults = UserDefaults.standard
     if let activeRaw = defaults.string(forKey: kActiveEventKey),
@@ -585,6 +630,15 @@ import awesome_notifications
       // Nothing replaces it. The duration the extension recorded arrives as an
       // `end` instruction in the inbox and is applied by the drain, which is the
       // only thing that writes the record list.
+      //
+      // ── NO PRESERVE HERE, AND WHY IT IS SAFE ──
+      // Same invariant as clearStaleActiveStateIfEnded, and the same pin. This
+      // deletes the app's standard copy after an end that already happened —
+      // the feedback notification being tapped is what says so. On 17+ the
+      // extension ended the event and cleared only the shared copy, preserving
+      // first if it could not read it, so what is deleted here is a duplicate of
+      // a value already adjudicated. This site can beat clearStaleActiveStateIfEnded
+      // to that deletion, which is exactly why it is named and not left implicit.
       let standard = UserDefaults.standard
       standard.removeObject(forKey: kActiveEventKey)
       standard.synchronize()
@@ -720,6 +774,36 @@ import awesome_notifications
     shared.synchronize()
   }
 
+  /// Moves an unreadable active marker aside instead of deleting it.
+  ///
+  /// Called on the FAILURE branch only, immediately before a clear. The re-read
+  /// is deliberate: `activeRaw` binds in the first clause of the `if let` chain
+  /// and is out of scope by the time we reach the clear, and the key is
+  /// untouched until then, so re-reading returns exactly what is about to be
+  /// destroyed.
+  ///
+  /// A nil re-read means the chain failed at its FIRST clause — the key was
+  /// absent or not a string — and there is nothing to preserve. It returns
+  /// without writing, because an empty quarantine entry would manufacture
+  /// evidence of a loss that did not happen.
+  ///
+  /// ⛔ BUDGET: one read, one set, one count set, one os_log. NO synchronize.
+  /// Sites 1 and 3 are on the notification-action path, where `writeInboxInstruction`
+  /// already records that `synchronize()` "can sit waiting on cfprefsd while the
+  /// window runs out". Nothing here may block that window.
+  private func preserveUnreadableMarker(from site: String, key: String) {
+    let standard = UserDefaults.standard
+    guard let raw = standard.string(forKey: key), !raw.isEmpty else { return }
+    guard let shared = UserDefaults(suiteName: kAppGroupId) else { return }
+
+    let count = shared.integer(forKey: kQuarantineCountKey) + 1
+    shared.set(raw,   forKey: kQuarantineKey)
+    shared.set(count, forKey: kQuarantineCountKey)
+
+    os_log("preserved unreadable active marker site=%{public}@ count=%{public}d",
+           log: Self.captureLog, type: .default, site, count)
+  }
+
   // ── Action handlers ───────────────────────────────────────────────────────
 
   private func handleQuickLogStart(completion: @escaping () -> Void) {
@@ -811,6 +895,12 @@ import awesome_notifications
   private func handleQuickLogEnd(completion: @escaping () -> Void) {
     let standard = UserDefaults.standard
     var elapsedStr = ""
+    // Set ONLY inside the if let body below, so it distinguishes "the chain
+    // succeeded" from "the marker was there and would not parse". The clear at
+    // the end of this function is unconditional and must stay that way — the
+    // banner clears in every case — so this is what decides whether the marker
+    // is moved aside first.
+    var endedCleanly = false
 
     if let activeRaw = standard.string(forKey: kActiveEventKey),
        let data = activeRaw.data(using: .utf8),
@@ -835,6 +925,7 @@ import awesome_notifications
       // rather than relocated.
       writeInboxEnd(id: eventId, at: ISO8601DateFormatter().string(from: endTime),
                     seconds: secs)
+      endedCleanly = true
     }
 
     // ── 2. NOTIFY ──
@@ -854,6 +945,13 @@ import awesome_notifications
     // progress" notification. That is a visible, self-correcting cost, which is
     // the trade this whole ordering makes: never lose the record or the
     // feedback, and let the tidying be retried.
+    //
+    // MOVED ASIDE, NOT DELETED. If the chain above did not complete, the marker
+    // is preserved before this clear. The banner still clears exactly as before
+    // — that half of the original trade was legitimate and is not reversed.
+    if !endedCleanly {
+      preserveUnreadableMarker(from: "handleQuickLogEnd", key: kActiveEventKey)
+    }
     standard.removeObject(forKey: kActiveEventKey)
     UserDefaults(suiteName: kAppGroupId)?.removeObject(forKey: kSharedActiveKey)
 
@@ -919,6 +1017,9 @@ import awesome_notifications
   /// disappearing and the record appearing is the confirmation.
   private func endActiveEventFromApp(completion: @escaping () -> Void) {
     let standard = UserDefaults.standard
+    // Same discriminator as handleQuickLogEnd. Captured by the escaping closure
+    // below, which is where the clear happens.
+    var endedCleanly = false
 
     // 1. THE FACT, first, as on every other capture path.
     if let activeRaw = standard.string(forKey: kActiveEventKey),
@@ -932,10 +1033,15 @@ import awesome_notifications
       let secs = max(0, Int(endTime.timeIntervalSince(startTime)))
       writeInboxEnd(id: eventId, at: ISO8601DateFormatter().string(from: endTime),
                     seconds: secs)
+      endedCleanly = true
     }
     // An unreadable or absent marker still tears down below. The banner is
     // showing, so something is up on screen; leaving it there because the JSON
     // did not parse would be the worse failure.
+    //
+    // ⭐ That reasoning still stands and the teardown is unchanged. What it did
+    // NOT address is that the marker was the only evidence the event was
+    // running, so the teardown now moves it aside first — see the clear below.
 
     // 2. DISMISS, and wait for it. See the order note above.
     endLiveActivity { [weak self] in
@@ -943,6 +1049,16 @@ import awesome_notifications
 
       // 3. CLEAR BOTH. More than EndMEREventIntent does — it can only reach the
       //    App Group copy, which is why clearStaleActiveStateIfEnded exists.
+      //
+      //    MOVED ASIDE, NOT DELETED. The re-read inside preserveUnreadableMarker
+      //    happens HERE, at deletion time rather than at decision time, because
+      //    this clear runs inside the endLiveActivity completion. That is
+      //    DELIBERATE: for a move-aside the value that matters is the one about
+      //    to be destroyed, not the one read a moment earlier.
+      if !endedCleanly {
+        self.preserveUnreadableMarker(from: "endActiveEventFromApp",
+                                      key: self.kActiveEventKey)
+      }
       standard.removeObject(forKey: self.kActiveEventKey)
       UserDefaults(suiteName: self.kAppGroupId)?.removeObject(forKey: self.kSharedActiveKey)
 
