@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,6 +23,7 @@ import '../theme/mer_theme.dart';
 import '../constants.dart';
 import '../models/capture_instruction.dart';
 import '../models/duration_format.dart';
+import 'ios_capture_bridge.dart' show reportCaptureChannelError;
 
 // ── IDs & storage keys ────────────────────────────────────────────────────────
 
@@ -36,7 +38,127 @@ const _chanFeedback   = 'mer_feedback';
 
 const _activeEventKey = 'mer_active_event';
 
+/// ── Unreadable-marker quarantine ─────────────────────────────────────────
+///
+/// ⛔ **PRESERVATION ONLY.** Nothing in the app reads these. They exist because
+/// deleting an active marker that could not be parsed is IRREVERSIBLE — the
+/// marker holds the only copy of the event's start time, so losing it makes the
+/// running event's duration permanently unrecoverable. That asymmetry is the
+/// whole justification and there is no other.
+///
+/// ⭐ **DELIBERATELY THE SAME SHAPE AND THE SAME NAMES AS THE SWIFT SIDE'S
+/// QUARANTINE IN `a2df73c`** — most-recent value plus a count. Symmetry, not
+/// coincidence: one marker at a time, the payload is two fields, and bounded
+/// storage beats completeness nobody reads. The COUNT is what tells a later
+/// reader whether it recurred.
+///
+/// ⚠️ **THE IDENTICAL NAMES CANNOT COLLIDE, AND THE REASON IS STRUCTURAL.**
+/// Swift's live in `UserDefaults(suiteName: group.au.com.notiva.…)`; these live
+/// in `SharedPreferences`, which on iOS reads `UserDefaults.standard` and
+/// filters to the `flutter.` prefix. **`shared_preferences` cannot address a
+/// suite name at all**, so Dart is incapable of becoming a second writer of the
+/// App Group keys even by mistake. See `ios_capture_bridge.dart`'s header.
+///
+/// ⛔ **AND THE WORD THAT DOES NOT BELONG HERE: these keys are not "reportable".
+/// They are PRESERVATION.** The report is the Sentry event raised alongside
+/// them — a separate thing, in a separate place, with a separate name. The
+/// Swift side could not report at all, which is why `a2df73c` has only an
+/// os_log; Dart has Sentry and does both.
+const _quarantineKey      = 'mer_active_quarantine';
+const _quarantineCountKey = 'mer_active_quarantine_count';
+
+/// ⚠️ Per-process, reset only by a restart. See the report block in
+/// [resolveActiveMarker] for why this is not a persisted key.
+bool _unreadableReported = false;
+
+@visibleForTesting
+void debugResetUnreadableReport() => _unreadableReported = false;
+
 const _timeoutMins    = 30;
+
+/// What the active marker turned out to be.
+enum MarkerState {
+  /// Parsed. Safe to act on and safe to remove.
+  readable,
+
+  /// Present but unparseable. ⛔ **Must be preserved, never removed.**
+  unreadable,
+
+  /// Not there at all. Nothing to preserve and nothing to remove.
+  ///
+  /// ⚠️ Distinguished from [unreadable] DELIBERATELY. `_decodeActive` returns
+  /// null for both, and quarantining an absent marker would manufacture
+  /// evidence of a loss that did not happen.
+  absent,
+}
+
+/// Disposes of the active marker according to what it turned out to be.
+///
+/// Returns the state it classified, so a caller can act on it.
+///
+/// ⭐ **THIS IS THE INBOX DRAIN'S SHAPE, NOT A NEW INVENTION.** `applyInbox`
+/// already solves exactly this: an entry that cannot be parsed becomes
+/// `InboxEntry.deferred(key, InboxDefer.malformed)` — an OBSERVABLE STATE — and
+/// is excluded from `drainableKeys`, so it is never acked. Per-element evidence
+/// about the very thing being destroyed. The mirror lacked that and cost a
+/// one-way door; this had the same gap and is closed the same way.
+///
+/// ⛔ **PLATFORM-FREE ON PURPOSE.** The callers are gated (`endEvent` returns on
+/// Windows, `onActionReceived` on iOS), so a behavioural test of the policy
+/// would otherwise be host-bound by construction — the exact class Brief 68
+/// exists for. Taking `prefs` and `onReport` as parameters, and reading
+/// `Platform` nowhere, makes every row of this decision testable on any host.
+/// The rationale for that shape is written at
+/// `walkthrough_screen.dart:361-366`; this is its third application.
+@visibleForTesting
+Future<MarkerState> resolveActiveMarker(
+  SharedPreferences prefs, {
+  required bool decodedOk,
+  void Function(Object error, StackTrace stack)? onReport,
+}) async {
+  final raw = prefs.getString(_activeEventKey);
+
+  if (raw == null || raw.isEmpty) return MarkerState.absent;
+
+  if (decodedOk) {
+    await prefs.remove(_activeEventKey);
+    return MarkerState.readable;
+  }
+
+  // ⛔ UNREADABLE. Preserve first, remove nothing. A failure decides that this
+  // branch runs, and a failure must not be allowed to destroy the only copy.
+  final count = (prefs.getInt(_quarantineCountKey) ?? 0) + 1;
+  await prefs.setString(_quarantineKey, raw);
+  await prefs.setInt(_quarantineCountKey, count);
+
+  // ⭐ THE REPORT, which is a different thing from the preservation above, and
+  // carries the count — "this is the third time" is actionable, "something
+  // failed" is not.
+  //
+  // ⛔ ONCE PER PROCESS, NOT ONCE PER OCCURRENCE, AND THE FIX ITSELF IS WHY.
+  // Because an unreadable marker is no longer REMOVED, it persists — so every
+  // subsequent end-button press in the same session re-reads the same bad value
+  // and would report again. Preserving the marker is what creates the
+  // recurrence, so the report has to be bounded or the fix manufactures a
+  // firehose out of one stuck value.
+  //
+  // ⭐ Same choice and same reasoning as `_incompleteReported` in
+  // `ios_capture_bridge.dart`, and deliberately NOT a persisted key: contract
+  // `#18` makes a durable key permanent once shipped, and the COUNT above is
+  // already the durable signal. The count keeps rising while the reports stay
+  // at one per launch, so a later reader still sees how often it recurred.
+  if (!_unreadableReported) {
+    _unreadableReported = true;
+    onReport?.call(
+      StateError('Active event marker could not be read. PRESERVED, not '
+          'removed — the start time is the only copy and deleting it would '
+          "make the running event's duration unrecoverable. occurrence "
+          '#$count.'),
+      StackTrace.current,
+    );
+  }
+  return MarkerState.unreadable;
+}
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
@@ -257,7 +379,18 @@ class NotificationService {
       );
     }
 
-    await prefs.remove(_activeEventKey);
+    // ⛔ THE REMOVE IS NOW INSIDE THE DECISION, 21 September 2026. It sat here
+    // UNCONDITIONALLY, outside the `if (active != null)` above — so an
+    // unreadable marker wrote no end instruction, showed no feedback, AND WAS
+    // DELETED ANYWAY, taking the only copy of the start time with it and making
+    // that event's duration permanently unrecoverable.
+    //
+    // ⭐ THE TRADE AT :226 IS NOT REVERSED. Continuing past an unreadable marker
+    // was a deliberate fix for a stuck active notification, and it still
+    // continues: `_showNormal()` below runs in every case. Only the DELETION
+    // changed.
+    await resolveActiveMarker(prefs,
+        decodedOk: active != null, onReport: reportCaptureChannelError);
     // Delay restoring the persistent notification so the end-event feedback
     // notification settles at the top of the shade first.
     await Future.delayed(const Duration(seconds: 3));
@@ -314,8 +447,27 @@ class NotificationService {
     final prefs     = await SharedPreferences.getInstance();
     final activeRaw = prefs.getString(_activeEventKey);
     if (activeRaw == null) return;
-    final active = jsonDecode(activeRaw) as Map<String, dynamic>;
-    final start  = DateTime.parse(active['startIso'] as String);
+
+    // ⛔ WAS `jsonDecode(activeRaw) as Map` AND `DateTime.parse(...)`, BOTH
+    // BARE. That was SAFE — they THREW on an unreadable marker, so the remove
+    // below was never reached — but safe by an exception nobody chose, while
+    // `_decodeActive` four methods away returns null for the same input.
+    //
+    // ⭐ AND THE REPOSITORY HAD ALREADY DECIDED AGAINST THIS THROW ONCE: the
+    // comment in `_handleEnd` records that "previously a bare DateTime.parse
+    // threw here, so the active notification stuck", and treats that as a bug
+    // worth fixing. Pinning the throw as load-bearing would have argued against
+    // that precedent. Two functions in one file now take ONE shape.
+    //
+    // ⚠️ THIS DOES PARSE WHERE IT USED TO THROW, which is the cost of the
+    // symmetry and is stated rather than hidden.
+    final decoded = _decodeActive(activeRaw);
+    if (decoded == null) {
+      await resolveActiveMarker(prefs,
+          decodedOk: false, onReport: reportCaptureChannelError);
+      return;
+    }
+    final start = decoded.startedAt;
     if (DateTime.now().difference(start).inMinutes >= _timeoutMins) {
       // Clears the MARKER only, and deliberately leaves the record alone. The
       // record is created at start with a NULL duration, so an abandoned event
@@ -325,7 +477,13 @@ class NotificationService {
       // that belongs at creation, it only ever reached Android because the iOS
       // timeout is native, and it could null a duration the user had since
       // filled in by hand.
-      await prefs.remove(_activeEventKey);
+      //
+      // ⭐ THROUGH THE POLICY, not a bare remove. The marker decoded, so this is
+      // the readable branch and behaves exactly as before — but routing it here
+      // means `prefs.remove(_activeEventKey)` exists in ONE place in this file,
+      // which is what makes the source scan a complete check rather than a
+      // sample.
+      await resolveActiveMarker(prefs, decodedOk: true);
     }
   }
 
