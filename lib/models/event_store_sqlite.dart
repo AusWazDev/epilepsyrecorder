@@ -560,11 +560,80 @@ class SqliteEventStore implements EventStore {
   /// Inside ONE transaction, so a kill mid-write leaves the previous contents
   /// intact rather than a partial history. That is strictly stronger than the
   /// old store's rollback key, which bounded the loss rather than preventing it.
+  /// ⛔ **THE DELETION'S SCOPE IS NO LONGER "EVERYTHING", 21 September 2026.**
+  ///
+  /// It was `txn.delete('event')` — unconditional, no `where`. Combined with
+  /// `_load`'s `.whereType<EventRecord>()`, which drops a row that cannot be
+  /// read BEFORE the list exists, that made **a parse failure at LOAD into a
+  /// permanent deletion at the next SAVE**: the list arrives short, and the
+  /// rewrite removes what was never in it. `persistEvents` runs on capture,
+  /// edit, hide, restore and drain, so ordinary use was enough.
+  ///
+  /// ⭐ **THE INVARIANT: a row that could not be read is never deleted by a
+  /// write derived from a read that skipped it.**
+  ///
+  /// ⚠️ **NOT AN UPSERT, DELIBERATELY.** Deletion is a real feature — hiding or
+  /// removing a record takes it out of the list and the row must go. An upsert
+  /// would RESURRECT deleted records, which is a worse defect than the one this
+  /// fixes. So the delete still removes everything the list does not contain,
+  /// **except rows the database itself cannot read.**
+  ///
+  /// ⭐ **PRESERVED BY `rowid`, NOT BY `id`.** `rowid` is SQLite's own identity
+  /// and exists whatever the row contains; a row whose `logged_at` is
+  /// unreadable may have an unreadable `id` too, so identifying it by its own
+  /// content would be the same mistake one level down.
+  ///
+  /// ⭐ **THIS IS THE SHAPE `applyInbox` AND `MirrorParse` ALREADY USE** — keep
+  /// what could not be read, act on what could. Not a new invention.
+  ///
+  /// ⚠️ **AND IT IS WHAT MAKES THE DEFERRED USER-FACING SURFACE POSSIBLE.** A
+  /// preserved unreadable row can later be counted, repaired or reported. A
+  /// deleted one cannot. Nothing surfaces it today; that item stays deferred.
+  ///
+  /// ⛔ **THE FIX SHIPS BECAUSE THE FAILURE IS TOTAL AND THE FIX IS CHEAP, NOT
+  /// BECAUSE THE FREQUENCY IS KNOWN.** Whether any row has ever failed to parse
+  /// in the field is NOT established and is not claimed here.
   @override
   Future<void> save(List<EventRecord> records) {
     final snapshot = List<EventRecord>.of(records);
     return EventStore.serialise(() => db.transaction((txn) async {
-          await txn.delete('event');
+          // Rows the table holds that this build cannot read. Read inside the
+          // same transaction, so nothing can change between the survey and the
+          // delete.
+          final existing =
+              await txn.rawQuery('SELECT rowid AS _rowid, * FROM event');
+          final keep = <int>[];
+          for (final row in existing) {
+            if (eventFromRow(row) != null) continue;
+            final rid = row['_rowid'];
+            if (rid is int) keep.add(rid);
+          }
+
+          if (keep.isEmpty) {
+            await txn.delete('event');
+          } else {
+            // ⛔ LITERALS, NOT BOUND PARAMETERS, AND THE REASON IS THE STANDING
+            // RULE. One `?` per preserved row means the count is capped by
+            // `SQLITE_MAX_VARIABLE_NUMBER` — 999 on older builds. A table with
+            // more unreadable rows than that would make EVERY save throw:
+            // `persistEvents` would report it, so it would be visible rather
+            // than silent, but the user could no longer record anything.
+            //
+            // ⛔ THAT WOULD GATE CAPTURE — a fix that soft-locks the app on a
+            // pathological table breaks the rule it exists to serve.
+            //
+            // ⭐ SAFE TO INLINE BECAUSE THESE ARE NOT USER INPUT. Every value
+            // is a `rowid` SQLite itself issued, type-checked with `is int`
+            // above before it enters the list, so the list is `List<int>` by
+            // construction and cannot carry a string to escape. Interpolating
+            // anything the user typed here would be a different matter.
+            //
+            // ⚠️ The remaining bound is `SQLITE_MAX_SQL_LENGTH`, one billion
+            // bytes by default — around a hundred million preserved rows. Not
+            // reachable on a personal event log.
+            await txn.delete('event', where: 'rowid NOT IN (${keep.join(',')})');
+          }
+
           final batch = txn.batch();
           for (var i = 0; i < snapshot.length; i++) {
             batch.insert('event', eventToRow(snapshot[i], i));

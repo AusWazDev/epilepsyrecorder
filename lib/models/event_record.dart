@@ -884,6 +884,21 @@ extension EventRecordVisibility on List<EventRecord> {
    STORAGE
    =========================== */
 
+/// ⛔ PRESERVATION ONLY. Holds a whole events payload that could not be decoded
+/// at all, saved aside before an overwrite would have destroyed it. Nothing
+/// reads it. Same shape and same justification as the active-marker quarantine
+/// in notification_service.dart and the Swift side's in a2df73c.
+///
+/// ⚠️ **A PERMANENT COMMITMENT, TAKEN DELIBERATELY.** Contract `#18` makes a
+/// durable key permanent once shipped — it can never be renamed or removed,
+/// because a payload written by an older build must stay findable. This one was
+/// judged worth that: an undecodable payload is irreversible on overwrite, and
+/// there is nowhere else to put it. ⭐ **The contrast is the report flag beside
+/// it in `notification_service`, which is deliberately IN-PROCESS and takes no
+/// key at all** — a rate limit is not worth a permanent commitment; a preserved
+/// payload is.
+const String kEventPayloadQuarantineKey = 'mer_events_payload_quarantine';
+
 class EventStore {
   /// Serialises every store operation, so two can never interleave.
   ///
@@ -944,9 +959,83 @@ class EventStore {
   /// Callers pass `_records`, which is mutated in place by `insert` and replaced
   /// wholesale by `_loadRecords`; encoding after an await meant a save could
   /// serialise records it never intended to, or state from before a reload.
+  /// ⛔ **SAME INVARIANT AS `SqliteEventStore.save`, AND IT HAS TO BE: a row
+  /// that could not be read is never deleted by a write derived from a read
+  /// that skipped it.** This implementation is the fallback store chosen at
+  /// boot when SQLite cannot open, so a divergence here would be a defect that
+  /// appears on one boot path and not the other — which is worse than either
+  /// uniform behaviour, because nothing on the working path would ever show it.
+  ///
+  /// ⚠️ **THE MECHANISM DIFFERS BECAUSE THE STORAGE DOES.** SQLite preserves by
+  /// `rowid`; there is no rowid here, so the unreadable ENTRIES are carried
+  /// through verbatim as the raw maps they already were. Same invariant, same
+  /// shape, different handle.
+  ///
+  /// ⭐ **THE SNAPSHOT-BEFORE-AWAIT PROPERTY IS PRESERVED.** The original
+  /// encoded synchronously so a save could not serialise a list that changed
+  /// underneath it. `records` is copied on the first line, before anything is
+  /// awaited, which keeps that guarantee while allowing the read below.
+  /// ⛔ **`serialise` IS CALLED SYNCHRONOUSLY, AND IT HAS TO BE.** A first
+  /// attempt made this method `async` and awaited `getInstance()` before
+  /// enqueuing — which let two concurrent saves enqueue out of call order.
+  /// `persist_race_test` caught it: *"the real store applies saves in call
+  /// order"*, *"completion order matches call order"*, *"a load cannot jump
+  /// ahead of a queued write"*.
+  ///
+  /// ⭐ So the read-modify-write happens INSIDE the serialised section, which is
+  /// also strictly more correct than the original: nothing can interleave
+  /// between surveying the existing payload and overwriting it.
+  ///
+  /// ⚠️ **NO VARIABLE LIMIT APPLIES HERE, and the payload cannot grow without
+  /// bound.** There is no SQL and no parameter binding — the preserved entries
+  /// are re-encoded into the same JSON array they already occupied, so the
+  /// payload after a save is never larger than the payload before it plus the
+  /// records the caller supplied. The only doubling is the quarantine key, and
+  /// that is one most-recent copy, not an accumulation.
+  ///
+  /// ⚠️ **THE SURVEY RUNS ON EVERY SAVE — capture, edit, hide, restore, drain —
+  /// AND ITS COST IS A JUDGEMENT, NOT A MEASUREMENT.** Accepted on the basis
+  /// that a personal medical event log is tens to low hundreds of records.
+  /// ⛔ **Recorded so it can be wrong**: if a user's set ever runs to many
+  /// thousands, this is the thing to revisit. Nothing here has measured it and
+  /// this is not a finding.
   Future<void> save(List<EventRecord> records) {
-    final payload = jsonEncode(records.map((e) => e.toMap()).toList());
-    return serialise(() => _write(payload));
+    final snapshot = List<EventRecord>.of(records);
+    return serialise(() => _saveInner(snapshot));
+  }
+
+  static Future<void> _saveInner(List<EventRecord> snapshot) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw   = prefs.getString(kEventStorageKey);
+    final preserved = <dynamic>[];
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          for (final e in decoded) {
+            if (e is! Map) {
+              // Not even a map. Kept for the same reason as the rest: this
+              // build cannot read it, so this build must not destroy it.
+              preserved.add(e);
+              continue;
+            }
+            if (EventRecord.fromMap(Map<String, dynamic>.from(e)) == null) {
+              preserved.add(e);
+            }
+          }
+        }
+      } catch (_) {
+        // ⛔ THE WHOLE PAYLOAD IS UNREADABLE, which no per-entry pass can
+        // rescue. Preserved wholesale before being overwritten, for the same
+        // reason and in the same shape as the active-marker quarantine: the
+        // bytes are cheap and the loss is irreversible. Nothing reads this.
+        await prefs.setString(kEventPayloadQuarantineKey, raw);
+      }
+    }
+
+    final payload =
+        jsonEncode([...snapshot.map((e) => e.toMap()), ...preserved]);
+    await _write(payload);
   }
 
   static Future<void> _write(String payload) async {
