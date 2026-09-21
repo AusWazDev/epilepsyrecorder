@@ -2958,3 +2958,57 @@ sentence is true of every regression ever shipped.
 hashes.** It rests on `drawer_contents_test` — destinations, order, section grouping, door count,
 route model, `_records` ownership. **The hashes record where things sit. A green hash is not
 evidence the drawer works.**
+
+---
+
+## ✅ Brief 64's Help spacing fix — CONFIRMED ON THE DEVICE, 21 September 2026
+
+**Teclast P30, running `1.1.1+62` from `616c16d`.** The gap between Help's last two sections now
+matches the others, observed by the developer on the physical device.
+
+### ⛔ WHY THIS CONFIRMATION COULD NOT HAVE COME FROM A TEST, AND THAT IS THE POINT
+
+**The defect:** Help's fourth inter-section gap sat inside `if (Platform.isWindows)`. On Android and
+iOS it never rendered, so those platforms shipped a gap of 0 where every other gap was 12.
+
+⭐ **NO TEST ON THIS CLI HOST COULD SEE THE DEFECT, AND NONE COULD SEE THE FIX. BY CONSTRUCTION,
+NOT BY OVERSIGHT.** The host is Windows. It rendered the branch that was already correct, both
+before and after. `help_section_spacing_test` measured a uniform screen and passed — truthfully —
+on both sides of the change. **There was never a version of that test, on this machine, that could
+have gone red.**
+
+⚠️ **SO BOTH ENDS OF THIS DEFECT WERE ESTABLISHED BY THE DEVELOPER'S EYE ON HARDWARE:** the defect
+was found by looking at the device, and the fix is confirmed by looking at the device. **The
+repository's contribution was to make the fix checkable AFTERWARDS** — `#19`'s source-scan half,
+`help_no_platform_gap_test`, which fails if the guard is ever reintroduced. ⛔ **That test prevents
+a recurrence. It could not have detected the original.**
+
+### ⭐ WHAT THIS CLOSES, AND WHAT IT DOES NOT
+
+**It closes Brief 64.** The spacing change is shipped, on a device, and seen.
+
+⛔ **It does not vindicate the sweep's conclusion, and it is worth being precise about the
+direction.** Brief 68 found that *host-bound* — a green test asserting over a branch it never
+renders — was **not** the dominant mode in the population it examined: all four topics were simply
+**untested**, which is visible. ⭐ **This record is the counter-instance, and it is the ORIGINAL
+one.** Contract `#19`'s behaviour half is host-bound by its own note J, and this is what that costs
+when it goes wrong: a defect that ships, passes every check, and is caught by a person looking at a
+screen.
+
+⚠️ **The honest reading of the two together: the mechanism is RARE in this codebase and EXPENSIVE
+when it occurs.** A sweep that found it uncommon is not a sweep that found it harmless, and the
+untested-versus-host-bound distinction is about how hard a gap is to FIND, never about what it
+costs once missed.
+
+### ⭐ AND THE INSTRUMENT THAT ACTUALLY WORKED IS NOT IN THE REPOSITORY
+
+**It is a developer with the build in their hands.** ⛔ **Recorded plainly because this project's
+standing bias is toward mechanising checks, and that bias would have produced nothing here.** No
+widget test, no source scan, no golden and no capture pipeline on this host could have returned
+this answer — the capture rules already say a Windows framebuffer answers "how does it look" only
+for what Windows renders.
+
+⚠️ **The practical form is not "test less". It is: WHERE A DIVERGENCE CANNOT BE RENDERED ON THE
+BUILD HOST, THE DEVICE PASS IS NOT A FORMALITY AFTER THE TESTS — IT IS THE ONLY INSTRUMENT.**
+Scheduling it as a final tick, after a green suite has already been read as success, inverts which
+of the two was load-bearing.
