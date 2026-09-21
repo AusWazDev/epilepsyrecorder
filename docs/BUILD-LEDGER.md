@@ -71,7 +71,7 @@ safe behaviour is to take a code above the highest ever recorded anywhere.
 | **59** | 1.1.0 | ⛔ **NOT RECOVERABLE** — an uncommitted tree between `c4d5d0a` and `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 | ✅ **by 60, same day — defect found ON THE DEVICE** |
 | 60 | 1.1.0 | the tree that became `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 — **current** | — |
 | 61 | 1.1.1 | `f00a54d` ✅ **exact, tree clean** | 20 Sep 2026 | release APK, 73,718,998 B, md5 `9cba274a030d8ace6c09489e5a8addd7` | ⛔ **nowhere** — on disk only, not installed | — |
-| **62** | 1.1.1 | `8e75804` ✅ **exact, tree clean** | 21 Sep 2026 | release APK — ⏳ **ROW PUSHED BEFORE THE BUILD; artefact details filled in after** | ⛔ **nowhere yet** | — |
+| **62** | 1.1.1 | `616c16d` ✅ **exact, tree clean, READ FROM GIT AT BUILD TIME** | 21 Sep 2026 | release APK, 73,702,682 B, md5 `d46aa4f22ff97a9d8ba933267286947e` | ⛔ **nowhere — not installed** | — |
 
 ### ⭐ Row 59 is the reason this file exists
 
@@ -97,6 +97,21 @@ build still spends the code — and it is preferable to two hosts silently takin
 ⚠️ **VERSION NAME STAYS 1.1.1.** 61 carried 1.1.1 and went nowhere; the release has not shipped, so
 the name has nothing to move past. ⛔ **Only the CODE advances, because only the code must never
 repeat.**
+
+⚠️ **AND THE ONE THING THE NEW ORDERING CANNOT DO, FOUND ON ITS FIRST OUTING.** When the row was
+written, the commit that would carry it **did not yet exist**, so it necessarily named its PARENT,
+`8e75804`. The build then came from `616c16d` — the allocation commit itself, because that is the
+commit holding the `1.1.1+62` bump.
+
+⛔ **So the row was written with a commit it was always going to be wrong about, and it was
+corrected after the build from a git read at build time.** That is not a defect in the amendment; it
+is the shape of writing a record before the thing it records. **The build-time read is what makes
+the row true, and Brief 65 B-3 already required it** — what is new is that the pre-build row now has
+a placeholder value in the interval, which a reader fetching mid-build would see.
+
+⭐ **Recorded because the alternative is worse in both directions:** naming no commit until after the
+build leaves the pushed row unable to say what it allocated against, and naming the parent silently
+leaves a wrong hash that nothing re-derives.
 
 ### ⚠️ On "built from", and why three rows are hedged
 
