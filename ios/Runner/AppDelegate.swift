@@ -172,7 +172,26 @@ import awesome_notifications
           result(shared?.string(forKey: self?.kLegacySharedRecords ?? ""))
         case "clearLegacySharedRecords":
           // Retire the mirror so nothing can later read it as a source of truth.
-          // Called only after Dart confirmed the merged write.
+          //
+          // ⛔ SUPERSEDED 21 September 2026. The line below read:
+          //     "Called only after Dart confirmed the merged write."
+          // That was TRUE of one of its three callers and FALSE of the other
+          // two. Dart calls this from `reconcileLegacySharedRecords` at three
+          // places, and only one of them follows a write:
+          //
+          //   · the mirror key was ABSENT or empty  — no write, nothing to fold
+          //   · the fold found NOTHING NEW          — no write, the two agreed
+          //   · the merged list was PERSISTED       — the write this described
+          //
+          // ⭐ WHAT IS NOW TRUE OF ALL THREE: Dart calls this only when the READ
+          // WAS COMPLETE — the payload decoded as a List, every element produced
+          // a record, and nothing threw. Completeness of the read, not absence
+          // of change and not a successful write, is what earns the delete.
+          //
+          // ⚠️ THE ASYMMETRY THAT MAKES THIS LOAD-BEARING: `removeObject` below
+          // is irreversible and each device runs this path exactly once, on its
+          // first launch after upgrading from 1.0.2. The Dart-side flag can be
+          // re-set; the App Group value cannot be recovered once removed.
           if let group = self?.kAppGroupId,
              let key = self?.kLegacySharedRecords,
              let shared = UserDefaults(suiteName: group) {

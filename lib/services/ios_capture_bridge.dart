@@ -22,6 +22,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -204,7 +205,22 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
     );
   }
 
-  final mirrored = _parseMirroredRecords(raw);
+  final parse = _parseMirroredRecords(raw);
+  final mirrored = parse.records;
+
+  // ⛔ REPORTED AS SOON AS IT IS KNOWN, not at the retirement sites. The counts
+  // are what make it actionable: "3 of 11 elements produced no record" can be
+  // investigated; "something failed" cannot.
+  if (!parse.complete && !_incompleteReported) {
+    _incompleteReported = true;
+    onError?.call(
+      StateError('Legacy mirror read INCOMPLETE — ${parse.failure}. '
+          'kept ${parse.records.length} of ${parse.elements}. '
+          'The mirror is NOT being retired; this will retry next foreground.'),
+      StackTrace.current,
+    );
+  }
+
   final merged = <EventRecord>[];
   final order = <String>[];
   final byId = <String, EventRecord>{};
@@ -284,6 +300,16 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
 
   final changed = addedIds.isNotEmpty || durationsRecovered.isNotEmpty;
   if (!changed) {
+    // ⛔ COMPLETENESS OF THE READ, NOT ABSENCE OF CHANGE, EARNS THE DELETE.
+    // "The two agreed" and "the payload could not be read" both arrive here
+    // with an empty `mirrored`, and before 21 September 2026 they were
+    // indistinguishable — four different meanings taking one branch.
+    if (!parse.complete) {
+      return SharedRecordsReconcileOutcome(
+        records: loaded, ran: true, wrote: false,
+        addedIds: none, durationsRecovered: none,
+      );
+    }
     // The two agreed. Retire the mirror without a write.
     await prefs.setBool(kSharedRecordsReconciledKey, true);
     try {
@@ -300,7 +326,16 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
   }
 
   final wrote = await persistEvents(store, merged);
-  if (wrote) {
+  // ⛔ THE WORST OF THE THREE, AND THE ONE Brief 75 PART A ADDED. `wrote` says
+  // the merged list was PERSISTED. It says nothing about whether the merge was
+  // built from everything that was there — so a payload that decoded partially,
+  // folded its survivors and wrote them successfully used to delete the records
+  // it had just dropped. `wrote == true` is the strongest signal of success at
+  // this line, and a partially-failed read was producing it.
+  //
+  // ⭐ The survivors are still folded and still written. Partial recovery is
+  // better than none and that behaviour is unchanged. Only the DELETE waits.
+  if (wrote && parse.complete) {
     await prefs.setBool(kSharedRecordsReconciledKey, true);
     try {
       await channel
@@ -320,21 +355,93 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
   );
 }
 
+/// What a parse of the mirror SAW, alongside what it KEPT.
+///
+/// ⛔ **THE FUNCTION BELOW ANSWERS TWO DIFFERENT QUESTIONS AND USED TO RETURN
+/// ONLY ENOUGH FOR ONE.** "What can I fold?" is answered by the survivors.
+/// "Is it safe to DELETE the source?" is not — and both decisions were being
+/// taken from the same `List<EventRecord>`.
+///
+/// ⭐ **The parse rule itself is unchanged and is NOT the defect**: one
+/// unreadable record still never costs the others, exactly as
+/// `EventStore.load` behaves. Partial recovery is better than none. What
+/// changes is that the caller can now tell a partial recovery from a total one.
+class MirrorParse {
+  const MirrorParse({
+    required this.records,
+    required this.elements,
+    required this.complete,
+    this.failure,
+  });
+
+  /// The records that could be built. Survivors only, as before.
+  final List<EventRecord> records;
+
+  /// How many elements the decoded JSON List contained. 0 when it was not a
+  /// List or the decode threw.
+  final int elements;
+
+  /// ⛔ **COMPLETE means: it decoded as a List, EVERY element produced a
+  /// record, and nothing threw.** Anything else is incomplete, and an
+  /// incomplete read must never be allowed to retire the mirror.
+  final bool complete;
+
+  /// Why it was incomplete, for the report. Null when complete.
+  final String? failure;
+
+  /// Elements that decoded but produced no record.
+  int get dropped => elements - records.length;
+}
+
 /// Parses the legacy mirror payload. One unreadable record never costs the
 /// others — the same rule `EventStore.load` follows.
-List<EventRecord> _parseMirroredRecords(String raw) {
+///
+/// ⚠️ Now reports completeness alongside the survivors. See [MirrorParse].
+MirrorParse _parseMirroredRecords(String raw) {
   try {
     final decoded = jsonDecode(raw);
-    if (decoded is! List) return const <EventRecord>[];
-    return decoded
+    if (decoded is! List) {
+      return const MirrorParse(
+        records: <EventRecord>[], elements: 0,
+        complete: false, failure: 'payload did not decode as a List',
+      );
+    }
+    final records = decoded
         .whereType<Map>()
         .map((e) => EventRecord.fromMap(Map<String, dynamic>.from(e)))
         .whereType<EventRecord>()
         .toList();
-  } catch (_) {
-    return const <EventRecord>[];
+    final complete = records.length == decoded.length;
+    return MirrorParse(
+      records: records,
+      elements: decoded.length,
+      complete: complete,
+      failure: complete
+          ? null
+          : '${decoded.length - records.length} of ${decoded.length} '
+              'elements produced no record',
+    );
+  } catch (e) {
+    return MirrorParse(
+      records: const <EventRecord>[], elements: 0,
+      complete: false, failure: 'decode threw: $e',
+    );
   }
 }
+
+/// ⚠️ ONE REPORT PER PROCESS, and the reason is that an incomplete read now
+/// RECURS. Before this change a bad mirror was read once and deleted; now it is
+/// read on every foreground until it parses or the user reinstalls. A
+/// permanently unparseable payload would otherwise become a Sentry firehose.
+///
+/// ⭐ Per-process rather than a durable key, deliberately: the reconciliation
+/// runs at most once per foreground load, so a process-scoped flag already
+/// bounds this to roughly one report per app launch — without adding a
+/// persisted key, which contract `#18` makes permanent once shipped.
+bool _incompleteReported = false;
+
+@visibleForTesting
+void debugResetIncompleteReport() => _incompleteReported = false;
 
 /// Reports a channel failure without letting it reach the caller.
 void reportCaptureChannelError(Object error, StackTrace stack) {
