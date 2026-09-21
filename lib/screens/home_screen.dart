@@ -366,11 +366,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// `getPendingOpenLatest` consumes the flag as it reads it, so draining here is
   /// what stops a flag set alongside a channel call firing spuriously on some
   /// later foreground. Returns whether it opened anything.
+  ///
+  /// ⚠️ **A NO-OP OFF iOS**, and reached on every platform: the channel is
+  /// registered only in `AppDelegate.swift`, so Android and Windows throw
+  /// [MissingPluginException] here and fall through to the `SharedPreferences`
+  /// path in `initState` and `_handleResume`, which is their real route. The
+  /// call is left uniform on purpose — see [reportNavChannelFailure].
   Future<bool> _drainPendingOpenLatest() async {
     bool pending = false;
     try {
       pending = await _navChannel.invokeMethod<bool>('getPendingOpenLatest') ?? false;
-    } catch (_) {}
+    } catch (e, st) {
+      reportNavChannelFailure(e, st);
+    }
     if (!pending) return false;
     await _openLatestEvent(reload: false);
     return true;
@@ -438,7 +446,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       try {
         final s = await _navChannel.invokeMethod<String>('getShowPreviewsSetting');
         previewsAlways = s == 'always';
-      } catch (_) {}
+      } catch (e, st) {
+        // ⚠️ Guarded to iOS, which is the row where EVERYTHING is reported —
+        // so a missing handler here surfaces rather than being absorbed into
+        // the `previewsAlways = true` default. See [reportNavChannelFailure].
+        reportNavChannelFailure(e, st);
+      }
     }
     if (mounted) setState(() {
       _notificationsAllowed = allowed;
@@ -876,9 +889,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
 
     await _persist();
-    // Reschedule the persistent notification — app stays in foreground so
-    // applicationDidBecomeActive won't fire to do this automatically.
-    try { await _navChannel.invokeMethod<void>('restoreNotification'); } catch (_) {}
+    // Reschedule the persistent notification. ⚠️ ON iOS ONLY, AND SAYING SO IS
+    // HALF THE POINT OF THIS COMMENT: the rationale below is an iOS rationale,
+    // and without this sentence a reader on Android is handed a reason and no
+    // hint the line cannot work for them.
+    //
+    // WHY IT EXISTS: on iOS the app stays in the foreground through this save,
+    // so applicationDidBecomeActive won't fire to reschedule automatically.
+    //
+    // WHY ITS ABSENCE OFF iOS COSTS NOTHING — and it is a property of the
+    // notification's CONTENT, not of anything here. Android's two shapes are
+    // save-independent for two different reasons, both recorded as contracts
+    // #20 and #21. Break either and this missing reschedule becomes a defect
+    // with no change at this line.
+    //
+    // The call stays uniform across platforms; only the reading of a failure
+    // diverges. See [reportNavChannelFailure].
+    try {
+      await _navChannel.invokeMethod<void>('restoreNotification');
+    } catch (e, st) {
+      reportNavChannelFailure(e, st);
+    }
   }
 
   // ── YOUR DATA ──

@@ -22,7 +22,9 @@ rule's reasoning, it points at it.
 
 ---
 
-## The nineteen
+⚠️ **THREE ROWS ADDED 21 September 2026 (Brief 68 Part C). The heading moved from "nineteen" to "twenty-two" with them.** ⛔ **`#20` and `#21` are deliberately TWO ROWS for what one sentence could have covered — see note K. That is the point of them, not an oversight.**
+
+## The twenty-two
 
 | # | structure | invariant — what must remain TRUE | outcome | checked by |
 |---|---|---|---|---|
@@ -45,6 +47,9 @@ rule's reasoning, it points at it.
 | **15** | not-asked states | A field the user was never shown must not persist, export or render an answer on their behalf | **TESTED — behaviour + source scan** | `referral_not_asked_test` ⚠️ **one field of four — note H** |
 | **16** | wizard summary | Every field the wizard asked about appears on the review step, answered or not; a gated child that was never asked does not | **TESTED — behaviour** | `wizard_summary_completeness_test` |
 | **17** | selection carriers | No control conveys selected-versus-unselected by colour alone | **TESTED — behaviour + source scan** | `type_chip_carrier_test` ⚠️ **one control — note I** |
+| **20** | `_showNormal` content | The Android STANDING notification's content is **constant** — a hardcoded title and body, nothing interpolated. `home_screen`'s `_openLogScreen` makes no reschedule call that works off iOS, and that is correct **only while this holds** | **CONVENTION**, 21 Sep 2026 | note K — ⛔ **`:881` depends on it** |
+| **21** | `_showActive` content | The Android ACTIVE notification's content **is** variable, and derives **only from the `mer_active_event` marker — never from an `EventRecord`.** Same missing reschedule, same dependency, **different mechanism** | **CONVENTION**, 21 Sep 2026 | note K — ⛔ **`:881` depends on it** |
+| **22** | nav channel failures | A failure on `au.com.notiva.mer/navigation` is READ by platform, never silenced by one: iOS reports everything; off iOS only `MissingPluginException` is swallowed. No bare `catch (_)` on a channel call | **TESTED — behaviour + source scan** | `nav_channel_failure_policy_test` ⭐ **both platform rows are behavioural — see note K** |
 
 ---
 
@@ -200,6 +205,85 @@ it makes it irrelevant while it goes on passing.
 on platform for CONTENT — the quick-log section genuinely differs on Android, iOS and Windows.
 **A check forbidding platform conditionals outright would be wrong about this screen and would be
 deleted by the first person who needed one.**
+
+### K — `#20`, `#21`, `#22` — ⛔ TWO ROWS FOR ONE FACT, ON PURPOSE
+
+**Recorded 21 September 2026, Brief 68 Part C.**
+
+`home_screen`'s `_openLogScreen` reschedules the persistent notification over
+`au.com.notiva.mer/navigation` after a save. **That channel is registered in
+`ios/Runner/AppDelegate.swift` and nowhere else** — `MainActivity.kt` is a bare
+`FlutterActivity`, `windows/runner` registers nothing — so off iOS the call throws
+`MissingPluginException` and nothing reschedules.
+
+⭐ **That costs nothing today, and the reason is a property of the NOTIFICATION'S CONTENT, not of
+anything at the call site.** Which is why it is written down: it is an invariant the depending code
+cannot see, and nothing re-derives it.
+
+#### Why this is two rows and not one
+
+⛔ **The two shapes are save-independent FOR DIFFERENT REASONS, and a single sentence covering both
+would be checked against one mechanism and pass while the other silently failed.**
+
+| | the mechanism it actually rests on |
+|---|---|
+| **`_showNormal`** | its content is **CONSTANT**. A hardcoded title and body. Nothing interpolates |
+| **`_showActive`** | its content **IS** variable — `'Event in progress · ${_fmtTime(start)}'` — it just varies on the **`mer_active_event` marker**, never on an `EventRecord` |
+
+⚠️ **The wording this replaced was one sentence:** *"the Android standing notification's content
+must remain independent of saved event data."* **It covers `_showNormal` and would be read as not
+applying to `_showActive`**, because `_showActive` visibly does interpolate a value — so a reader
+checking it against that sentence finds the sentence does not seem to be about them, and moves on.
+
+⭐ **In Dart the marker has EXACTLY ONE WRITER — `notification_service.dart:205` — and that is
+MEASURED, not inferred from a private-name search.** The const `_activeEventKey` is private to its
+file, so searching the NAME returns one file and reads as a complete answer. Searching the LITERAL
+`'mer_active_event'` returns four more sites: a read at `home_screen.dart:558`, and three writers in
+Swift (`AppDelegate.swift:18`, `:22`, `MERWidget/EndMEREventIntent.swift:14`). **The Swift writers do
+not disturb the answer for a structural reason rather than a lucky one — `_showActive` opens with
+`if (Platform.isIOS) return;`, so it never renders on the platform those writers exist on.**
+
+#### ⛔ What breaks each, and what does not break the other
+
+**Put an event type or a record timestamp in `_showActive`'s title** and `:881`'s missing reschedule
+becomes a live defect — **with `_showNormal` untouched, and a single-sentence contract still reading
+as satisfied.** The reverse holds too: interpolate anything into `_showNormal` and `#21` is still
+true. **Neither row can stand in for the other.**
+
+#### `#22` — and why BOTH platform rows are behavioural
+
+The three `_navChannel` call sites were wrapped in `catch (_) {}`, so **Android, Windows and a broken
+iOS produced byte-identical observable behaviour**: no log, no Sentry event, no failing test.
+
+⛔ **The fix is not a platform guard around the call.** That silences iOS too, on the one failure with
+no other detector — a channel or method rename on the Swift side, after which the call quietly becomes
+a no-op and every test stays green. **The platform check moved from *should we call* to *is this
+failure expected*.**
+
+⭐ **`shouldReportNavChannelFailure` takes `isIOS` as a PARAMETER rather than reading
+`Platform.isIOS`, and that is the whole reason `#22` is not host-bound like `#19`.** A test host
+renders exactly one platform; a policy that read the platform itself could only ever have been
+exercised on the Windows row, while the iOS row passed by never running. **That is the Brief 64
+defect rebuilt inside the test written to prevent it.** The parameter is what makes both rows real.
+
+⚠️ **The half that is still source scan, named rather than implied:** tests 1–4 prove the POLICY is
+right; they cannot prove the three call sites USE it. A future edit restoring `catch (_) {}` at any
+of them leaves all four passing. Test 5 reads the source for that, and **enumerates every bare catch
+it chose NOT to flag** — currently the `jsonDecode` guard at `home_screen.dart:562`, which is
+unrelated and correct. A blanket ban on `catch (_)` in the file would have condemned it, and a check
+that is wrong about a legitimate line gets deleted by the first person it inconveniences.
+
+⚠️ **A THIRD SITE WAS FOUND BY DERIVING SCOPE FROM THE ARTEFACT.** The brief named two catches,
+`:374` and `:881`. `getShowPreviewsSetting` at `:449` had the identical shape and was not on the
+list — and it is the worse instance, because it sits inside `if (Platform.isIOS)` and therefore only
+ever ran on the row where **everything** is meant to be reported, absorbing any failure into the
+`previewsAlways = true` default.
+
+#### Still open, dated
+
+🔴 **Whether the Swift `restoreNotification` handler can fail in practice is UNESTABLISHED, 21
+September 2026, and needs the Mac.** It is not a blocker for `#22` — **the point of `#22` is that if
+it ever does fail, something says so.**
 
 ### F — `#12` the envelope key SET
 

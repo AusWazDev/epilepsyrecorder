@@ -20,6 +20,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -338,4 +339,45 @@ List<EventRecord> _parseMirroredRecords(String raw) {
 /// Reports a channel failure without letting it reach the caller.
 void reportCaptureChannelError(Object error, StackTrace stack) {
   unawaited(Sentry.captureException(error, stackTrace: stack));
+}
+
+/// Whether a failure on `au.com.notiva.mer/navigation` is worth reporting.
+///
+/// ⛔ **THE PLATFORM CHECK IS ABOUT THE FAILURE, NOT ABOUT THE CALL.** The call
+/// is made on every platform, deliberately. A guard that stopped it off iOS
+/// would also stop iOS ever reporting a handler that has GONE missing — a
+/// channel or method rename on the Swift side — and that is the failure most
+/// worth hearing about, because it has no other detector: the call would
+/// silently become a no-op on iOS too and every test would stay green.
+///
+/// The channel is registered in `ios/Runner/AppDelegate.swift` and **nowhere
+/// else** — `MainActivity.kt` is a bare `FlutterActivity` and `windows/runner`
+/// registers nothing — so off iOS a [MissingPluginException] is the expected
+/// and only outcome. Reporting it would fire on every cold start and every
+/// save, which is noise that would bury the signal above.
+///
+/// | platform | `MissingPluginException` | anything else |
+/// |---|---|---|
+/// | iOS | report | report |
+/// | Android, Windows | swallow | report |
+///
+/// ⛔ **DO NOT "SIMPLIFY" THIS BACK INTO `if (Platform.isIOS)` AROUND A CALL
+/// SITE.** That is the shape this replaced. It is silent in the one place
+/// silence costs something, and it reads as tidier.
+///
+/// ⭐ `isIOS` is a PARAMETER rather than a read of `Platform.isIOS`, and that is
+/// the point of the signature: a test host renders exactly ONE platform, so a
+/// policy that read the platform itself could only ever be exercised on one
+/// side of the table while the other side passed by never running. Both rows
+/// are behavioural tests because of this parameter.
+bool shouldReportNavChannelFailure(Object error, {required bool isIOS}) =>
+    isIOS || error is! MissingPluginException;
+
+/// Applies [shouldReportNavChannelFailure], then routes through the existing
+/// [reportCaptureChannelError]. Deliberately not a second reporting path.
+///
+/// `isIOS` defaults to the real platform; tests pass it explicitly.
+void reportNavChannelFailure(Object error, StackTrace stack, {bool? isIOS}) {
+  if (!shouldReportNavChannelFailure(error, isIOS: isIOS ?? Platform.isIOS)) return;
+  reportCaptureChannelError(error, stack);
 }

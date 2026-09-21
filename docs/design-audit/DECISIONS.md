@@ -2516,3 +2516,98 @@ session it is checking; a reporting requirement is enforced by the party reading
 ⛔ **RECORDED AS A LIMIT OF THIS REPOSITORY, NOT AS A SOLVED PROBLEM.** A clone that never reports
 to chat has no detector at all. **(h) remains a convention, and the honest claim is that it moved
 from ABSENT to STATED, with its check living outside the artefact that states it.**
+
+
+---
+
+## Brief 68 Part C — the channel catches, and a class about contract wording — 21 September 2026
+
+### What changed
+
+⛔ **Three `_navChannel` call sites had bare `catch (_) {}`**, so a failure on
+`au.com.notiva.mer/navigation` was indistinguishable from success on every platform. The channel is
+registered in `ios/Runner/AppDelegate.swift` and nowhere else — `MainActivity.kt` is a bare
+`FlutterActivity`, `windows/runner` registers nothing — so off iOS every call throws
+`MissingPluginException`, and the catch made that look exactly like a working call.
+
+**The fix is NOT a platform guard around the call**, and that distinction is the whole design:
+
+> ⭐ **The platform check moved from *should we call* to *is this failure expected*.**
+
+A guard stopping the call off iOS would also stop **iOS** ever reporting a handler that had gone
+missing — a channel or method rename on the Swift side, after which the call silently becomes a
+no-op and every test stays green. That is the failure with no other detector, so it is the one the
+design protects. `shouldReportNavChannelFailure` in `ios_capture_bridge.dart` now carries the table;
+both call sites and a third route through `reportNavChannelFailure` into the existing
+`reportCaptureChannelError`. **No second reporting path.**
+
+⚠️ **THE THIRD SITE WAS NOT ON THE BRIEF'S LIST.** The brief named `:374` and `:881`.
+`getShowPreviewsSetting` at `:449` had the identical shape, and is the **worse** instance: it sits
+inside `if (Platform.isIOS)`, so it only ever ran on the row where everything is meant to be
+reported, absorbing any failure into the `previewsAlways = true` default. **Found by deriving the
+scope from the artefact rather than from the list** — the same discipline that has now produced a
+finding on four consecutive briefs.
+
+### ⛔ THE CLASS — TWO FACTS THAT HOLD FOR DIFFERENT REASONS NEED TWO STATEMENTS
+
+**Recorded 21 September 2026.**
+
+> ⭐ **One sentence covering both will be checked against the mechanism it describes, and will PASS
+> while the other silently fails.**
+
+**The instance.** `:881`'s missing reschedule off iOS is harmless because Android's two notification
+shapes are save-independent. The proposed contract wording was one sentence:
+
+> *"the Android standing notification's content must remain independent of saved event data"*
+
+**It covers `_showNormal` — whose content is CONSTANT — and would be read as not applying to
+`_showActive`**, whose content visibly interpolates `'Event in progress · ${_fmtTime(start)}'`. A
+reader checking `_showActive` against that sentence finds the sentence does not appear to be about
+them, and moves on. **`_showActive` is save-independent for a different reason: its one variable
+comes from the `mer_active_event` marker, never from an `EventRecord`.**
+
+⛔ **So the failure mode is not that the sentence is wrong. It is that the sentence is TRUE, and
+verifying it confirms the mechanism it names while telling you nothing about the one it does not.**
+A check that passes is read as a check that covered.
+
+⭐ **THE TELL: the two facts have the same CONSEQUENCE and different CAUSES.** Where a single
+statement is reached by generalising over outcomes — *"neither one changes, so neither matters"* —
+it will describe whichever cause was in mind when it was written. **Write one statement per
+mechanism, and name the mechanism in each.** Recorded as contracts `#20` and `#21` and note K, two
+rows where one would have read as sufficient.
+
+⚠️ **Same family as the declared-scope class and the closed-list-versus-rule class in the workspace
+rules — a correct statement whose coverage is narrower than the reader's use of it.** The difference
+worth keeping: those fail when the CORPUS grows. **This one fails immediately, on a corpus of two,
+and still reads as complete.**
+
+### ⚠️ AN OBSERVATION — source-level only, NOT this release's work
+
+**Recorded 21 September 2026. Not reached on a device; established by reading the source only.**
+
+⛔ **Nothing excludes an in-progress record from being edited.** `_openDetails` routes any record to
+the wizard or `_openLogScreen` with no active-event check, and `_activeEvent` is used only for a
+banner (`home_screen.dart:1428`, `:1442`). So editing a running event leaves the notification title
+showing the **marker** time, because `_showActive` reads `mer_active_event` and not the record.
+
+**BOTH READINGS ARE RECORDED, because the two are not distinguishable from the code and the choice
+between them is a product question, not an engineering one:**
+
+1. ⭐ **They are two different facts and the display is correct.** The notification reports **when
+   the event's capture STARTED**; the record reports **when the event is said to have OCCURRED**. A
+   user who corrects the occurred-at time has not changed when they pressed start, and the
+   notification would be wrong to follow it.
+2. ⚠️ **A user sees two times for one event and cannot tell which is which.** Nothing on either
+   surface labels the distinction, so the two readings are indistinguishable to the person looking
+   at them — which makes reading 1 true and unhelpful at the same time.
+
+⛔ **`#22` does not change this either way, and that is stated so a later reader does not treat the
+fix as having addressed it:** a reschedule re-reads the same marker and redraws the same string.
+
+🔴 **Left OPEN. Not a defect claim, not closed by inference, and not in this release.**
+
+### Still open, dated
+
+🔴 **Whether the Swift `restoreNotification` handler can fail in practice — UNESTABLISHED, 21
+September 2026, needs the Mac.** ⭐ **Not a blocker: the point of `#22` is that if it ever does
+fail, something says so.**
