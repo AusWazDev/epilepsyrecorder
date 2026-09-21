@@ -109,6 +109,15 @@ afterwards, which is why it is written down now rather than tidied into a commit
 > ⚠️ **A code is USED the moment an artefact is produced with it** — not when it is committed,
 > not when it is installed. A build that is superseded five minutes later has still used its
 > code, and row 59 is what that looks like.
+>
+> 🔴 **AND WITH MORE THAN ONE HOST BUILDING, THE ROW IS WRITTEN AND PUSHED BEFORE THE NEXT
+> CODE IS ALLOCATED.** ⛔ **An unpushed row is invisible to every other clone**, so two hosts
+> reading this table can both see the same highest code and both take it. ⭐ Row 59 is the
+> single-host version of that failure — a code spent with nothing recording it — and a second
+> machine does not add a new failure mode, it adds a second hand to the existing one.
+>
+> ⚠️ See `docs/WORKING-AGREEMENT.md` §2B rule (h), which carries the same obligation from the
+> session's side rather than the ledger's.
 
 ⚠️ **STATED IN THIS REPOSITORY FOR THE FIRST TIME, 21 September 2026.** Brief 66 asked that the
 existing rule be annotated to point here rather than restated. **There was no existing rule in

@@ -136,7 +136,7 @@ separate `[read]` line records what was checked, beside it.
 
 ## 2B. The four rules from the handover — three were already written down, one was not
 
-⚠️ **TWO MORE ADDED 20 September 2026 — (f) and (g), below the original four.** Both had been in use and unwritten, which is the same condition (e) was in when this section was created. ⛔ **The heading above describes the 17 September handover and is left as written; it is not a count of what this section now holds.**
+⚠️ **THREE MORE ADDED SINCE — (f) and (g) on 20 September 2026, (h) on 21 September.** (f) and (g) had been in use and unwritten, which is the same condition (e) was in when this section was created; **(h) had never been written anywhere a clone of this repository could reach.** ⛔ **The heading above describes the 17 September handover and is left as written; it is not a count of what this section now holds.**
 
 ⚠️ **CHECKED 17 September 2026 rather than assumed.** The claim reaching this document was that
 *"three of the four are in active use; whether they were ever written down is unknown."*
@@ -221,6 +221,58 @@ made the disagreement visible; re-reading the output would not have.
 ⚠️ **AND WHERE A PREDICTION MISSES, SAY WHICH HALF MOVED.** A prediction of 27 against a measured
 26 was not a miss — the comparison included a line the measurement excluded. **A reconciliation
 that cannot name the delta has not reconciled.**
+
+### ⛔ (h) CONFIRM STATE BEFORE WORK THAT ANOTHER MACHINE MAY HAVE MOVED — recorded 21 September 2026
+
+> **At the start of a session, before any work: state the platform, the current `HEAD`, whether
+> `HEAD` matches `origin`, and whether anything is uncommitted or unpushed.**
+>
+> **Push before handing off.** Work left unpushed on one host does not exist for the others, and
+> the next host's edit proceeds without knowing it is there.
+>
+> **Before editing a file another machine may have touched, FETCH, then read `git log` for that
+> file.** ⛔ **The fetch is part of the check, not a preliminary to it.** A `git log` read on a
+> clone that has not fetched returns a clean history while the work sits on the remote unseen —
+> **a null with no control, which rule (e) says is worth nothing.** The log cannot show what the
+> clone has never been told about, and it reports that absence exactly as it reports a genuine one.
+>
+> ⛔ **Not the Change Register.** MER's lives in OneDrive and does not travel by `git push`, so a
+> remedy that depends on it fails on the machine most likely to need it. `git log` is available to
+> any clone, which is why it is the dependency named — once fetched.
+>
+> **A build from any host writes its ledger row before the next version code is allocated.**
+
+⭐ **Evidence: eight features silently reverted.** A Mac-side commit to the SoundFind repo undid
+eight previously-fixed items — audio, persistent hints, a stale-closure fix, a branded icon —
+because that session did not know about intervening Windows-side fixes. **Nothing failed. The
+commit applied cleanly and the work was simply gone.**
+
+⚠️ **AND GIT AUTHOR WILL NOT TELL YOU WHICH MACHINE DID IT.** `claude-config`'s *Build, Release
+and Machine Continuity Brief* calls this *"the most important thing in this brief"*: identity is a
+`git config` value, not a machine fingerprint — set per-clone, surviving being copied, validated
+by nothing. In MER the split happens to be clean; in SoundFind one identity spans 156 commits
+across both hosts, and MER's own history contains a second Mac. **Treat author as a hint and
+confirm from the `STATUS.md` session labels or from what the work required.**
+
+⚠️ **THE POPULATION IS NOT TWO, WHICH IS WHY THIS RULE SAYS *ANOTHER* AND NOT *THE OTHER*.** The
+evidence above is the reason: a second Mac already appears in MER's history, and one SoundFind
+identity covers both hosts. **A rule written for exactly two machines stops being true the moment
+a third clone exists, and one already did before the rule was written.**
+
+⛔ **THAT BRIEF IS CITED, NOT RELIED ON.** It lives in `claude-config`, and the global
+`~/.claude/CLAUDE.md` carries a related per-file rule. **Neither reaches a clone of this
+repository, and neither is guaranteed identical across machines.** This rule is stated here so
+that a CLI holding nothing but a MER clone has it.
+
+🔴 **THE LEDGER CLAUSE IS NOT HOUSEKEEPING.** `docs/BUILD-LEDGER.md` exists because code 59 was
+built, installed, found defective and superseded before any commit, so nothing in git recorded it
+as spent. **One host doing that is recoverable. Two hosts allocating from one ledger, neither
+seeing the other's unpushed row, is the same failure with two hands in it** — and the ledger is
+the only record of a code that was spent without being committed.
+
+⚠️ **IT ENFORCES NOTHING, AND SAYING SO IS THE POINT.** No check runs, nothing fails when a
+session skips it, and a `git push` omitted at handoff succeeds exactly as before. ⭐ **The cost of
+following it is four commands at session start; the cost of its absence was eight features.**
 
 ### ⚠️ And the fifth, which is not one of the four: READING IS NOT VERIFYING
 
