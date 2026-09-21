@@ -2610,6 +2610,53 @@ fix as having addressed it:** a reschedule re-reads the same marker and redraws 
 
 **Recorded 21 September 2026, from Brief 68 Part C.**
 
+⛔ **THE PRIMACY CLAIM BELOW IS SUPERSEDED, 21 September 2026, hours after it was written. The
+NOTE stands; "the worked instance" does not.** It read:
+
+> *"**The worked instance.** `shouldReportNavChannelFailure(Object error, {required bool isIOS})` in
+> `ios_capture_bridge.dart`."*
+
+⭐ **`notificationInstruction` in `walkthrough_screen.dart` is the FIRST instance, and it had already
+stated the rule in its own docstring at `:361-366`:**
+
+> *"## Why this is a FUNCTION OF A BOOL rather than a read of `Platform`*
+> *Taking the platform as an argument is what makes the pair testable. A test runs on ONE host -
+> Windows here - so a direct `Platform.isIOS` read means the iOS string is never exercised by any
+> test on any developer machine, and the branch that shipped wrong once would be the branch nobody
+> checks."*
+
+**So the ordering is: `notificationInstruction` FIRST, `shouldReportNavChannelFailure` SECOND.**
+Found by A2-lite's reason read, which was looking for something else entirely.
+
+#### ⛔ AND THE FINDING IS WORTH MORE THAN THE NOTE — LOCAL CORRECTNESS DOES NOT PROPAGATE, WITH A FRESH INSTANCE
+
+⚠️ **The standard existed. It was written down correctly. It sat in one function's docstring, was
+never lifted anywhere a later author would look, and so it did not propagate.** The session that
+wrote `shouldReportNavChannelFailure` **re-derived it from scratch**, and came within a hair of
+writing the policy as a `Platform.isIOS` read instead — which would have left the iOS row of
+contract `#22` passing by never running.
+
+⭐ **THAT IS THE ARGUMENT FOR THE LIFTING, NOT FOR THE RULE.** The rule was never in doubt and was
+never missing. **What was missing was a location.** A docstring is read by someone already editing
+that function; nothing carries it to the author of the next one. This is the same class as
+`bump()`'s ordering rule — in the docstring of the very function being called, and violated anyway —
+and as `doc_utils._describe()`, which rendered `old -> new` per token years before "dry runs print
+diffs" was written down, and was never generalised, so the next script printed counts and corrupted
+two files.
+
+⚠️ **THE UNCOMFORTABLE PART, RECORDED BECAUSE IT IS THE EVIDENCE: the re-derivation was
+INDEPENDENT AND CORRECT.** Two authors reached the same design from the same pressure. ⛔ **That
+reads as reassurance and is not one.** It means the rule is discoverable from first principles by
+someone who thinks about it hard enough — and **the whole point of writing a rule down is to spare
+the next author having to.** A standard that must be re-derived to be applied has failed at the only
+job a written standard has, however good the re-derivation.
+
+⭐ **PRACTICAL FORM, and it is the one this repo already has: when a standard proves itself in one
+implementation, LIFT IT OUT of that implementation.** The lift is what `8b983b6` did. **Its error was
+in claiming to have discovered what it was actually rescuing.**
+
+---
+
 > ⭐ **Where a platform decision must be testable on a single host, take the platform as a
 > PARAMETER at the point the decision is made, rather than reading `Platform.isX` there.**
 
