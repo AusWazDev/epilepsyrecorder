@@ -1,6 +1,12 @@
 name: medical_event_recorder
 description: Medical Event Recorder
 publish_to: 'none'
+
+# ⛔ THE BUILD NUMBER AFTER THE `+` IS NOT ALLOCATED FROM THIS FILE'S HISTORY.
+# Read the next unused code from `docs/BUILD-LEDGER.md` and add its row BEFORE
+# building. This file records codes that were COMMITTED; the ledger records
+# codes that were BUILT, and they are not the same set — code 59 was built and
+# installed on 20 September 2026 and appears nowhere below.
 version: 1.1.1+61
 
 environment:
