@@ -2264,6 +2264,36 @@ number**, which means a future change to that token moves both at once.
 
 ### B-7 — deferred, with an expiry date on the absence
 
+✅ **DISCHARGED 21 September 2026 — Brief 68. The deferral below is ANNOTATED, NOT REWRITTEN, per
+Brief 68's own instruction.**
+
+**What was asked for here has been done:** the sweep enumerated **47 platform conditionals in
+`lib/`** across six forms, plus the channel boundary — `au.com.notiva.mer/navigation`, registered
+in `ios/Runner/AppDelegate.swift` and nowhere else. The count stopped at the gate and the scope
+decision was taken by the reader, not absorbed by the sweep.
+
+⚠️ **47 IS A FLOOR, NOT A TOTAL, and the reason is recorded rather than the number trusted:** one
+form — a platform value read at one site and branched on at another — was found by a second pass
+that was not systematic. **The form that hides from the sweep is the form the sweep exists to
+find.**
+
+⭐ **AND THE DEFERRAL'S OWN PREMISE IS THE THING THE SWEEP CORRECTED.** The text below says *every
+one of those branches is invisible to a test on a single host*, and records the deferral
+specifically so that *"we have tests for that"* is never read as *"that branch is covered"*.
+**The first half held. The second half found nothing to guard against in the population it
+examined:** of the four topics coverage-classified, **none was host-bound — all four were simply
+untested.** ⛔ **The exposure is real and it is VISIBLE.** The dangerous mode — a green test
+asserting over a branch it never renders — was not the dominant one here.
+
+⚠️ **NOT DISCHARGED AS "NO PROBLEM FOUND".** 37 of the 47 gate content this host never executes,
+and they remain uncovered; contract `#19`'s behaviour half remains host-bound by its own note J;
+and a **second family** — bare catches on platform-divergent calls — is recorded as an enumerated
+gap that this sweep did not count. **Discharged means the question was answered, not that the
+answer was reassuring.**
+
+**Full record: the Brief 68 sections dated 21 September 2026 in this file, and contracts `#20`,
+`#21`, `#22` with note K.**
+
 ⛔ **DEFERRED, RECORDED 20 September 2026 so the absence has a date rather than being silent:**
 a sweep enumerating **every platform conditional in `lib/`**, stating for each whether any test
 can actually see it.
@@ -2725,3 +2755,113 @@ every platform-exclusive call site.
 🔴 **Whether the Swift `restoreNotification` handler can fail in practice — UNESTABLISHED, 21
 September 2026, needs the Mac.** ⭐ **Not a blocker: the point of `#22` is that if it ever does
 fail, something says so.**
+
+---
+
+## Brief 68 closes — the escape clause fires, and the answer is not the one the brief assumed — 21 September 2026
+
+### ⭐ THE FINDING — a green test over a branch it never renders is NOT the dominant mode here
+
+**The coverage pass over Amendment 3's four topics returned: nothing covered, nothing host-bound,
+all four UNTESTED.**
+
+| topic | sites | result |
+|---|---|---|
+| Show Previews | `help_screen:32 :51 :70 :105`, `home_screen:445` | **untested** |
+| Delete-vs-offload copy | `help_screen:317` | **untested** |
+| `setStandingEnabled` guard | `notification_service:403` | **untested** |
+| `timeoutAfter` | `notification_service:505` | **untested** |
+
+⛔ **Brief 68 was built on ONE instance generalised into a class, and said so.** Its escape clause
+asked to be told if the Brief 64 defect turned out unrepresentative. **This answers it: the
+MECHANISM is not the common case in this population.**
+
+⭐ **THE DISTINCTION THAT MATTERS, because the exposure did not go away:**
+
+> **Host-bound** is a green test asserting over a branch it never renders. It is **dangerous
+> because it looks like coverage** — the reader is actively misled.
+> **Untested** is an absence. It is **visible to anyone who looks**, and it misleads nobody.
+
+**The 37 of 47 instances that gate content this host never executes are real, and they remain
+uncovered. What is NOT there is the thing that makes an uncovered branch hard to find.** A gap
+that announces itself costs a search; a green test over an unrendered branch costs the finding.
+
+⚠️ **SO THE SWEEP'S SUBJECT NARROWS, and Amendment 3 already said this better than the brief
+did: the class worth chasing is divergences that FAIL SILENTLY** — the Help gap, the swallowed
+channel exception, the host-bound green test. ⛔ **Not "platform conditionals", which is a
+syntactic category containing mostly benign members.** `storage_boot:66`'s ffi path fails loudly:
+the app does not start.
+
+⚠️ **AND THE HONEST LIMIT ON THIS CONCLUSION: it rests on FOUR topics, eight sites, out of 47.**
+The remaining 33 were classified **reasoned** and were never coverage-classified at all. **This
+says the mechanism was not found where it was most expected — the unreasoned residue. It does not
+say the mechanism is absent from the repository.** One counter-instance already exists and is
+recorded: contract `#19`'s behaviour half, which is host-bound by its own note J.
+
+### ⚠️ A method finding from the same pass — RENDERING IS NOT EXERCISING
+
+**Predicted host-bound for the delete-vs-offload copy and it landed untested.** Three tests pump
+`HelpScreen` and genuinely render that row. **None asserts anything about its text.**
+
+⭐ **A2's definition of host-bound requires that the test pass regardless of the OTHER branch's
+state — which implies THIS host's branch is pinned. Here neither is.** Those tests would catch a
+crash or an overflow in the row; they would not catch the wrong string, on any platform.
+
+⛔ **The assumption that a widget being drawn means its content is under test is the Brief 64
+defect one level down.** There the test ran the wrong branch. Here it runs the right branch and
+looks at something else. **Both produce a green test that answers a question nobody asked.**
+
+### ⚠️ And the classifier could not return host-bound until its control said so
+
+**Version 1 scored the KNOWN host-bound case as COVERED.** It OR'd instruments across a whole test
+FILE, so contract `#19`'s source-scan half masked its host-bound behaviour half, and it never asked
+**which branch** a test sees. Rebuilt branch-aware and assertion-scoped; the controls then returned
+all three states. ⛔ **Brief 67's dead detector, rebuilt — and caught only because the control was
+run before the verdicts were believed.**
+
+⭐ **One raw hit was adjudicated away and it was our own:** T1 first scored COVERED on
+`nav_channel_failure_policy_test:118` — a **denominator reason string written in Part C** that
+names `getShowPreviewsSetting` in prose. Second candidate was an exclusion-list glossary entry in
+`checklist_citations_test`. **Neither asserts anything about the conditional.** Enumerate
+mechanically, adjudicate manually.
+
+---
+
+## ⚠️ CHEAP ITEMS, UNSTARTED — recorded as a gap with a date, NOT as scheduled work — 21 September 2026
+
+⛔ **None of these is planned, costed or committed to a release.** They are written down so the
+absence has a date rather than being silent, and so a later reader does not mistake "not done" for
+"not known".
+
+### 1 · `notification_service:403` — Amendment 3's Decision 3, not started
+
+`setStandingEnabled` carries a seven-line doc comment explaining its cancel semantics and says
+**nothing** about the `if (Platform.isWindows || Platform.isIOS) return;` on the line below it.
+**That is C-3's shape exactly** — a reader is handed a rationale and no hint the call is inert for
+them. ⛔ **A comment change, not a behaviour change.** ⚠️ **With C-3's own escape attached: if the
+platform behaviour cannot be stated truthfully as costing nothing, it is a behaviour finding
+wearing a comment's clothes and must stop rather than acquire a reassuring sentence.**
+
+### 2 · T1's test — ⭐ NEEDS NO DESIGN, ONLY A TEST
+
+`_StatusBand` **already takes `showPreviewsRow` and `showPreviewsAlways` as plain bools**
+(`help_screen:653-656`). The parameter remedy is already in the code. A test can construct it with
+`showPreviewsRow: true` and assert the iOS row **on this Windows host today**. ⭐ **What is missing
+is the test, not the shape** — which makes this the cheapest item recorded here and the one where
+"we did not get to it" is least defensible.
+
+### 3 · T2's extraction — flagged against a defect that has already shipped
+
+Extract `help_screen:317`'s inline conditional to `String appDeletionCopy({required bool isIOS})`,
+`notificationInstruction`'s exact shape, making both strings behavioural on this host.
+
+🔴 **FLAGGED BECAUSE THIS EXACT KIND OF CONTENT HAS SHIPPED WRONG BEFORE: CR-43, where the ANDROID
+BUILD CARRIED THE iOS NOTIFICATION WORDING.** `notificationInstruction`'s docstring still carries
+the warning — *"DO NOT UNIFY THEM AND DO NOT WRITE ONE FROM THE OTHER … re-deriving one from the
+other is how that happened."* **Platform-specific user instructions are this repository's
+demonstrated failure surface, and `:317` is an unasserted instance of exactly that.**
+
+⚠️ **A boundary, named rather than hidden:** Show Previews spans **six** sites, not five.
+`home_screen:445`'s consumer is the banner at `:1447`, part of the `:1435` chain — a separate
+instance in A2-lite and absent from Amendment 3's topic list. **Not a grouping error; a boundary
+that falls between two lists.**
