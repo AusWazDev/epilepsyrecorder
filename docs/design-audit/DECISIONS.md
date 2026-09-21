@@ -3096,3 +3096,50 @@ section as *"alwaysVisible with real children"* — a statement about the DECLAR
 report and the screen were never in conflict; the phrase described the shape of the code and was
 read as a description of the output.** Same family as the checks recorded above that answer an
 adjacent question to the one asked.
+
+---
+
+## ⛔ CITATION RULE — DEFERRED ITEMS ARE CITED BY NAME, NEVER BY POSITION — 21 September 2026
+
+> ⭐ **Cite a deferred item by its NAME. The repository's list is prose and unnumbered, and it stays
+> that way.**
+
+### Why the list is not numbered, and must not be
+
+**A numbered table of these items exists CHAT-SIDE. It is a SEPARATE SEQUENCE.** ⛔ **Numbering the
+repository's list would create two numberings with no mechanism keeping them aligned** — and this
+project already knows what two uncontrolled copies of the same fact do to each other. **A name is
+the same on both sides by construction; a position is not.**
+
+⚠️ **AND THE DIVERGENCE IS NOT HYPOTHETICAL — IT HAS ALREADY HAPPENED.** On 21 September an item
+was referred to as *"deferred appearance defect #6"*. In the repository's list, *"Help's chevron on
+QUICK LOG NOTIFICATION"* is the **FIFTH** of thirteen. **The two sequences were already one apart at
+the first citation.**
+
+⭐ **THE CLOSE SUCCEEDED ANYWAY, AND THAT IS THE ARGUMENT.** The message also described the item —
+*"the chevron reads collapsed with content hidden, tapping expands and reverses the arrow"* — and
+the description was unambiguous where the number was wrong. **The name carried the reference; the
+number contradicted it.**
+
+### ⛔ THE FAILURE MODE A NUMBER HAS AND A NAME DOES NOT
+
+**A wrong number can still LAND.** Thirteen items, a number in range, and no name to disagree with
+it: the citation resolves to the wrong item, silently, and the closure is recorded against
+something nobody looked at. ⚠️ **Here it was caught only because the description travelled with the
+number and the two disagreed.** ⭐ **Redundancy caught it, not the numbering.** A bare `#6` would
+have been actioned.
+
+**PRACTICAL FORM, and it is cheap on both sides:**
+
+- **In the repository:** leave the list as prose. Do not number it. When an item closes, **strike
+  it in place and annotate it** — position is then never load-bearing, because a struck item still
+  occupies its slot and the list never renumbers.
+- **From chat:** cite the NAME, and if a number is used, carry the name with it so a mismatch is
+  visible rather than silent.
+- **Reading either:** ⛔ **where a number and a description disagree, the DESCRIPTION governs** —
+  and say so rather than reconciling it quietly, because the reconciliation is the only evidence
+  the sequences have drifted.
+
+⭐ Same family as the two-copies problem the `CURRENT DECISIONS` block already records: **the fix
+is not to synchronise the copies, it is to remove the thing that can diverge.** A name cannot drift
+from itself.
