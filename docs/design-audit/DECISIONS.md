@@ -1513,7 +1513,7 @@ a field nothing user-facing renders.
 ### Deferred — RECORDED, NOT FIXED, and they go to the follow-up release
 
 Two editors styled differently · time format differs between home and history · red carrying four
-meanings · three selection idioms on one screen · Help's chevron on QUICK LOG NOTIFICATION · the
+meanings · three selection idioms on one screen · ~~Help's chevron on QUICK LOG NOTIFICATION~~ ✅ **CLOSED 21 Sep 2026, confirmed on the Teclast P30 at `1.1.1+62` — see the dated record at the end of this file** · the
 large voids in the wizard and Help · the cloud icon beside "Notiva never receives your events" ·
 the backup sheet's Cancel against the nav bar · History's transparent pinned count · the hide
 dialog not naming the event · chip group alignment · "34 to choose from" / "Show all" · the
@@ -3012,3 +3012,87 @@ for what Windows renders.
 BUILD HOST, THE DEVICE PASS IS NOT A FORMALITY AFTER THE TESTS — IT IS THE ONLY INSTRUMENT.**
 Scheduling it as a final tick, after a green suite has already been read as success, inverts which
 of the two was load-bearing.
+
+---
+
+## ✅ Help's chevron on QUICK LOG NOTIFICATION — CLOSED ON THE DEVICE, 21 September 2026
+
+**Teclast P30, running `1.1.1+62` from `616c16d`**, confirmed by the developer:
+
+> The chevron reads collapsed with content hidden; tapping expands it and reverses the arrow;
+> tapping again collapses it. **It is no longer a control that contradicts what it sits beside.**
+
+⚠️ **NUMBERING: THIS WAS ASKED FOR AS "DEFERRED APPEARANCE DEFECT #6", AND NO SUCH NUMBER EXISTS
+IN THIS REPOSITORY.** The deferred items live as a prose list under *"Deferred — RECORDED, NOT
+FIXED"*, where this one is the **fifth** of thirteen and **nothing numbers them.** ⛔ **Closed by
+NAME rather than by number, because the description was unambiguous and the number was not.**
+⭐ **Recorded rather than silently reconciled: a list that is cited by position but not numbered
+will be miscited again, and the next citation may not be so easy to identify.**
+
+---
+
+## ⛔ AND THE QUESTION THAT CAME WITH IT — THE PREMISE IS WRONG. THE DEFAULT DID NOT MOVE.
+
+**Asked: did the `_expandable` change also alter QUICK LOG NOTIFICATION's default visibility?**
+
+**IT DID NOT — not for that section, and not for any other. Established from git, not inferred.**
+
+### What `alwaysVisible` does now
+
+It renders **unconditionally, outside the collapse gate**:
+
+    if (widget.alwaysVisible != null)
+      Padding(padding: const EdgeInsets.fromLTRB(14, 0, 14, 14), child: widget.alwaysVisible),
+    if (_open && _expandable)
+      Padding(... children ...)
+
+⭐ **Two separate slots.** `alwaysVisible` has never been gated on `_open`, and Brief 64 did not
+touch it. **So content IS still shown without interaction** — on the non-Windows section that is
+the *"Starting an event"* row, which is the long-press instruction on iOS and the
+find-the-notification instruction on Android.
+
+### Does it still apply to that section
+
+**Yes. Both QUICK LOG NOTIFICATION sections declare it** — and there are two, which is the detail
+that makes the whole question legible:
+
+| declared at | platform | `alwaysVisible` | `children` | `_expandable` |
+|---|---|---|---|---|
+| `help_screen.dart:362` | **non-Windows** | yes | **has children** | **true** |
+| `help_screen.dart:503` | **Windows** | yes | **EMPTY** | **false** |
+
+### Did any other section's default visibility move
+
+**No.** The only gate Brief 64 changed is `if (_open)` → `if (_open && _expandable)`, and that can
+only alter a section whose `children` are **empty**. ⭐ **Enumerated rather than assumed: of the six
+`_Section` constructions in the file, exactly one has empty children — the WINDOWS quick-log
+section at `:503`.** It has nothing to reveal, so **nothing became hidden**; what it lost was its
+chevron and its tap.
+
+### ⭐ WHICH OF THE TWO CHANGES THIS WAS, AND IT IS THE DESIGNED ONE
+
+> **A chevron made honest by HIDING CONTENT is a different change from a chevron made honest by
+> REMOVING THE CHEVRON, and only one of them was designed.**
+
+⛔ **This was the second. No content was hidden anywhere.** The chevron was removed from the one
+section that had nothing behind it, which is B-5 exactly as specified and recorded. **Intended.**
+
+### ⚠️ WHERE THE IMPRESSION CAME FROM, AND WHY IT IS NOT A REGRESSION
+
+**Collapsed-by-default is a MONTH older than Brief 64.** `bool _open = false` and
+`alwaysVisible: Platform.isIOS` both arrive in `db2fd38`, *"Help: collapsible sections with an
+always-visible status band"*, **24 August 2026**. Brief 64's `0c97387` is 20 September.
+
+⛔ **Verified against the tablet's OWN previous build, which is the comparison that matters for an
+on-device observation:** the complete Help delta from `d8e0a1d` (code 60, what the device carried
+until today) to now is **the four section gaps moving to `_kSectionGap` with the `Platform.isWindows`
+guard removed, and `_expandable` with its semantics, conditional tap and conditional chevron.**
+`bool _open = false` appears on **neither side** of that diff. *Control on that reader: the same
+grep returns 7 `_expandable` lines, so the null is real.*
+
+⭐ **The likeliest source of the impression is a description, not a render.** Brief 64 reported the
+section as *"alwaysVisible with real children"* — a statement about the DECLARATION. It reads as
+"content shown", and what it means is **one row always shown while the children collapse.** ⚠️ **The
+report and the screen were never in conflict; the phrase described the shape of the code and was
+read as a description of the output.** Same family as the checks recorded above that answer an
+adjacent question to the one asked.
