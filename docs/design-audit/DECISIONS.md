@@ -2865,3 +2865,96 @@ demonstrated failure surface, and `:317` is an unasserted instance of exactly th
 `home_screen:445`'s consumer is the banner at `:1447`, part of the `:1435` chain — a separate
 instance in A2-lite and absent from Amendment 3's topic list. **Not a grouping error; a boundary
 that falls between two lists.**
+
+---
+
+## Brief 69 — the drawer, and a class about which question a check answers — 21 September 2026
+
+### ⛔ THE CLASS — A CHECK THAT IS EASIER TO RUN THAN THE ONE ASKED FOR GETS RUN IN ITS PLACE, AND ITS ANSWER READS AS THE ANSWER
+
+> ⭐ **The substitution is silent, because the easier check is a real check, it is
+> well-formed, it is about the same subject, and it returns a true answer.**
+
+**The evidence, from this brief and one hour old.** Brief 69's escape clause asked:
+
+> *"if the hamburger **displaces** the title — stop and report the conflict"*
+
+**The first measurement asked whether the title still FITS.** It was a careful measurement: real
+Roboto loaded from the SDK cache, the string laid out FREE rather than read off a rendered
+paragraph, the 1.34 `AppBar` title clamp applied, both widths, a control proving the harness
+actually inserted the hamburger. **It reproduced the figure recorded in `home_screen.dart` to one
+decimal place — 274.2 required.** And it printed `FITS`, which was TRUE.
+
+⛔ **Displacement and fit are different questions. The title moved 16.0 -> 72.0, displaced by
+exactly 56.0, and the fit measurement could not have said so** — a width test cannot report a
+position.
+
+⚠️ **WHAT CAUGHT IT WAS NOT THE TEST WRITTEN FOR IT.** It was `a11y_batch_render_comparison_test`'s
+pinned home baseline going red for its own reasons. **The purpose-built instrument reported
+success; an unrelated pin reported the truth.**
+
+⭐ **WHY THE SUBSTITUTION HAPPENS, AND IT IS NOT LAZINESS.** "Does it fit" has an obvious
+instrument, a clean numeric answer, and a familiar shape — this repository has an existing
+measurement idiom for exactly it. "Is it displaced" needed a different reading of the same widget
+tree and no idiom existed. **The available instrument decided the question**, which is the same
+shape as the detection lesson already recorded in the workspace rules: *a question that names a
+mechanism instead of an outcome will return findings shaped like the mechanism.* ⛔ **This is that
+failure with the mechanism supplied by convenience rather than by the question's wording.**
+
+**PRACTICAL FORM: quote the question, then state what the instrument measures, and check that the
+two are the same sentence.** Where a brief uses a specific verb — *displaces*, *reaches*, *survives*
+— that verb names the quantity. ⚠️ **A check that answers an adjacent question is worse than no
+check, because it discharges the obligation to ask.**
+
+⭐ Same family as the coverage-versus-consistency defect and the dry-run that printed counts instead
+of diffs: **output that reads as assurance while measuring something next to the question.** The
+distinguishing feature here is that **nothing was wrong with the measurement** — it was right about
+the wrong thing.
+
+### ⚠️ THE HEADROOM CONSTRAINT — 12.8 POINTS AT 375 / 1.34, ROUGHLY ONE CHARACTER
+
+**Measured, `test/drawer_appbar_headroom_test.dart`:**
+
+    w=375  scale=1.34   slot 295.0 -> 287.0   required 274.2   headroom 20.8 -> 12.8   FITS
+    w=800  scale=1.34   slot 720.0 -> 712.0   required 274.2   headroom 445.8 -> 437.8  FITS
+
+⭐ **THE DRAWER COSTS 8.0 POINTS, NOT 56.0, AND THE DIFFERENCE IS LOAD-BEARING.** The drawer
+REPLACES the `PopupMenuButton`, so the trailing `actions:` slot is freed at the same moment the
+leading slot is taken. ⚠️ **A first measurement against an `AppBar` with no `actions:` reported
+56.0 and was answering a configuration that does not exist in this app.** Model the real before and
+the real after, not the widget in isolation.
+
+⛔ **12.8 POINTS IS ABOUT ONE CHARACTER, AND IT WAS ALREADY THIN AT 20.8.** Anything added to the
+title, or any return of an `actions:` entry, must be RE-MEASURED rather than eyeballed. Flagged in
+`home_screen.dart`'s `_buildDrawer` doc; given a dated home here because a code comment is read by
+whoever is already editing that method, and the person who breaks this will be editing the title.
+
+⚠️ **AND THE FAILURE MODE IS AN ELLIPSIS, NOT AN OVERFLOW.** `Flexible` was added to that title on
+17 September precisely so the Row cannot overflow — *"Flexible only decides the failure mode"*. So
+exceeding 12.8 points does not throw, does not turn a test red, and does not draw a yellow banner:
+**the title quietly truncates.** ⛔ **There is no detector.** That is what makes the number worth
+recording rather than the margin worth spending.
+
+### The re-capture, and why it was not the forbidden kind
+
+`home@375`, `home@430` and `home@800` were re-captured. **Paragraph count unchanged at 26 across all
+three**, so nothing was created or destroyed; only geometry moved.
+
+⛔ **THE DISTINCTION, RECORDED IN THE TEST FILE ITSELF because that is where it will be misapplied:**
+
+> **A re-capture is FORBIDDEN as a way of making a test pass.**
+> **A re-capture is REQUIRED as a way of recording a change decided in advance.**
+> ⭐ **What separates them is whether the decision preceded the red.**
+
+The same edit, the same three values, the same diff — **the two cases are distinguishable only by
+their order in time.** Here the displacement was measured, reported and authorised before any
+baseline was touched.
+
+⚠️ **The tell for the forbidden case: the baseline is the FIRST thing to move after a test goes
+red, and the justification offered is that the new value is what the app now renders.** That
+sentence is true of every regression ever shipped.
+
+⭐ **And the pointer that keeps the pin honest: the drawer's CORRECTNESS does not rest on these
+hashes.** It rests on `drawer_contents_test` — destinations, order, section grouping, door count,
+route model, `_records` ownership. **The hashes record where things sit. A green hash is not
+evidence the drawer works.**

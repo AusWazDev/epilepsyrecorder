@@ -1123,6 +1123,133 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  /// Dispatches a destination. ⛔ **UNCHANGED BY THE DRAWER, DELIBERATELY.**
+  ///
+  /// Brief 69 replaced the `PopupMenuButton` with a `Drawer` and moved this
+  /// switch out of it WITHOUT touching a single case. Every destination is
+  /// still pushed from this call site, onto the same stack, at the same
+  /// depth. ⭐ No container screen, no extra level, no `pop` depth changed,
+  /// and `_records` stays owned by this State — which is why `_openHistory`
+  /// and `_openYourData` keep their delegation rather than being inlined
+  /// for symmetry. Those two need this State's live records; that is the
+  /// reason, not an inconsistency to tidy.
+  Future<void> _onMenuAction(_HomeMenuAction action) async {
+    switch (action) {
+      case _HomeMenuAction.history:
+        _openHistory();
+        break;
+      case _HomeMenuAction.medication:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            // The database, not the store. Medication notes are a
+            // SEPARATE TABLE and deliberately do not pass through
+            // EventStore - that interface is the event list, and
+            // widening it is how the two streams start sharing
+            // assumptions again.
+            builder: (_) => MedicationScreen(
+              store: MedicationStore(StorageBoot.database),
+            ),
+          ),
+        );
+        break;
+      // The overflow is where a user goes WITH A REASON, which is
+      // what Medication established. Hiding a list entry is that
+      // shape exactly: rare, deliberate, never part of capture.
+      // Named "What you track" rather than "Conditions": the user
+      // does not necessarily think of themselves as having a
+      // condition, and the screen is about their vocabulary.
+      case _HomeMenuAction.conditions:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ConditionsScreen(
+              store: ConditionStore(StorageBoot.database),
+            ),
+          ),
+        );
+        break;
+      case _HomeMenuAction.lists:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const VocabularyScreen(),
+          ),
+        );
+        break;
+      case _HomeMenuAction.yourData:
+        _openYourData();
+        break;
+      case _HomeMenuAction.about:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AboutScreen(
+              onReset: _confirmResetDisclaimer,
+            ),
+          ),
+        );
+        break;
+      case _HomeMenuAction.help:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const HelpScreen(),
+          ),
+        );
+        break;
+    }
+  }
+  /// The navigation drawer. Replaces the overflow menu, 21 September 2026.
+  ///
+  /// ⚠️ **THE HAMBURGER COSTS 8.0 LOGICAL POINTS, NOT 56.0**, and the
+  /// difference is the whole reason this fits: the drawer REPLACES the
+  /// `PopupMenuButton`, so the trailing `actions:` slot is freed at the same
+  /// moment the leading slot is taken. Measured at 375 and 800, Roboto, at the
+  /// 1.34 title clamp: slot 295.0 -> 287.0, title requires 274.2, headroom
+  /// 20.8 -> 12.8. See `test/drawer_appbar_headroom_test.dart`.
+  ///
+  /// ⛔ **12.8 POINTS IS THIN AND IT WAS ALREADY THIN.** Anything added to the
+  /// title, or to `actions:`, needs re-measuring rather than eyeballing.
+  ///
+  /// ⭐ **Sections group by WHAT A DESTINATION TOUCHES**, which is the same cut
+  /// the route model makes: the first pair carry this State's live records; the
+  /// middle three are self-sufficient vocabularies capture draws from; the last
+  /// pair is support.
+  Widget _buildDrawer() => Drawer(
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const SizedBox(height: 8),
+              _drawerItem(Icons.history,                 'History',           _HomeMenuAction.history),
+              _drawerItem(Icons.folder_outlined,         'Your data',         _HomeMenuAction.yourData),
+              const _DrawerSectionLabel('Set up what you track'),
+              _drawerItem(Icons.medication_outlined,     'Medication',        _HomeMenuAction.medication),
+              _drawerItem(Icons.checklist_outlined,      'What you track',    _HomeMenuAction.conditions),
+              _drawerItem(Icons.list_alt_outlined,       'Your lists',        _HomeMenuAction.lists),
+              const _DrawerSectionLabel('Help'),
+              _drawerItem(Icons.help_outline,            'Help',              _HomeMenuAction.help),
+              _drawerItem(Icons.info_outline,            'About',             _HomeMenuAction.about),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+
+  /// One drawer destination.
+  ///
+  /// ⚠️ **CLOSES THE DRAWER, THEN PUSHES, AND THE ORDER IS NOT COSMETIC.**
+  /// Pushing first leaves the drawer open underneath the new route and it is
+  /// still there on the way back. Closing uses the DRAWER's own Navigator
+  /// entry, so `_onMenuAction` then pushes onto the same stack it always did.
+  Widget _drawerItem(IconData icon, String label, _HomeMenuAction action) =>
+      ListTile(
+        // ⛔ 56.0 minimum, above the 50.0 the type-scale gate holds elsewhere.
+        minTileHeight: 56,
+        leading: Icon(icon, color: MERColours.onSurfaceMuted),
+        title:   Text(label, style: MERType.bodyOnSurface),
+        onTap: () {
+          Navigator.of(context).pop();
+          _onMenuAction(action);
+        },
+      );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1162,103 +1289,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ],
         ),
-        actions: [
-          PopupMenuButton<_HomeMenuAction>(
-            onSelected: (action) async {
-              switch (action) {
-                case _HomeMenuAction.history:
-                  _openHistory();
-                  break;
-                case _HomeMenuAction.medication:
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      // The database, not the store. Medication notes are a
-                      // SEPARATE TABLE and deliberately do not pass through
-                      // EventStore - that interface is the event list, and
-                      // widening it is how the two streams start sharing
-                      // assumptions again.
-                      builder: (_) => MedicationScreen(
-                        store: MedicationStore(StorageBoot.database),
-                      ),
-                    ),
-                  );
-                  break;
-                // The overflow is where a user goes WITH A REASON, which is
-                // what Medication established. Hiding a list entry is that
-                // shape exactly: rare, deliberate, never part of capture.
-                // Named "What you track" rather than "Conditions": the user
-                // does not necessarily think of themselves as having a
-                // condition, and the screen is about their vocabulary.
-                case _HomeMenuAction.conditions:
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ConditionsScreen(
-                        store: ConditionStore(StorageBoot.database),
-                      ),
-                    ),
-                  );
-                  break;
-                case _HomeMenuAction.lists:
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const VocabularyScreen(),
-                    ),
-                  );
-                  break;
-                case _HomeMenuAction.yourData:
-                  _openYourData();
-                  break;
-                case _HomeMenuAction.about:
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AboutScreen(
-                        onReset: _confirmResetDisclaimer,
-                      ),
-                    ),
-                  );
-                  break;
-                case _HomeMenuAction.help:
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const HelpScreen(),
-                    ),
-                  );
-                  break;
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: _HomeMenuAction.history,
-                child: Text('History'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.medication,
-                child: Text('Medication'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.conditions,
-                child: Text('What you track'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.lists,
-                child: Text('Your lists'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.yourData,
-                child: Text('Your data'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.about,
-                child: Text('About'),
-              ),
-              PopupMenuItem(
-                value: _HomeMenuAction.help,
-                child: Text('Help'),
-              ),
-            ],
-          ),
-        ],
       ),
+      drawer: _buildDrawer(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -2448,5 +2480,31 @@ class _SplashRedirectState extends State<_SplashRedirect> {
   Widget build(BuildContext context) =>
       const Scaffold(
         body: Center(child: CircularProgressIndicator()),
+      );
+}
+
+/// A drawer section heading.
+///
+/// ⭐ **WRAPS THE EXISTING `SectionLabel`, DOES NOT REIMPLEMENT IT.** That
+/// widget owns the uppercase register deliberately — V4 moved the register out
+/// of seventeen literal strings and into one place precisely so a new site
+/// could not reintroduce it by typing capitals. Passing sentence case here is
+/// what keeps that true.
+///
+/// ⚠️ Marked `header: true` for the same reason Help's sections are: without it
+/// a screen reader reads a heading as ordinary text, and the grouping that
+/// justifies the drawer's order is inaudible.
+class _DrawerSectionLabel extends StatelessWidget {
+  const _DrawerSectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        header: true,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+          child: SectionLabel(text),
+        ),
       );
 }

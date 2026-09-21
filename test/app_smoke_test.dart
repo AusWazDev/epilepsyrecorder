@@ -19,24 +19,34 @@ Future<void> pumpUntilFound(
   throw TestFailure('Timed out waiting for: $finder');
 }
 
-Finder popupMenuItemWithLabel(String label) {
+/// ⚠️ BRIEF 69, 21 September 2026 — THE OVERFLOW MENU IS NOW A DRAWER.
+/// Renamed from `popupMenuItemWithLabel` and re-pointed at `ListTile`. The
+/// destination, its label and its route are all unchanged; only the container
+/// the user opens to reach it is different.
+Finder drawerItemWithLabel(String label) {
   final textFinder = find.text(label).last;
   return find.ancestor(
     of: textFinder,
-    matching: find.byWidgetPredicate((w) => w is PopupMenuItem),
+    matching: find.byWidgetPredicate((w) => w is ListTile),
   );
 }
 
 Future<void> tapOverflowMenuItem(WidgetTester tester, String label) async {
-  await tester.tap(find.byIcon(Icons.more_vert));
-  // ⚠️ SETTLE THE MENU BEFORE TAPPING AN ITEM. `pump()` alone leaves the popup
+  // ⚠️ OPENED BY TOOLTIP, NOT BY ICON. The hamburger is inserted by `Scaffold`
+  // rather than written in `home_screen`, so there is no icon constant here to
+  // name; `Open navigation menu` is the framework's own label for it and is
+  // what a screen reader announces.
+  await tester.tap(find.byTooltip('Open navigation menu'));
+  // ⚠️ SETTLE THE DRAWER BEFORE TAPPING AN ITEM. `pump()` alone leaves it
   // mid-animation: the item is FOUND, `tap` does not throw, and nothing
   // happens, because a tap during a route or menu transition is absorbed.
   // Indistinguishable from a missing widget, and it cost several passes here.
+  // ⭐ The hazard survives the menu-to-drawer change unaltered, which is why
+  // this note is carried over rather than rewritten.
   await tester.pumpAndSettle();
 
   await pumpUntilFound(tester, find.text(label));
-  final itemFinder = popupMenuItemWithLabel(label);
+  final itemFinder = drawerItemWithLabel(label);
   await pumpUntilFound(tester, itemFinder);
 
   await tester.tap(itemFinder);

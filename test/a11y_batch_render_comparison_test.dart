@@ -264,9 +264,46 @@ const Map<String, String> kBaseline = <String, String>{
   // home 200% sweep reports `overflowing rows: none` AND `truncated text:
   // none` at every width. `Follow-ups` is one character longer than
   // `Referrals` and costs nothing.
-  'home@375': '26|5bad0e9dbec5b815',
-  'home@430': '26|297a782f8d152207',
-  'home@800': '26|7ff66c403f44e8e3',
+  // ⚠️ RECAPTURED 21 September 2026 FOR BRIEF 69 — THE OVERFLOW MENU BECAME A
+  // DRAWER, AND THE HAMBURGER MOVES THE TITLE. Authorised in advance as an
+  // intended appearance change.
+  //
+  //   Brief 69 before  26|5bad0e9dbec5b815  26|297a782f8d152207  26|7ff66c403f44e8e3
+  //
+  // WHAT CHANGED, measured rather than described:
+  //   · paragraph COUNT unchanged — 26 at every width, before and after, so
+  //     nothing was added or removed;
+  //   · the title's left edge moved 16.0 -> 72.0, displaced by exactly 56.0;
+  //   · `more_vert` at the trailing edge was replaced by a hamburger at
+  //     16.0,16.0.
+  // Every hash therefore moves and the count cannot. A COUNT change here would
+  // have meant a paragraph was created or destroyed, which none was.
+  //
+  // ⛔ THE DRAWER'S CORRECTNESS DOES NOT REST ON THESE HASHES. It rests on
+  // `drawer_contents_test` — the seven destinations, their order, their
+  // section grouping, the door count per destination, the route model and
+  // `_records` ownership. These three values record WHERE THINGS SIT. They are
+  // not evidence that the drawer works, and a future reader must not read a
+  // green hash as one.
+  //
+  // ⭐⛔ THE DISTINCTION THAT WILL BE MISAPPLIED OTHERWISE, AND IT IS NOT ABOUT
+  // THE RE-CAPTURE ITSELF:
+  //
+  //   A re-capture is FORBIDDEN as a way of making a test pass.
+  //   A re-capture is REQUIRED as a way of recording a change decided in advance.
+  //
+  // **WHAT SEPARATES THEM IS WHETHER THE DECISION PRECEDED THE RED.** The same
+  // edit, the same three values, the same diff — and the two cases are only
+  // distinguishable by their order in time. Here the displacement was measured,
+  // reported and authorised BEFORE any baseline was touched; the red was the
+  // consequence of a decision, not its cause.
+  //
+  // ⚠️ The tell for the forbidden case: the baseline is the FIRST thing to move
+  // after a test goes red, and the reason given is that the new value is what
+  // the app now renders. That is true of every regression ever shipped.
+  'home@375': '26|50c88d4978e7d8d6',
+  'home@430': '26|5c67486355585ec9',
+  'home@800': '26|53d37fb7f15ae00e',
 };
 
 /// Deterministic 64-bit FNV-1a over UTF-8, so no package is needed.
