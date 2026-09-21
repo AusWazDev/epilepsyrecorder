@@ -674,6 +674,17 @@ class _EventWizardScreenState extends State<EventWizardScreen> {
           // The heading carries the temporal meaning rather than leaving it to
           // the hint, because Option A showed what happens when the hint is the
           // only thing saying it: remove one line and the meaning is gone.
+          //
+          // ⭐ APPLIED AGAIN 21 September 2026, ON A DIFFERENT FIELD AND A
+          // DIFFERENT SURFACE, and recorded there rather than restated here:
+          // the SINGLE FORM's Notes field declares no `labelText`, so its
+          // standalone `NOTES (OPTIONAL)` heading is the only label that field
+          // has once anything is typed — its hint measures opacity 1.0 when
+          // empty and 0.0 after the first keystroke. ⛔ Removing that heading
+          // as duplication is Option A exactly, on a free-text field, where
+          // there is no chip or selected state to reconstruct the meaning
+          // from. See DECISIONS.md, 21 September 2026, "STATED DEPENDENCY".
+          //
           // ⛔ NO PERSON IN THIS HEADING, and that is the point. It read
           // "How did you feel afterwards?" — first person, addressed to the
           // person who had the event. MER is patient-first but carers are a

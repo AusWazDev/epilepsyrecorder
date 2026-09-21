@@ -1516,7 +1516,7 @@ Two editors styled differently · time format differs between home and history �
 meanings · three selection idioms on one screen · ~~Help's chevron on QUICK LOG NOTIFICATION~~ ✅ **CLOSED 21 Sep 2026, confirmed on the Teclast P30 at `1.1.1+62` — see the dated record at the end of this file** · the
 large voids in the wizard and Help · the cloud icon beside "Notiva never receives your events" ·
 the backup sheet's Cancel against the nav bar · History's transparent pinned count · the hide
-dialog not naming the event · chip group alignment · "34 to choose from" / "Show all" · the
+dialog not naming the event · chip group alignment · "34 to choose from" / "Show all" · **Wizard Notes field has no heading widget** *(added 21 Sep 2026 — see the dated entry at the end of this file; SAME FAMILY as "Two editors styled differently", first in this list)* · the
 SnackBar outliving navigation.
 
 ⚠️ **The SnackBar is the strongest of them** — it survived 60 seconds, navigation and a modal
@@ -3143,3 +3143,94 @@ have been actioned.
 ⭐ Same family as the two-copies problem the `CURRENT DECISIONS` block already records: **the fix
 is not to synchronise the copies, it is to remove the thing that can diverge.** A name cannot drift
 from itself.
+
+---
+
+## ⛔ STATED DEPENDENCY — THE FORM'S `NOTES (OPTIONAL)` HEADING IS THE ONLY PERSISTENT LABEL THAT FIELD HAS — 21 September 2026
+
+**`log_event_screen.dart`'s Notes field declares NO `labelText`.** Measured, not read off the
+source:
+
+    FORM, Notes field          heading NOTES (OPTIONAL)      hint "Add any additional observations..."
+      empty, unfocused         opacity 1.0                   opacity 1.0
+      after one keystroke      opacity 1.0                   opacity 0.0
+
+⭐ **SO THE HINT IS NOT A LABEL AND CANNOT STAND IN FOR ONE. IT IS GONE AFTER THE FIRST
+CHARACTER.** The standalone `_SectionLabel('Notes (optional)')` — rendered uppercase by
+`SectionLabel` — is the **only** thing naming that field once the user has typed anything at all.
+
+### ⛔ THE DEPENDENCY, STATED SO IT IS NOT TIDIED AWAY
+
+> **Removing the form's `NOTES (OPTIONAL)` heading as duplication would leave the field UNLABELLED
+> ON SCREEN AND TO A SCREEN READER.**
+
+⚠️ **It looks like duplication, and that is exactly why this is written down.** The heading and the
+hint both say Notes, and a reader comparing the form to the wizard — where one `labelText` does both
+jobs — will see two labels on the form and reach for the obvious simplification. **There is no
+`labelText` underneath to fall back on.** The `InputDecoration` carries `hintText` and nothing else.
+
+### ⭐ THE PRECEDENT, AND IT IS EXACT: THE "AFTERWARDS" DECISION, REVERSED FOR THIS REASON ON A DIFFERENT FIELD
+
+`event_wizard_screen.dart`'s heading history records five wordings for the *afterwards* field. **The
+fourth was to remove the label entirely:**
+
+> *"4. **Nothing at all (Option A). Reversed the same day.** It rested on two premises that did not
+> hold: a per-step title in the AppBar (there is none — it reads "Add details" on every step) and a
+> RadioGroup or Semantics label being duplicated (there is neither). **Nothing was being duplicated,
+> so what was removed was the only label the field had.**"*
+
+and the conclusion it drew:
+
+> *"The heading carries the temporal meaning rather than leaving it to the hint, because **Option A
+> showed what happens when the hint is the only thing saying it: remove one line and the meaning is
+> gone.**"*
+
+⛔ **THAT IS THIS SITUATION, ON A DIFFERENT FIELD AND A DIFFERENT SURFACE.** Option A was removing a
+label believed to be duplicated and finding it was the only one. **The form's Notes heading is the
+same shape of mistake waiting to be made**, with one difference that makes it worse: on the form the
+hint genuinely IS visible at rest, so the duplication looks real until the user types.
+
+⭐ **A free-text field is where this costs most**, which is the reason the precedent already gives:
+there is no chip, no selected state and no value shown elsewhere from which the field's purpose
+could be reconstructed. **Once the heading is gone and a character is typed, nothing on screen says
+what the box is for.**
+
+⚠️ **NOT GENERALISED INTO A RULE ABOUT HEADINGS.** This is a dependency of ONE field on ONE widget,
+recorded because the widget looks redundant and is not. **The wizard's Notes field is differently
+built and does not share it** — its `labelText` persists at opacity 1.0 in every state, including
+after the first keystroke.
+
+---
+
+## ⚠️ DEFERRED, NOT FIXED — "Wizard Notes field has no heading widget" — added 21 September 2026
+
+⛔ **WHAT IT IS NOT: the field is NOT unlabelled.** `event_wizard_screen.dart` gives it
+`labelText: 'Notes (optional)'`, and that label renders at **opacity 1.0 in every state** —
+empty and unfocused at y=860, floated to y=812 on focus, and still there after the first
+keystroke. ⭐ **It does not share the form's dependency and it does not vanish on typing.**
+**Anyone reading this item as "the wizard's Notes field has no label" has read it wrong.**
+
+⚠️ **WHAT IT IS: it is the only field on its step without a heading ABOVE it.** The same step
+renders `_heading('How were things afterwards?', …)` and `const SectionLabel('Further medical
+attention?')` with a description beneath. Notes alone carries its name inside the box.
+
+> ⭐ **The complaint is CONSISTENCY WITHIN THE STEP, not a missing label.** That is why it reads as
+> an omission to the eye while measuring as fully labelled.
+
+⚠️ **AND THE FLOATING LABEL'S RESTING POSITION IS WHY IT READS THAT WAY.** With the field empty the
+label sits INSIDE the box, in the slot a placeholder would occupy — the wizard's own `hintText` is
+at opacity 0.0 there, suppressed by the label. **So at rest it looks like placeholder text, and a
+reader scanning the step for headings finds none.**
+
+### ⭐ SAME FAMILY AS "Two editors styled differently", THE FIRST ITEM IN THE DEFERRED LIST
+
+**Both are the two editors solving the same problem by different means.** The single form uses a
+standalone uppercase heading plus a hint; the wizard uses a Material floating label. ⛔ **Neither is
+broken, and that is what makes this a deferred consistency item rather than a defect.**
+
+⚠️ **AND THE TWO ARE DELIBERATELY DIFFERENT IN PLACES, WHICH IS WHY THIS CANNOT BE CLOSED BY
+HARMONISING ON SIGHT.** `event_wizard_screen.dart` already carries a ⛔ against exactly that on the
+referral question — *"THE TWO EDITORS DIFFER DELIBERATELY — do not harmonise them"* — because the
+wizard asks one question at a time and the form is scanned. **Whoever closes this item has to
+establish that Notes is NOT one of the deliberate divergences, and that is the work, not the
+styling.**
