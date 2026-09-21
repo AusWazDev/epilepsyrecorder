@@ -2348,6 +2348,51 @@ Android 14+ ignores it. **That precedent existed and did not stop this.**
 UNKNOWN rather than as absent** — and the date is the date it was checked, 21 September 2026, not
 the date the code was written.
 
+> ### ⭐ CLOSED — INAPPLICABLE, NOT UNKNOWN. 21 September 2026, later the same day.
+>
+> ⛔ **THE PARAGRAPH ABOVE IS SUPERSEDED AND IS ANNOTATED, NOT REWRITTEN.** It was right that the
+> question was open and right to refuse to close it on a guess. **It was settled by reading, not
+> by a device**, and the deployment target is what made that possible.
+>
+> **ON 16.2-16.7 THE LIVE ACTIVITY HAS NO END CONTROL AT ALL.** Three gates, none with a
+> fallback branch:
+>
+>     EndMEREventIntent.swift:95   @available(iOS 17.0, *)
+>                                  extension EndMEREventIntent: LiveActivityIntent {}
+>     MERLiveActivity.swift:45     if #available(iOS 17.0, *) { Button(intent:) ... }   NO else
+>     MERLiveActivity.swift:163    if #available(iOS 17.0, *) { Button(intent:) ... }   NO else
+>
+> ⭐ **`LiveActivityIntent` conformance is 17+ ONLY**, so below 17 nothing in a Live Activity can
+> invoke the intent — and both places the widget would draw an end control are gated with no
+> 16.x branch. **What renders on 16.x is the timer, "Event in progress", "Started" and the start
+> time. Display only.**
+>
+> ⛔ **SO ON 16.x THERE IS ONE END SURFACE, NOT TWO, AND TWO SURFACES CANNOT DIVERGE WHERE ONLY
+> ONE EXISTS.** The notification is the sole end path on that tier — which is also why
+> `956b2d3`'s silent-failure fix was described as landing on *"the only end path this tier has"*.
+> **That phrase was in the corpus the whole time and is exactly this fact, stated from the other
+> direction.**
+>
+> ⚠️ **AND THE CONTROL CAUGHT A DEAD APPARATUS BEFORE THIS WAS REPORTED.** The first detector
+> counted braces per LINE, so `} else {` netted to zero, the block boundary was never seen, and
+> it could only ever answer *"no fallback"*. **It returned the right answer for the wrong
+> reason.** Injecting an `else` into a scratch copy and watching the detector fail to notice it
+> is what exposed that; the rewritten character-wise walk reports `else present` for the injected
+> case and `NONE` for the four real ones. ⭐ **A null that happens to be true is still worthless
+> until the apparatus is shown capable of the other answer** — and here the true answer and the
+> broken answer were the same string.
+>
+> ⚠️ **WHAT IS NOT CLOSED: the deployment target is `16.2` (`ios/Podfile:2`, and six
+> `IPHONEOS_DEPLOYMENT_TARGET = 16.2` across two targets × three configs), so 16.2-16.7 devices
+> DO exist in the user base.** They are unaffected by the divergence because they have one end
+> surface — **not because there are no users on that tier.**
+>
+> ⛔ **NO PROCUREMENT IS NEEDED. A 16.x device would have answered a question the source already
+> answered**, and the earlier entry's closing line — that settling it needs hardware — is
+> withdrawn. ⚠️ **A Mac with Xcode IS available to the developer**, so iOS builds, simulator runs
+> and Xcode reads are possible; the earlier assumption that none existed was wrong and is
+> corrected here rather than left standing.
+
 ### The two policies were set in different passes, by different reasoning
 
     .alwaysAllowed            4 May 2026   17a0a4b  "CR-42: Live Activity + lock-screen
