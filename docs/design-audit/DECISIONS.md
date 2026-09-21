@@ -2606,6 +2606,73 @@ fix as having addressed it:** a reschedule re-reads the same marker and redraws 
 
 🔴 **Left OPEN. Not a defect claim, not closed by inference, and not in this release.**
 
+### ⭐ A METHOD NOTE — INJECT THE PLATFORM, DO NOT READ IT AT THE DECISION POINT
+
+**Recorded 21 September 2026, from Brief 68 Part C.**
+
+> ⭐ **Where a platform decision must be testable on a single host, take the platform as a
+> PARAMETER at the point the decision is made, rather than reading `Platform.isX` there.**
+
+**The worked instance.** `shouldReportNavChannelFailure(Object error, {required bool isIOS})` in
+`ios_capture_bridge.dart`. Both rows of its table — iOS reports everything, off iOS only
+`MissingPluginException` is swallowed — are **behavioural tests on this Windows host**.
+
+⛔ **Had it read `Platform.isIOS` at the decision point, the iOS row would have passed BY NEVER
+RUNNING.** The test would exist, be green, name the right invariant, and assert nothing. **That is
+the Brief 64 defect rebuilt inside the test written to prevent it**, and it is the reason this is a
+method note rather than a remark about one function.
+
+⚠️ **THE DISTINCTION THAT MAKES IT WORK: the decision moves, the read does not.** `Platform.isIOS`
+is still read — once, as a default argument in the thin wrapper `reportNavChannelFailure`. What
+changes is that **nothing branches at the point of the read**, and nothing reads at the point of the
+branch. The residue is a single defaulted argument, which a source scan pins; everything with
+behaviour in it is injectable.
+
+⭐ **NAMED AS THE LIKELY REMEDY SHAPE FOR THE HOST-BOUND SUBSET OF THE 47, NOT ONLY AS A LOCAL
+CHOICE.** Part A found 47 platform conditionals in `lib/`, **37 of which gate content this host never
+executes**. Where one of those turns out to be host-bound rather than covered, this is the first
+shape to reach for, because it converts the conditional from *untestable here* to *tested here on
+both sides* without removing the divergence the app actually needs.
+
+⚠️ **ITS LIMITS, STATED SO THE NOTE IS NOT READ AS UNIVERSAL.** It fits a **decision** — a predicate,
+a policy, a choice of value. ⛔ **It does not fit a conditional whose branches call
+platform-exclusive APIs**, because there the branch is not a decision to be injected but a call that
+cannot run here at all: `awesome_notifications` on Android, ActivityKit on iOS, `sqflite_common_ffi`
+on Windows. **For those the honest outcome is still source scan, and pretending otherwise would
+manufacture the same false coverage this note exists to prevent.** Which of the 47 are decisions and
+which are exclusive calls is not yet established — A2-lite has not run.
+
+### ⚠️ A BOUNDED GAP — BARE CATCHES ON PLATFORM-DIVERGENT CALLS ARE A SECOND FAMILY, NOT ENUMERATED
+
+**Recorded 21 September 2026. Given an expiry rather than left silent.**
+
+⛔ **The sweep enumerates platform CONDITIONALS. A bare `catch` on a platform-divergent call is a
+SECOND FAMILY with the same invisibility, and it is not among the 47.**
+
+**Why it is the same invisibility.** A conditional makes different code run by platform and can at
+least be seen in the source. A swallowed exception on a call that only works on one platform makes
+different code run by platform **and leaves no trace at all** — no branch to read, no log, no Sentry
+event, no failing test. ⭐ **`home_screen`'s three sites produced byte-identical observable behaviour
+on Android, on Windows, and on a broken iOS.**
+
+**What is established, and what is not:**
+
+| | |
+|---|---|
+| **Established** | three sites in `home_screen.dart`, all on `au.com.notiva.mer/navigation`, all fixed at `335195b` and held by contract `#22` |
+| **Established** | **one of the three, `:449`, was NOT on the brief's list** and was found by reading the artefact. So the family's membership is not predictable from the conditional sweep's output |
+| ⛔ **NOT established** | **how large the family is.** Nothing has counted bare catches on platform-divergent calls across `lib/`. `#22`'s source scan covers `home_screen.dart` only |
+
+⛔ **NOT BEING ENUMERATED IN THIS RELEASE.** The serial-release cost argument that capped Part A at
+the count applies here unchanged, and this family would be a second enumeration on top of the first.
+
+⚠️ **THE EXPIRY, WHICH IS THE POINT OF RECORDING IT:** this is an **accepted gap with a known shape
+and no count**, not a clean result. ⭐ **A reader who finds `#22` and concludes the channel-catch
+class is closed is wrong — it is closed for one file.** When the platform-conditional sweep
+completes, this family is the next enumeration, and the instrument is cheap: the same backward scan
+`nav_channel_failure_policy_test` test 5 already uses, widened from `_navChannel.invokeMethod` to
+every platform-exclusive call site.
+
 ### Still open, dated
 
 🔴 **Whether the Swift `restoreNotification` handler can fail in practice — UNESTABLISHED, 21
