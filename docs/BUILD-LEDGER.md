@@ -69,9 +69,9 @@ safe behaviour is to take a code above the highest ever recorded anywhere.
 | 53 | 1.1.0 | `c4220f2` | 11 Sep 2026 | release APK, 73,440,186 B, md5 `c80f4ca27289` | Teclast P30 | — |
 | 58 | 1.1.0 | the tree that became `4ccce33` | 20 Sep 2026 | release APK | Teclast P30 | ✅ by 59, same day |
 | **59** | 1.1.0 | ⛔ **NOT RECOVERABLE** — an uncommitted tree between `c4d5d0a` and `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 | ✅ **by 60, same day — defect found ON THE DEVICE** |
-| 60 | 1.1.0 | the tree that became `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 — **current** | — |
+| 60 | 1.1.0 | the tree that became `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 | ✅ **by 62 on the device, 21 Sep 2026** |
 | 61 | 1.1.1 | `f00a54d` ✅ **exact, tree clean** | 20 Sep 2026 | release APK, 73,718,998 B, md5 `9cba274a030d8ace6c09489e5a8addd7` | ⛔ **nowhere** — on disk only, not installed | — |
-| **62** | 1.1.1 | `616c16d` ✅ **exact, tree clean, READ FROM GIT AT BUILD TIME** | 21 Sep 2026 | release APK, 73,702,682 B, md5 `d46aa4f22ff97a9d8ba933267286947e` | ⛔ **nowhere — not installed** | — |
+| **62** | 1.1.1 | `616c16d` ✅ **exact, tree clean, READ FROM GIT AT BUILD TIME** | 21 Sep 2026 | release APK, 73,702,682 B, md5 `d46aa4f22ff97a9d8ba933267286947e` | Teclast P30 — **current**, installed 21 Sep 2026, read back from the device as `versionCode=62 versionName=1.1.1` (was 60 / 1.1.0) | — |
 
 ### ⭐ Row 59 is the reason this file exists
 
@@ -153,6 +153,14 @@ afterwards, which is why it is written down now rather than tidied into a commit
 > ⚠️ **AMENDED 21 September 2026. This clause read:** *"AND WITH MORE THAN ONE HOST BUILDING,
 > THE ROW IS WRITTEN AND PUSHED BEFORE THE NEXT CODE IS ALLOCATED"* — which described the
 > same sequence while still treating allocation as something the build does.
+>
+> ⭐ **ADDED 21 September 2026, from row 62, the first row written under the amended rule.
+> A ROW PUSHED BEFORE ITS BUILD NAMES ITS PARENT COMMIT, because the allocation commit does
+> not exist when the row is written. IT IS CORRECTED FROM THE BUILD-TIME GIT READ AFTERWARDS,
+> AND THAT CORRECTION IS PART OF THE PROCEDURE, NOT A REPAIR.** ⚠️ **This is the shape of
+> writing a record before the thing it records — not a defect in the ordering.** ⛔ **So a row
+> whose commit has not been corrected after its build is INCOMPLETE, not merely untidy**, and
+> Brief 65 B-3's build-time read is what closes it.
 >
 > ⚠️ See `docs/WORKING-AGREEMENT.md` §2B rule (h), which carries the same obligation from the
 > session's side rather than the ledger's.
