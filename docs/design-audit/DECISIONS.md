@@ -3234,3 +3234,106 @@ referral question — *"THE TWO EDITORS DIFFER DELIBERATELY — do not harmonise
 wizard asks one question at a time and the form is scanned. **Whoever closes this item has to
 establish that Notes is NOT one of the deliberate divergences, and that is the work, not the
 styling.**
+
+---
+
+# 🔴 REGULATORY POSITION — two sentences confirmed unchanged, BY DEVELOPER DECISION — 21 September 2026
+
+## 1 · What was confirmed
+
+**Both sentences stand as written. No wording change was made.**
+
+**(a) The iOS duration disclosure**, `help_screen.dart`, inside the `Platform.isIOS` branch of the
+quick-log section:
+
+> *"After tapping "Event Ended", a notification shows the recorded duration. Tap it to open MER
+> directly on the event's edit screen — add notes, what was happening beforehand, and severity while
+> the details are still fresh. **The duration is measured to the moment the end is recorded. If the
+> phone had to be unlocked first, that time is included.**"*
+
+**(b) The further-attention filter description**, in History's filter sheet:
+
+> *"Show only events where further medical attention happened"*
+
+⚠️ **Both were referred to as "the two Help sentences". Only (a) is in Help.** (b) is
+`history_screen.dart`'s filter sheet. **Recorded because a future reader searching Help for the
+second sentence will not find it**, and because this entry is the thing they would be relying on.
+
+---
+
+## 2 · ⛔ ATTRIBUTION — THIS IS A DEVELOPER DECISION, NOT AN ADVISER CLEARANCE
+
+> ⛔ **DECIDED BY THE APPLICATION OWNER. THE ADVISER WAS NOT CONSULTED ON EITHER SENTENCE.**
+
+⛔ **A READER MUST NOT FIND "CONFIRMED" OR "CLEARED" HERE AND INFER EXTERNAL REVIEW. NO EXTERNAL
+REVIEW TOOK PLACE.**
+
+⭐ **Stated this plainly because the two records are different things and only one of them is
+evidence of anything to a regulator.** An adviser clearance is an external professional position on
+a claim. A developer decision is the application owner exercising their own judgement about their
+own product. **Both are legitimate; they are not interchangeable, and the difference is invisible
+once the word "confirmed" is in a register.** ⚠️ **This project has already found what an
+authoritative-looking label does when nothing re-derives it.**
+
+---
+
+## 3 · The reasoning, recorded as the developer gave it
+
+> **The duration sentence describes what the app's capture function does, and describing its own
+> function is something a capture tool is entitled to do.**
+
+⭐ Recorded in the developer's terms rather than paraphrased into a rationale of ours. **The
+distinction it rests on is between the app describing ITS OWN BEHAVIOUR and the app characterising
+THE EVENT** — the first is a statement about software, the second is a statement about a person's
+health.
+
+---
+
+## 4 · ⭐ THE STANDING TEST THAT FOLLOWS, FOR ALL FUTURE COPY
+
+> ⭐ **A capture tool may describe WHAT it captures and HOW it captures it.**
+> ⛔ **It may not describe what the capture MEANS.**
+
+**Applied to the two sentences above:** *"the duration is measured to the moment the end is
+recorded"* is HOW it captures. *"If the phone had to be unlocked first, that time is included"* is
+HOW it captures. *"events where further medical attention happened"* is WHAT it captures — an event
+the user reported, not a judgement about whether it was warranted.
+
+### ⚠️ IT WOULD HAVE SETTLED "REFERRAL REQUIRED" IN ONE PASS INSTEAD OF THREE
+
+**That wording was corrected three times across two briefs, and the test above would have caught
+the defect on the first reading:**
+
+| pass | commit | what moved |
+|---|---|---|
+| 1 | `c4d5d0a` · `bc6c470` — Brief 62 | the capture surfaces stopped asking *"Medical referral required?"* and now ask *"Further medical attention?"* |
+| 2 | `2579629` — Brief 63 Part C | the CSV column and the documents followed |
+| 3 | `c57f408` — Brief 63 Part D | the store listing bullet, *"Whether a medical referral is needed"* → *"Whether further medical attention happened"* |
+
+⛔ **THE DEFECT WAS ALWAYS THE SAME ONE, AND IT IS EXACTLY WHAT THE TEST FORBIDS.** Brief 63 Part D
+recorded it: *"**"needed" asserted a clinical judgement the app never makes**; the field records
+whether something HAPPENED, not whether it was warranted."* **"Required" and "needed" both describe
+what the capture MEANS.** "Happened" describes what it captures.
+
+⭐ **Three passes were spent because the question was asked as "is this wording current?" each
+time** — a retired-term sweep — **and the term was retired for a reason nobody had stated as a
+rule.** With the rule stated, one reading of *"Medical referral required?"* answers it: `required`
+is a meaning, not a capture. **The corrections are the evidence, and they cost two briefs.**
+
+---
+
+## 5 · ⚠️ THE STANDING ROUTING INSTRUCTION WAS NOT FOLLOWED FOR THESE TWO
+
+`docs/WORKING-AGREEMENT.md` reads:
+
+> ⛔ ***Regulatory or claim wording.** Routes to the adviser, not to chat or the CLI. MER is a data
+> capture tool and never diagnostic; wording that touches that line is not ours to settle.*
+
+⛔ **THAT ROUTE WAS NOT TAKEN FOR EITHER SENTENCE.** Recorded as a fact about what happened, not as
+a criticism and not as a precedent.
+
+🔴 **WHETHER THAT INSTRUCTION STILL STANDS IS A SEPARATE QUESTION, AND IT HAS BEEN PUT TO THE
+DEVELOPER. IT IS OPEN AS AT 21 September 2026.** ⛔ **Until it is answered, this entry must not be
+read as having relaxed it.** ⚠️ **One instance decided by the owner is not a change to the standing
+rule** — and treating it as one would be the same move this register already forbids elsewhere: a
+precedent recorded without its limits is read as permission.
