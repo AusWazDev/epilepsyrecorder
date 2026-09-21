@@ -7,7 +7,7 @@ publish_to: 'none'
 # building. This file records codes that were COMMITTED; the ledger records
 # codes that were BUILT, and they are not the same set — code 59 was built and
 # installed on 20 September 2026 and appears nowhere below.
-version: 1.1.1+61
+version: 1.1.1+62
 
 environment:
   sdk: '>=3.4.0 <4.0.0'

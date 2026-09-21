@@ -71,6 +71,7 @@ safe behaviour is to take a code above the highest ever recorded anywhere.
 | **59** | 1.1.0 | ⛔ **NOT RECOVERABLE** — an uncommitted tree between `c4d5d0a` and `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 | ✅ **by 60, same day — defect found ON THE DEVICE** |
 | 60 | 1.1.0 | the tree that became `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 — **current** | — |
 | 61 | 1.1.1 | `f00a54d` ✅ **exact, tree clean** | 20 Sep 2026 | release APK, 73,718,998 B, md5 `9cba274a030d8ace6c09489e5a8addd7` | ⛔ **nowhere** — on disk only, not installed | — |
+| **62** | 1.1.1 | `8e75804` ✅ **exact, tree clean** | 21 Sep 2026 | release APK — ⏳ **ROW PUSHED BEFORE THE BUILD; artefact details filled in after** | ⛔ **nowhere yet** | — |
 
 ### ⭐ Row 59 is the reason this file exists
 
@@ -84,6 +85,18 @@ and superseded by 60 within the same pass, **all before any commit.** So:
 
 ⛔ **A build that reached a device and whose source state cannot be reconstructed is the worst
 case this ledger records, and it is four days old.**
+
+### ⭐ Row 62 is the first row written under the amended rule
+
+⛔ **THE PUSH IS THE ALLOCATION, and this row was pushed BEFORE `flutter build` was invoked.**
+Rows 53–61 were all written after their builds, which is the ordering the amendment of 21 September
+reversed. ⚠️ **So this row exists in a state none of the others ever occupied: allocated, pushed,
+and not yet built.** That is the intended cost recorded in `DECISIONS.md` — a pushed row with no
+build still spends the code — and it is preferable to two hosts silently taking 62 at once.
+
+⚠️ **VERSION NAME STAYS 1.1.1.** 61 carried 1.1.1 and went nowhere; the release has not shipped, so
+the name has nothing to move past. ⛔ **Only the CODE advances, because only the code must never
+repeat.**
 
 ### ⚠️ On "built from", and why three rows are hedged
 
