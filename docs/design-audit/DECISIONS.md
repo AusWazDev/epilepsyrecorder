@@ -2286,3 +2286,127 @@ traversal order. **Deferred:** the platform-conditional sweep.
 ⭐ **NOTHING SORTED TO THE DEFERRED HELP ACCESSIBILITY AUDIT.** Nothing here required a statement
 about what the app does, new or changed copy, or a restructure — **the triage line held without
 needing to be softened**, and the audit keeps its claims register and its scope intact.
+
+---
+
+## iOS — two end surfaces, two authentication policies, and one wrong finding — 21 September 2026
+
+### What was asked, and what it settled
+
+**Does the recorded duration include time spent unlocking?** Traced on both platforms rather than
+reasoned from the wording.
+
+    ANDROID   _handleEnd()          endTime = DateTime.now(), captured in the background isolate
+              ActionType.SilentAction — no app launch, NO AUTHENTICATION
+              => no unlock occurs, so no unlock latency can enter the interval
+
+    iOS       handleQuickLogEnd()   endTime = Date(), captured in the delegate callback
+              UNNotificationAction options: [.authenticationRequired]
+              => the action does not fire until unlocked, so the unlock IS in the interval
+
+⭐ **Both platforms compute `end − start` and both capture the end at the moment the action
+fires.** The difference is entirely in what GATES the action. **Help's platform-split wording is
+therefore correct**, and the Android paragraph is not missing a true caveat — the caveat does not
+apply to it.
+
+### 🔴 THE FINDING I FIRST REPORTED WAS WRONG, AND THE CORRECTION MATTERS MORE THAN THE FINDING
+
+**I reported that the Live Activity ends without an unlock and that the two iOS surfaces
+therefore produce different durations.** ⛔ **That is false on iOS 17+**, and the sentence
+refuting it sits **twelve lines above** the line I quoted:
+
+> *"On iOS 17+ ActivityKit already refuses to run EndMEREventIntent on a locked device and demands
+> Face ID, **ignoring the `.alwaysAllowed` policy the intent requests**."*
+
+⭐ **I READ A DECLARATION AND REPORTED IT AS BEHAVIOUR.** `EndMEREventIntent` declares
+`.alwaysAllowed`; the platform does not honour it. ⚠️ **This is `WORKING-AGREEMENT.md`'s
+*READING IS NOT VERIFYING* failing in precisely the form it is written down to prevent** — *"a
+source read is evidence about the source, not about the world"* — and it failed while I was
+reading the very file that contained the correction.
+
+⛔ **THE SHAPE, RECORDED BECAUSE IT WILL RECUR: a declared policy is a REQUEST, not a guarantee.**
+`options:`, `authenticationPolicy:`, `locked:` and every other platform-facing flag state what the
+app asks for. What the OS does with the request is a separate fact, and on iOS it has changed
+between versions. **Quote the declaration and the observed behaviour as two different claims, or
+do not claim the behaviour.**
+
+⚠️ **Same family as the `locked: true` note already in this corpus** — MER asks for it and
+Android 14+ ignores it. **That precedent existed and did not stop this.**
+
+### What is actually established, by tier
+
+    iOS 17+        BOTH surfaces gate on authentication. ActivityKit enforces it on the intent
+                   regardless of the declared policy; the notification action declares it.
+                   No divergence. The Help caveat is TRUE of both.
+
+    iOS 16.2-16.x  The notification action prompts, by declaration — that is what 956b2d3 was
+                   written for. ⛔ WHAT 16.x ActivityKit DOES WITH `.alwaysAllowed` IS NOT
+                   ESTABLISHED. The rationale comment does not say, and it cannot be determined
+                   from the Windows CLI host.
+
+🔴 **SO THE DIVERGENCE IS POSSIBLE ONLY ON 16.2-16.x AND IS UNVERIFIED THERE.** ⚠️ **Recorded as
+UNKNOWN rather than as absent** — and the date is the date it was checked, 21 September 2026, not
+the date the code was written.
+
+### The two policies were set in different passes, by different reasoning
+
+    .alwaysAllowed            4 May 2026   17a0a4b  "CR-42: Live Activity + lock-screen
+                                                     consecutive notification actions"
+                                                     NO comment beside it
+    .authenticationRequired  24 Aug 2026   956b2d3  "iOS 16.2-16.x: make the End action prompt
+                                                     instead of failing silently"
+                                                     34 lines of stated rationale
+
+⭐ **Sixteen weeks apart, for different problems, and never set against each other.** That is why
+they read as an inconsistency now. **The August pass is the one that READ the May declaration**
+and concluded it does not do what it says on 17+.
+
+### ⛔ Privacy does not justify the gate, and the gate does not provide it
+
+**Everything the end surfaces expose on a locked screen, enumerated:**
+
+    persistent notification   "Medical Event Recorder" / "Long-press this notification to log an event"
+    active notification       "Event in progress · {startTime}" / "Tap \"Event Ended\" when the event is over"
+    end confirmation          "Event ended · {elapsed}" / "Open MER to add details"
+    Live Activity             "Event in progress", "Started" + start time, a running timer
+
+**No event detail appears anywhere** — no type, no severity, no notes, no observations, no
+history. ⛔ **And `.authenticationRequired` gates PERFORMING the action, never DISPLAYING the
+notification.** The banner and the elapsed time are on the lock screen before any authentication
+and would stay there whatever the option is. ⭐ **Anything a bystander could learn, they can learn
+without touching the button.** The rationale never claimed privacy as a reason, and it was right
+not to.
+
+### 🔴 THE OPTION THAT LOOKS OBVIOUS IS THE ONE THAT RESTORES A DATA-LOSS DEFECT
+
+**Setting the notification End action to `options: []` — to match the intent — is not a neutral
+alternative. It is the PRIOR STATE**, and the comment records what it did:
+
+> *"ending from a locked device did nothing at all, silently: the notification was dismissed by
+> the UI, the handler never ran, no end instruction was written, neither notification posted, the
+> Live Activity kept counting, and the record kept its `lt1` default. **Wrong data, on the only
+> end path this tier has.**"*
+
+⛔ **A user ends an event from the lock screen, watches the notification disappear, and the record
+silently keeps a default duration.** In a capture tool that is the worst class available, and
+`956b2d3` exists to fix exactly it.
+
+⚠️ **AND IT WOULD NOT EVEN CONVERGE THE SURFACES.** On 17+ the intent still demands Face ID, so
+the notification would skip the unlock while the Live Activity enforced it — **inverting the
+divergence rather than closing it.**
+
+⭐ **THE GENERAL FORM, AND IT IS THE REASON THIS ENTRY IS LONG: an inconsistency between two
+declarations is not evidence that either is wrong.** Here the inconsistency is real, the
+declarations genuinely disagree, and **the correct action is to change neither** — because one is
+already overridden by the platform and the other is load-bearing against a defect. **A tidy-up
+reasoned from the declarations alone would have shipped the bug back.**
+
+### Help's wording, and what is left open
+
+⚠️ **Help tells iOS users the two surfaces are interchangeable** — *"tap 'Event Ended' on the
+timer or on the MER notification, whichever your iPhone shows"* — and four rows later carries the
+unlock caveat. **On 17+ that is accurate**, because both gate. **On 16.x it is unverified.**
+
+⛔ **NO WORDING WAS CHANGED, AND NO OPTION VALUE WAS CHANGED.** This entry settles a premise; the
+wording question exists only after it, and rests on a 16.x fact that needs a Mac, an iPhone and a
+16.x tier to establish. **None is available from this machine.**
