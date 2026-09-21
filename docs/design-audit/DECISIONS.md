@@ -2455,3 +2455,64 @@ unlock caveat. **On 17+ that is accurate**, because both gate. **On 16.x it is u
 ⛔ **NO WORDING WAS CHANGED, AND NO OPTION VALUE WAS CHANGED.** This entry settles a premise; the
 wording question exists only after it, and rests on a 16.x fact that needs a Mac, an iPhone and a
 16.x tier to establish. **None is available from this machine.**
+
+---
+
+## Rule (h)'s residual gaps — ACCEPTED, not closed — 21 September 2026
+
+⭐ **Rule (h) closes the part of the cross-machine gap a repository can close. These four it does
+not, and each is recorded as ACCEPTED WITH ITS REASON rather than left as an open item**, because
+an open item with no owner and no route to closure is a gap pretending to be a plan.
+
+### 1 · A pushed row with no build still spends the code
+
+⛔ **A host that writes and pushes a ledger row and then does not build holds a code the ledger
+shows as spent.** The amendment of 21 September makes the push the allocation, which is what
+closes the collision window — and the cost of that choice is this: **allocation can now happen
+without a build ever following it.**
+
+⭐ **ACCEPTED, AND IRREDUCIBLE WITHOUT A SHARED SERVICE.** Closing it needs something both hosts
+can ask *"is this code actually spent?"* in one round trip, which a git-tracked markdown file is
+not. ⚠️ **The failure it replaces was worse and more likely**: two hosts silently taking the same
+code, which is what the reversal removes. **A code lost to an abandoned row costs one integer; a
+code used twice costs the ability to tell two builds apart, and that has already happened three
+times with code 53.**
+
+### 2 · Global `~/.claude/CLAUDE.md` drift is undetectable from inside either machine
+
+⛔ **Each machine holds its own copy, in no repository, and nothing compares them.** A rule
+present on Windows and absent on the Mac — or present in two different versions — produces two
+sessions that both believe they are following the standing rules.
+
+⭐ **ACCEPTED BECAUSE (h) IS WRITTEN NOT TO DEPEND ON IT.** That was the drafting constraint and
+it is what makes this survivable: the cross-machine rule lives in the repository, reaches every
+clone by the mechanism the work itself uses, and cites the global file without relying on it.
+⚠️ **The drift is real and remains invisible. What has been removed is its ability to matter to
+(h).**
+
+### 3 · Which machine made a past commit is not knowable from git
+
+⛔ **Author is a `git config` value** — set per-clone, surviving being copied, validated by
+nothing. **And the `STATUS.md` session labels are a hand-written convention with no detector**: a
+session can omit one, or write the wrong one, and nothing objects.
+
+⭐ **ACCEPTED, BECAUSE (h) DOES NOT ASK THE QUESTION.** The rule routes through the FILE'S OWN
+HISTORY — fetch, then `git log` that file — and what that answers is **whether the file moved**,
+which is the fact the edit actually turns on. ⛔ **Who moved it is a different question and (h)
+needs no answer to it.** ⚠️ **The provenance gap stays open and stops being load-bearing**, which
+is the most a repository can do about a value nothing validates.
+
+### 4 · Whether (h) was followed has no detector in the repository
+
+⛔ **Nothing checks it.** No test, no hook, no scan — a session that skips every clause of (h)
+proceeds exactly as one that follows it, and the file says so in its own text.
+
+⭐ **THE DETECTOR IS EXTERNAL, AND DELIBERATELY SO: the chat side requires the platform, the
+current `HEAD` and whether `HEAD` matches `origin` at the top of every report, and treats their
+ABSENCE as a finding.** ⚠️ **That is the same shape as rule (f) and it is the reason (f) works —
+the remedy sits on the side that is not the one failing.** A repository check would be run by the
+session it is checking; a reporting requirement is enforced by the party reading the report.
+
+⛔ **RECORDED AS A LIMIT OF THIS REPOSITORY, NOT AS A SOLVED PROBLEM.** A clone that never reports
+to chat has no detector at all. **(h) remains a convention, and the honest claim is that it moved
+from ABSENT to STATED, with its check living outside the artefact that states it.**

@@ -103,18 +103,28 @@ afterwards, which is why it is written down now rather than tidied into a commit
 > ⛔ **TWO BUILDS MUST NEVER SHARE A VERSION CODE.**
 >
 > ⭐ **The next unused code is READ FROM THIS FILE, not remembered and not inferred from
-> `pubspec.yaml`.** Take the highest code in the table above, add one, and add the row **before**
-> the build rather than after.
+> `pubspec.yaml`.** Take the highest code in the table above, add one, **write the row, PUSH
+> it, and only then build.**
+>
+> ⛔ **THE PUSH IS THE ALLOCATION.** Not the build, not the commit — the moment the row
+> reaches `origin`. ⚠️ **AMENDED 21 September 2026**, hours after this file was created. It
+> read: *"add the row **before** the build rather than after"* — correct for one host and
+> insufficient for two, because a row that is written and not pushed is a code that looks
+> free to every other clone.
 >
 > ⚠️ **A code is USED the moment an artefact is produced with it** — not when it is committed,
 > not when it is installed. A build that is superseded five minutes later has still used its
 > code, and row 59 is what that looks like.
 >
-> 🔴 **AND WITH MORE THAN ONE HOST BUILDING, THE ROW IS WRITTEN AND PUSHED BEFORE THE NEXT
-> CODE IS ALLOCATED.** ⛔ **An unpushed row is invisible to every other clone**, so two hosts
-> reading this table can both see the same highest code and both take it. ⭐ Row 59 is the
-> single-host version of that failure — a code spent with nothing recording it — and a second
-> machine does not add a new failure mode, it adds a second hand to the existing one.
+> 🔴 **WITH MORE THAN ONE HOST BUILDING, THE PUSHED ROW IS WHAT SPENDS THE CODE.** ⛔ **An
+> unpushed row is invisible to every other clone**, so two hosts reading this table can both
+> see the same highest code and both take it. ⭐ Row 59 is the single-host version of that
+> failure — a code spent with nothing recording it — and a second machine does not add a new
+> failure mode, it adds a second hand to the existing one.
+>
+> ⚠️ **AMENDED 21 September 2026. This clause read:** *"AND WITH MORE THAN ONE HOST BUILDING,
+> THE ROW IS WRITTEN AND PUSHED BEFORE THE NEXT CODE IS ALLOCATED"* — which described the
+> same sequence while still treating allocation as something the build does.
 >
 > ⚠️ See `docs/WORKING-AGREEMENT.md` §2B rule (h), which carries the same obligation from the
 > session's side rather than the ledger's.

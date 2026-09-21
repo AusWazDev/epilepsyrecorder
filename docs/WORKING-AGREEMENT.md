@@ -240,7 +240,15 @@ that cannot name the delta has not reconciled.**
 > remedy that depends on it fails on the machine most likely to need it. `git log` is available to
 > any clone, which is why it is the dependency named — once fetched.
 >
-> **A build from any host writes its ledger row before the next version code is allocated.**
+> **Write the ledger row and PUSH it, then build.** ⛔ **The push IS the allocation.** A code is
+> taken when its row reaches `origin`, not when an artefact is produced — so another host that
+> fetches sees the row before it can reach for the same code, and the window in which two hosts
+> can collide is a push round-trip rather than a session.
+>
+> ⚠️ **AMENDED 21 September 2026, hours after it was written. It read:** *"A build from any host
+> writes its ledger row before the next version code is allocated."* ⭐ **That put the allocation
+> at the build and the record after it, which is the wrong way round the moment a second clone
+> exists:** the row was correct locally and invisible remotely for as long as the session ran.
 
 ⭐ **Evidence: eight features silently reverted.** A Mac-side commit to the SoundFind repo undid
 eight previously-fixed items — audio, persistent hints, a stale-closure fix, a branded icon —
