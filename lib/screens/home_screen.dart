@@ -94,7 +94,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _store = StorageBoot.store;
   final _uuid  = const Uuid();
 
-  List<EventRecord> _records = [];
+  // ── THE ONLY ASSIGNMENT PATH FOR _records ────────────────────────────────
+  //
+  // ⭐ THE INVARIANT: every assignment to `_records` leaves it sorted by
+  // `whenHappened`, DESCENDING. Not by `timestamp`.
+  //
+  // ⛔ "LAST EVENT" MEANS THE MOST RECENT EVENT, NOT THE MOST RECENTLY TYPED
+  // ROW. A user who backdates a record is telling the app when the thing
+  // happened; sorting by the write clock prefers the app's clock over the
+  // user's statement, which is the same class of defect as displaying a time
+  // the user explicitly corrected.
+  //
+  // ⚠️ ENFORCED BY CONSTRUCTION, NOT BY DISCIPLINE, and that distinction is
+  // the whole reason for this shape. A `_sortRecords()` helper that six sites
+  // must REMEMBER to call is the failure this cluster is made of: on
+  // 12 September a pass fixed one getter, declared itself complete, and left
+  // five writes standing. A rule applied at N places where N is DISCOVERED
+  // rather than KNOWN fails exactly that way.
+  //
+  //   · the setter sorts, so no caller can assign an unsorted list;
+  //   · the getter returns an UNMODIFIABLE view, so no caller can mutate one
+  //     into existence afterwards — `.insert`, `[]=` and `.sort` throw;
+  //   · therefore a scan for `_recordsSorted` outside these three lines is a
+  //     COMPLETE check, not a sampling one.
+  //
+  // ⚠️ The setter does NOT call setState. All six write sites are already
+  // inside one, so wrapping here would nest setState within setState. The
+  // sort belongs to the assignment; the rebuild belongs to the caller.
+  List<EventRecord> _recordsSorted = const <EventRecord>[];
+
+  List<EventRecord> get _records => _recordsSorted;
+
+  set _records(List<EventRecord> value) {
+    _recordsSorted = List<EventRecord>.unmodifiable(
+      [...value]..sort((a, b) => b.whenHappened.compareTo(a.whenHappened)),
+    );
+  }
+
   Map<String, dynamic>? _activeEvent;
   bool _loaded = false;
   bool _buttonFlash = false;
@@ -669,6 +705,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// Events that HAPPENED this month, not events typed this month.
   ///
+  /// ⛔ **THE COMPLETION CLAIM BELOW IS SUPERSEDED, 21 September 2026. The
+  /// CORRECTION it records is sound and stands; the claim to have FINISHED is
+  /// not.** It read *"AUDIT.md §13(j)'s **last standing site**"* and *"this
+  /// getter was **the remaining surface** counting by the other clock"*.
+  ///
+  /// **What that pass actually covered: `_eventsThisMonth`, and nothing else.**
+  /// Five sites were left standing, one of them 34 lines below this comment:
+  /// `_LastEventCard`'s rendered date, `_daysSinceLastEvent`, the two save-path
+  /// sorts, and the capture-path insert. All fixed 21 September 2026.
+  ///
+  /// ⭐ **HOW IT MISSED THEM, because that is the reusable half: it looked at
+  /// ONE GETTER rather than enumerating every WRITE to the list.** A search for
+  /// a field name where a value is *read* finds the readers; it never finds the
+  /// site that decided the ORDER, and order is what made two screens disagree
+  /// about which record was latest. The same shape caught the project out one
+  /// brief earlier — a search for `whenHappened` at render sites finds
+  /// `final w = r.whenHappened`, the assignment, and never the render.
+  ///
+  /// ⛔ **AND THE CLASS: A COMPLETION CLAIM WRITTEN AS PROSE IS AN ABSENCE
+  /// CLAIM — "nothing else reads the other clock" — AND ABSENCE CLAIMS FAIL
+  /// INVISIBLY.** Nothing re-derives it, nothing contradicts it, and it reads
+  /// as authoritative precisely because someone wrote it deliberately. **The
+  /// remedy is not a better comment.** It is the single-assignment setter at
+  /// the top of this class, whose scan either returns zero or names the
+  /// violation. See `CONTRACTS.md` #23 and #24.
+  ///
   /// ⭐ `whenHappened`, not `timestamp` — 12 Sep 2026, AUDIT.md §13(j)'s last
   /// standing site. A count of events in a month is a clinical figure, and a
   /// seizure backdated to last month belongs in last month's count however
@@ -706,8 +768,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // sharpest self-contradiction on the screen: "Days since 0" beside a card
     // showing an event from days earlier under the heading LAST EVENT.
     if (_records.isEmpty) return 0;
+    // ⛔ `whenHappened`, NOT `timestamp` — 21 September 2026. Counted from the
+    // logging clock, a seizure backdated to last week read "Days since 0" on
+    // the day it was typed.
     return DateTime.now()
-        .difference(_records.first.timestamp)
+        .difference(_records.first.whenHappened)
         .inDays;
   }
 
@@ -782,7 +847,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final mayOnset   = extending || !_flashOnCooldown;
 
     setState(() {
-      _records.insert(0, rec);
+      // ⚠️ THE CAPTURE PATH, AND IT WAS THE SIXTH WRITE — found 21 September
+      // 2026, named in neither the brief nor its amendment. It read
+      // `_records.insert(0, rec)`, a MUTATION rather than an assignment, so an
+      // enumeration looking for `_records =` missed it twice.
+      //
+      // ⭐ It was CORRECT BY COINCIDENCE: a live capture has no `occurredAt`,
+      // so its `whenHappened` is `timestamp` is now, and position 0 was right.
+      // It would have stopped being right the moment capture gained a time
+      // picker, silently, on the one path that runs most.
+      _records = [rec, ..._records];
       if (mayOnset) _buttonFlash = true;
     });
 
@@ -851,13 +925,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (!mounted) return;
 
     setState(() {
-      final i = _records.indexWhere((r) => r.id == result.id);
+      final next = [..._records];
+      final i = next.indexWhere((r) => r.id == result.id);
       if (i >= 0) {
-        _records[i] = result;
+        next[i] = result;
       } else {
-        _records.insert(0, result);
+        next.insert(0, result);
       }
-      _records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
+      _records = next;
     });
     await persistEvents(_store, _records);
   }
@@ -879,13 +955,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (result == null) return;
 
     setState(() {
+      final next = [..._records];
       if (existing == null) {
-        _records.insert(0, result);
+        next.insert(0, result);
       } else {
-        final index = _records.indexWhere((r) => r.id == result.id);
-        if (index != -1) _records[index] = result;
+        final index = next.indexWhere((r) => r.id == result.id);
+        if (index != -1) next[index] = result;
       }
-      _records.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
+      _records = next;
     });
 
     await _persist();
@@ -1070,6 +1148,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         builder: (_) => HistoryScreen(
           records:          _records,
           onRecordsChanged: (updated) async {
+            // ⚠️ THIS WAS THE ONLY CORRECT ASSIGNMENT, AND IT WAS CORRECT BY
+            // ACCIDENT: it inherited History's `whenHappened` sort rather than
+            // performing one. Under the setter above it is correct by
+            // construction. ⛔ Worth a line because an accidentally-correct
+            // site is precisely the kind a later refactor breaks in silence —
+            // nothing here ever said the order mattered.
             setState(() => _records = updated);
             await _persist();
           },
@@ -2246,12 +2330,17 @@ class _LastEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ⛔ `whenHappened`, NOT `timestamp` — 21 September 2026. This card read
+    // the LOGGING clock, so a record the user backdated showed the moment it
+    // was typed. History has always printed `whenHappened`, so the same record
+    // carried two different times on two screens.
+    final at = record.whenHappened;
     final timeStr =
-        '${_pad(record.timestamp.day)} '
-        '${_month(record.timestamp.month)} '
-        '${record.timestamp.year}  ·  '
-        '${_pad(record.timestamp.hour)}:'
-        '${_pad(record.timestamp.minute)}';
+        '${_pad(at.day)} '
+        '${_month(at.month)} '
+        '${at.year}  ·  '
+        '${_pad(at.hour)}:'
+        '${_pad(at.minute)}';
 
     return Container(
       padding: const EdgeInsets.all(12),

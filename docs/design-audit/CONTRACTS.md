@@ -24,7 +24,9 @@ rule's reasoning, it points at it.
 
 ⚠️ **THREE ROWS ADDED 21 September 2026 (Brief 68 Part C). The heading moved from "nineteen" to "twenty-two" with them.** ⛔ **`#20` and `#21` are deliberately TWO ROWS for what one sentence could have covered — see note K. That is the point of them, not an oversight.**
 
-## The twenty-two
+⚠️ **TWO ROWS ADDED 21 September 2026 (Brief 74). The heading moved from "twenty-two" to "twenty-four" with them.** ⛔ **`#23` and `#24` are deliberately SEPARATE, and only `#24` is enforceable — see note L. A single row claiming both would dress a convention as a test.**
+
+## The twenty-four
 
 | # | structure | invariant — what must remain TRUE | outcome | checked by |
 |---|---|---|---|---|
@@ -50,6 +52,8 @@ rule's reasoning, it points at it.
 | **20** | `_showNormal` content | The Android STANDING notification's content is **constant** — a hardcoded title and body, nothing interpolated. `home_screen`'s `_openLogScreen` makes no reschedule call that works off iOS, and that is correct **only while this holds** | **CONVENTION**, 21 Sep 2026 | note K — ⛔ **`:881` depends on it** |
 | **21** | `_showActive` content | The Android ACTIVE notification's content **is** variable, and derives **only from the `mer_active_event` marker — never from an `EventRecord`.** Same missing reschedule, same dependency, **different mechanism** | **CONVENTION**, 21 Sep 2026 | note K — ⛔ **`:881` depends on it** |
 | **22** | nav channel failures | A failure on `au.com.notiva.mer/navigation` is READ by platform, never silenced by one: iOS reports everything; off iOS only `MissingPluginException` is swallowed. No bare `catch (_)` on a channel call | **TESTED — behaviour + source scan** | `nav_channel_failure_policy_test` ⭐ **both platform rows are behavioural — see note K** |
+| **23** | record time · record recency | Every surface that DISPLAYS a record's time, or decides WHICH record is most recent, reads `whenHappened` — never `timestamp`. ⛔ **Named exceptions, each with its reason in note L: `eventsSinceLastBackup` (its subject IS the write clock) and the CSV's log-time omission (a decided v6 trade, pinned to the v8 marker)** | **CONVENTION**, 21 Sep 2026 | note L — ⚠️ **no cheap scan can decide this; four behavioural tests cover the two surfaces that exist today, which is instance coverage, not enforcement** |
+| **24** | home's `_records` | It is assigned in exactly ONE place, and that place sorts by `whenHappened` DESCENDING. The getter returns `List.unmodifiable`, so no caller can mutate an order into existence afterwards | **TESTED — source scan** | `records_single_assignment_test` ⭐ **the scan either returns zero or NAMES the violation by line** |
 
 ---
 
@@ -284,6 +288,85 @@ ever ran on the row where **everything** is meant to be reported, absorbing any 
 🔴 **Whether the Swift `restoreNotification` handler can fail in practice is UNESTABLISHED, 21
 September 2026, and needs the Mac.** It is not a blocker for `#22` — **the point of `#22` is that if
 it ever does fail, something says so.**
+
+### L — `#23` and `#24` — the whenHappened cluster, and why only ONE of these rows is enforceable
+
+**Recorded 21 September 2026, Brief 74.**
+
+⛔ **`#24` IS THE ROW THAT DOES THE WORK. `#23` IS THE ROW THAT STATES THE INTENT.** They are
+deliberately separated because **only one of them can be checked**, and a single row claiming both
+would be dressing a convention as enforcement.
+
+#### Why `#23` is CONVENTION and not TESTED
+
+The rule is *every surface that displays a record's time, or decides which record is most recent,
+reads `whenHappened`*. ⚠️ **No cheap scan can decide that**, and the reason is the defect's own
+history: a search for a field name at render sites finds the ASSIGNMENT, not the render. History's
+own correct code reads `final w = r.whenHappened;` and renders `w` — a scan looking for the field at
+a render site sees nothing there at all.
+
+⛔ **A scan that flagged every `.timestamp` in a screen file would be noise, not enforcement.** Three
+legitimate uses survive in the editors — `event_wizard_screen:193`, `log_event_screen:466` and
+`:720` — all PRESERVING an existing record's logged time on edit, none displaying it. **A check
+whose output is mostly exceptions is a list again, and a list is what failed on 12 September.**
+
+⭐ **So `#23` carries a date and a reason, and the four behavioural tests below cover the two
+surfaces that exist TODAY.** That is coverage of instances, not enforcement of the rule, and the
+distinction is the row's outcome column.
+
+#### ⛔ THE NAMED EXCEPTIONS, WITH THEIR REASONS — these must keep `timestamp`
+
+| | why |
+|---|---|
+| `backup_service.dart:101` `eventsSinceLastBackup` | ⭐ **Its subject IS the write clock.** "How many events have been WRITTEN since the last backup" is a question about what is unsaved, not about when anything happened. Reading `whenHappened` here would mean a record backdated to last year counts as already backed up |
+| the CSV's omission of the log time | a decided v6 trade. ⛔ **The CSV is pinned to the v8 shape marker by a hash and is out of scope; it was not examined and nothing was aligned to it** |
+
+⚠️ **Both were verified during Brief 71 Part A and again here. They are not oversights and a future
+sweep must not "fix" them.**
+
+#### Why `#24` IS enforceable, and what it replaces
+
+**The invariant is structural: `_records` has exactly ONE assignment path, and that path sorts.**
+
+  · the **setter** sorts by `whenHappened` descending, so no caller can assign an unsorted list;
+  · the **getter** returns `List.unmodifiable`, so `.insert`, `[]=` and `.sort` throw at runtime;
+  · therefore **a scan for the backing field outside those three lines is COMPLETE**, not a sample.
+
+⭐ **THIS IS WHAT REPLACES A `_sortRecords()` HELPER, AND THE DIFFERENCE IS THE WHOLE LESSON.** A
+helper six sites must remember to call is a rule applied at N places **where N is discovered rather
+than known** — which is exactly how a pass on 12 September fixed one getter, declared itself
+complete, and left five writes standing.
+
+#### ⚠️ THE SIXTH WRITE, FOUND ON THE SECOND PASS
+
+**Neither the brief nor its amendment named it:** `home_screen`'s capture path read
+`_records.insert(0, rec)` — a **mutation**, not an assignment — so two successive enumerations
+looking for `_records =` missed it.
+
+⭐ **It was correct BY COINCIDENCE.** A live capture has no `occurredAt`, so its `whenHappened` is
+its `timestamp` is now, and position 0 was right. ⛔ **It would have stopped being right the moment
+capture gained a time picker, silently, on the path that runs most.** The `unmodifiable` getter is
+what makes that class impossible rather than merely fixed.
+
+#### What the tests cover, and the trap they avoid
+
+⛔ **EVERY FIXTURE RECORD HAS `occurredAt` SET AND NINE DAYS FROM `timestamp`.** A behavioural test
+is BLIND on a null-`occurredAt` record — `occurredAt ?? timestamp` and `timestamp` return the same
+value — and null is what most real records carry. **A suite seeded with null-occurredAt records
+passes identically against the defect and against the fix.** That is the trap this cluster sat in.
+
+| test | what it pins |
+|---|---|
+| `when_happened_card_test` | the rendered time, and Days since |
+| `when_happened_identity_test` | ⭐ **home and history name the SAME record as latest** |
+| `when_happened_load_path_test` | a cold load with no save — the path that runs on every app open |
+| `when_happened_round_trip_test` | the card does not change record after a History round trip |
+| `records_single_assignment_test` | `#24` itself |
+
+⚠️ **The fixture's own control caught an error in the fixture on its first run:** with the two
+clocks 9 days 15½ hours apart, `Duration.inDays` truncated to 10 from one reference point and 9 from
+another. **The time of day is now aligned on both so the gap is exactly nine days**, and the
+assertion cannot drift with the wall clock.
 
 ### F — `#12` the envelope key SET
 
