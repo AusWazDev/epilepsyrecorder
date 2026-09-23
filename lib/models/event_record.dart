@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -1059,6 +1060,38 @@ class EventStore {
     await writeEventPayload(prefs, payload);
   }
 
+  /// ⛔ **DOES NOT GO THROUGH [serialise], AND MUST NOT BE "TIDIED UP" TO MATCH
+  /// [SqliteEventStore.clearAll]. DELIBERATE AND LOAD-BEARING, 23 September
+  /// 2026.**
+  ///
+  /// The inconsistency is real and it is the point: `SqliteEventStore.clearAll`
+  /// wraps its delete in `EventStore.serialise` and this one does not. Anyone
+  /// reading the two side by side will want to make them agree. ⛔ **Making
+  /// them agree removes the only way out of a stranded queue.**
+  ///
+  /// **MEASURED, NOT ARGUED — Brief 144, 23 September 2026.** One stranded save
+  /// leaves the queue permanently blocked: it has no timeout, no reset and no
+  /// cancellation, and `_queue` has exactly two assignments, its initialiser
+  /// and the append inside `serialise`. With one operation stranded:
+  ///
+  ///     BLOCKED     prefs  load / prefs  save
+  ///     BLOCKED     sqlite load / sqlite clearAll   <- Reset is dead here
+  ///     BLOCKED     persistEvents
+  ///     COMPLETED   prefs clearAll                  <- this method, the way out
+  ///
+  /// ⭐ So on a fallback launch the user's own Reset still works when nothing
+  /// else does. That is not much of an escape hatch — it costs them their
+  /// records — but it is the difference between an app that can be recovered
+  /// and one that must be reinstalled.
+  ///
+  /// ⚠️ **NOT PRESENTED AS A DESIGNED SAFETY FEATURE.** It was an accident of
+  /// two implementations diverging, discovered by measurement. It is recorded
+  /// as deliberate FROM TODAY because it is now known to be load-bearing, and
+  /// the next person to notice the asymmetry should find this note rather than
+  /// a symmetry that looks obviously correct.
+  ///
+  /// ⛔ Whether the SQLite side should gain the same property is a real
+  /// question and is NOT decided here. Do not resolve it by removing this.
   Future<SharedPreferences> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -1246,10 +1279,77 @@ enum LoadState {
 /// instruction (so it survives). What is withheld is the REPLACE, not the
 /// record. The `false` return raises the standing unsaved-write banner, which
 /// is the mechanism that already exists for exactly this state.
+/// How long a save may run before it is reported as STRANDED.
+///
+/// ⭐ CHOSEN FROM MEASUREMENT, 23 September 2026, not from a round number.
+/// Legitimate saves on this machine, median of 12 runs after a warm-up:
+///
+///     records        1      10      72     500    2000
+///     sqlite      1.71    2.77    6.07   19.86   61.42 ms  (worst 72.86)
+///     prefs       0.08    0.27    1.43    9.20   33.63 ms  (worst 36.01)
+///
+/// The live device holds about 72 records: 6 ms, worst 11. **30 seconds is
+/// roughly 410x the worst figure measured at 2000 records — a count no user
+/// here has — and about 2,800x the real one.**
+///
+/// ⚠️ THE MEASUREMENT IS A LOWER BOUND AND IS NOT A DEVICE FIGURE. It was taken
+/// with in-process FFI SQLite and mock preferences; a device goes through a
+/// platform channel to native storage and is slower. The margin is sized for
+/// that: even at a 100x device penalty the 2000-record case is 7.3 s, still
+/// four times inside the threshold. It also clears Android's 5 s ANR bar, so a
+/// save stalled behind a main-thread freeze severe enough to be reported as an
+/// ANR still completes well within it.
+///
+/// ⭐ THE WINDOW INCLUDES QUEUE WAIT, deliberately. The timer starts when
+/// `save` is CALLED, which is when it joins `EventStore.serialise`'s queue —
+/// and from the user's side a write stuck in the queue and a write stuck in the
+/// channel are the same event: it has not landed.
+const Duration kPersistStrandThreshold = Duration(seconds: 30);
+
+/// Reports a save that has neither returned nor thrown.
+///
+/// ⚠️ THE TWO HALVES FAIL DIFFERENTLY, ON PURPOSE. The Sentry event needs no
+/// storage and will be raised whatever is wrong underneath. The persisted flag
+/// goes through `SharedPreferences`, so if PREFS ITSELF is the stranded
+/// resource the flag will not land — and its own write would then strand too,
+/// which is why it is awaited inside a guard and its failure is swallowed.
+/// ⛔ Neither half is sufficient alone; that is the reason for both.
+Future<void> _reportPersistStrand(
+  EventStore store,
+  int records,
+  Duration threshold,
+) async {
+  await Sentry.captureMessage(
+    'Persist strand: save has not completed',
+    level: SentryLevel.error,
+    withScope: (scope) => scope.setContexts('persist_strand', {
+      // WHICH STORE. The queue is shared, so either backend can be the one
+      // holding it — Brief 144 measured one stranded SQLite save stopping the
+      // prefs store entirely.
+      'store': store.runtimeType.toString(),
+      'threshold_seconds': threshold.inSeconds,
+      'records': records,
+      // ⭐ WHAT KIND OF FAILURE, stated rather than inferred from the absence of
+      // a stack trace. This is NOT an error the save reported: it neither
+      // returned nor threw. Anything searching Sentry for save failures will
+      // find exceptions by their type; this class has no exception to find.
+      'kind': 'strand: no return, no throw',
+      'observe_only': true,
+    }),
+  );
+  try {
+    await setFailedWriteWarning();
+  } catch (_) {
+    // Storage is failing, which is consistent with the strand being in storage.
+    // The Sentry event above is the half that does not depend on it.
+  }
+}
+
 Future<bool> persistEvents(
   EventStore store,
   List<EventRecord> records, {
   required LoadState from,
+  Duration strandAfter = kPersistStrandThreshold,
 }) async {
   if (from != LoadState.completed) {
     // ⛔ NOT AN ERROR, AND NOT REPORTED AS ONE. A withheld write is the fix
@@ -1271,7 +1371,41 @@ Future<bool> persistEvents(
     return false;
   }
   try {
-    await store.save(records);
+    // ── THE STRAND WATCHDOG — 23 September 2026 ────────────────────────────
+    // ⛔ OBSERVE ONLY. It does not cancel, complete, time out, retry or touch
+    // the save or the queue in any way. `await pending` below is the same await
+    // this function has always had, on the same future, reached the same way.
+    // Nothing gates capture, the record or export; this reports and no more.
+    //
+    // WHY IT EXISTS. `store.save` can stop without failing. Every operation in
+    // the store queue ends in a platform-channel reply, and a channel has no
+    // timeout anywhere in its chain — `_DefaultBinaryMessenger.send` awaits a
+    // bare `Completer` completed only from the reply callback. A reply that
+    // never arrives is not an exception and not a `false`; it is a future that
+    // never settles.
+    //
+    // ⛔ AND THAT WAS ENTIRELY SILENT BEFORE THIS. The `catch` below is never
+    // entered, because a hang does not throw. So `persistEvents` never
+    // returned, `_persist`'s `ok` was never assigned, `setState` never ran and
+    // `_writeFailed` stayed false — no banner, no Sentry, no error, while the
+    // record sat on screen looking saved and was gone at next launch. Measured
+    // on both stores, Brief 144.
+    //
+    // ⭐ SELF-CORRECTING BY CONSTRUCTION. If a slow save later completes, the
+    // success path below calls `clearFailedWriteWarning()` and the banner goes.
+    // A false positive costs one Sentry event and a banner that clears itself.
+    final pending = store.save(records);
+    final watchdog = Timer(
+      strandAfter,
+      () => unawaited(_reportPersistStrand(store, records.length, strandAfter)),
+    );
+    try {
+      await pending;
+    } finally {
+      // Stops the timer only. The save is untouched either way, and if it never
+      // settles this line is never reached — which is the case the timer is for.
+      watchdog.cancel();
+    }
     await clearFailedWriteWarning();
     return true;
   } catch (e, st) {

@@ -717,6 +717,11 @@ class SqliteEventStore implements EventStore {
   /// explicit user-initiated reset — the one case where leaving it would
   /// resurrect deleted events on the next launch.
   @override
+  /// ⚠️ **THIS ONE IS SERIALISED AND [EventStore.clearAll] IS NOT. The
+  /// asymmetry is deliberate — see the note there before changing either.**
+  /// Recorded 23 September 2026. Measured consequence: when the queue is
+  /// stranded, THIS Reset is blocked and the prefs one still works, which makes
+  /// the unserialised one the last recovery path in the app.
   Future<SharedPreferences> clearAll() async {
     await EventStore.serialise(() => db.delete('event'));
     final prefs = await SharedPreferences.getInstance();

@@ -218,7 +218,34 @@ import awesome_notifications
           // fourth writer of the end instruction exists — see
           // endActiveEventFromApp.
           DispatchQueue.main.async {
-            self?.endActiveEventFromApp { result(nil) }
+            // ⛔ NO SELF, STILL A REPLY — 23 September 2026. This read
+            // `self?.endActiveEventFromApp { result(nil) }`, where a nil `self`
+            // short-circuits the whole expression: the method is never invoked,
+            // so the completion that calls `result` never runs, and NOTHING
+            // ELSE EVER CALLS IT.
+            //
+            // ⚠️ A channel reply is not optional. A Flutter method channel has
+            // no timeout anywhere in its chain — `_DefaultBinaryMessenger.send`
+            // awaits a bare `Completer` completed only from the reply callback
+            // — so a skipped `result` is not a slow call or a failed call. It
+            // is a Dart future that never completes and never errors, for the
+            // life of the process.
+            //
+            // ⭐ WHETHER `self` CAN ACTUALLY BE NIL HERE IS NOT CLAIMED, and
+            // deliberately was not investigated: establishing it costs more
+            // than closing it, and the answer would not change this code.
+            //
+            // ⭐ NOTE THE CONTRAST WITH THE CALLEE, which already had this
+            // right: `endActiveEventFromApp` guards its own weak capture with
+            // `guard let self = self else { completion(); return }`. The
+            // discipline existed one frame down and had not reached the call
+            // site — so this is the local-correctness-does-not-propagate class,
+            // not an oversight about weak references.
+            guard let self = self else {
+              result(nil)
+              return
+            }
+            self.endActiveEventFromApp { result(nil) }
           }
         case "readCaptureInbox":
           result(self?.readInboxEntries() ?? [:])
