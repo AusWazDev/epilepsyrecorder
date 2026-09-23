@@ -880,9 +880,47 @@ coming back quietly.
 
 ⚠️ **AND IT RECURRED ANYWAY. As at 23 September 2026 the two machines disagree, live:** this
 suite reports **982 passing, zero failing**, while the Mac reports **nine failures** at the same
-commit across `a11y_batch_render_comparison`, `drawer_contents` and `help_section_spacing` —
-**six of them a real accessibility defect** (the Mac's finding, recorded here as its finding and
-not as a measurement taken on this machine; Windows cannot see it, which is the whole point).
+commit across `a11y_batch_render_comparison`, `drawer_contents` and `help_section_spacing`.
+
+**THE NINE, BROKEN DOWN — corrected 23 September 2026, and the original wording is quoted below
+rather than deleted.** Of the nine, **three were SDK skew** and **six were the app rendering
+differently**. Of those six, **ONE was a real user-facing defect** — a RenderFlex overflow from
+150% text scale on narrow widths — **four were the spacing test measuring outer render boxes
+rather than painted boundaries**, and **one was a correct census difference**.
+
+> ⛔ **THIS LINE READ, until 23 September 2026:** *"**six of them a real accessibility defect**
+> (the Mac's finding, recorded here as its finding and not as a measurement taken on this
+> machine; Windows cannot see it, which is the whole point)."*
+
+⛔ **HOW THE WRONG NUMBER GOT HERE IS THE PART WORTH KEEPING, because an UNMEASURED CLAIM REACHED
+A RULE ABOUT UNMEASURED CLAIMS.** The six came from chat, was written into this file the same
+hour, and was **attributed rather than verified** — the entry even says so, in the words now
+quoted above, and the attribution was treated as sufficient. ⚠️ **It is not.** Naming a claim's
+source records where it came from; it does nothing about whether it is true, and a sourced wrong
+number reads *more* authoritative than an unsourced one, not less. Brief 145 Part B later
+withdrew the underlying flush-cards claim outright: `_StatusBand` carries a 12px margin and every
+PAINTED gap measures 12.0 — so four of the six were an instrument reading the wrong boundary,
+which is this file's most-recorded failure shape, committed inside the entry describing it.
+
+⭐ **THE RULE IS UNCHANGED AND WAS NEVER IN DOUBT.** The Windows suite cannot see behind a
+`!Platform.isWindows` guard. Only the evidence was overstated — which is exactly the correction
+that has to be visible, because a rule carrying an inflated number invites the whole rule to be
+dismissed when the number is checked.
+
+⚠️ **AND A SECOND INSTANCE ARRIVED THE SAME DAY, IN THE OPPOSITE FAILURE MODE — record both,
+because the two look nothing alike.** The Mac's `settings_nudge_card_layout_test` (7c46068)
+passes there and fails **all 12 of its cases** here with `Found 0 widgets with text
+"Notifications are off"`: the nudge card sits behind `Platform.isAndroid`, so Windows renders no
+card at all.
+
+    gated behaviour RENDERED DIFFERENTLY on the host   -> silent FALSE PASS   (help_screen)
+    gated behaviour ABSENT on the host                 -> loud FAIL           (nudge card)
+
+⭐ **The loud one is the safe one.** A test for a widget the host cannot render fails on its
+finder and is impossible to miss; a test for a widget the host renders on the *other branch*
+passes and is impossible to notice. ⛔ **So a platform-gated test failing on Windows is not
+necessarily a defect, and a platform-gated test PASSING on Windows is not necessarily coverage.**
+Neither verdict means what it appears to.
 
 **1. MUST NOT: report "the suite is green" as a release signal from Windows alone.** Say which
 host. A green here means *"green on the branches Windows renders."*
