@@ -38,6 +38,11 @@ struct EndMEREventIntent: AppIntent {
         // Set ONLY inside the if let body, so it separates "the chain succeeded"
         // from "the marker was there and would not parse".
         var endedCleanly = false
+        // Hoisted because the feedback notification is built BELOW this block,
+        // where `eventId` is out of scope. Nil means the same as
+        // endedCleanly == false — the marker did not read — and the
+        // notification is posted either way.
+        var endedEventId: String?
 
         if let activeRaw = shared.string(forKey: kSharedActive),
            let data      = activeRaw.data(using: .utf8),
@@ -83,6 +88,7 @@ struct EndMEREventIntent: AppIntent {
                 shared.set(json, forKey: "\(kInboxPrefix)\(UUID().uuidString)")
             }
             endedCleanly = true
+            endedEventId = eventId
         }
 
         // MOVED ASIDE, NOT DELETED. The re-read is deliberate: activeRaw binds
@@ -120,6 +126,23 @@ struct EndMEREventIntent: AppIntent {
         feedback.title = elapsedStr.isEmpty ? "Event ended" : "Event ended · \(elapsedStr)"
         feedback.body  = "Open MER to add details"
         feedback.sound = .default
+        // ⭐ THE ID RIDES ALONG, 23 September 2026, AND ON 17+ THIS IS THE
+        // POSTER THAT MATTERS. The event ends in this extension, so the app is
+        // usually not running and this is the notification most taps arrive on.
+        // Leaving it out here would disable the carrier on its main path while
+        // AppDelegate's copy made it look implemented.
+        //
+        // ⚠️ "mer_event_id" IS A DUPLICATED LITERAL. AppDelegate holds it as
+        // kNotificationEventIdKey and cannot be imported — Runner and MERWidget
+        // are separate targets, the same boundary that already forces
+        // MERActivityAttributes.swift and the inbox schema to be duplicated.
+        // test/notification_fallback_routing_test.dart asserts both sides.
+        //
+        // ⛔ CONTENT, IDENTIFIER, TRIGGER AND SOUND ARE UNCHANGED. `userInfo`
+        // is not presented by the system, so nothing a user can see moves.
+        if let endedEventId, !endedEventId.isEmpty {
+            feedback.userInfo = ["mer_event_id": endedEventId]
+        }
         try? await center.add(UNNotificationRequest(
             identifier: "mer_feedback_intent",
             content:    feedback,

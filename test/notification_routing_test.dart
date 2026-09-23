@@ -27,10 +27,21 @@ import 'package:medical_event_recorder/screens/home_screen.dart';
 /// emulator, driving a real notification tap. ⛔ **That is not available from
 /// this machine and the gap is recorded rather than implied.**
 ///
-/// 🔴 **AND THE iOS LEG STAYS OPEN.** `_openLatestEvent` is still
-/// position-based — the iOS native channel's `getPendingOpenLatest` returns a
-/// BOOL with no id. ⚠️ **It does not become closed because the Android side
-/// now is**; closing it needs a Swift change and a Mac.
+/// ⭐ **THE iOS LEG CLOSED ON 23 SEPTEMBER 2026.** It was open here because
+/// `getPendingOpenLatest` returned a BOOL carrying no id, so `_openLatestEvent`
+/// resolved by POSITION. Both feedback notifications now attach the event id to
+/// `userInfo`, both the live channel call and a new persisted key carry it, and
+/// the routing decision is extracted as `resolveNotificationRouting`.
+///
+/// ⚠️ **THE SWIFT HALF IS STILL ARGUED, NOT DEMONSTRATED** — no simulator
+/// build. What IS demonstrated lives in
+/// test/notification_fallback_routing_test.dart: the routing decision, the
+/// upgrade boundary, and source pins over both Swift posters.
+///
+/// ⛔ **AND THE NO-ID CASE DID NOT GO AWAY, IT MOVED.** A notification posted
+/// by a pre-carrier build carries no id and nothing ever removes a feedback
+/// notification, so that branch is PERMANENT on iOS. It reaches History — never
+/// `.first`.
 
 EventRecord rec(String id, DateTime when, {bool hidden = false}) => EventRecord(
       id:               id,

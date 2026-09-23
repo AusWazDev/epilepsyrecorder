@@ -123,6 +123,70 @@ enum _HomeMenuAction {
   return (hadId: true, record: i < 0 ? null : records[i]);
 }
 
+/// Where a notification tap lands.
+enum NotificationLanding {
+  /// The tap named an event, and that event is in the list.
+  record,
+
+  /// The tap named an event that is not in the list.
+  notFound,
+
+  /// ⛔ The tap named NO event. HISTORY — never `.first`.
+  history,
+}
+
+/// CLASSIFICATION: ROUTING. The whole decision, and the only copy of it.
+///
+/// ⭐ EXTRACTED 23 September 2026 SO THAT IT CAN BE TESTED, which is the
+/// reason it exists as a function rather than as three branches inside a
+/// `State`. [resolveNotificationTarget] already separated "no id" from "an id
+/// that resolved to nothing"; this turns that separation into the three places
+/// a tap can land. Both halves are pure, both are driven by
+/// test/notification_fallback_routing_test.dart, and neither needs a device.
+///
+/// ⛔ NO ID MEANS HISTORY, PERMANENTLY, AND IT IS NOT AN OPTIMISATION
+/// BOUNDARY. The tempting shortcut — "if exactly one record was created near
+/// the notification, open it" — reintroduces position-as-identity in the one
+/// branch nobody looks at. A tap that cannot name its event has no business
+/// choosing one on the user's behalf: it opens the list and says why.
+///
+/// ⚠️ THE COST IS REAL AND IT LANDS ON EVERY NO-ID TAP, not only the ones
+/// that would have gone wrong. On Android, where the pre-id boolean shim is
+/// still reachable, a tap that lands correctly today lands on History instead.
+/// Taken anyway: it converts a SILENT wrong-write into a VISIBLE extra tap, and
+/// a misrouted clinical detail with no signal is worse than one more tap.
+({NotificationLanding landing, EventRecord? record}) resolveNotificationRouting(
+    List<EventRecord> records, String? id) {
+  final target = resolveNotificationTarget(records, id);
+  if (!target.hadId) {
+    return (landing: NotificationLanding.history, record: null);
+  }
+  if (target.record == null) {
+    return (landing: NotificationLanding.notFound, record: null);
+  }
+  return (landing: NotificationLanding.record, record: target.record);
+}
+
+/// Shown when a tap named an event that is not in the list.
+///
+/// ⛔ ASSERTS NO CAUSE IT CANNOT KNOW. See the note at the former call site:
+/// MER has no delete path for events, so the realistic causes are that the
+/// record was never saved or that a restore replaced the list.
+const String kNotificationMissingRecordMessage =
+    'That event could not be found.';
+
+/// Shown when a tap carried no event id at all and landed on History.
+///
+/// ⭐ A USER WHO LANDS ON A LIST CANNOT TELL WHAT HAPPENED — whether the app
+/// failed, the event vanished, or they mis-tapped. Same reasoning as the
+/// Windows Help section: the honest thing is to say which it was.
+///
+/// ⚠️ NON-BLOCKING, AND THAT IS PART OF THE COPY. A SnackBar, never a
+/// dialog and never a gate: nothing on this path may stand between the user and
+/// their records.
+const String kNotificationNoIdMessage =
+    "That notification didn't identify an event. Choose it from the list.";
+
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   static const _navChannel = MethodChannel('au.com.notiva.mer/navigation');
 
@@ -223,19 +287,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // The capture path is load-bearing: the banner must never gate, delay or
   // obstruct logging an event. Each of these suppresses it outright.
 
-  /// Guards the "open the latest event" funnel against a double push.
+  /// Guards the iOS notification funnel against a double push.
   ///
-  /// Two independent signals now arrive for the SAME notification tap, by
-  /// design: the durable `mer_open_latest_event` flag and the transient
-  /// `openLatestEvent` channel call. Making the native side send both is what
-  /// removes its dependence on the Flutter engine being ready at `didReceive`
-  /// time — see the comment in AppDelegate's default-action branch. This is what
-  /// stops both of them landing and opening the edit screen twice.
+  /// Two independent signals arrive for the SAME notification tap, by design:
+  /// the durable `mer_open_latest_event` flag and the transient
+  /// `openLatestEvent` channel call — each of which now also carries the event
+  /// id. Making the native side send both is what removes its dependence on the
+  /// Flutter engine being ready at `didReceive` time — see the comment in
+  /// AppDelegate's default-action branch. This is what stops both of them
+  /// landing and opening the edit screen twice.
+  ///
+  /// ⚠️ iOS ONLY, and the scope is deliberate. Android sends one signal and
+  /// routes directly; putting it behind this guard would let a tap arriving
+  /// while an edit screen is open be consumed and silently dropped.
   ///
   /// Held across the push, so it stays true for as long as the edit screen is
   /// open and clears when the user closes it. A genuinely new tap later is still
   /// honoured.
-  bool _openingLatest = false;
+  bool _openingFromNotification = false;
   bool _backupBannerDismissed  = false; // user dismissed it
 
   /// Whether this launch fell back to the shared_preferences store.
@@ -325,9 +394,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (await _openEventFromNotification(prefs)) break;
           if (prefs.getBool('mer_open_latest_event') ?? false) {
             await prefs.remove('mer_open_latest_event');
-            if (mounted && _records.isNotEmpty) {
-              _openDetails(_records.first);
-            }
+            // ⛔ ANDROID ALSO STOPS USING `.first`, 23 September 2026. This is
+            // the pre-id boolean shim: the tap happened, and it cannot name its
+            // event. It goes to History like every other no-id tap.
+            await _routeNotificationTap(id: null, reload: false);
             break;
           }
           await Future.delayed(const Duration(milliseconds: 250));
@@ -392,62 +462,106 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // execute and the round trip cannot be driven end to end from `flutter
     // test`. ⛔ The platform gate decides WHEN TO POLL; it has nothing to do
     // with WHICH RECORD OPENS, and that is the part a defect corrupts.
-    final outcome =
-        resolveNotificationTarget(_records, prefs.getString('mer_open_event_id'));
-    if (!outcome.hadId) return false;
+    //
+    // ⛔ ABSENCE OF THE KEY IS NOT A TAP. Returning false here is what keeps
+    // the eight-iteration poll polling; the signal that a tap happened WITHOUT
+    // an id is the legacy boolean below, not this. Collapsing the two would
+    // make every empty poll iteration land on History.
+    final id = prefs.getString('mer_open_event_id');
+    if (!resolveNotificationTarget(_records, id).hadId) return false;
     await prefs.remove('mer_open_event_id');
 
-    if (outcome.record == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            // ⛔ WORDING CORRECTED 20 September 2026 — the old text was
-            // "That event is no longer on this device", which asserts a CAUSE
-            // this branch cannot know and which is usually FALSE.
-            //
-            // ⭐ THE CAUSE LIST, settled by reading: MER has NO DELETE PATH FOR
-            // EVENTS — hiding is the only removal, and routing reads the
-            // complete set, so a hidden record still resolves. ⚠️ So the
-            // realistic causes are that the record was NEVER SAVED (the
-            // notification fires from the capture path; `_persist()` is
-            // deliberately not awaited and can fail), or that the list was
-            // replaced by a restore. ⛔ In the first case the record was never
-            // on this device at all, so "no longer" is simply wrong — and it
-            // is the case that most needs the user to look.
-            content: Text('That event could not be found.'),
-          ),
-        );
-      }
-      return true;
-    }
-    if (mounted) _openDetails(outcome.record!);
+    // ⛔ WORDING CORRECTED 20 September 2026 — the old text was "That event is
+    // no longer on this device", which asserts a CAUSE this branch cannot know
+    // and which is usually FALSE. ⭐ THE CAUSE LIST, settled by reading: MER has
+    // NO DELETE PATH FOR EVENTS — hiding is the only removal, and routing reads
+    // the complete set, so a hidden record still resolves. ⚠️ The realistic
+    // causes are that the record was NEVER SAVED (`_persist()` is deliberately
+    // not awaited and can fail) or that a restore replaced the list. The copy
+    // now lives at kNotificationMissingRecordMessage, once.
+    //
+    // ⚠️ NOT behind the iOS double-signal guard — see
+    // [_openFromIosNotification]. Android sends one signal, and guarding it
+    // would let a tap arriving while an edit screen is open be dropped.
+    await _routeNotificationTap(id: id, reload: false);
     return true;
   }
 
-  Future<void> _openLatestEvent({required bool reload}) async {
-    if (_openingLatest) return;
-    _openingLatest = true;
+  /// The iOS funnel — guarded, because iOS sends TWO signals for one tap.
+  ///
+  /// The durable flag and the transient channel call both arrive by design, so
+  /// that neither depends on the Flutter engine being ready at `didReceive`
+  /// time. This is what stops both of them landing and opening twice.
+  ///
+  /// ⚠️ THE GUARD IS iOS-ONLY BECAUSE THE DOUBLE SIGNAL IS. Android sends
+  /// one signal and routes through [_routeNotificationTap] directly — putting
+  /// it behind this guard would let a tap arriving while an edit screen is open
+  /// be consumed and silently dropped.
+  Future<void> _openFromIosNotification({
+    required String? id,
+    required bool reload,
+  }) async {
+    if (_openingFromNotification) return;
+    _openingFromNotification = true;
     try {
-      // CLASSIFICATION: ROUTING.
-      //
-      // ⛔ COMPLETE LIST, 19 September 2026 — it read `.visible`, so a hidden
-      // newest record silently routed the tap to an OLDER event and the user
-      // added details to the wrong one.
-      //
-      // 🔴 STILL POSITION-AS-IDENTITY, AND THAT IS AN OPEN DEFECT RATHER THAN A
-      // SOLVED ONE. This is the path the iOS native channel uses
-      // (`getPendingOpenLatest` returns a BOOL, carrying no id), and the
-      // legacy pre-id Android fallback. `.first` is wrong whenever the list
-      // order changes for ANY reason — a record created between the
-      // notification firing and the tap already breaks it today, hidden or
-      // not. ⭐ Closing it needs the id on the iOS side too, which is a Swift
-      // change and is not in this brief.
-      if (reload) await _loadRecords();
-      if (!mounted || _records.isEmpty) return;
-      await _openDetails(_records.first);
+      await _routeNotificationTap(id: id, reload: reload);
     } finally {
-      _openingLatest = false;
+      _openingFromNotification = false;
     }
+  }
+
+  /// CLASSIFICATION: ROUTING. The one place a notification tap is acted on.
+  ///
+  /// ⭐ WAS `_openLatestEvent`, RENAMED 23 September 2026 BECAUSE IT NO LONGER
+  /// OPENS THE LATEST. A function whose name states a behaviour it has stopped
+  /// having is the next reader's trap, and the rename costs nothing now.
+  ///
+  /// ⛔ POSITION-AS-IDENTITY IS GONE FROM THIS PATH. It read
+  /// `_openDetails(_records.first)` on every no-id tap — iOS always, Android on
+  /// the legacy boolean — and `.first` is wrong whenever the list order changed
+  /// between the notification firing and the tap. A record created in between is
+  /// enough. The user added details to the wrong event and nothing said so.
+  ///
+  /// [reload] is false when the caller has just loaded the list — which every
+  /// drain site has. Reloading again would put a second reconciliation and inbox
+  /// drain on the cold-start path, where four of the seven historical
+  /// notification failures lived.
+  Future<void> _routeNotificationTap({
+    required String? id,
+    required bool reload,
+  }) async {
+    if (reload) await _loadRecords();
+    if (!mounted) return;
+
+    // ⛔ COMPLETE LIST, 19 September 2026 — this read `.visible`, so a hidden
+    // newest record silently routed the tap to an OLDER event. Hiding is a VIEW
+    // concern; a notification about an event must reach that event.
+    final routing = resolveNotificationRouting(_records, id);
+    switch (routing.landing) {
+      case NotificationLanding.record:
+        await _openDetails(routing.record!);
+      case NotificationLanding.notFound:
+        // ⛔ NOT A FALLBACK. Opening the newest record instead is the defect
+        // this path exists to remove, and it is worse than the original bug:
+        // the user asked for a specific event and would get a different one
+        // with no signal. ⚠️ Doing nothing silently was rejected too — a tap
+        // that produces no response reads as a broken app.
+        _reportNotificationLanding(kNotificationMissingRecordMessage);
+      case NotificationLanding.history:
+        // History FIRST, then the message, so the message appears over the
+        // list the user has been sent to rather than over the dashboard they
+        // are leaving. The root ScaffoldMessenger outlives the push.
+        _openHistory();
+        _reportNotificationLanding(kNotificationNoIdMessage);
+    }
+  }
+
+  /// A message, not a step. Nothing here gates capture, the record or export.
+  void _reportNotificationLanding(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   /// Reads and CLEARS the native pending-open flag, then acts on it.
@@ -464,20 +578,49 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// call is left uniform on purpose — see [reportNavChannelFailure].
   Future<bool> _drainPendingOpenLatest() async {
     bool pending = false;
+    String? id;
     try {
       pending = await _navChannel.invokeMethod<bool>('getPendingOpenLatest') ?? false;
+      // ⭐ THE ID, SECOND AND ONLY WHEN A TAP IS PENDING, 23 September 2026.
+      // Swift writes it beside the flag and consumes it as it reads it, exactly
+      // like the flag. ⛔ A STALE ID CANNOT BE CONSUMED: the id is only ever
+      // written together with the flag and the tap branch REMOVES it when there
+      // is no id, so "id present" implies "flag present" — and a flag drained
+      // without its id leaves the id unreachable until the next tap overwrites
+      // or clears it.
+      //
+      // ⚠️ NULL IS THE UPGRADE CASE AND IT IS NOT AN ERROR. A pending flag
+      // written by the CURRENT shipping build carries no id, and a feedback
+      // notification it posted carries no `userInfo` at all. Both arrive here as
+      // null and both must reach History.
+      if (pending) {
+        id = await _navChannel.invokeMethod<String>('getPendingOpenEventId');
+      }
     } catch (e, st) {
       reportNavChannelFailure(e, st);
     }
     if (!pending) return false;
-    await _openLatestEvent(reload: false);
+    await _openFromIosNotification(id: id, reload: false);
     return true;
   }
 
   Future<dynamic> _handleNativeCall(MethodCall call) async {
+    // ⚠️ "openLatestEvent" IS A WIRE NAME THAT NO LONGER DESCRIBES THE
+    // BEHAVIOUR, 23 September 2026. It now means "a notification was tapped,
+    // and its arguments are the event it named, or null". The string is KEPT
+    // because it is referenced outside the two ends that implement it —
+    // test/ios_feedback_tap_ownership_test.dart pins it as part of the
+    // untouched-navigation control — so renaming it is not the single-commit,
+    // two-site change it looks like. The matching comment is at the Swift end,
+    // in the didReceive default-action branch.
     if (call.method == 'openLatestEvent') {
       if (!mounted) return;
-      await _openLatestEvent(reload: true);
+      // ⛔ `arguments` IS THE LIVE HALF OF THE CARRIER and it is nullable by
+      // design, not defensively: a pre-upgrade notification has no id to send.
+      await _openFromIosNotification(
+        id: call.arguments is String ? call.arguments as String : null,
+        reload: true,
+      );
     }
   }
 
@@ -519,9 +662,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (await _openEventFromNotification(prefs)) return;
         if (prefs.getBool('mer_open_latest_event') ?? false) {
           await prefs.remove('mer_open_latest_event');
-          if (mounted && _records.isNotEmpty) {
-            _openDetails(_records.first);
-          }
+          // ⛔ The same decision as the cold-start branch, and for the same
+          // reason. No id, no record — History.
+          await _routeNotificationTap(id: null, reload: false);
           return;
         }
         await Future.delayed(const Duration(milliseconds: 250));
@@ -602,16 +745,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// is the same idiom one level up, and deliberately so.
   ///
   /// ⛔ FIVE CALLERS, AND ONLY TWO WERE EVER NAMED. `initState`'s post-frame
-  /// (`initial: true`), `_openLatestEvent(reload: true)`, `_handleResume`, and
-  /// BOTH branches of `_endActiveEvent`. `_openingLatest` guards
-  /// `_openLatestEvent` and nothing else — `_handleResume` calls this directly
-  /// and bypasses it entirely — so a guard anywhere but here misses callers.
+  /// (`initial: true`), `_routeNotificationTap(reload: true)`, `_handleResume`,
+  /// and BOTH branches of `_endActiveEvent`. `_openingFromNotification` guards
+  /// the iOS funnel and nothing else — `_handleResume` calls this directly and
+  /// bypasses it entirely — so a guard anywhere but here misses callers.
   ///
   /// ⭐ QUEUED, NOT DROPPED AND NOT COALESCED, and the difference is the point:
   ///
-  ///   * DROPPING the second call would let `_openLatestEvent` fall through to
-  ///     `_openDetails(_records.first)` against a list it did not refresh. The
-  ///     notification tap would silently open stale state.
+  ///   * DROPPING the second call would let `_routeNotificationTap` resolve
+  ///     against a list it did not refresh, so a notification naming a record
+  ///     written moments earlier would report it as missing. ⚠️ The stakes
+  ///     changed on 23 September 2026 and did not go away: before the id
+  ///     carrier this fell through to `_openDetails(_records.first)` and opened
+  ///     the WRONG event silently; now it opens nothing and says so. Visible
+  ///     rather than silent, still wrong.
   ///   * COALESCING — handing the second caller the first's result — loses work
   ///     whenever the second caller's trigger happened AFTER the first call's
   ///     `transport.read()`. A capture written by Swift in that window would

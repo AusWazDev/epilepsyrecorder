@@ -105,6 +105,35 @@ import awesome_notifications
 
   // ── Navigation ────────────────────────────────────────────────────────────
   private let kPendingOpenLatest = "mer_open_latest_event"
+
+  /// The id of the event a tapped feedback notification NAMED, handed to Dart
+  /// on the next foreground.
+  ///
+  /// ⭐ A NEW KEY, NOT A REPURPOSED ONE, 23 September 2026. `kPendingOpenLatest`
+  /// keeps its name, its meaning and its BOOL type. Widening it would make an
+  /// upgrade ambiguous in the one direction that matters: a flag written by the
+  /// CURRENT shipping build carries no id, and the new build must be able to
+  /// tell that from an id it simply has not read yet.
+  ///
+  /// ⚠️ UNPREFIXED, deliberately, and matching kPendingOpenLatest rather than
+  /// kActiveEventKey. Both live entirely inside Swift's own namespace — written
+  /// here, read here, returned to Dart over the channel — so
+  /// `shared_preferences` never sees either one. This is NOT a new published
+  /// Dart storage key, and that is what makes it a small commitment.
+  ///
+  /// ⛔ Distinct from Android's `mer_open_event_id`, which IS a
+  /// `shared_preferences` key and reaches Dart as `flutter.mer_open_event_id`.
+  /// Same idea, different transport, and naming them alike would invite a
+  /// reader to assume one mechanism where there are two.
+  private let kPendingOpenEventId = "mer_pending_open_event_id"
+
+  /// The `userInfo` key both feedback notifications carry.
+  ///
+  /// ⚠️ DUPLICATED as a literal in EndMEREventIntent.swift, which is a separate
+  /// target — the same boundary that already forces MERActivityAttributes.swift
+  /// and the inbox schema to be duplicated. Any change here must be mirrored
+  /// there, and test/notification_fallback_routing_test.dart checks both.
+  private let kNotificationEventIdKey = "mer_event_id"
   private var navChannel: FlutterMethodChannel?
 
   override func application(
@@ -159,6 +188,22 @@ import awesome_notifications
           let flag  = UserDefaults.standard.bool(forKey: key)
           UserDefaults.standard.removeObject(forKey: key)
           result(flag)
+        // The persisted half of the carrier. Read only after
+        // `getPendingOpenLatest` has said a tap is pending, and consumed as it
+        // is read, exactly like the flag.
+        //
+        // ⭐ A STALE ID CAN NEVER BE CONSUMED, and it is worth saying why rather
+        // than trusting it. The id is only ever written in the same breath as
+        // the flag, and the tap branch REMOVES it when there is no id — so
+        // "id present" implies "flag present". If the app dies between draining
+        // the flag and draining the id, the leftover id is unreachable: nothing
+        // reads it without a flag, and the next tap either overwrites it or
+        // clears it.
+        case "getPendingOpenEventId":
+          let key = self?.kPendingOpenEventId ?? ""
+          let id  = UserDefaults.standard.string(forKey: key)
+          UserDefaults.standard.removeObject(forKey: key)
+          result(id)
         case "getShowPreviewsSetting":
           UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
@@ -715,9 +760,41 @@ import awesome_notifications
       // Same asymmetry as endLiveActivity(completion:): on 17+ the work happens
       // somewhere the system keeps alive, and on 16.2-16.x it happens in a window
       // the app is about to close.
+      //
+      // ⭐ AND THE ID NOW TRAVELS, 23 September 2026. The notification names its
+      // event in `userInfo`; both signals carry it, because either one can be
+      // the one that lands. A carrier on only one path is a carrier that works
+      // intermittently, which is worse than none — it makes the failure look
+      // like a fluke rather than a design.
+      //
+      // ⛔ THE `else` IS LOAD-BEARING. A tap with no id MUST clear the key.
+      // Without that, an id left by an earlier tap is read as this tap's id and
+      // the no-id case opens a RECORD — the exact defect this work removes,
+      // restored by omission. That is a one-line hole and it would be invisible.
+      //
+      // ⚠️ A tap can legitimately carry no id: a notification posted by the
+      // CURRENT shipping build has no `userInfo` at all, and one posted by this
+      // build after an UNREADABLE active marker has no id to attach. Both must
+      // reach History, never a record. `kPendingOpenLatest` is untouched by all
+      // of this — same name, same meaning, same BOOL.
+      let taggedId = response.notification.request.content
+        .userInfo[kNotificationEventIdKey] as? String
       standard.set(true, forKey: kPendingOpenLatest)
+      if let taggedId, !taggedId.isEmpty {
+        standard.set(taggedId, forKey: kPendingOpenEventId)
+      } else {
+        standard.removeObject(forKey: kPendingOpenEventId)
+      }
       standard.synchronize()
-      navChannel?.invokeMethod("openLatestEvent", arguments: nil)
+      // ⚠️ "openLatestEvent" IS A WIRE NAME THAT NO LONGER DESCRIBES THE
+      // BEHAVIOUR, 23 September 2026. This call no longer means "open the latest
+      // event"; it means "a notification was tapped, and here is the event it
+      // named, or nil". The string is KEPT because it is referenced outside the
+      // two ends that implement it — test/ios_feedback_tap_ownership_test.dart
+      // pins it as part of the untouched-navigation control — so renaming it is
+      // not the single-commit, two-site change it looks like. The matching
+      // comment is at the Dart end, in _handleNativeCall.
+      navChannel?.invokeMethod("openLatestEvent", arguments: taggedId)
       completionHandler()
     default:
       completionHandler()
@@ -956,6 +1033,11 @@ import awesome_notifications
     // banner clears in every case — so this is what decides whether the marker
     // is moved aside first.
     var endedCleanly = false
+    // Hoisted for one reason only: the feedback notification is posted BELOW the
+    // `if let`, where `eventId` is out of scope. Nil carries the same meaning as
+    // endedCleanly == false — the marker did not read — and the notification is
+    // posted either way.
+    var endedEventId: String?
 
     if let activeRaw = standard.string(forKey: kActiveEventKey),
        let data = activeRaw.data(using: .utf8),
@@ -981,6 +1063,7 @@ import awesome_notifications
       writeInboxEnd(id: eventId, at: ISO8601DateFormatter().string(from: endTime),
                     seconds: secs)
       endedCleanly = true
+      endedEventId = eventId
     }
 
     // ── 2. NOTIFY ──
@@ -988,7 +1071,7 @@ import awesome_notifications
     // can wait on cfprefsd or ActivityKit. Copy, timing, identifiers and
     // categories are unchanged; only their position moved. Once `add` lands, the
     // daemon owns the schedule and fires it even if this process dies.
-    showFeedbackNotification(elapsed: elapsedStr)
+    showFeedbackNotification(elapsed: elapsedStr, eventId: endedEventId)
     showPersistentNormalNotification()
 
     // ── 3. EVERYTHING ELSE ──
@@ -1229,11 +1312,26 @@ import awesome_notifications
   /// would only work from the other callers. It belongs in
   /// scheduleActiveNotification, at the START of the next event, and wants its
   /// own change with its own test.
-  private func showFeedbackNotification(elapsed: String) {
+  ///
+  /// ⭐ [eventId] RIDES ALONG AND NOTHING ELSE MOVES, 23 September 2026. Title,
+  /// body, sound, identifier, category and trigger are byte-for-byte what they
+  /// were. `userInfo` is not presented by the system — not shown, not spoken,
+  /// not summarised, not used for grouping — so this is invisible to the user
+  /// by construction rather than by inspection.
+  ///
+  /// ⚠️ NIL IS A REAL CASE, not a defensive one. This function is called
+  /// UNCONDITIONALLY at the end of handleQuickLogEnd, including when the active
+  /// marker would not parse and no end instruction was written. There is no id
+  /// to attach then, the notification is still posted, and the tap must reach
+  /// History rather than a record — which is exactly what an absent id does.
+  private func showFeedbackNotification(elapsed: String, eventId: String?) {
     let content = UNMutableNotificationContent()
     content.title = elapsed.isEmpty ? "Event ended" : "Event ended · \(elapsed)"
     content.body = "Open MER to add details"
     content.sound = .default
+    if let eventId, !eventId.isEmpty {
+      content.userInfo = [kNotificationEventIdKey: eventId]
+    }
     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
     let request = UNNotificationRequest(
       identifier: kFeedbackId, content: content, trigger: trigger

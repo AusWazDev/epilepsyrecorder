@@ -260,7 +260,8 @@ records in store         ${unguarded.stored}  ${guarded.stored}  ${serialControl
       expect(bypass, isEmpty,
           reason: '⛔ a caller reaches the composite body directly and so is '
               'not serialised. FIVE callers exist and only two were ever '
-              'named: initState, _openLatestEvent, _handleResume, and BOTH '
+              'named: initState, _routeNotificationTap, _handleResume, and '
+              'BOTH '
               'branches of _endActiveEvent.\n${bypass.join('\n')}');
 
       // The denominator, asserted rather than eyeballed.
