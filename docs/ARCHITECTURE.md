@@ -665,6 +665,42 @@ availability gates in Swift (`iOS 16.0 / 16.2 / 17.0`) that Dart cannot see.
 | `backup_service.dart` | 2 |
 | `storage_boot.dart` | 1 |
 
+### ⭐ 9a. THE STANDING IDIOM: take the platform as a PARAMETER, not as a read
+
+**The pattern.** A function that behaves differently per platform takes
+`{required bool isIOS}` (or the equivalent) and the **CALLER** passes `Platform.isIOS`. The
+decision becomes a pure function; the platform read happens once, at the edge.
+
+⭐ **IT WAS THE RIGHT ANSWER THREE SEPARATE TIMES ON 23 SEPTEMBER 2026** — the Help storage gate,
+the iOS notification carrier, and the redirect extraction. ⛔ **That is not a fix recurring. It is
+how this codebase expresses platform divergence**, and until now it was recorded at one call site
+only.
+
+**The rationale lives at the source and is NOT restated here.** See `notificationInstruction` in
+`lib/screens/walkthrough_screen.dart`, which states it in full:
+
+> *"Taking the platform as an argument is what makes the pair testable. A test runs on ONE host —
+> Windows here — so a direct `Platform.isIOS` read means the iOS string is never exercised by any
+> test on any developer machine, and the branch that shipped wrong once would be the branch
+> nobody checks."*
+
+⚠️ **Cited by SYMBOL, not by line number** — §3's rule, adopted after three of six line numbers
+went wrong within days. ⛔ **And quoted ONCE rather than paraphrased into a second copy**: a
+provenance claim in this project needed correcting in four files because it had been duplicated
+as prose instead of cited.
+
+### ⛔ 9b. THE POLARITY RULE: platform-specific text goes in the GUARDED branch
+
+**The catch-all is what an unanticipated platform inherits**, so the catch-all must hold the
+NEUTRAL wording.
+
+    if (isIOS) { iOS-specific } else { neutral }        ✅ a new platform gets the neutral text
+    if (isAndroid) { neutral } else { iOS-specific }    ⛔ a new platform gets the iOS text
+
+⚠️ **`constants.dart` does this correctly. `help_screen.dart` does NOT, in two places** — Mac CLI,
+Brief 97, 23 September 2026. **Recorded here, not fixed**: `help_screen.dart` is a copy surface
+and copy changes carry their own approval.
+
 ---
 
 ## 10. Known-wrong and unverifiable
