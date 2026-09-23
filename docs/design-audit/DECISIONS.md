@@ -3547,3 +3547,49 @@ the primary path wearing the clothes of a fix to a corner.
 configuration, or an explicit decision that History is the right destination for all of them. **The
 first is a measurement; the second is a decision. They are not the same and the hold covers
 both.**
+
+---
+
+# ⛔ FINDING, NOT A DECISION — NO DONATION MECHANISM EXISTS — checked 23 September 2026
+
+⚠️ **This records a measured ABSENCE and its consequence. It takes no position on what should
+happen, which is the developer's and is open.**
+
+## What was measured
+
+Across `lib/` and `pubspec.yaml`, **at HEAD and at the shipped tree**, for every token a purchase
+or donation path would need:
+
+    donat* · in_app_purchase · InAppPurchase · revenuecat · purchases_flutter · iap ·
+    storekit · billing · tip jar · subscribe · subscription
+
+    at HEAD          0 hits
+    at the shipped tree (2d171ca, 7 May 2026)   0 hits
+
+⭐ **Control live:** the same reader over the same `pubspec.yaml` returns **3** for
+`share_plus|sentry_flutter|awesome_notifications`, so the apparatus works and the zero is real. A
+separate sweep for a price or paid-tier string in `lib/` returned one hit, which is a **file path**
+in a `file_selector_android` comment, not a price.
+
+⚠️ **The date is when the absence was CHECKED — 23 September 2026 — not when any decision was
+taken.** An absence claim's useful property is when someone last looked.
+
+## ⭐ THE CONSEQUENCE, WHICH IS THE POINT
+
+**The monetisation model decided on 20 August 2026 — free with an optional donation — requires a
+FEATURE TO BE BUILT. It is not a price change.**
+
+⛔ **There is no donation affordance anywhere in the app**: no package, no purchase call, no
+button, no link. Flipping a store price without building one produces a free app that asks for
+nothing. **That is a coherent state and it is not the decision as worded.**
+
+⚠️ **And the ordering rule already recorded in the workspace notes applies in reverse here.** That
+rule says ship the gate before flipping the price, so a paid feature is not left unlocked. **This
+is the mirror: the price can be flipped safely at any time, and the decision is simply not
+DELIVERED until the affordance exists.** Nothing is at risk; something is merely absent.
+
+## ⛔ What this entry does NOT say
+
+**Whether the model should change, whether a donation mechanism should be built, and on what
+timetable.** Those are the developer's and they are open. **This entry exists so that the gap
+between the decision and the code is on the record, dated, rather than rediscovered.**
