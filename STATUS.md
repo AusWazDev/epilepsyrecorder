@@ -1790,6 +1790,44 @@ been native Swift since CR-42 (May 2026) and awesome_notifications is
 deliberately never initialised there. Not corrected in this pass — flagged so
 it is not read as current.
 
+> ✅ **RESOLVED — verified 23 September 2026. BOTH HALVES WERE FIXED AND THIS
+> ITEM WAS NEVER CLOSED.**
+>
+> **The superseded item, quoted:** *"`CLAUDE.md` still records "Version:
+> 1.0.3+4" … and describes iOS notifications as `awesome_notifications` with
+> `ActionType.Default`. … Not corrected in this pass — flagged so it is not
+> read as current."*
+>
+> **Measured, not assumed:** `CLAUDE.md` contains **zero** occurrences of
+> `1.0.3+4`, and states *"⚠️ **iOS does NOT use awesome_notifications.** Since
+> CR-42 (May 2026) iOS notifications are native Swift"*. It now records **no
+> version at all** — deliberately, with its own note on why a value that moves
+> every build does not belong in a file nothing re-derives.
+>
+> **Two artefacts record the fix.** `CLAUDE.md` itself, and
+> `docs/ARCHITECTURE.md`'s known-wrong table, which carries this exact item and
+> its resolution: *"Both corrected. `CLAUDE.md` now states no version at all and
+> describes iOS as native Swift."*
+>
+> ⭐ **THE CLASS, AND IT IS NOT THE ONE ABOVE IT.** The neighbouring correction
+> in this backlog is a **stale FACT** — a claim about the code that stopped being
+> true. **This is a stale FINDING: the claim was true, the work was done, and
+> the finding was never retired.** ⚠️ **It reads as work remaining**, which is
+> the more expensive kind: a stale fact misleads a reader, a stale finding
+> allocates effort.
+>
+> ⛔ **AND IT IS AN INSTANCE OF THIS BACKLOG'S OWN WARNING, two headings above:**
+> *"Stale-open is the mirror of stale-decided, and it is **harder to spot because
+> it looks like diligence**."* **The warning was written here and the instance
+> sat four headings below it, unretired, for the better part of a month.**
+>
+> ⚠️ **The rest of the backlog was swept at the same time and is SOUND.** C2
+> (`renameEntry` unreachable) is still true — the symbol is defined and every
+> other mention is a comment, with a live control. M1–M4 (monetisation decided,
+> not built) is still true and was re-measured on 23 September 2026. C1 already
+> carries its own SUPERSEDED annotation. **Count of other resolved-but-open
+> items: ZERO.**
+
 ## Notes for Mac Claude
 
 - `sentry_flutter: ^9.0.0` added to `pubspec.yaml`
