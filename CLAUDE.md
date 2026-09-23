@@ -1013,6 +1013,30 @@ passes and is impossible to notice. ⛔ **So a platform-gated test failing on Wi
 necessarily a defect, and a platform-gated test PASSING on Windows is not necessarily coverage.**
 Neither verdict means what it appears to.
 
+⭐ **AMENDMENT, 23 September 2026 — WHAT A PLATFORM-GATED TEST SHOULD ASSERT. This is an
+amendment to the entry above rather than a rule of its own, and the distinction is the reason it
+was needed: everything above DESCRIBES the two failure modes and none of it PRESCRIBES what to
+write instead.** ⚠️ The gap surfaced because Brief 149 is implementing the prescription on the
+Mac while the description already sat in this file — a description that had been read several
+times without anyone noticing it answered a different question.
+
+**A platform-gated test asserts WHAT THE PLATFORM SHOULD DO, not what one platform does.**
+
+⛔ **NEVER A SKIP — A SKIPPED TEST CANNOT FAIL.** A `skip:` on the host that cannot render the
+behaviour converts a loud failure into silence, which trades the one failure mode this file
+calls *safe* for the one it calls dangerous. It also reads, in a green run, exactly like
+coverage.
+
+    where the gated behaviour CAN render    -> the behavioural assertions
+    where it CANNOT                         -> assert its ABSENCE, and that the
+                                               screen is correct without it
+
+⭐ **BOTH BRANCHES MUST BE CAPABLE OF FAILING.** An absence assertion that would pass on any
+screen at all is not a test — "the nudge card is not here" must fail if the card appears where
+it should not, and the *"correct without it"* half is what stops the absence branch degenerating
+into an assertion that nothing is on screen. ⛔ **Two branches, two live assertions; a branch that
+can only pass is the skip it was written to avoid, wearing an `expect`.**
+
 **1. MUST NOT: report "the suite is green" as a release signal from Windows alone.** Say which
 host. A green here means *"green on the branches Windows renders."*
 
