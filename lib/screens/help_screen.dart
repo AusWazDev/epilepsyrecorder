@@ -829,6 +829,31 @@ class _StatusRow extends StatelessWidget {
                 ),
               ),
             ),
+            // ⭐ THE AFFORDANCE, IN BOTH STATES, 23 September 2026. This row
+            // is tappable either way — see the note on `onTap` above — but it
+            // only ADMITTED to it in one: 'Off — tap to enable' says so and
+            // 'Active' says nothing at all. So in the healthy state this was a
+            // control with no visible affordance, indistinguishable from the
+            // read-only prose it sits among.
+            //
+            // ⛔ THE COPY DID NOT MOVE AND MUST NOT. The chevron carries the
+            // AFFORDANCE; the label and the dot carry the STATUS. Wording the
+            // good state into an invitation would have made the row's status
+            // text argue with its own status.
+            //
+            // ⭐ `chevron_right`, NOT `expand_more`, and 18/onSurfaceMuted to
+            // match `_HelpRow` exactly. Help has two glyph idioms and they mean
+            // different things: `expand_more`/`expand_less` reveal content in
+            // place, `chevron_right` goes somewhere. This goes somewhere — out
+            // to the OS notification settings page.
+            //
+            // ⚠️ DELIBERATELY NOT `colour`. Tinting it caution-orange or
+            // positive-green would make it a SECOND status indicator beside the
+            // dot and the text, which is the kind of one-glyph-two-jobs
+            // overload the design audit already unpicked once.
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right,
+                size: 18, color: MERColours.onSurfaceMuted),
           ],
         ),
       ),

@@ -2236,6 +2236,12 @@ no content appearing. ⛔ **A control that reveals nothing is worse than no cont
 tell whether the content is missing or the feature is absent** — the exact failure the
 replacement-section pattern exists to prevent.
 
+> ⭐ **ANNOTATED 23 September 2026 — B-5 STANDS, AND IT HAS A CONVERSE.** Everything above
+> remains true of what B-5 decided: that section was not a control and its chevron was a lie.
+> The converse case — a row that **is** a control and shows no chevron — was found in
+> `_StatusRow` and closed the same day. See **A THIRD DIRECTION** in the Brief 64 record later in
+> this file.
+
 ⭐ **WHY THEY ARE ONE CHANGE AND NOT TWO.** The role depends on whether the thing IS a control.
 Announcing `button: true` on a section that does not expand would be **the same lie B-5 removes,
 told to a screen reader instead of to the eye.** One predicate, `_expandable`, drives the
@@ -3076,6 +3082,39 @@ chevron and its tap.
 
 ⛔ **This was the second. No content was hidden anywhere.** The chevron was removed from the one
 section that had nothing behind it, which is B-5 exactly as specified and recorded. **Intended.**
+
+#### ⭐ A THIRD DIRECTION — ADDED 23 September 2026, AND B-5 ABOVE IS UNCHANGED BY IT
+
+> **A row that IS a control carries its affordance in every state, including the state whose copy
+> does not ask for it.**
+
+⚠️ **THIS IS AN ADDITION, NOT A CORRECTION.** B-5 removed a chevron from something that was
+**not a control** — the Windows replacement section, declared `children: []`, which revealed
+nothing when tapped. Everything recorded above about it remains true. The third direction covers
+the case B-5 never met: a thing that **is** a control and does not say so.
+
+⛔ **THE INSTANCE, and it had been sitting beside B-5 the whole time.** `_StatusRow` — the
+Notifications and Show Previews rows of `_StatusBand` — is an `InkWell` that opens the OS
+notification settings page. It is tappable in **both** states, deliberately, and its own comment
+says why: *"someone whose setting is correct may still want the Settings page, and a row that is
+only sometimes a target is a row people stop trying."* But it carried its invitation **in the
+copy** — `'Off — tap to enable'`, `'Not set to Always — tap to fix'` — and the healthy state's
+copy is `'Active'` / `'Always'`, which invites nothing. So in the good state it was a control with
+no visible affordance, sitting among thirty rows of read-only prose.
+
+⭐ **THE FIX WAS THE GLYPH, NOT THE WORDS.** `Icons.chevron_right`, 18px, `onSurfaceMuted` —
+matching `_HelpRow`, whose doc comment had already written the rule down for its own case:
+*"without the chevron a tappable row is indistinguishable from the thirty around it that do
+nothing."* The copy did not move. **The chevron carries the affordance; the label and the dot carry
+the status.** Tinting the chevron with the status colour was rejected for the same reason B-5
+exists — it would have made one glyph do two jobs.
+
+⚠️ **AND HELP HAS TWO CHEVRON IDIOMS THAT MEAN DIFFERENT THINGS.**
+`expand_more`/`expand_less` reveal content in place; `chevron_right` goes somewhere else.
+`_StatusRow` goes somewhere, so it takes the second. ⛔ **`help_section_spacing_test` had been
+counting only the first**, which is why a row wearing the correct glyph still reported
+`chevrons=4 tappable=5`. The count now includes both — a widening that makes the assertion
+**harder** to satisfy, not easier, since it is an equality.
 
 ### ⚠️ WHERE THE IMPRESSION CAME FROM, AND WHY IT IS NOT A REGRESSION
 

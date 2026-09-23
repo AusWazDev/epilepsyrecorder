@@ -36,19 +36,37 @@ import 'package:medical_event_recorder/theme/mer_theme.dart';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  /// The bordered container of every section, top to bottom.
+  /// The PAINTED border of every section, top to bottom.
+  ///
+  /// ⭐ RE-POINTED 23 September 2026, AND IT IS NOT A LOOSENING. This walked
+  /// `Container` ELEMENTS and took their render objects. A `Container` with a
+  /// `margin` builds that margin INSIDE its own render object, so the outer box
+  /// swallows the spacing and reports the card as ending where its margin ends.
+  /// `_StatusBand` — the notifications/previews band, which renders on every
+  /// platform but Windows — spaces itself with `margin: EdgeInsets.only(bottom:
+  /// 12)` while every real section uses a sibling `SizedBox`. So this collector
+  /// measured 0.0 above the first section and called it a defect.
+  ///
+  /// ⛔ IT WAS MEASURING A PROXY FOR THE THING IT CLAIMS TO TEST. The subject
+  /// is whether a user sees page background between two cards; the proxy was a
+  /// render box that need not coincide with the painted edge. Now it walks
+  /// `RenderDecoratedBox` and takes the box that actually PAINTS the border,
+  /// which is the boundary the Brief 64 photograph scanned.
+  ///
+  /// ⚠️ `_StatusBand`'s margin is a legitimate idiom and was left alone. The
+  /// instrument changed, not the subject.
   List<Rect> sectionBoxes(WidgetTester tester) {
     final out = <Rect>[];
-    for (final e in tester.allElements) {
-      final w = e.widget;
-      if (w is! Container) continue;
-      final d = w.decoration;
-      if (d is! BoxDecoration) continue;
-      if (d.border == null || d.borderRadius == null) continue;
-      final ro = e.renderObject;
-      if (ro is! RenderBox || !ro.hasSize) continue;
-      out.add(ro.localToGlobal(Offset.zero) & ro.size);
+    void walk(RenderObject r) {
+      if (r is RenderDecoratedBox) {
+        final d = r.decoration;
+        if (d is BoxDecoration && d.border != null && d.borderRadius != null) {
+          out.add(r.localToGlobal(Offset.zero) & r.size);
+        }
+      }
+      r.visitChildren(walk);
     }
+    walk(tester.binding.rootElement!.renderObject!);
     out.sort((a, b) => a.top.compareTo(b.top));
     return out;
   }
@@ -57,6 +75,15 @@ void main() {
       {double w = 800, double scale = 1.0}) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = Size(w, 4000);
+    // ⛔ A FRESH ELEMENT TREE EVERY TIME, 23 September 2026. `pumpWidget` with
+    // the same widget type UPDATES the existing elements rather than rebuilding
+    // them, so `_Section._open` survived from one iteration of test 3 to the
+    // next: the first tap expanded a section, the second COLLAPSED it, and the
+    // "expanded" assertion then measured a collapsed screen on every even pass.
+    // ⚠️ That was true on every host, Windows included — it is not part of
+    // the platform divergence. It surfaced only once an anti-vacuity control
+    // was added; before that the assertion passed either way.
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(MaterialApp(
       theme: MERTheme.light,
       home: MediaQuery(
@@ -111,8 +138,31 @@ void main() {
         expect(gapsOf(tester).toSet(), hasLength(1),
             reason: 'collapsed @${scale}x w=$w');
 
-        await tester.tap(find.byType(InkWell).first);
+        // ⛔ A NAMED SECTION HEADER, NOT `InkWell.first`, 23 September 2026 —
+        // AND THIS HALF OF THE TEST WAS VACUOUS ON ONE HOST. `_StatusBand`
+        // renders on every platform but Windows and its row is the FIRST
+        // InkWell on the screen, so off Windows this tapped the notifications
+        // row, expanded nothing, and then asserted that the gaps had not moved
+        // — which they trivially had not, because nothing had happened.
+        // Measured: expanded sections 0 before the tap and 0 after.
+        //
+        // ⚠️ ON WINDOWS IT WAS A REAL TEST, because `_StatusBand` is absent
+        // there and `first` WAS a section header. The same instrument, the
+        // same commit, honest on one machine and empty on the other.
+        await tester.tap(find.ancestor(
+          of: find.text('RECORDING EVENTS'),
+          matching: find.byType(InkWell),
+        ).first);
         await tester.pumpAndSettle();
+
+        // ⭐ THE ANTI-VACUITY CONTROL, and the thing whose absence hid the
+        // above. An assertion about the EXPANDED state is worth nothing until
+        // something has actually expanded.
+        expect(find.byIcon(Icons.expand_less), findsWidgets,
+            reason: 'CONTROL @${scale}x w=$w: the tap must actually have '
+                'expanded a section. Without this the assertion below passes '
+                'against a screen where nothing happened at all.');
+
         expect(gapsOf(tester).toSet(), hasLength(1),
             reason: 'EXPANDED @${scale}x w=$w — expanding a section must not '
                 'move its neighbours apart. The gaps are siblings in the '
@@ -179,8 +229,18 @@ void main() {
       // real children and IS expandable — so this test measures whichever
       // platform it runs on, and the assertion is about the RULE rather than
       // about one section.
+      // ⭐ BOTH IDIOMS, 23 September 2026, AND WIDENING THIS MAKES THE TEST
+      // HARDER TO SATISFY, NOT EASIER. Help uses two chevrons for two
+      // meanings: `expand_more`/`expand_less` reveal content in place, and
+      // `chevron_right` goes somewhere. This counted only the first, so a
+      // tappable row wearing the SECOND read as a control with no affordance
+      // at all — which is how `_StatusRow` sat at chevrons=4 tappable=5 while
+      // carrying the correct glyph for what it does. The assertion below says
+      // "exactly the sections that can be tapped show a chevron"; it now
+      // counts every chevron that says so.
       final chevrons = find.byIcon(Icons.expand_more).evaluate().length +
-          find.byIcon(Icons.expand_less).evaluate().length;
+          find.byIcon(Icons.expand_less).evaluate().length +
+          find.byIcon(Icons.chevron_right).evaluate().length;
       final taps = <InkWell>[
         for (final e in tester.allElements)
           if (e.widget is InkWell) e.widget as InkWell,
