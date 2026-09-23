@@ -64,6 +64,35 @@ const _activeEventKey = 'mer_active_event';
 /// them — a separate thing, in a separate place, with a separate name. The
 /// Swift side could not report at all, which is why `a2df73c` has only an
 /// os_log; Dart has Sentry and does both.
+///
+/// ⛔ **CORRECTED 23 September 2026. THE SENTENCE ABOVE READS:**
+/// *"**`shared_preferences` cannot address a suite name at all**, so Dart is
+/// incapable of becoming a second writer of the App Group keys even by
+/// mistake."* **It is left in place; this is the correction, not a rewrite.**
+///
+/// ⛔ **FALSE ABOUT THE PACKAGE.** `shared_preferences_foundation`'s
+/// `SharedPreferencesPlugin` exposes `getUserDefaults(options:)`, which calls
+/// `UserDefaults(suiteName: options.suiteName)` and explicitly validates a
+/// `group.` prefix on iOS. **The package can address a suite.**
+///
+/// ⭐ **TRUE ABOUT THE API THIS APP USES.** `SharedPreferences.getInstance()`
+/// is the LEGACY api and routes to `LegacySharedPreferencesPlugin`, which is
+/// hardcoded to `UserDefaults.standard`. MER uses `getInstance()` in **26
+/// places across 9 files** and the async api in **none** — checked
+/// 23 September 2026.
+///
+/// ⚠️ **SO THE SEPARATION IS A PROPERTY OF AN API CHOICE, NOT OF THE
+/// PACKAGE**, and a migration to `SharedPreferencesAsync` or
+/// `SharedPreferencesWithCache` would undo it **silently** — nothing else in
+/// the codebase knows this is load-bearing. Pinned by
+/// `persist_withheld_on_failed_load_test.dart`.
+///
+/// ⭐ **THE CONCLUSION THE ORIGINAL SENTENCE REACHED IS STILL CORRECT TODAY**,
+/// which is why only the reasoning is corrected: the keys cannot collide. The
+/// three sibling copies of this note — in `capture_inbox.dart`,
+/// `ios_capture_bridge.dart` and `home_screen.dart` — all say *"giving
+/// `shared_preferences` a suite name would relocate every preference in the
+/// app"*, which is accurate, and **need no correction.**
 const _quarantineKey      = 'mer_active_quarantine';
 const _quarantineCountKey = 'mer_active_quarantine_count';
 
