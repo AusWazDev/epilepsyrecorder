@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
@@ -2490,6 +2491,34 @@ class _SettingsNudgeCard extends StatelessWidget {
     required this.onHelp,
   });
 
+  // ⛔ THE LABELS ARE CONSTANTS BECAUSE THEY ARE MEASURED AND THEN DRAWN.
+  // A layout that decides its shape by measuring one string and then renders a
+  // different one is a defect that only appears at some text sizes, on some
+  // widths, and never in review.
+  static const String _kOpenSettings = 'Open Settings';
+  static const String _kHelp         = 'Help →';
+
+  // The Row's INFLEXIBLE parts. The text block is the only flexible child, so
+  // these four are exactly what decides whether the Row fits.
+  static const double _kIconSize   = 20;
+  static const double _kIconGap    = 10;
+  static const double _kActionsGap = 6;
+  static const double _kActionPadH = 10;
+
+  Widget _action(String label, VoidCallback onPressed, double vertical) =>
+      TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: iconColor,
+          padding: EdgeInsets.symmetric(
+              horizontal: _kActionPadH, vertical: vertical),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: MERType.bodyStrongInherit,
+        ),
+        child: Text(label),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -2499,56 +2528,133 @@ class _SettingsNudgeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border:       Border.all(color: bdColor),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20, color: iconColor),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: MERType.bodyStrongInherit.copyWith(color: iconColor),
-                ),
-                Text(
-                  body,
-                  style: MERType.bodyInherit.copyWith(color: iconColor.withValues(alpha: 0.85), height:   1.4),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          Column(
+      // ⭐ RESPONSIVE BECAUSE IT HAD TO BE, 23 September 2026. Side by side,
+      // this card overflowed by 10px at 150% and 101px at 200% on a 375-wide
+      // phone — in the state it exists to report, with notifications denied.
+      // Neither is an extreme: 200% is an ordinary accessibility setting and
+      // 375 is the narrowest width MER supports.
+      //
+      // ⛔ THE COPY IS NOT THE LEVER. Shortening 'Open Settings' would have
+      // fitted it and would have been the wrong fix: the card has to survive
+      // whatever text size the user needs, and the next label would break it
+      // again.
+      //
+      // ⚠️ AND IT WAS INVISIBLE TO THE SUITE. This card sits behind
+      // `!_notificationsAllowed` AND the Windows platform guard at its call
+      // site, and `_notificationsAllowed` starts true and is only ever set by
+      // `_checkNotificationStatus()` — which the guard in `initState` turns
+      // off on Windows. So on the machine that ran the suite this card could
+      // not render at all. Pinned now by
+      // test/settings_nudge_card_layout_test.dart at three widths and three
+      // text scales.
+      //
+      // ⛔ THE PLATFORM NAME IS SPELLED OUT IN PROSE HERE RATHER THAN IN
+      // CODE FONT, AND THAT IS NOT STYLE. drawer_contents_test counts
+      // `Platform.is` occurrences in this file as a "no new platform
+      // conditional" pin, and its scan does not strip comments — so a MENTION
+      // reads as a CONDITIONAL and turns a green pin red. Same trap that
+      // failed notification_routing_test on its first run: a mention in a
+      // comment is not code.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final text = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: MERType.bodyStrongInherit.copyWith(color: iconColor),
+              ),
+              Text(
+                body,
+                style: MERType.bodyInherit.copyWith(color: iconColor.withValues(alpha: 0.85), height:   1.4),
+              ),
+            ],
+          );
+
+          final actions = Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              TextButton(
-                onPressed: onOpenSettings,
-                style: TextButton.styleFrom(
-                  foregroundColor: iconColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: MERType.bodyStrongInherit,
-                ),
-                child: const Text('Open Settings'),
-              ),
-              TextButton(
-                onPressed: onHelp,
-                style: TextButton.styleFrom(
-                  foregroundColor: iconColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: MERType.bodyStrongInherit,
-                ),
-                child: const Text('Help →'),
-              ),
+              _action(_kOpenSettings, onOpenSettings, 4),
+              _action(_kHelp, onHelp, 2),
             ],
-          ),
-        ],
+          );
+
+          // ⭐ MEASURED, NOT THRESHOLDED. A text-scale cutoff would be a magic
+          // number that is wrong on the next label or the next font; this asks
+          // the only question that matters — does the widest action still
+          // leave the icon and its gaps a place to stand.
+          //
+          // The actions column is the Row's one inflexible child, so it takes
+          // its intrinsic width and the text block absorbs whatever is left.
+          // The Row therefore overflows exactly when the icon, the gaps and
+          // that intrinsic width together exceed the available width.
+          final resolved = DefaultTextStyle.of(context)
+              .style
+              .merge(MERType.bodyStrongInherit);
+          final scaler = MediaQuery.textScalerOf(context);
+          double actionWidth(String label) {
+            final painter = TextPainter(
+              text: TextSpan(text: label, style: resolved),
+              textDirection: Directionality.of(context),
+              textScaler: scaler,
+              maxLines: 1,
+            )..layout();
+            return painter.width + _kActionPadH * 2;
+          }
+
+          final actionsWidth = math.max(
+              actionWidth(_kOpenSettings), actionWidth(_kHelp));
+          final sideBySide =
+              _kIconSize + _kIconGap + _kActionsGap + actionsWidth <=
+                  constraints.maxWidth;
+
+          // ⚠️ BOUNDED IN BOTH BRANCHES, deliberately. When the actions fit
+          // this changes nothing — they are narrower than the bound. When the
+          // measurement is a pixel optimistic, the labels WRAP instead of
+          // overflowing, so the worst case is an ugly card rather than a
+          // striped one. A layout guard is worth more than a tight estimate.
+          final boundedActions = ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: math.max(
+                  0, constraints.maxWidth - _kIconSize - _kIconGap - _kActionsGap),
+            ),
+            child: actions,
+          );
+
+          if (sideBySide) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(icon, size: _kIconSize, color: iconColor),
+                const SizedBox(width: _kIconGap),
+                Expanded(child: text),
+                const SizedBox(width: _kActionsGap),
+                boundedActions,
+              ],
+            );
+          }
+
+          // Stacked: the message keeps the full width it needs, and the
+          // actions sit beneath it, still right-aligned and still in the same
+          // order. Nothing is hidden, nothing is truncated, nothing scrolls
+          // sideways.
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: _kIconSize, color: iconColor),
+                  const SizedBox(width: _kIconGap),
+                  Expanded(child: text),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Align(alignment: Alignment.centerRight, child: actions),
+            ],
+          );
+        },
       ),
     );
   }
