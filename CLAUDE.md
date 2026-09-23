@@ -20,6 +20,34 @@
 
 ---
 
+## ⭐ STALE-CLAIM SWEEP BASELINE — 23 September 2026
+
+**Recorded so the NEXT sweep is a DIFF rather than a fresh count**, which is the only way a
+recurring check gets cheaper instead of being skipped.
+
+    swept                      23 September 2026, by script
+    denominator                756 lines
+    mechanical candidates       26
+      rule PROSE, not claims   -11   (the file's own rules ABOUT absence, not absence claims)
+      genuine claims re code    15
+        dated and verified      13   ⭐ LEFT AS THEY ARE — they are the control that makes the
+                                      two stale ones legible
+        corrected this pass       2   the `condition.dart` line, and the `StorageBoot.outcome`
+                                      sentence below
+
+⚠️ **THE INSTRUMENT'S KNOWN BIAS, RECORDED WITH THE RESULT.** The script decides whether a claim
+is dated by looking **only UPWARD, 12 lines**. A claim whose date sits BELOW it scores as
+undated — `event_record.dart`'s column count does exactly that. ⛔ **So this sweep
+OVER-REPORTS undated claims and cannot under-report them.** That is the safe direction for a
+resolution instrument, and it is stated here rather than left for the next reader to rediscover.
+
+⭐ **What counts as a claim, since the classification is the judgement:** an assertion about the
+CODE that nothing re-derives — an absence (*"nothing reads X"*), or a count (*"17 columns"*).
+**The file's prose ABOUT absence is not a claim and was excluded**; eleven candidates were
+dropped on that ground.
+
+---
+
 ## Project Identity
 
 - **App name:** Medical Event Recorder (MER)
@@ -79,7 +107,13 @@ lib/
     vocabulary.dart       — the DDL, seeds and rules for event types, observations and triggers; isShippedHidden, isMisdecodedTwin, setActive, renameEntry
     vocabulary_store.dart — Vocabularies: the cached lists every picker reads
     medication_note.dart  — the exceptions-only medication stream (missed / late / changed)
-    condition.dart        — condition + condition_observation. TABLES ONLY, no UI, zero rows
+    condition.dart        — condition + condition_observation; the "What you track" screen
+                            ⚠️ **CORRECTED 23 September 2026 — this read *"TABLES ONLY, no UI, zero rows"*.**
+                            `conditions_screen.dart` has a live Add control (`_add()`, a `TextField` and an
+                            Add button) and is reached from the drawer as **"What you track"**. ⭐ The no-UI
+                            half was TRUE WHEN WRITTEN; the zero-rows half was never a property of the code
+                            at all, only of one device on one day — **a row count is not a fact about a
+                            repository.** Date is when the claim was CHECKED, not when the screen landed.
     duration_format.dart  — duration labels and the seconds/bucket split
     backup.dart           — JSON backup envelope (schema 2), parsing/validation, id-merge restore plan
   screens/
@@ -300,6 +334,18 @@ adhoc signature and the wrong platform were both symptoms of the one stale-cache
 `StorageBoot.isSqlite`, so nothing surfaces it — the only signal leaves the device to Sentry
 (`main.dart:49`, issue `MEDICAL-EVENT-RECORDER-9`). **After any device install, confirm the
 record count on the home screen against the database before trusting the build.**
+
+⛔ **HALF-CORRECTED 23 September 2026, and the surviving half is the interesting one.** The
+sentence above is preserved as written. **`StorageBoot.outcome` IS read and IS surfaced:**
+`home_screen.dart`'s `_storageFellBack` reads it, and the build renders `_StorageFallbackBanner`
+on it. ⚠️ **`StorageBoot.isSqlite` still has ZERO readers, checked 23 September 2026.**
+
+⭐ **SO THE DISTINCTION THAT MATTERS IS *WHEN* THE FAILURE HAPPENS, NOT WHETHER IT IS SURFACED.**
+`outcome` is set once at boot and, by its own getter's comment, *"never changes again"* — so the
+banner reports a BOOT-TIME fallback and is **structurally incapable** of reporting a store failure
+that happens later. ⛔ **A load that throws after a successful boot is still silent**, which is the
+case Brief 91 measured. **That is why this line is annotated rather than deleted: the warning it
+gives is still true of the case it was written about.**
 
 ---
 
