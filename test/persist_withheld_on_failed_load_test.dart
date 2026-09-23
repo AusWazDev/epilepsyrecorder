@@ -226,10 +226,73 @@ void main() {
         reason: 'CONTROL: the scan found almost no files — it is looking in '
                 'the wrong place and any zero it reports is meaningless.');
 
-    final legacyUsers = <String>[];
-    final offenders   = <String>[];
+    // ⭐ USAGE, NOT TOKENS — 23 September 2026. This scanned raw source, so the
+    // doc comment in `notification_service.dart` that NAMES these classes in
+    // order to WARN AGAINST THEM tripped the pin. It stayed red across eight
+    // commits.
+    //
+    // ⛔ THE STRIPPER SKIPS COMMENT-ONLY LINES AND NOTHING ELSE. It does NOT
+    // blank string literals and does NOT strip trailing comments off code
+    // lines. That restraint is the whole design, and Brief 93 is why: a
+    // comment-stripper there blanked STRING LITERALS, so
+    // `'clearLegacySharedRecords'` was erased before the pattern could see it
+    // and a sweep returned ZERO against a true FOUR, with three controls
+    // passing. ⚠️ A stripper that over-reaches converts a true positive into a
+    // silent zero, which is worse than the false positive it replaces.
+    //
+    // ⭐ SO EVERY RESIDUAL IMPRECISION IS DELIBERATELY IN THE OVER-REPORTING
+    // DIRECTION: a token in a trailing comment after real code still trips, and
+    // a token inside a `/* */` body whose line does not begin with `*` still
+    // trips. Those are false positives a human resolves in seconds. A false
+    // NEGATIVE here is a silent migration.
+    //
+    // ⚠️ AND WHY LINE FILTERING IS SUFFICIENT, stated rather than assumed: a
+    // Dart class name cannot be split across lines, so a usage's token always
+    // appears whole on one line. Filtering lines therefore cannot hide a usage
+    // that a token search would have found. Parsing Dart would be a larger
+    // instrument than the thing it protects.
+    // ⛔ A BARE `startsWith('*')` WAS WRONG AND THE POSITIVE CONTROL CAUGHT IT.
+    // First cut treated ANY line whose trimmed form began with `*` as a
+    // block-comment body. A Dart CODE line can begin with `*` — an arithmetic
+    // continuation, `    * foo.hashCode;` — and that line was silently skipped.
+    // ⚠️ A canary placed there produced a GREEN pin with a real usage in the
+    // tree: a FALSE NEGATIVE, which is exactly the Brief 93 failure this design
+    // set out to avoid, reproduced by the design itself.
+    //
+    // ⭐ `*` NOW ONLY MEANS "COMMENT" WHILE WE ARE ACTUALLY INSIDE A BLOCK
+    // COMMENT, tracked with one boolean. Still line filtering; no Dart parsing.
+    var inBlock = false;
+    bool isCommentOnly(String line) {
+      final t = line.trim();
+      if (inBlock) {
+        if (t.contains('*/')) inBlock = false;
+        return true;
+      }
+      if (t.startsWith('///') || t.startsWith('//')) return true;
+      if (t.startsWith('/*')) {
+        if (!t.contains('*/')) inBlock = true;
+        return true;
+      }
+      return false;
+    }
+
+    final legacyUsers  = <String>[];
+    final offenders    = <String>[];
+    var strippedLines  = 0;
+    var scannedLines   = 0;
     for (final f in files) {
-      final src = f.readAsStringSync();
+      inBlock = false; // per file: a block comment cannot span files
+      final lines = f.readAsLinesSync();
+      final code  = <String>[];
+      for (final line in lines) {
+        if (isCommentOnly(line)) {
+          strippedLines++;
+        } else {
+          scannedLines++;
+          code.add(line);
+        }
+      }
+      final src = code.join('\n');
       if (src.contains('SharedPreferences.getInstance')) {
         legacyUsers.add(f.path);
       }
@@ -241,6 +304,18 @@ void main() {
       }
     }
 
+    // ⛔ THE STRIPPER MUST BE SHOWN TO HAVE RUN, AND TO HAVE LEFT CODE BEHIND.
+    // A checker that never executes returns output shaped like a pass — the
+    // lesson of the same day's `R`/`Invoke-History` alias collision, where a
+    // dead function made every "the old wording is gone" check report false.
+    expect(strippedLines, greaterThan(0),
+        reason: 'CONTROL: the stripper removed NO lines across all of lib/. It '
+                'is not running, and an empty `offenders` list means nothing.');
+    expect(scannedLines, greaterThan(strippedLines ~/ 2),
+        reason: 'CONTROL: the stripper removed almost everything. An '
+                'over-reaching stripper turns a true positive into a silent '
+                'zero — see Brief 93 in the comment above.');
+
     // ⭐ POSITIVE CONTROL ON THE NULL: the same reader, over the same corpus,
     // must FIND the legacy API. If this is empty the scanner is broken and the
     // empty `offenders` list means nothing.
@@ -250,16 +325,55 @@ void main() {
                 'app has been migrated — in which case this pin has fired for '
                 'real — or the scanner is broken. Either way, stop.');
 
+    // ⭐ THE NEGATIVE CONTROL, ASSERTED RATHER THAN ASSUMED. The doc comment in
+    // `notification_service.dart` names both async classes in order to warn
+    // against them. It must NOT trip the pin — and it must fail to trip for the
+    // RIGHT REASON: because its lines were identified as comments, not because
+    // the file went unread. A verdict that agrees with its siblings for the
+    // wrong reason is still a claim about the instrument first.
+    final guard = files.firstWhere(
+        (f) => f.path.endsWith('notification_service.dart'));
+    final guardRaw = guard.readAsLinesSync();
+    final guardNamesThem = guardRaw.any((l) =>
+        l.contains('SharedPreferencesAsync') ||
+        l.contains('SharedPreferencesWithCache'));
+    expect(guardNamesThem, isTrue,
+        reason: 'CONTROL: `notification_service.dart` no longer names the async '
+                'classes at all, so it can no longer serve as the negative '
+                'control. Either the annotation was edited or this test is '
+                'reading the wrong file — in both cases the clean result below '
+                'is unearned.');
+    expect(
+        guardRaw
+            .where((l) =>
+                l.contains('SharedPreferencesAsync') ||
+                l.contains('SharedPreferencesWithCache'))
+            .every(isCommentOnly),
+        isTrue,
+        reason: 'CONTROL: a line in `notification_service.dart` names an async '
+                'class OUTSIDE a comment. That is a real usage, and the pin '
+                'below should be reporting it.');
+
     expect(offenders, isEmpty,
-        reason: '⛔ THE PIN FIRED. Something in lib/ now uses the '
-                'shared_preferences ASYNC api, or changes the key prefix. '
-                'The iOS capture inbox depends on Dart keys living in '
+        reason: '⛔ THE PIN FIRED. Something in lib/ USES the shared_preferences '
+                'async api, or changes the key prefix — in CODE, not in a '
+                'comment. The iOS capture inbox depends on Dart keys living in '
                 '`UserDefaults.standard` under a `flutter.` prefix, DISJOINT '
                 'from the App Group keys Swift writes. The async api can be '
                 'given a suite name; the legacy one is hardcoded to standard. '
                 'Before proceeding, re-establish that Swift `mer_inbox_*` keys '
                 'and Dart `mer_inbox_*` keys still cannot collide, and update '
                 '`CompositeInboxTransport`, whose delete routing assumes they '
-                'cannot. Offenders: $offenders');
+                'cannot.\n'
+                '⭐ WHAT THIS PIN CATCHES: a usage on a non-comment line '
+                'anywhere under lib/.\n'
+                '⛔ WHAT IT DOES NOT CATCH, stated so a green result is not '
+                'over-read: (1) a migration performed OUTSIDE lib/ — in a '
+                'plugin, in generated code, or in another package; (2) anything '
+                'about RUNTIME behaviour — it is a source scan and says nothing '
+                'about which UserDefaults suite is actually addressed on a '
+                'device; (3) an async api reached through an alias or a '
+                'redirecting export, since it matches these names literally.\n'
+                'Offenders: $offenders');
   });
 }
