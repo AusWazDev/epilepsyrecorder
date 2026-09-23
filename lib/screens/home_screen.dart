@@ -17,6 +17,9 @@ import '../services/backup_service.dart';
 import '../services/ios_capture_bridge.dart';
 import '../services/notification_service.dart';
 import '../models/capture_inbox.dart';
+// The refuge's writer. `capture_inbox` imports this but does not re-export it,
+// so the dependency is named here rather than relied on transitively.
+import '../models/capture_instruction.dart';
 import '../models/event_record.dart';
 import '../models/medication_note.dart';
 import 'event_wizard_screen.dart';
@@ -168,6 +171,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Map<String, dynamic>? _activeEvent;
+
+  /// What `_records` is known to be, relative to storage.
+  ///
+  /// ⛔ **THIS IS THE ONE THING THE PERSIST PATH WAS MISSING.** `_records`
+  /// starts empty and stays empty when a load throws, and nothing downstream
+  /// could tell that from a device with no events — so the rewrite removed
+  /// every readable row. Measured at HEAD 23 September 2026: twelve readable
+  /// rows plus one capture left ONE row.
+  ///
+  /// ⚠️ **NOT a gate, and not a fourth `_loaded`.** `_loaded` is about whether
+  /// the first load has RETURNED, and it guards display only. This is about
+  /// whether the list can be trusted to be a superset of storage, and it
+  /// guards the write only. Both capture buttons remain ungated by either.
+  LoadState _loadState = LoadState.notAttempted;
+
   bool _loaded = false;
   bool _buttonFlash = false;
 
@@ -605,8 +623,58 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   ///
   /// The cost is that a caller may wait for one in-flight pass before its own.
   /// Nothing is dropped and nothing the user sees changes.
+  /// Runs a composite load and RECORDS WHETHER IT SUCCEEDED.
+  ///
+  /// ⛔ **THE CATCH IS THE POINT, AND IT IS NOT A BEHAVIOUR CHANGE FOR ITS OWN
+  /// SAKE.** Before this, a throw from `_store.load()` escaped the async
+  /// post-frame callback as an unhandled async error, was swallowed by the
+  /// guarded zone, and left `_records` empty with **nothing anywhere recording
+  /// that a load had failed**. The next persist then rewrote storage from that
+  /// empty list.
+  ///
+  /// ⚠️ **The throw is not rethrown**, because it is now handled: the state is
+  /// recorded, the write path reads it, and Sentry gets the same exception it
+  /// got from the zone. Rethrowing would restore an unhandled async error for
+  /// no remaining benefit.
+  ///
+  /// ⭐ Deliberately wraps the SERIALISER, not the inner body, so a failure
+  /// anywhere in the composite — load, iOS fold, drain — is recorded the same
+  /// way. Every one of them leaves `_records` behind storage.
   Future<void> _loadRecords({bool initial = false}) =>
-      LoadSerialiser.run(() => _loadRecordsInner(initial: initial));
+      LoadSerialiser.run(() => _loadRecordsInner(initial: initial))
+          .catchError(_recordLoadFailure);
+
+  /// Records that a composite load did not complete, and reports it.
+  ///
+  /// ⛔ **THE RECORDING IS THE POINT.** Before this, a throw from
+  /// `_store.load()` escaped the async post-frame callback as an unhandled
+  /// async error, was swallowed by the guarded zone, and left `_records` empty
+  /// with **nothing anywhere recording that a load had failed.** The next
+  /// persist then rewrote storage from that empty list.
+  ///
+  /// ⚠️ **NOT RETHROWN, because it is now handled**: the state is recorded, the
+  /// write path reads it, and Sentry receives the same exception the zone used
+  /// to receive. Rethrowing would restore an unhandled async error for no
+  /// remaining benefit.
+  ///
+  /// ⭐ **ATTACHED OUTSIDE THE SERIALISER DELIBERATELY, AND THE MAC'S TEST IS
+  /// WHY.** `load_records_reentry_test` asserts that `_loadRecords` routes
+  /// through `LoadSerialiser.run` on its first two lines and that no caller
+  /// reaches `_loadRecordsInner` off the serialiser line. A `try`/`catch`
+  /// wrapper broke both and the test caught it. `catchError` here keeps the
+  /// wrapper's shape and the invariant intact.
+  ///
+  /// ⚠️ Queue semantics are unaffected either way: `LoadSerialiser` already
+  /// stores `onError: (_) {}` back into its chain, so a rejected load never
+  /// poisoned later ones. This changes who observes the error, not the queue.
+  Future<void> _recordLoadFailure(Object e, StackTrace st) async {
+    if (mounted) {
+      setState(() => _loadState = LoadState.failed);
+    } else {
+      _loadState = LoadState.failed;
+    }
+    await Sentry.captureException(e, stackTrace: st);
+  }
 
   Future<void> _loadRecordsInner({bool initial = false}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -685,6 +753,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _records          = loaded;
       _activeEvent      = active;
       _writeFailed = unsaved;
+      // ⭐ Set HERE and nowhere earlier: this line is reached only when the
+      // whole composite — load, fold, drain — returned. Setting it beside the
+      // assignment is what keeps the label and the list from disagreeing.
+      _loadState        = LoadState.completed;
       if (initial) _loaded = true;
     });
     await _refreshBackupCount();
@@ -703,10 +775,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// would take the first render of the list with it — and this sits on the
   /// cold-start path, where four of the seven historical notification failures
   /// lived.
+  /// ⛔ **iOS READS BOTH SOURCES, 23 September 2026.** It used to read the App
+  /// Group over the channel and nothing else. The refuge writes its instruction
+  /// through `SharedPreferences` on every platform — Dart cannot write the App
+  /// Group, and giving `shared_preferences` a suite name would relocate every
+  /// preference in the app — so an iOS refuge entry would have been **written
+  /// and never read.**
+  ///
+  /// ⭐ The channel source is listed FIRST so the native path keeps its
+  /// existing precedence on a duplicate key. The two keyspaces are disjoint, so
+  /// there is nothing to de-duplicate; the order is stability, not policy.
   CaptureInboxTransport _inboxTransport(SharedPreferences prefs) =>
       Platform.isIOS
-          ? IosChannelInboxTransport(_navChannel,
-              onError: reportCaptureChannelError)
+          ? CompositeInboxTransport([
+              IosChannelInboxTransport(_navChannel,
+                  onError: reportCaptureChannelError),
+              PrefsInboxTransport(prefs),
+            ])
           : PrefsInboxTransport(prefs);
 
   /// Ends the active event from the in-app banner.
@@ -750,8 +835,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// Never throws: [persistEvents] reports to Sentry and returns false, and the
   /// warning banner is the user-visible half. Every call site is a user action
   /// that has already been confirmed on screen.
+  /// Writes the durable copy of [rec] to the capture inbox.
+  ///
+  /// ⛔ **NEVER THROWS.** This runs unawaited off the capture path, and an
+  /// error escaping here would be an unhandled async error on the one action
+  /// that matters most. A failure to shelter is reported and leaves the record
+  /// exactly where it already is — in the in-memory list, behind the
+  /// unsaved-write banner — which is no worse than before the refuge existed.
+  ///
+  /// ⚠️ Writes a START instruction only. A one-tap capture measures nothing, so
+  /// there is no duration to carry, and `applyInbox` supplies the same defaults
+  /// it supplies for the notification path.
+  Future<void> _shelterCapture(EventRecord rec) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await writeStartInstruction(prefs, id: rec.id, at: rec.timestamp);
+    } catch (e, st) {
+      await Sentry.captureException(e, stackTrace: st);
+    }
+  }
+
   Future<void> _persist() async {
-    final ok = await persistEvents(_store, _records);
+    final ok = await persistEvents(_store, _records, from: _loadState);
     if (!mounted) return;
     setState(() => _writeFailed = !ok);
     await _refreshBackupCount();
@@ -760,7 +865,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// Re-attempts the write behind the warning banner.
   Future<void> _retryPersist() async {
     setState(() => _retryingPersist = true);
-    final ok = await persistEvents(_store, _records);
+    final ok = await persistEvents(_store, _records, from: _loadState);
     if (!mounted) return;
     setState(() {
       _retryingPersist = false;
@@ -939,6 +1044,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (mayOnset) _buttonFlash = true;
     });
 
+    // ⛔ THE REFUGE. A capture taken while the list is not known to be complete
+    // cannot be written to the store — the rewrite would delete every readable
+    // row it does not contain — so the durable copy goes to the INBOX instead.
+    //
+    // ⭐ SHOW IT, SHELTER IT, WITHHOLD THE REPLACE. The record is already in
+    // `_records` above, so it appears instantly and the snackbar below is
+    // honest; the instruction written here is what survives a restart; and
+    // `_persist` withholds only the rewrite. **Nothing here gates capture.**
+    //
+    // ⚠️ NOT an array append — one key per instruction, which is the whole
+    // reason the inbox can be written when the payload cannot be read. See
+    // `capture_instruction.dart`.
+    //
+    // The drain merges it by id on the next load that succeeds, and the record
+    // it produces is the same one the notification path produces, because
+    // `applyInbox` is the one producer for both.
+    if (_loadState != LoadState.completed) {
+      unawaited(_shelterCapture(rec));
+    }
+
     // Started, deliberately NOT awaited: the confirmation must not wait on
     // storage. A failure raises the warning banner instead of being silent.
     unawaited(_persist());
@@ -1014,7 +1139,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
       _records = next;
     });
-    await persistEvents(_store, _records);
+    await persistEvents(_store, _records, from: _loadState);
   }
 
   // ── OPEN LOG SCREEN ──

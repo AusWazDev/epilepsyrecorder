@@ -354,6 +354,86 @@ class PrefsInboxTransport implements CaptureInboxTransport {
   Future<void> delete(Iterable<String> keys) => deleteInboxKeys(prefs, keys);
 }
 
+/// Reads several inboxes as one, and acks each key to the source it came from.
+///
+/// ⭐ **WHY IT EXISTS.** On iOS the drain read the App Group over the channel
+/// and nothing else, so a Dart-written `SharedPreferences` entry would have
+/// been **written and never read** — worse than the defect it exists to avoid.
+/// The refuge needs a Dart writer on every platform, so iOS needs a reader for
+/// both.
+///
+/// ⛔ **THE DELETE TARGET IS REMEMBERED, NEVER INFERRED.** Both sources use the
+/// same key SHAPE — `mer_inbox_<uuid>` — and [SharedPreferences.getKeys] strips
+/// the `flutter.` prefix before Dart ever sees it. **So the key a caller hands
+/// back does NOT say where it came from**, and guessing from the UUID's casing
+/// would be exactly the kind of inference that reads as fact later. This class
+/// records the origin at [read] time and routes [delete] by that record.
+///
+/// ⚠️ **The two keyspaces are DISJOINT** — Swift writes bare keys to the App
+/// Group suite, Dart's legacy API writes `flutter.`-prefixed keys to
+/// `UserDefaults.standard`, and either mechanism alone would separate them.
+/// Measured 23 September 2026. **That is why a key cannot collide across
+/// sources, and it is pinned by `shared_preferences_api_pin_test.dart` because
+/// it is a property of the API this app chose, not of the package.**
+class CompositeInboxTransport implements CaptureInboxTransport {
+  CompositeInboxTransport(this.sources);
+
+  /// Read in order. Order carries no meaning — the drain sorts on `at` — but a
+  /// stable order keeps the pre-sort arrangement stable.
+  final List<CaptureInboxTransport> sources;
+
+  /// Origin of every key returned by the most recent [read].
+  final Map<String, CaptureInboxTransport> _origin =
+      <String, CaptureInboxTransport>{};
+
+  @override
+  Future<List<InboxEntry>> read() async {
+    _origin.clear();
+    final out = <InboxEntry>[];
+    for (final source in sources) {
+      // Each transport already guarantees it does not throw; a source that
+      // cannot be reached contributes nothing and is read again next time.
+      for (final entry in await source.read()) {
+        // ⚠️ FIRST SOURCE WINS on a duplicate key. It cannot happen while the
+        // keyspaces are disjoint, and if it ever did, dropping the second is
+        // safer than acking a key against the wrong store: an unacked entry is
+        // re-read and re-applied, and every instruction is idempotent.
+        if (_origin.containsKey(entry.key)) continue;
+        _origin[entry.key] = source;
+        out.add(entry);
+      }
+    }
+    return out;
+  }
+
+  @override
+  Future<void> delete(Iterable<String> keys) async {
+    final bySource = <CaptureInboxTransport, List<String>>{};
+    final unknown = <String>[];
+    for (final key in keys) {
+      final source = _origin[key];
+      if (source == null) {
+        unknown.add(key);
+      } else {
+        (bySource[source] ??= <String>[]).add(key);
+      }
+    }
+    for (final entry in bySource.entries) {
+      await entry.key.delete(entry.value);
+    }
+    // ⛔ A key this instance never read. Not reachable through the drain, which
+    // only acks keys it was given — so this is a programming error, not a
+    // runtime state. Offered to EVERY source rather than dropped: an
+    // undeletable key is re-drained on every foreground forever, and deleting
+    // a key that is not there is a no-op.
+    if (unknown.isNotEmpty) {
+      for (final source in sources) {
+        await source.delete(unknown);
+      }
+    }
+  }
+}
+
 /// Drains the inbox into [store]: apply, write, verify, and only then delete.
 ///
 /// The order is the whole point. Clearing the keys before the write is
@@ -387,7 +467,15 @@ Future<InboxDrainOutcome> drainInbox({
   var wrote = false;
   var records = loaded;
   if (plan.drainableKeys.isNotEmpty) {
-    wrote = await persistEvents(store, plan.merged);
+    // ⛔ `completed` IS STRUCTURAL HERE, NOT AN ASSUMPTION. `loaded` is a
+    // parameter, and the only caller passes the result of a load that
+    // RETURNED — a load that throws never reaches the drain at all.
+    // ⚠️ THE CONDITION UNDER WHICH THIS STOPS BEING TRUE, stated so it is not
+    // re-derived: if a caller ever hands this function a list it did not get
+    // from a completed load, this literal becomes a lie and the state must
+    // become a parameter.
+    wrote = await persistEvents(store, plan.merged,
+        from: LoadState.completed);
     records = plan.merged;
     if (wrote) await transport.delete(plan.drainableKeys);
   }

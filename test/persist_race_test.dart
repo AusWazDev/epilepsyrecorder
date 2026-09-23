@@ -200,7 +200,7 @@ void main() {
     test('persistEvents reports failure and raises the warning', () async {
       final records = <EventRecord>[record('a', 1), record('b', 2)];
 
-      final ok = await persistEvents(_FailingStore(), records);
+      final ok = await persistEvents(_FailingStore(), records, from: LoadState.completed);
 
       expect(ok, isFalse);
       expect(await hasFailedWrite(), isTrue);
@@ -209,7 +209,7 @@ void main() {
     test('the record is NOT removed from the list on failure', () async {
       final records = <EventRecord>[record('a', 1), record('b', 2)];
 
-      await persistEvents(_FailingStore(), records);
+      await persistEvents(_FailingStore(), records, from: LoadState.completed);
 
       expect(records, hasLength(2),
           reason: 'an event vanishing in front of the person who just logged '
@@ -220,12 +220,12 @@ void main() {
     test('persistEvents never throws, so it cannot escape into a discarded '
         'Future', () async {
       await expectLater(
-          persistEvents(_FailingStore(), <EventRecord>[record('a', 1)]),
+          persistEvents(_FailingStore(), <EventRecord>[record('a', 1)], from: LoadState.completed),
           completion(isFalse));
     });
 
     test('the warning survives into a later session', () async {
-      await persistEvents(_FailingStore(), <EventRecord>[record('a', 1)]);
+      await persistEvents(_FailingStore(), <EventRecord>[record('a', 1)], from: LoadState.completed);
 
       // hasFailedWrite reloads from storage rather than trusting a cached
       // instance, which is what makes it survive a restart.
@@ -237,10 +237,10 @@ void main() {
     test('a good save after a failed one clears it', () async {
       final records = <EventRecord>[record('a', 1)];
 
-      await persistEvents(_FailingStore(), records);
+      await persistEvents(_FailingStore(), records, from: LoadState.completed);
       expect(await hasFailedWrite(), isTrue);
 
-      final ok = await persistEvents(EventStore(), records);
+      final ok = await persistEvents(EventStore(), records, from: LoadState.completed);
 
       expect(ok, isTrue);
       expect(await hasFailedWrite(), isFalse);
@@ -250,7 +250,7 @@ void main() {
     });
 
     test('a successful save leaves no warning behind', () async {
-      final ok = await persistEvents(EventStore(), <EventRecord>[record('a', 1)]);
+      final ok = await persistEvents(EventStore(), <EventRecord>[record('a', 1)], from: LoadState.completed);
 
       expect(ok, isTrue);
       expect(await hasFailedWrite(), isFalse);
@@ -268,9 +268,9 @@ void main() {
       final records = <EventRecord>[record('a', 1)];
 
       // 'a' reaches storage; 'b' does not.
-      await persistEvents(EventStore(), records);
+      await persistEvents(EventStore(), records, from: LoadState.completed);
       records.insert(0, record('b', 2));
-      final ok = await persistEvents(_FailingStore(), records);
+      final ok = await persistEvents(_FailingStore(), records, from: LoadState.completed);
 
       expect(ok, isFalse);
       expect(await hasFailedWrite(), isTrue);
@@ -292,7 +292,7 @@ void main() {
   group('nothing about the stored payload changed', () {
     test('the key and the payload shape are as before', () async {
       final records = <EventRecord>[record('a', 1)];
-      await persistEvents(EventStore(), records);
+      await persistEvents(EventStore(), records, from: LoadState.completed);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
@@ -308,7 +308,7 @@ void main() {
     test('a round trip through the store preserves the record exactly',
         () async {
       final original = record('a', 1);
-      await persistEvents(EventStore(), <EventRecord>[original]);
+      await persistEvents(EventStore(), <EventRecord>[original], from: LoadState.completed);
 
       final loaded = await EventStore().load();
 

@@ -103,7 +103,7 @@ void main() {
       home: HistoryScreen(
         records: seed,
         // What home_screen.dart:893-894 does.
-        onRecordsChanged: (updated) async => persistEvents(store, updated),
+        onRecordsChanged: (updated) async => persistEvents(store, updated, from: LoadState.completed),
         onEdit: (_, {required confirmOnSave}) async {},
       ),
     ));

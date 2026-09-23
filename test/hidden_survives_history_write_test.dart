@@ -161,7 +161,7 @@ void main() {
           // ⛔ EXACTLY what home_screen.dart:893-894 does. The setState is not
           // reproduced because it changes no list contents — the list handed
           // to persistEvents is the one History passed out.
-          onRecordsChanged: (updated) async => persistEvents(store, updated),
+          onRecordsChanged: (updated) async => persistEvents(store, updated, from: LoadState.completed),
           onEdit: (_, {required confirmOnSave}) async {},
         ),
       ));

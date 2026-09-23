@@ -1157,10 +1157,50 @@ Future<void> clearFailedWriteWarning() async {
   await prefs.remove(kFailedWriteKey);
 }
 
+/// What the list being persisted is known to be, relative to storage.
+///
+/// ⛔ **THE EMPTY LIST MEANS TWO DIFFERENT THINGS AND THE CODE COULD NOT TELL
+/// THEM APART: "there are no records" and "we could not find out."** Every
+/// route that reached a persist with a list from a failed load was that
+/// ambiguity being spent, and `save`'s rewrite-everything semantics spent it
+/// as a deletion.
+///
+/// ⭐ **DELIBERATELY THE SAME SHAPE AS `MarkerState` IN `bb2eaf8`** — three
+/// states, not two, and for the same reason `MarkerState.absent` is distinct
+/// from `unreadable`: *not yet known* must not be read as *known to be bad*,
+/// or the code manufactures evidence of a loss that did not happen.
+///
+/// ⚠️ **This is NOT a fourth direction.** A list can also be AHEAD of storage —
+/// a capture that has not been written yet — and that is [completed]: the
+/// unsaved-write banner already describes it, and a backup taken then
+/// deliberately contains those records. Ahead is fine. **Behind is the
+/// problem, and only a failed read produces it.**
+enum LoadState {
+  /// A load completed. The list is storage, plus any unsaved additions ahead
+  /// of it. ⭐ A rewrite that removes what the list does not contain is
+  /// removing things the USER removed — hiding and deleting are real features
+  /// and must keep working.
+  completed,
+
+  /// A load RAN AND FAILED. The list is BEHIND storage by an unknown amount.
+  ///
+  /// ⛔ **Replace semantics here delete readable rows.** Measured at HEAD,
+  /// 23 September 2026: twelve readable rows plus one capture into a list from
+  /// a failed load left ONE row.
+  failed,
+
+  /// No load has completed yet. ⭐ **Nothing has gone wrong; we do not know
+  /// yet.** Distinct from [failed] deliberately — see the enum's own note.
+  ///
+  /// Reached by a capture taken before the first load returns, where the list
+  /// is empty for a reason that is not a loss.
+  notAttempted,
+}
+
 /// Saves [records] and reports whether it worked, without ever throwing.
 ///
 /// Returns true when the write succeeded and any standing warning was cleared,
-/// false when it failed and the warning was raised.
+/// false when it failed or was withheld and the warning was raised.
 ///
 /// The failure is optimistic by design and the caller has already confirmed to
 /// the user. Three deliberate choices sit behind that:
@@ -1178,7 +1218,42 @@ Future<void> clearFailedWriteWarning() async {
 /// Reported to Sentry explicitly on every failure, never swallowed: before
 /// this, an exception here escaped into a discarded Future and was captured by
 /// the guarded zone with nothing shown on screen at all.
-Future<bool> persistEvents(EventStore store, List<EventRecord> records) async {
+///
+/// ⛔ **[from] IS NOT OPTIONAL AND HAS NO DEFAULT, DELIBERATELY.** A default of
+/// [LoadState.completed] would give every call site added later the replace
+/// semantics by silence, which is exactly how this defect reached five call
+/// sites without anyone choosing it. The compiler now asks.
+///
+/// ⚠️ **THIS DOES NOT GATE CAPTURE.** Where [from] is not [LoadState.completed]
+/// the write is withheld, but the record is already in the in-memory list (so
+/// the user sees it) and the capture path has already written a durable inbox
+/// instruction (so it survives). What is withheld is the REPLACE, not the
+/// record. The `false` return raises the standing unsaved-write banner, which
+/// is the mechanism that already exists for exactly this state.
+Future<bool> persistEvents(
+  EventStore store,
+  List<EventRecord> records, {
+  required LoadState from,
+}) async {
+  if (from != LoadState.completed) {
+    // ⛔ NOT AN ERROR, AND NOT REPORTED AS ONE. A withheld write is the fix
+    // working. It is reported at `warning` so the frequency is visible without
+    // it reading as a crash.
+    await Sentry.captureMessage(
+      'Persist withheld: the record list is not known to be complete',
+      level: SentryLevel.warning,
+      withScope: (scope) => scope.setContexts('persist', {
+        'from':    from.name,
+        'records': records.length,
+      }),
+    );
+    try {
+      await setFailedWriteWarning();
+    } catch (_) {
+      // Storage is failing; the in-memory banner still shows for this session.
+    }
+    return false;
+  }
   try {
     await store.save(records);
     await clearFailedWriteWarning();

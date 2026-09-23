@@ -325,7 +325,12 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
     );
   }
 
-  final wrote = await persistEvents(store, merged);
+  // ⛔ STRUCTURAL, as in `drainInbox`: `loaded` is a parameter and its only
+  // caller passes the result of a load that RETURNED. A load that throws never
+  // reaches the reconciliation. Same condition for revisiting it: if a caller
+  // ever passes a list from anywhere else, this must become a parameter.
+  final wrote =
+      await persistEvents(store, merged, from: LoadState.completed);
   // ⛔ THE WORST OF THE THREE, AND THE ONE Brief 75 PART A ADDED. `wrote` says
   // the merged list was PERSISTED. It says nothing about whether the merge was
   // built from everything that was there — so a payload that decoded partially,

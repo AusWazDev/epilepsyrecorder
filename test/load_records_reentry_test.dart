@@ -114,7 +114,7 @@ void main() {
       channel: kTestChannel, prefs: prefs, store: store, loaded: base,
     );
     base = fold.records;
-    await persistEvents(store, base);
+    await persistEvents(store, base, from: LoadState.completed);
   }
 
   /// Drives two composite loads and reports what happened.
