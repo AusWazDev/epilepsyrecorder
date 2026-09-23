@@ -1141,7 +1141,23 @@ import awesome_notifications
     let request = UNNotificationRequest(
       identifier: kPersistentId, content: content, trigger: trigger
     )
-    UNUserNotificationCenter.current().add(request) { _ in completion?() }
+    // ⭐ A NO-OP WHEN THIS WAS WRITTEN, 23 September 2026, AND FIXED ANYWAY.
+    // ⛔ This is NOT a live defect that shipped. Every one of the four callers
+    // of this function passes no `completion`, so `completion?()` did nothing
+    // and could not reach a notification-response handler off the main thread.
+    //
+    // ⚠️ AND IT IS NOT DEAD CODE EITHER — do not remove it. The parameter is
+    // public API of this function; the moment a caller passes a completion it
+    // inherits `66717c9`'s crash exactly, because
+    // `add(_:withCompletionHandler:)` calls back on an arbitrary queue.
+    //
+    // ⭐ THE FILE NOW HAS ONE RULE RATHER THAN THREE CASES. `endLiveActivity`
+    // was always right, `scheduleActiveNotification` was corrected by
+    // `66717c9`, and this was the last one left — and one of three being
+    // different is how the next reader learns the wrong pattern.
+    UNUserNotificationCenter.current().add(request) { _ in
+      DispatchQueue.main.async { completion?() }
+    }
   }
 
   func showPersistentActiveNotification(startIso: String) {
