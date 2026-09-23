@@ -222,13 +222,22 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 _HelpRow(
                   icon:  Icons.history,
                   title: 'View history',
-                  // Names BOTH routes. The ⋮ path was the only one documented,
-                  // and "All history" on the Last Event card is the more
-                  // prominent of the two on the running screen.
+                  // Names BOTH routes. ⛔ THE SECOND ROUTE WAS STALE, NOT THE
+                  // FIRST: this read "⋮ (top right)" until 23 September 2026,
+                  // and Brief 69 had replaced that PopupMenuButton with a
+                  // Drawer whose affordance is at the top LEFT. The comment
+                  // above it recorded that a second route had been ADDED and
+                  // nothing re-read the one it was added beside.
+                  // ⚠️ "top left" is INFERRED from Scaffold(drawer:) with no
+                  // custom leading:, and is on the device checklist. It has
+                  // not been observed on a running app.
+                  // "All history" on the Last Event card is the more prominent
+                  // of the two on the running screen and is unchanged.
                   // ⛔ "delete" corrected to "hide", 17 September 2026. The
                   // per-row control no longer deletes anything.
-                  body:  'Tap "All history" on the last event, or ⋮ (top right) → History, to see '
-                         'all past events with edit and hide options.',
+                  body:  'Tap "All history" on the last event, or open the menu at the top left '
+                         'and choose History, to see all past events with edit and hide '
+                         'options.',
                 ),
                 _HelpRow(
                   icon:   Icons.filter_list,
@@ -267,7 +276,8 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                 _HelpRow(
                   icon:   Icons.download_outlined,
                   title:  'Export to CSV',
-                  body:   'Tap ⋮ → Your data → Export all events to share your events as a '
+                  body:   'Open the menu at the top left, choose Your data, then "Export a '
+                          'spreadsheet" to share your events as a '
                           'spreadsheet file. A CSV cannot be read back into the app — it is a '
                           'copy to share, not a backup.',
                 ),
@@ -290,8 +300,9 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // NOT "a file you choose": on iOS the save option does not
                   // exist and Share is the only route, so nothing offers a
                   // location to choose.
-                  body:   'Tap ⋮ → Your data → Back up now to save every event to a file you '
-                          'can share or store. Restore from a backup on the same screen reads '
+                  body:   'Open the menu at the top left, choose Your data, then "Back up your '
+                          'history" to save every event to a file you '
+                          'can share or store. "Restore from a backup" on the same screen reads '
                           'one back in. Restoring only adds events — anything already on this '
                           'device is left exactly as it is.',
                   isLast: true,
@@ -539,7 +550,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   // the Your data row points at the Your data screen: two copies
                   // of the same fact drift, and About already carries the
                   // version, the privacy policy and the terms as live links.
-                  body:   'The About screen shows which version you are running and links to the privacy policy and terms. Open it from the menu in the top right.',
+                  body:   'The About screen shows which version you are running and links to the privacy policy and terms. Open it from the menu at the top left.',
                 ),
                 // THE WALKTHROUGH'S ONE RE-RUN ENTRY POINT, and one is
                 // deliberate: not About, not Your data. Getting help is where
