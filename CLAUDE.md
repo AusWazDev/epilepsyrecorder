@@ -779,6 +779,35 @@ SEPARATELY.** There the plugin caches an instance for the process; here the DATA
 process-scoped. ⛔ **A reader who knows the prefs rule will not infer this one** — they are two
 libraries with one shared consequence, and the consequence is the part that looks like a result.
 
+### ⚠️ `git stash` AND `pubspec.lock` — A FLUTTER COMMAND CAN STRAND A STASH
+
+⚠️ **Recorded 23 September 2026. A warning, not an incident: the work was recovered intact.**
+
+**`flutter analyze`, `flutter test` and `flutter pub get` all run `pub get` and can REWRITE
+`pubspec.lock`** — transitive packages get new patch versions without anyone asking. So this
+sequence fails:
+
+    git stash                      # park a change to compare against HEAD
+    flutter analyze <file>         # <-- writes pubspec.lock
+    git stash pop                  # ⛔ "local changes would be overwritten by merge"
+
+⛔ **The pop is REFUSED and the stash is KEPT** — git says so, and the work is recoverable with
+`git checkout pubspec.lock && git stash pop`. ⚠️ **But the failure arrives while the working
+tree looks empty**, which is the moment it reads as lost.
+
+**1. MUST: `git checkout pubspec.lock` before `git stash pop`** if any Flutter command ran in
+between. It is generated, and this project does not commit dependency drift as a side effect of
+running a checker.
+
+**2. MUST NOT: stash in order to compare against HEAD when a Flutter command is part of the
+comparison.** ⭐ **Use `git show HEAD:<path>` or `git diff` instead** — neither touches the
+working tree, and the question "was this lint here before?" is answerable without stashing at
+all.
+
+⭐ **WHY IT IS HERE AND NOT ONLY IN A BRIEF:** the trap is invisible until the pop fails, the
+stash-pop pair is what a careful person reaches for precisely when they are being careful, and
+`pubspec.lock` is touched by the very commands used to check a change is safe.
+
 ### ⛔ ANNOTATION VERIFICATION — A SENTENCE CAN BE BROKEN WITH ZERO DELETIONS
 
 ⚠️ **Inserting into the middle of a sentence splits it in two while deleting nothing.**
