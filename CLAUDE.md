@@ -853,6 +853,97 @@ converts a possible real deadlock into silence** — and on 23 September 2026 th
 like a harness artefact turned out, on its second appearance, to be a genuine one in a static
 queue. **Diagnose it, then decide.**
 
+⛔ **AMENDMENT, 23 September 2026 — A `Timeout` CANNOT FIRE WHEN THE CLOCK THAT WOULD FIRE IT IS
+THE ONE BEING BLOCKED. The rule above is necessary and is NOT sufficient.**
+
+`Timeout` protects against a hang in REAL time. It is **worthless against a fake-clock
+deadlock** — and `testWidgets` bodies are exactly where those live. A `tester.runAsync` that
+awaits a future started in the fake-clock zone blocks the test in the real zone while the fake
+clock stops being pumped, so the future can never advance **and neither can the timer meant to
+end it.** Measured: a `Timeout(Duration(seconds: 60))` sat on such a test and **400 seconds of
+silence followed**, with no output at all.
+
+**4. MUST: print markers that reach the terminal in REAL time, and bound the run from OUTSIDE.**
+A marker is only useful if it is visible before the process ends. ⚠️ **Do not read a running
+test's output through a filter that buffers** — a `flutter test … | Select-String …` pipeline
+holds everything until the pipeline completes, so a hung run shows **zero bytes** and the marker
+trail added to find the hang is itself invisible. Write to a file and tail it.
+
+⛔ **AND THE RULE'S OWN AUTHOR DID NOT FOLLOW IT THE SAME AFTERNOON — THE COUNT IS THE
+ARGUMENT.** This rule was promoted to this file in the morning of 23 September 2026, off the
+back of a 45-second hang. A reproduction written that same afternoon, by the same session, was
+committed with **no `Timeout` and no markers**, hung, and cost the 400 seconds above before
+either was added. ⭐ **That is the third time this file has recorded a rule being broken in the
+act of writing about it** — see the recursion note in the workspace rules. **Attention to a rule
+is not compliance with it, and the moment of promoting one is evidently not a moment of immunity
+to it.**
+
+### ⛔ ATTRIBUTION IS NOT VERIFICATION. A PROVENANCE MARKER SAYS WHERE A CLAIM CAME FROM, NEVER WHETHER IT IS TRUE
+
+⚠️ **This corrects the provenance scheme itself, 23 September 2026.** `[read]`, `[report]`,
+`[VERIFY]` and `[console]` record a claim's SOURCE. They are useful and they stay. ⛔ **What they
+do not do, and were never able to do, is make the claim true** — and the scheme reads as though
+they do, which is the defect.
+
+⭐ **A SOURCED WRONG CLAIM IS WORSE THAN AN UNSOURCED ONE, because it survives scrutiny LONGER.**
+An unattributed number invites the question "where did that come from?". An attributed one has
+already answered it, so the reader moves on. **The marker satisfies the instinct that would
+otherwise have checked.**
+
+**THE INSTANCE — not restated here; it is recorded in full at the Windows-green rule below, in
+the paragraph beginning "HOW THE WRONG NUMBER GOT HERE".** In short: a figure carried a CORRECT
+attribution and a WRONG value, and landed in this file's own rule about unmeasured claims. The
+entry even said the number was "recorded here as its finding and not as a measurement taken on
+this machine" — a precise, honest statement of provenance, beside a number nothing had checked.
+
+**1. MUST: treat a provenance marker as metadata, never as evidence.** `[report]` means chat said
+it. It does not mean it is so.
+
+**2. MUST: mark a claim's VERIFICATION STATE separately from its source**, and say plainly when a
+figure is unverified — *"the Mac's figure, not measured here"* is the honest form, and it should
+read as a caveat rather than as a credential.
+
+**3. MUST NOT: let a number into a RULE without measuring it**, whatever its provenance. A rule
+carrying an inflated figure invites the whole rule to be dismissed once the figure is checked,
+which costs more than the number was ever worth.
+
+⭐ **SAME FAMILY AS THE NULL-RESULT CONTROL RULE in the workspace file** — there, a null needs a
+positive control because "nothing found" and "did not look" produce identical output. Here, a
+verified claim and a merely-sourced one read identically. ⛔ **In both cases the output is the
+same shape and only one of them means anything.**
+
+### ⛔ `pump()` AND `pumpWidget()` REUSE THE ELEMENT TREE — STATE YOU BELIEVE YOU RESET SURVIVES
+
+⚠️ **THREE FALSE RESULTS FROM THIS IN ONE DAY, 23 September 2026.** Flutter reuses elements
+across pumps where the widget type and key match, so a new `pumpWidget` in the same test is a
+REBUILD, not a fresh start. Expansion state, scroll offsets, controllers, `initState` work and
+anything a `State` holds can carry into the next iteration — **especially in a loop over sizes or
+text scales, where each pass looks like a clean run and is not.**
+
+    the Brief 143 retraction        a finding withdrawn outright
+    the Brief 145 nudge-card lever  the lever measured was not the one being set
+    Brief 147's test 3              measured a COLLAPSED screen on every EVEN pass
+
+⭐ **THE SHAPE: every pass produces a number, every number is plausible, and the alternating ones
+are wrong.** Nothing errors. A loop that reports twelve results and got six of them from a
+surviving expansion state is indistinguishable, by its output, from twelve clean measurements.
+
+**1. MUST: assert the state you believe you set, BEFORE measuring it.** One `expect` that the
+section is expanded, the list is at the top, the toggle is off. ⛔ **Setting state and measuring
+state are two operations, and the gap between them is where the previous iteration lives.**
+
+**2. MUST: force a real teardown between iterations when the subject holds state** — pump a
+different widget (`SizedBox.shrink()`), or give the widget a distinct `Key` per pass so the
+element cannot be reused. A `setUp`-per-case (`setUp`, not `setUpAll`) is the blunter form.
+
+**3. MUST NOT: read a loop's results as independent measurements** unless one of the above is in
+place. Treat an alternating or suspiciously uniform pattern as a harness fault until proven
+otherwise — the same posture the prefs and `inMemoryDatabasePath` rules above take.
+
+⭐ **SAME FAMILY AS THOSE TWO, DIFFERENT MECHANISM, WHICH IS WHY IT IS FILED SEPARATELY.** There a
+plugin caches an instance and a database is process-scoped; here the FRAMEWORK reuses the tree.
+⛔ **A reader who knows both of those will not infer this one.**
+
 ### ⛔ WINDOWS GREEN IS NOT A COMPLETE GREEN. THE MAC IS AUTHORITATIVE FOR PLATFORM-GATED BEHAVIOUR
 
 ⚠️ **Recorded 23 September 2026.** A widget test renders on the HOST. The CLI host here is
