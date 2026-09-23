@@ -1169,7 +1169,27 @@ import awesome_notifications
     let request = UNNotificationRequest(
       identifier: kActivePersistentId, content: content, trigger: trigger
     )
-    UNUserNotificationCenter.current().add(request) { _ in completion?() }
+    // ⛔ MAIN QUEUE, AND IT IS THE COMPLETION HANDLER THAT REQUIRES IT, NOT
+    // THIS CLOSURE'S BODY.
+    //
+    // `completion` here IS the `didReceive` completion handler: the chain is
+    // didReceive -> handleQuickLogStart(completion:) -> here. UNUserNotification
+    // Center's `add(_:withCompletionHandler:)` calls back on an ARBITRARY
+    // internal queue, so invoking it directly delivered a notification-response
+    // completion off the main thread.
+    //
+    // ⚠️ THAT IS SENTRY MEDICAL-EVENT-RECORDER-7: NSInternalInconsistency
+    // Exception "Call must be made on main thread", EXC_CRASH / SIGABRT, 12
+    // events across 2 install ids on build 38. Unchanged since `17a0a4b`
+    // (4 May 2026) — the silence since is the path being rare, not fixed.
+    //
+    // ⭐ THE END PATH ALREADY DOES THIS. `endLiveActivity(completion:)` reaches
+    // its completion only through `DispatchQueue.main.asyncAfter` and
+    // `DispatchQueue.main.async`, and says so: "handedBack is only ever touched
+    // on the main queue". START simply never got the same treatment.
+    UNUserNotificationCenter.current().add(request) { _ in
+      DispatchQueue.main.async { completion?() }
+    }
   }
 
   /// ⚠️ NOTHING EVER REMOVES THIS NOTIFICATION. Recorded 21 September 2026, not
