@@ -3454,3 +3454,96 @@ the store window; the repository also carried the migration commit, the fix comm
 ⛔ **AND THE LIMIT, so this is not read as a clearance:** bounded-out is not *absent*. Whether
 that population exists in the field remains **unestablished**, and is not establishable from
 Windows. The claim is that the population is **describable and narrow**, not that it is empty.
+
+---
+
+# ⭐ FOUR DECISIONS FROM THE SEVENTH-DOOR WORK — 23 September 2026
+
+Recorded as decisions with their reasoning, not as a narrative of the day. ⛔ **One of the four is
+OPEN and is recorded as open**, with the question rather than an answer.
+
+## D-1 · No provenance marker on a drained inbox record — **DECIDED**
+
+**A record that reaches the store through the capture inbox carries nothing saying so.**
+
+**Why.** A record's ROUTING is not a clinical fact. The capture model is a small fixed set of
+fields and every addition to it is permanent; this one would be bought for debugging. **Sentry
+carries it if it is ever needed**, which is where a diagnostic belongs.
+
+⭐ **DECIDED NOW RATHER THAN RETROFITTED, and that is the load-bearing half.** `applyInbox` builds
+an ordinary `EventRecord`, so a marker added later would have to be back-filled — inventing a
+provenance nobody observed — or left null for every record that predates it, which is a third
+state nobody asked for.
+
+⚠️ **AND AN INCIDENTAL MARKER ALREADY EXISTS, which strengthens the decision rather than
+weakening it.** `AUDIT.md` records that id CASING separates Swift-written records from
+Dart-written ones — uppercase against lowercase. **It is incidental, not designed, and it is not
+to be relied on**; but where provenance has genuinely been needed for an investigation, it was
+available without a field.
+
+## D-2 · ⛔ The envelope field for load state — **OPEN. NOT DECIDED.**
+
+**The question, stated so it can be answered without rereading the week: IS A LOAD-STATE MARKER
+THE USER'S DATA, OR A DIAGNOSTIC FIELD ABOUT THEIR DEVICE?**
+
+**Why it is open rather than decided.** `buildBackupJson` would write it into the backup envelope,
+and the envelope's field set is pinned by an exact key-set assertion in
+`test/backup_file_choice_test.dart` whose reason string is **`'the user data, and nothing about
+the device'`**. The assertion's own comment states the rule and anticipates this moment:
+
+> *"the exact-set assertion is **KEPT rather than loosened** to "contains" — it is what catches an
+> accidental addition, and **loosening it to accommodate a deliberate one would retire the check
+> on its first real outing.**"*
+>
+> *"this file holds the **USER'S OWN health data and nothing about their DEVICE**. … **A device
+> identifier, an install id, a location or a diagnostic field is the latter and still may not go
+> in — these files get emailed around.**"*
+
+⛔ **THIS IS THAT FIRST REAL OUTING.** The arguments both ways, recorded so the decision is not
+re-derived:
+
+  * **For inclusion** — it describes the FILE'S OWN TRUSTWORTHINESS, which is what `recordCount`,
+    `schemaVersion` and `exportedAt` already do. It names no device, no install and no location.
+  * **Against** — it discloses that the exporting device had a storage failure, on a file that
+    **gets emailed around**. That is a statement about the device's condition, which is the
+    category the rule names.
+
+⚠️ **What is NOT at stake: the parser.** Measured 23 September 2026 — `parseBackup` rejects on five
+positive checks against named keys, with no enumeration and no whitelist, and its schema gate is
+`>` rather than `!=`. **An unknown field is tolerated, and an older build already refuses a
+higher-schema file before reading any field**, so adding one is not a compatibility change. **The
+blocker is the content rule, not the format.**
+
+## D-3 · Brief 104 option C — the required parameter lands on the BUILDERS — **DECIDED**
+
+`backupShare` and `backupSaveAs` take the load state as a required parameter. **`buildBackupJson`
+does not.**
+
+**Why.** Measured, not estimated: `buildBackupJson` has **52 call sites across 14 test files**;
+the builders have **3**. ⛔ **The 52 edits buy DOCUMENTATION rather than SAFETY** — every one of
+them is a fixture built from a known-good list, so every one would take `completed` and none would
+ever have caught anything.
+
+⭐ **AND THE FINAL HOP IS PHYSICALLY FORCED BY D-2, which is what makes deferring it safe rather
+than merely cheaper.** If the envelope gets a field, `buildBackupJson` needs the value to write it
+— so the parameter arrives **with a use**, rather than as an unused parameter that a later reader
+has to be told is deliberate.
+
+## D-4 · A no-id notification tap should open History — **DECIDED IN PRINCIPLE, HELD IN PRACTICE**
+
+**Both halves are recorded because they have different statuses and collapsing them would lose
+one.**
+
+**The principle is settled:** a notification tap that carries no event id has nothing to open, and
+History is the honest destination — it shows the user everything rather than guessing at one
+record.
+
+⛔ **The practice is HELD, pending a developer observation, and the reason is not caution.** On iOS
+today **every tap is a no-id tap.** So shipping the principle now would not cover an edge case —
+it would change the destination of **every iOS notification tap**, which is a behaviour change to
+the primary path wearing the clothes of a fix to a corner.
+
+⚠️ **What would release it:** either an observation that iOS taps do carry an id in some
+configuration, or an explicit decision that History is the right destination for all of them. **The
+first is a measurement; the second is a decision. They are not the same and the hold covers
+both.**
