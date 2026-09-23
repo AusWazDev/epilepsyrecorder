@@ -40,11 +40,27 @@ const String kPrevious =
     'Your events are stored only on this device. A backup is the only '
     'way to get them onto another one.';
 
-/// ✅ SHIPPED 9 September 2026. Must match `home_screen.dart` exactly; the
+/// ✅ SHIPPED 23 September 2026. Must match `home_screen.dart` exactly; the
 /// assertion at the end of this test is what keeps the two in step.
+///
+/// ⛔ SUPERSEDED 23 September 2026, ANNOTATED NOT REWRITTEN. This read, and
+/// shipped on 9 September 2026:
+///
+///     'A backup is your own copy — the only one that moves to a new '
+///     'device. Save it somewhere lasting.'
+///
+/// ⚠️ "the only one that moves to a new device" is an EXCLUSIVITY CLAIM and it
+/// is unsupported: a platform device backup may well move them, and MER cannot
+/// speak for Apple's or Google's. Same rule that removed the device-backup
+/// sentence from Help and the disclaimer in `e30125c` — MER speaks for MER.
+///
+/// ⭐ THE 9 SEPTEMBER REWRITE DROPPED ONE EXCLUSIVITY CLAIM AND INTRODUCED
+/// ANOTHER. It removed "a backup is the only way to KEEP them" and added "the
+/// only one that MOVES", and the header's list of ruled-out claims did not
+/// catch it because that list enumerated the OLD wording's claims.
 const String kShipped =
-    'A backup is your own copy — the only one that moves to a new '
-    'device. Save it somewhere lasting.';
+    'A backup is your own copy — one you control, wherever you keep '
+    'it. Save it somewhere lasting.';
 
 /// The longer candidate, NOT chosen — it named destinations the share sheet
 /// already names one tap later. Kept so the comparison stays reproducible.

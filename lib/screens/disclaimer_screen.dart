@@ -255,12 +255,13 @@ class DisclaimerScreen extends StatelessWidget {
                                 children: [
                                   TextSpan(
                                     text: 'Because there is no account and no '
-                                        'cloud copy, ',
+                                        'cloud copy, your events live only on '
+                                        'this device. ',
                                   ),
                                   TextSpan(
-                                    text: 'deleting the app deletes every '
-                                        'event with it, and neither you nor '
-                                        'Notiva can recover them.',
+                                    text: 'Notiva has no copy of them and '
+                                        'cannot recover them if the app is '
+                                        'deleted.',
                                     style: TextStyle(
                                       fontWeight: MERType.emphasis,
                                     ),

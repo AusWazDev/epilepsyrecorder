@@ -2304,8 +2304,8 @@ class _BackupReminderBanner extends StatelessWidget {
           // "device", not "phone": this app ships on the Microsoft Store, and
           // the word already on screen here and in the share sheet is "device".
           Text(
-            'A backup is your own copy — the only one that moves to a new '
-            'device. Save it somewhere lasting.',
+            'A backup is your own copy — one you control, wherever you keep '
+            'it. Save it somewhere lasting.',
             style: MERType.bodyPositiveOnContainer.copyWith(height: 1.4),
           ),
           const SizedBox(height: 10),
