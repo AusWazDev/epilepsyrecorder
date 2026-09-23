@@ -205,11 +205,40 @@ import awesome_notifications
           UserDefaults.standard.removeObject(forKey: key)
           result(id)
         case "getShowPreviewsSetting":
-          UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-              result(settings.showPreviewsSetting == .always ? "always" : "other")
-            }
+          // ⛔ EXACTLY ONE REPLY, ON EVERY PATH — 23 September 2026. Listed in
+          // Brief 146 as the second skippable reply site and fixed here.
+          //
+          // The reply sat inside `getNotificationSettings`' completion, so a
+          // completion that never ran meant `result` was never called. A
+          // Flutter method channel has no timeout anywhere in its chain —
+          // `_DefaultBinaryMessenger.send` awaits a bare `Completer` completed
+          // only from the reply callback — so that is not a slow call or a
+          // failed call. It is a Dart future that never completes and never
+          // errors, for the life of the process.
+          //
+          // ⭐ THE LATCH IS NOT BELT AND BRACES, IT IS REQUIRED. With a
+          // fallback in play the system completion may still arrive
+          // afterwards, and replying twice to one channel call is itself a
+          // crash. Both paths hop to the main queue before touching
+          // `answered`, so the flag needs no lock.
+          //
+          // ⭐ "other" IS THE CONSERVATIVE FALLBACK, not an arbitrary default.
+          // Dart reads this as `setting == 'always'`, so "other" makes Help
+          // show its previews-may-not-appear row. A fallback of "always" would
+          // tell the user previews are shown when nothing confirmed it —
+          // reassurance is the direction that costs privacy.
+          var answered = false
+          let reply: (String) -> Void = { value in
+            if answered { return }
+            answered = true
+            result(value)
           }
+          UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let value = settings.showPreviewsSetting == .always ? "always" : "other"
+            DispatchQueue.main.async { reply(value) }
+          }
+          // If the system never answers, the channel still does.
+          DispatchQueue.main.asyncAfter(deadline: .now() + 5) { reply("other") }
         case "restoreNotification":
           DispatchQueue.main.async { self?.restorePersistentNotification() }
           result(nil)
