@@ -779,6 +779,80 @@ SEPARATELY.** There the plugin caches an instance for the process; here the DATA
 process-scoped. ⛔ **A reader who knows the prefs rule will not infer this one** — they are two
 libraries with one shared consequence, and the consequence is the part that looks like a result.
 
+### ⛔ A `testWidgets` BODY RUNS ON A FAKE CLOCK. REAL I/O AWAITED INSIDE ONE NEVER COMPLETES
+
+⚠️ **PROMOTED HERE 23 September 2026, AFTER THE THIRD OCCURRENCE. The count is the argument —
+without it this reads as advice.** Origin: the Change Register
+(`{OneDrive root}\Projects\App Dev\Claude\Medical Event Recorder — Change Register.md`, the
+17 September 2026 `updated_at` entry), which records it in these words:
+
+> ⚠️ **THREE PREFS-DEPENDENT TESTS IN ONE FILE HUNG FOR SIX AND A HALF MINUTES.** A `testWidgets`
+> body runs on a FAKE CLOCK, and real I/O awaited inside one waits on a future that clock never
+> reaches. **Both the rule and the fix were already written down and were re-learned.**
+
+⛔ **THAT ENTRY IS ITSELF THE SECOND OCCURRENCE — it says so in its own last sentence.** The third
+was 23 September 2026, when the Brief 135R reproduction hung for 45 seconds on
+`databaseFactory.openDatabase` and had to be diagnosed from scratch. ⭐ **THE FIRST TWO WERE BOTH
+RECORDED IN A FILE NOTHING AUTO-LOADS.** The Register is read when someone goes looking; this file
+is read every session. The rule was never missing — it was never where a session would meet it.
+**That is the whole reason for the promotion, and it is the same shape as the two promotions in
+the workspace rules.**
+
+**THE MECHANISM.** `fakeAsync` overrides timers and microtasks. A completion that arrives by a
+**port message** — a background isolate, a plugin's platform thread — is a real event-loop event
+the fake clock never services, so the `await` waits forever. The prefs store completes through
+microtasks and is fine; `databaseFactoryFfi` runs SQLite in an isolate and is not.
+
+**1. MUST: put real I/O in `setUp`, not in the test body.** `setUp` runs on the real clock.
+⚠️ **`setUp`, not `setUpAll`, wherever the fixture is state the tests must not share** —
+`inMemoryDatabasePath` is one database per process, per the rule above.
+
+**2. MUST: wrap any real-I/O observation inside the body in `tester.runAsync`.** It lends the real
+clock to one call. ⭐ **This changes WHEN code runs, never WHAT is driven** — taps, pumps and
+lifecycle events stay on the fake clock, which is the point of the harness.
+
+**3. MUST: use `databaseFactoryFfiNoIsolate` when the WIDGET UNDER TEST does its own database
+I/O.** Moving the test's own I/O off the fake clock does nothing for the app's: a `HomeScreen`
+load runs inside `pumpWidget`. The in-process factory completes through microtasks, which the fake
+clock does flush.
+
+⛔ **AND THE ONE THAT IS NOT A FAKE-CLOCK PROBLEM AT ALL, found 23 September 2026 and recorded
+here because it presents identically.** `EventStore.serialise` is a **STATIC queue shared by both
+stores**. A `save` left in flight when a `testWidgets` test ends has its continuation stranded in
+that test's disposed zone, so **the tail of the queue never completes and every later `serialise`
+call — in any later test, on either store — blocks forever.** Measured: `openDatabase` and
+`db.delete` returned; `SqliteEventStore.save` did not.
+⚠️ **This was WRONGLY REFUTED earlier the same day** on the reasoning that `serialise` stores
+`result.then((_) {}, onError: (_) {})`, "a future that always completes". **That guarantees the
+wrapper completes only if the INNER future does.** ⭐ **The queue has no timeout and no reset.**
+**Separate processes, separate statics** — which the one-prefs-test-per-process rule already
+forces, and is a second independent reason for it.
+
+### ⛔ EVERY REPRODUCTION CARRIES AN EXPLICIT `timeout`, SO A HANG ARRIVES AS A LOCATED FAILURE
+
+⚠️ **Standing rule from 23 September 2026, and it earned that on its FIRST outing.**
+
+A hung test is the worst possible output: it produces **no verdict, no location and no
+attribution**, it holds the suite open, and it leaves orphaned `dart` and `flutter_tester`
+processes behind that the next run inherits. ⭐ **A timeout converts all of that into an ordinary
+red with a line number.**
+
+```dart
+}, timeout: const Timeout(Duration(seconds: 45)));
+```
+
+**1. MUST: give every reproduction and every long-running widget test an explicit `Timeout`.**
+
+**2. MUST: print step markers through the body**, so the marker trail says where it stopped.
+⭐ **On its first run this located a hang to a single statement with no bisection at all** — the
+last marker printed named the line, and on its second it separated `openDatabase` from `save`
+inside one fixture.
+
+**3. MUST NOT: rewrite a test until it completes.** ⛔ **Changing the test to avoid a hang
+converts a possible real deadlock into silence** — and on 23 September 2026 the hang that looked
+like a harness artefact turned out, on its second appearance, to be a genuine one in a static
+queue. **Diagnose it, then decide.**
+
 ### ⚠️ `git stash` AND `pubspec.lock` — A FLUTTER COMMAND CAN STRAND A STASH
 
 ⚠️ **Recorded 23 September 2026. A warning, not an incident: the work was recovered intact.**
