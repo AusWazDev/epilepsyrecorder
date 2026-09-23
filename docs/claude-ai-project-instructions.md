@@ -213,6 +213,23 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
 1. **No backend.** Fully local, no account, no sync. This is the product's
    differentiator, not an implementation detail — it is the only account-free,
    device-only tool in the category.
+   ⚠️ **STATUS CHANGED 23 September 2026. The wording above is kept and its
+   STATUS is corrected; it is NOT deleted.**
+   • **The superseded claim, quoted:** *"it is the only account-free, device-only
+     tool in the category"*.
+   ⚠️ **It is a MARKET claim, not an architectural one — and it is UNVERIFIED.**
+     *"Fully local, no account, no sync"* is architecture and stands. *"the only
+     … in the category"* is a statement about other people's products.
+   • **A plausible counterexample exists.** Epsy requires an account and its Play
+     Data safety declares it collects personal info and health data; **Seizure
+     Tracker's Play Data safety declares "No data collected"** and its cloud sync
+     reads as optional.
+   ⛔ **NO "only" OR "first" CLAIM GOES IN COPY.** The differentiator can be
+     stated positively — what MER does — without a claim about every other app.
+   ⭐ **WHY THIS IS ANNOTATED RATHER THAN DELETED, and it is the point:** this file
+     is the SOURCE of the paste that seeds every chat session before any register
+     is read. **Deleting the line would remove the evidence of how an unverified
+     claim came to be asserted as fact.** The path matters more than the sentence.
 2. **The capture model is a small fixed set of fields**, several of them closed
    enums. Before claiming the app records something, check ARCHITECTURE.md,
    which lists the claims the model does NOT support. Copy has been written from
