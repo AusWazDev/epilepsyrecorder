@@ -271,7 +271,8 @@ Future<void> showBackupOptions(
             // choosing where to put it afterwards, not a save dialog.
             child: Text(
               'Saves every event to a file you can share or store. Keep it '
-              'somewhere off this device.',
+              'somewhere off this device — it has no password on it, so '
+              'choose somewhere private.',
               style: MERType.bodyInherit,
             ),
           ),
