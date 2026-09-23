@@ -39,6 +39,23 @@ String _posix(String p) => p.replaceAll(Platform.pathSeparator, '/');
 ///  * It does NOT establish that the call sits on the failure branch rather than
 ///    the success branch, and it does NOT establish that it ever runs. Verifying
 ///    either needs Swift control flow, which a text scan does not have.
+///  * ⛔ THE PRESERVE CAPTURES THE APP-SUITE COPY ONLY, AND THIS LIST DID NOT
+///    SAY SO UNTIL 21 SEPTEMBER 2026. `preserveUnreadableMarker` reads
+///    `UserDefaults.standard`, so what lands in the quarantine is
+///    `kActiveEventKey`. The App Group removals that follow it —
+///    `AppDelegate.swift`'s `kSharedActiveKey` clears in `handleQuickLogEnd`
+///    and `endActiveEventFromApp` — are NOT preserved by that call. They are
+///    safe because the single-write invariant makes the two copies
+///    byte-identical, so the preserved bytes are the same bytes. ⭐ THEIR
+///    SAFETY RESTS ON THE INVARIANT, NOT ON THE PRESERVE. Break the invariant
+///    and *the preserve — present at the three call sites* below still passes
+///    while those two removals become lossy.
+///
+///    ⚠️ The group *every marker removal is preceded by a preserve* now covers
+///    them, having been added because the original helper stopped at the FIRST
+///    removal matching its token and never examined the line after it. A file
+///    that lists its limits implies the list is complete, which is why this was
+///    worse than an unlisted limit in a file that lists none.
 ///  * The conditions that PRODUCE an unreadable marker are cold-and-locked.
 ///    `ARCHITECTURE.md` §5 records that `didReceive` is not entered cold,
 ///    measured on hardware. No simulator reproduces that, so this file is the
@@ -301,6 +318,100 @@ void main() {
         source:       endIntent(),
         function:     'perform',
         removalToken: 'kSharedActive',
+      );
+    });
+
+    // ── the widening, 21 September 2026 ──────────────────────────────────
+    //
+    // ⛔ expectPreserveBeforeRemoval BREAKS AT THE FIRST REMOVAL matching its
+    // token, so in handleQuickLogEnd it examined :955 and stopped, and the
+    // App Group removal on :956 was never looked at. Same in
+    // endActiveEventFromApp for :1062 / :1063.
+    //
+    // This checks EVERY marker removal in those functions, not the first.
+    // It passes today — the preserve textually precedes both — but it is what
+    // makes that a checked fact rather than an assumed one. See the limits
+    // note at the top for what "preceded by a preserve" does and does not
+    // buy for the App Group copy specifically.
+    void expectPreserveBeforeEveryRemoval({
+      required String source,
+      required String function,
+      required int expectedRemovals,
+    }) {
+      final lines = source.split('\n');
+      final start = lines.indexWhere((l) => l.contains('func $function'));
+      expect(start, isNot(-1), reason: 'positive control: $function was found');
+
+      var preserve = -1;
+      final unprotected = <String>[];
+      var removals = 0;
+      var depth = 0;
+      var seenBody = false;
+
+      for (var i = start; i < lines.length; i++) {
+        final line = lines[i];
+        if (line.trimLeft().startsWith('//')) continue;
+
+        if (preserve == -1 &&
+            (line.contains('preserveUnreadableMarker') ||
+             line.contains('forKey: kQuarantineKey'))) {
+          preserve = i;
+        }
+
+        // `kSharedActive` and not `kSharedActiveKey`: EndMEREventIntent spells
+        // the constant without the suffix, being a separate target with its own
+        // local copy. Matching only the suffixed form found ZERO removals there
+        // — caught by the expectedRemovals control on its first run, which is
+        // what that control is for.
+        if (line.contains('removeObject(forKey:') &&
+            (line.contains('kActiveEventKey') ||
+             line.contains('kSharedActive'))) {
+          removals++;
+          if (preserve == -1 || preserve > i) {
+            unprotected.add('line ${i + 1}: ${line.trim()}');
+          }
+        }
+
+        depth += '{'.allMatches(line).length - '}'.allMatches(line).length;
+        if (depth > 0) seenBody = true;
+        if (seenBody && depth <= 0) break;
+      }
+
+      expect(removals, expectedRemovals,
+          reason: 'positive control: $function must contain exactly '
+              '$expectedRemovals marker removals. A different count means the '
+              'function changed shape and this assertion is now measuring '
+              'something else. Found $removals');
+      expect(unprotected, isEmpty,
+          reason: '⛔ a marker removal in $function is NOT preceded by a '
+              'preserve. The original helper stopped at the first removal and '
+              'could not see this. Unprotected:\n${unprotected.join('\n')}');
+    }
+
+    test('every marker removal in handleQuickLogEnd is preceded by a preserve',
+        () {
+      expectPreserveBeforeEveryRemoval(
+        source:           appDelegate(),
+        function:         'handleQuickLogEnd',
+        expectedRemovals: 2,
+      );
+    });
+
+    test('every marker removal in endActiveEventFromApp is preceded by a preserve',
+        () {
+      expectPreserveBeforeEveryRemoval(
+        source:           appDelegate(),
+        function:         'endActiveEventFromApp',
+        expectedRemovals: 2,
+      );
+    });
+
+    test('every marker removal in EndMEREventIntent is preceded by a preserve',
+        () {
+      expectPreserveBeforeEveryRemoval(
+        source:           endIntent(),
+        function:         'perform',
+        expectedRemovals: 1,
       );
     });
 

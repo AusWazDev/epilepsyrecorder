@@ -631,17 +631,72 @@ import awesome_notifications
       // `end` instruction in the inbox and is applied by the drain, which is the
       // only thing that writes the record list.
       //
-      // ── NO PRESERVE HERE, AND WHY IT IS SAFE ──
-      // Same invariant as clearStaleActiveStateIfEnded, and the same pin. This
-      // deletes the app's standard copy after an end that already happened —
-      // the feedback notification being tapped is what says so. On 17+ the
-      // extension ended the event and cleared only the shared copy, preserving
-      // first if it could not read it, so what is deleted here is a duplicate of
-      // a value already adjudicated. This site can beat clearStaleActiveStateIfEnded
-      // to that deletion, which is exactly why it is named and not left implicit.
+      // ── OWNERSHIP, NOT MERELY STALENESS ──
+      //
+      // ⛔ THIS CLEAR WAS UNCONDITIONAL UNTIL 21 SEPTEMBER 2026 AND THAT WAS A
+      // DATA-LOSS PATH. The comment it replaces said what is deleted here is "a
+      // duplicate of a value already adjudicated". That is true of the event
+      // this notification describes. It is NOT true of a different event
+      // started since, and nothing here compared the two.
+      //
+      // The sequence, every step reachable:
+      //   1. end event A — showFeedbackNotification posts under kFeedbackId,
+      //      and NOTHING ever removes it (see the note on that function)
+      //   2. start event B — the marker is written to BOTH suites
+      //   3. tap A's still-present notification, which invites exactly that
+      //      with "Open MER to add details"
+      //   4. this line deleted B's app-suite copy, leaving the App Group copy
+      //
+      // Nothing recovered it. clearStaleActiveStateIfEnded wants
+      // `standardActive != nil && sharedActive == nil` and this is the mirror
+      // image, so it does not fire. restorePersistentNotification reads nil,
+      // takes its else branch, and ends B's Live Activity and replaces its
+      // notification WHILE B IS STILL RUNNING. endActiveEventFromApp reads nil
+      // and writes no end instruction. The 30-minute timeout lives in that same
+      // else-less branch and needs the same key, so not even the wrong-duration
+      // fallback fired. B lost its duration outright.
+      //
+      // ⭐ THE RULE: AN OPERATION THAT CLEARS STATE ON BEHALF OF AN EVENT MUST
+      // ESTABLISH THAT THE STATE BELONGS TO THAT EVENT.
+      //
+      // ⚠️ IT CANNOT BE ESTABLISHED BY IDENTITY HERE. The notification carries
+      // no event id — `userInfo` is set nowhere in ios/ — so there is nothing to
+      // compare A's identity against. Giving it one is a payload change and a
+      // separate piece of work; it would also fix the navigation target below,
+      // which opens the LATEST event rather than this notification's event.
+      //
+      // ⭐ SO OWNERSHIP IS ESTABLISHED STRUCTURALLY INSTEAD, and it needs no
+      // payload. The App Group copy is written in exactly one place (:828, with
+      // the app-suite copy, from one value) and cleared in exactly four —
+      // EndMEREventIntent, restorePersistentNotification's timeout branch,
+      // handleQuickLogEnd and endActiveEventFromApp. Every one of those four
+      // ends or abandons the event. Therefore:
+      //
+      //     the App Group copy is PRESENT  ⟹  an event is LIVE
+      //     the App Group copy is ABSENT   ⟹  the app-suite copy is residue
+      //
+      // and residue is the only thing this site was ever meant to clear.
+      //
+      // ⛔ THE SUCCESSFUL PATH IS UNCHANGED, which is the point. On 17+ the
+      // extension cleared the shared copy before posting the feedback, so the
+      // guard is true and the delete happens exactly as before. On 16.2-16.x
+      // handleQuickLogEnd cleared both, so the guard is true and the delete is
+      // the no-op it already was. Only the stale-tap case behaves differently.
+      //
+      // ⚠️ NO SUITE, NO DELETE. If the App Group cannot be opened, ownership
+      // cannot be established, and the fail-safe direction is to leave the
+      // marker alone — the same discipline as clearStaleActiveStateIfEnded,
+      // which returns rather than guessing. A marker left behind is corrected on
+      // the next foreground; a marker deleted is not.
+      //
+      // Pinned by test/ios_feedback_tap_ownership_test.dart, which fails on the
+      // unguarded form.
       let standard = UserDefaults.standard
-      standard.removeObject(forKey: kActiveEventKey)
-      standard.synchronize()
+      if let group = UserDefaults(suiteName: kAppGroupId),
+         group.string(forKey: kSharedActiveKey) == nil {
+        standard.removeObject(forKey: kActiveEventKey)
+        standard.synchronize()
+      }
       // BOTH, deliberately. The flag is durable; the channel call is immediate.
       // Whichever arrives first wins, and consumption is idempotent on the Dart
       // side, so both arriving does not open the edit screen twice.
@@ -1117,6 +1172,27 @@ import awesome_notifications
     UNUserNotificationCenter.current().add(request) { _ in completion?() }
   }
 
+  /// ⚠️ NOTHING EVER REMOVES THIS NOTIFICATION. Recorded 21 September 2026, not
+  /// fixed here, and deliberately not fixed here.
+  ///
+  /// `showPersistentNormalNotification` and `scheduleActiveNotification` remove
+  /// only kPersistentId and kActivePersistentId, so this one survives in
+  /// Notification Center until the user swipes it. That is what let a feedback
+  /// notification for event A be tapped after event B had started — see the
+  /// ownership guard in the didReceive default-action branch.
+  ///
+  /// ⛔ REMOVING IT IS NOT A SUBSTITUTE FOR THAT GUARD, which is why the guard
+  /// went in first. A notification with a short life can still outlive its
+  /// event: this request carries a 2-second trigger, so B can start inside the
+  /// delivery window and be tapped on immediately.
+  ///
+  /// ⚠️ AND THE OBVIOUS PLACE TO CLEAR IT IS A TRAP. Adding kFeedbackId to
+  /// showPersistentNormalNotification's removal list would fire at
+  /// handleQuickLogEnd:937 — one line after this request is made and before it
+  /// is delivered — so it would remove nothing there while looking correct, and
+  /// would only work from the other callers. It belongs in
+  /// scheduleActiveNotification, at the START of the next event, and wants its
+  /// own change with its own test.
   private func showFeedbackNotification(elapsed: String) {
     let content = UNMutableNotificationContent()
     content.title = elapsed.isEmpty ? "Event ended" : "Event ended · \(elapsed)"
