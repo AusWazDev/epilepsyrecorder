@@ -1121,7 +1121,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _unhide(EventRecord original) async {
     final i = _records.indexWhere((r) => r.id == original.id);
     if (i < 0) return;
-    setState(() => _records[i] = original);
+
+    // ⛔ THE UNDO MUST LAND EVEN IF THIS SCREEN IS GONE — 23 September 2026.
+    //
+    // The bar is shown through `ScaffoldMessenger`, which sits ABOVE the
+    // Navigator, so it outlives the screen that raised it and this closure can
+    // run against a disposed State. `build`'s `PopScope` closes the bar on a
+    // POP, but a disposal that is not a pop — a tree teardown, a replaced
+    // route, a rebuilt Navigator — never reaches that hook.
+    //
+    // This method used to be `setState(() => _records[i] = original);` followed
+    // by the write. After dispose that THREW — reported from a real device as
+    // MEDICAL-EVENT-RECORDER-D — and because the throw happened BEFORE the
+    // write, the record was never unhidden either. A crash AND a lost undo.
+    //
+    // ⛔ `if (!mounted) return;` AT THE TOP IS THE WRONG FIX, and it is the
+    // obvious one. It removes the crash report and keeps the lost undo: the
+    // user presses Undo, nothing happens, and nothing says so. The three parts
+    // below are deliberately ordered and each is load-bearing:
+    //
+    //   1. the in-memory correction happens UNCONDITIONALLY — the list is the
+    //      parent's, not this State's, and it is what gets written;
+    //   2. `setState` runs ONLY if still mounted — it is a repaint request,
+    //      and there is nothing to repaint once the screen is gone;
+    //   3. the store write happens EITHER WAY — it is the whole point of the
+    //      undo and it does not need a widget tree.
+    //
+    // ⭐ SAFE BECAUSE `save` IS ADD-OR-UPDATE (86c8c40). Handing the parent's
+    // list to a write from a disposed screen used to risk removing records the
+    // list did not name; absence from a snapshot no longer means deletion, so
+    // this is now just the guard.
+    _records[i] = original;
+    if (mounted) setState(() {});
     await widget.onRecordsChanged(_records);
   }
 
