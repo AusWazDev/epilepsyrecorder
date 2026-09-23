@@ -753,6 +753,32 @@ can only return one answer must fail loudly, not quietly agree with itself.
 **3. MUST NOT: trust a measurement set in which every value matches.** Treat it as a
 harness fault until proven otherwise. Re-run one state in isolation and compare.
 
+### ⛔ AND THE SAME TRAP FOR SQLITE: `inMemoryDatabasePath` IS SHARED PER PROCESS
+
+⚠️ **`inMemoryDatabasePath` is ONE database for the whole test process, not one per
+`openDatabase`.** Rows written by an earlier test in the same file are still there in the next
+one, and nothing in the name says so.
+
+**The symptom is a plausible number, not a failure.** Measured 23 September 2026: a fixture that
+inserted twelve rows asserted twelve and got **13** — the extra was the previous test's surviving
+unreadable row. ⭐ **THE CONTROL IS WHAT CAUGHT IT. Without an assertion on the STARTING count,
+"13" would have been read as a result** — and the test it fed was about how many rows survive a
+delete, so a wrong denominator would have produced a confident wrong answer about data loss.
+
+**1. MUST: clear the table in the fixture** — `await db.delete('event')` after opening — **or**
+assert the starting count before acting. Both is better, and costs one line.
+
+**2. MUST: state the isolation before reporting any number** taken from that store. A row count
+without it is not interpretable by a reader.
+
+**3. MUST NOT: assume `openDatabase(inMemoryDatabasePath)` returns a fresh database.** It does
+not.
+
+⭐ **SAME CLASS AS THE PREFS RULE ABOVE, DIFFERENT MECHANISM, WHICH IS WHY IT IS RECORDED
+SEPARATELY.** There the plugin caches an instance for the process; here the DATABASE ITSELF is
+process-scoped. ⛔ **A reader who knows the prefs rule will not infer this one** — they are two
+libraries with one shared consequence, and the consequence is the part that looks like a result.
+
 ### ⛔ ANNOTATION VERIFICATION — A SENTENCE CAN BE BROKEN WITH ZERO DELETIONS
 
 ⚠️ **Inserting into the middle of a sentence splits it in two while deleting nothing.**
