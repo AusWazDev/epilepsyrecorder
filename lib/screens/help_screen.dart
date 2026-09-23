@@ -10,6 +10,65 @@ import '../theme/mer_theme.dart';
 import 'walkthrough_screen.dart';
 import '../theme/mer_type.dart';
 
+/// What deleting or clearing does to a user's events, on this platform.
+///
+/// ⭐ SPECIFIC TEXT IN A GUARDED BRANCH; NEUTRAL WORDING IN THE CATCH-ALL.
+/// This was `Platform.isIOS ? iOS : ANDROID`, so Windows and macOS were told
+/// to clear app storage "in Android settings" — a control that does not exist
+/// on their device. The Android text was in the CATCH-ALL, which is the
+/// polarity error: `constants.dart` gates its Android string ON `isAndroid`
+/// and gives everyone else neutral wording, and that is the shape copied here.
+///
+/// ⚠️ PARAMETERS, NOT A DIRECT `Platform` READ. A test runs on ONE host, so a
+/// direct read means the branch that shipped wrong once is the branch nobody
+/// checks — the reason `notificationInstruction` in `walkthrough_screen.dart`
+/// takes a bool, cited rather than re-derived.
+///
+/// ⛔ THE CATCH-ALL SERVES macOS, LINUX AND ANYTHING FUTURE. Putting
+/// Windows-specific text in it would repeat the same error one level down,
+/// which is why Windows has its own branch rather than the fallthrough.
+String storageClearingInstruction({
+  required bool isIOS,
+  required bool isAndroid,
+  required bool isWindows,
+}) {
+  if (isIOS) {
+    return 'Deleting Medical Event Recorder removes every event stored on this device. '
+           'Offloading is different: Settings → General → iPhone Storage → Offload App '
+           'frees up space but keeps your data, and reinstalling brings it back. '
+           'It is Delete App that destroys it.';
+  }
+  if (isAndroid) {
+    return 'Uninstalling Medical Event Recorder removes every event stored on this device. '
+           'Clearing app storage in Android settings does the same thing.';
+  }
+  if (isWindows) {
+    // Reset and Repair are properties of a PACKAGED app. Confirmed MSIX from
+    // `msix_config` in pubspec.yaml before this branch was written.
+    return 'Uninstalling Medical Event Recorder removes every event stored on this device. '
+           'So does Reset, in Windows Settings under the app\'s advanced options — '
+           'Repair leaves your events alone.';
+  }
+  return 'Uninstalling Medical Event Recorder removes every event stored on this device.';
+}
+
+/// The heading shown where the quick-log notification does not exist.
+///
+/// ⚠️ SAME DEFECT AS ABOVE, ONE SECTION DOWN. The section was gated on
+/// `!Platform.isWindows` and its replacement on `Platform.isWindows`, so macOS
+/// fell through to the ANDROID instruction and got no replacement at all.
+/// The gates are now `isIOS || isAndroid` and its exact negation, so every
+/// platform lands in exactly one of them.
+String quickLogUnavailableTitle({required bool isWindows}) =>
+    isWindows ? 'Not available on Windows' : 'Not available on this platform';
+
+/// ⛔ A SECTION IS NEVER SILENTLY OMITTED — a user who finds nothing here
+/// cannot tell whether the section is missing or the feature is absent. That
+/// rule is why the replacement exists; it was simply not reaching macOS.
+String quickLogUnavailableBody({required bool isWindows}) => isWindows
+    ? 'The quick log notification is a phone feature. On Windows, record events in the app — everything else works the same way.'
+    : 'The quick log notification is a phone feature. Record events in the app — everything else works the same way.';
+
 class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});
 
@@ -325,13 +384,11 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   icon:      Icons.delete_forever_outlined,
                   iconColor: MERColours.criticalAccent,
                   title:     'Deleting the app deletes your events',
-                  body:      Platform.isIOS
-                      ? 'Deleting Medical Event Recorder removes every event stored on this device. '
-                        'Offloading is different: Settings → General → iPhone Storage → Offload App '
-                        'frees up space but keeps your data, and reinstalling brings it back. '
-                        'It is Delete App that destroys it.'
-                      : 'Uninstalling Medical Event Recorder removes every event stored on this device. '
-                        'Clearing app storage in Android settings does the same thing.',
+                  body:      storageClearingInstruction(
+                    isIOS:     Platform.isIOS,
+                    isAndroid: Platform.isAndroid,
+                    isWindows: Platform.isWindows,
+                  ),
                 ),
                 const _HelpRow(
                   icon:      Icons.phonelink_setup_outlined,
@@ -369,7 +426,7 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: _kSectionGap),
 
-            if (!Platform.isWindows)
+            if (Platform.isIOS || Platform.isAndroid)
             _Section(
               title: 'QUICK LOG NOTIFICATION',
               // ⚠️ NEVER COLLAPSED. This is the only documentation of the
@@ -510,16 +567,16 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
             // returns before any channel is created. Said plainly rather than
             // omitted — a Windows user who finds nothing here cannot tell
             // whether the section is missing or the feature is absent.
-            if (Platform.isWindows)
-              const _Section(
+            if (!Platform.isIOS && !Platform.isAndroid)
+              _Section(
                 title: 'QUICK LOG NOTIFICATION',
                 alwaysVisible: _HelpRow(
                   icon:   Icons.desktop_windows_outlined,
-                  title:  'Not available on Windows',
-                  body:   'The quick log notification is a phone feature. On Windows, record events in the app — everything else works the same way.',
+                  title:  quickLogUnavailableTitle(isWindows: Platform.isWindows),
+                  body:   quickLogUnavailableBody(isWindows: Platform.isWindows),
                   isLast: true,
                 ),
-                children: [],
+                children: const [],
               ),
             // ⛔ THE GUARD IS GONE. Brief 64 B-1, 20 September 2026.
             // This read `if (Platform.isWindows) const SizedBox(height: 12)`,
