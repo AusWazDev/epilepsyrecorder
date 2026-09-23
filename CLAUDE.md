@@ -853,6 +853,52 @@ converts a possible real deadlock into silence** — and on 23 September 2026 th
 like a harness artefact turned out, on its second appearance, to be a genuine one in a static
 queue. **Diagnose it, then decide.**
 
+### ⛔ WINDOWS GREEN IS NOT A COMPLETE GREEN. THE MAC IS AUTHORITATIVE FOR PLATFORM-GATED BEHAVIOUR
+
+⚠️ **Recorded 23 September 2026.** A widget test renders on the HOST. The CLI host here is
+Windows, so **every `Platform.isWindows` branch is the one the Windows suite exercises, and the
+other side of every one of those conditionals is never rendered.** A test covering gated
+behaviour does not fail on Windows — **it passes, on the branch the host happens to be.**
+
+**THE DENOMINATOR, measured 23 September 2026: 62 platform conditionals across 9 files in
+`lib/`** — `constants`, `event_record`, `storage_boot`, `help_screen`, `home_screen`,
+`walkthrough_screen`, `backup_service`, `ios_capture_bridge`, `notification_service`. That is
+the surface on which a Windows green says nothing.
+
+⛔ **THIS HAS ALREADY COST A REAL DEFECT, AND THE TEST THAT PINS IT SAYS SO IN ITS OWN HEADER —
+written BEFORE the divergence recurred.** `help_section_spacing_test.dart`:
+
+> ⛔ **THIS TEST IS ONLY VALID BECAUSE THE PLATFORM CONDITIONAL IS GONE, AND A FUTURE READER WHO
+> RE-INTRODUCES ONE MUST KNOW THAT.** The defect it pins was **invisible to this test's own
+> harness**. The fourth gap sat inside `if (Platform.isWindows)`, and the CLI host IS Windows —
+> so a widget test rendered the branch that was already correct, measured `12, 12, 12, 12`, and
+> reported uniform. On Android the same screen measured **12, 12, 12, 0**.
+
+⭐ **THE RULE AND THE FIX WERE THE SAME CHANGE THERE**: removing the guard leaves one code path,
+so the test exercises what Android runs. `help_no_platform_gap_test` exists to stop the guard
+coming back quietly.
+
+⚠️ **AND IT RECURRED ANYWAY. As at 23 September 2026 the two machines disagree, live:** this
+suite reports **982 passing, zero failing**, while the Mac reports **nine failures** at the same
+commit across `a11y_batch_render_comparison`, `drawer_contents` and `help_section_spacing` —
+**six of them a real accessibility defect** (the Mac's finding, recorded here as its finding and
+not as a measurement taken on this machine; Windows cannot see it, which is the whole point).
+
+**1. MUST NOT: report "the suite is green" as a release signal from Windows alone.** Say which
+host. A green here means *"green on the branches Windows renders."*
+
+**2. MUST: treat the Mac as authoritative for anything behind a platform conditional** — layout,
+spacing, text scale, semantics, notification behaviour, storage fallback.
+
+**3. MUST: prefer deleting the conditional over testing both sides of it.** One code path is
+testable from either host; two are testable from neither alone.
+
+⭐ **THE SHAPE, AND IT IS THE ONE THIS FILE KEEPS RECORDING: the check ran, the output was
+well-formed, and it measured something adjacent to the question.** Same family as the
+one-em-per-glyph font and the `PrintWindow` captures — a harness silently substituting its own
+conditions for the ones that ship. ⛔ **Ask what the harness is standing in for, not only whether
+it is working.**
+
 ### ⚠️ `git stash` AND `pubspec.lock` — A FLUTTER COMMAND CAN STRAND A STASH
 
 ⚠️ **Recorded 23 September 2026. A warning, not an incident: the work was recovered intact.**
