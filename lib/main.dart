@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -37,7 +38,25 @@ void main() async {
         if (AppInfo.isLoaded) event.release = AppInfo.sentryRelease;
         return event;
       };
-      options.environment = 'production';
+      // ⛔ A DEV BUILD REPORTED AS 'production' AND SENTRY COULD NOT SEPARATE A
+      // DEVELOPER'S CRASH FROM A USER'S — the instrument the release is read
+      // through. kReleaseMode is the compiler's own answer, needs no plumbing,
+      // and cannot drift from how the binary was actually built.
+      //
+      // ⭐ NOT a --dart-define, deliberately: a define can be OMITTED on a build
+      // and silently reverts to the wrong label, which is the same failure class
+      // as the hardcode it replaces. A compiler constant cannot be forgotten.
+      //
+      // ⚠️ `kReleaseMode` needs `package:flutter/foundation.dart` EXPLICITLY.
+      // `material.dart` does NOT re-export it — assumed here at first, and the
+      // analyzer said `Undefined name 'kReleaseMode'`. Recorded because the
+      // assumption is the natural one to make twice.
+      //
+      // ⚠️ THE SPLIT BEGINS AT THE FIRST BUILD CARRYING THIS. Events recorded
+      // before it keep the label they were given — 22 events as at 23 September
+      // 2026, every one `production` — so a Sentry query spanning the boundary
+      // mixes the two schemes. Nothing separates them retroactively.
+      options.environment = kReleaseMode ? 'production' : 'development';
       options.tracesSampleRate = 0.1;
       options.sendDefaultPii = false;
     },
