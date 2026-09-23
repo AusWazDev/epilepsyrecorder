@@ -3632,3 +3632,68 @@ DELIVERED until the affordance exists.** Nothing is at risk; something is merely
 **Whether the model should change, whether a donation mechanism should be built, and on what
 timetable.** Those are the developer's and they are open. **This entry exists so that the gap
 between the decision and the code is on the record, dated, rather than rediscovered.**
+
+---
+
+# ⛔ `reconcileLegacySharedRecords`' RACE — **NOT FIXED, DELIBERATELY** — 23 September 2026
+
+## The decision
+
+**The check-then-act race in `reconcileLegacySharedRecords` is left as it is for this release.**
+It is not an oversight, not deferred work, and not a backlog item. It is a decision with a
+reason, and the reason is that fixing it cannot be verified.
+
+## What the race is, in one paragraph
+
+The function reads its one-shot flag **synchronously on its first line** and writes it only after
+two awaits — a platform-channel read and a store write. Two overlapping calls therefore both
+pass the check, read the App Group mirror twice, and run the irreversible
+`clearLegacySharedRecords` twice. Measured: **2 reads and 2 clears unguarded, 1 and 1 guarded.**
+
+## Why it is not fixed — and this is the whole point of the entry
+
+⛔ **THIS PATH RUNS ONCE PER DEVICE, ON THE FIRST LAUNCH AFTER UPGRADING FROM 1.0.2, AND CANNOT
+BE REHEARSED.** There is no 1.0.2 device to test against. The upgrade state it consumes — an App
+Group mirror written by a build that is no longer installed anywhere — cannot be recreated on a
+device, and a test harness standing in for it is exactly the substitution this project has been
+burned by repeatedly.
+
+⭐ **So the trade is: an UNREACHABLE race against an UNVERIFIABLE change, on the code path that
+reconstructs a user's medical records from the only copy that exists.** A change here that is
+subtly wrong destroys the records it was written to protect, on a path that runs once and cannot
+be retried, and nothing in the test suite would show it.
+
+**The race is unreachable today** because all five `_loadRecords` callers funnel through
+`LoadSerialiser.run`, a static chain, and this function has exactly one call site inside
+`_loadRecordsInner`. **And the destroying mechanism is separately gone:** `save` became
+add-or-update in `86c8c40`, so a second call can no longer remove what the first folded.
+
+⚠️ **Two independent reasons it is safe, and neither is the function itself.** That is recorded
+plainly rather than softened — the function remains unsafe on its own terms.
+
+## ⚠️ REVISITABLE — with a named trigger, not a review date
+
+**If `LoadSerialiser` is ever removed from `_loadRecords`, or a caller is added to
+`_loadRecordsInner` off that line, this race becomes reachable and MUST be fixed before that
+change ships.** Not after, and not in the same release as a matter of tidiness — before.
+
+**The detector already exists:** `test/load_records_reentry_test.dart:267` — *"`_loadRecords`
+routes through `LoadSerialiser`, and nothing bypasses it"* — enumerates all five callers and
+fails on a sixth that does not. ⭐ **That test going red is this decision's expiry notice.**
+Anyone who meets it should be sent here rather than to a fix.
+
+⛔ **What would NOT trigger a revisit:** a new caller of `_loadRecords`, which inherits the queue,
+or a second `HomeScreen`, which shares the static chain. Neither makes the race reachable, and
+treating them as triggers would make the condition noise.
+
+## What is at stake if it ever is reachable
+
+**The clear is irreversible and the mirror has no writer.** `mer_records` appears three times in
+`AppDelegate.swift` — the constant, the read, and the `removeObject`. **None of the three writes
+it.** Once removed from the App Group there is no copy anywhere.
+
+## ⛔ What this entry does NOT say
+
+**That the race is harmless, or that the function is correct.** It is neither. It says the race
+is unreachable in this release by two independent mechanisms, that fixing it cannot be verified,
+and that the condition under which that judgement expires is named and has a test behind it.

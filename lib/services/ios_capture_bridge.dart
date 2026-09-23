@@ -158,6 +158,52 @@ class SharedRecordsReconcileOutcome {
 /// merged list is confirmed written. A failure leaves the flag unset and the
 /// mirror in place, and the whole thing is retried next foreground — safe,
 /// because a union by id is idempotent.
+///
+/// ## Concurrency: this function is NOT re-entrant, and is made safe from
+/// outside — 23 September 2026
+///
+/// **It is check-then-act across two awaits, and therefore unsafe on its own
+/// terms.** `kSharedRecordsReconciledKey` is read SYNCHRONOUSLY on the first
+/// line and written only after the channel read and the store write have both
+/// completed. Two overlapping calls both pass the check: the second enters
+/// while the first is suspended, so the mirror is read twice and
+/// `clearLegacySharedRecords` runs twice. Measured, not argued — 2 reads and
+/// 2 clears unguarded, against 1 and 1 guarded.
+///
+/// **What makes it safe in this release is entirely external.** All FIVE
+/// callers of `_loadRecords` funnel through one line —
+/// `LoadSerialiser.run(() => _loadRecordsInner(...))` in `home_screen.dart` —
+/// and `LoadSerialiser`'s chain is `static`, so even two `HomeScreen`
+/// instances queue against each other. This function has exactly ONE call
+/// site, inside `_loadRecordsInner`. Nothing else can reach it.
+///
+/// ⛔ **THE CONDITION THAT BREAKS IT, stated so it can be checked rather than
+/// feared: a caller added to `_loadRecordsInner` off the serialiser line, or
+/// `LoadSerialiser` removed from `_loadRecords`.** Either makes the race
+/// reachable again. Nothing else does — not a new caller of `_loadRecords`,
+/// which inherits the queue, and not a second `HomeScreen`, which shares the
+/// static chain.
+///
+/// **The pin that catches it:** `test/load_records_reentry_test.dart:267`,
+/// *"`_loadRecords` routes through `LoadSerialiser`, and nothing bypasses
+/// it"*, which enumerates all five callers and fails on a sixth that does not.
+/// ⭐ That test is the reason this is a property with a guard rather than an
+/// assumption.
+///
+/// ## Why the stakes are what they are
+///
+/// **The clear is IRREVERSIBLE and the mirror has no writer.** `mer_records`
+/// appears three times in `AppDelegate.swift` — the constant, the read in
+/// `readLegacySharedRecords`, and the `removeObject` in
+/// `clearLegacySharedRecords`. **None of the three writes it.** Once removed
+/// from the App Group there is no copy anywhere, and this path runs once per
+/// device, on the first launch after upgrading from 1.0.2.
+///
+/// ⭐ **The destroying mechanism is already gone, and that is separate from the
+/// race.** `save` became add-or-update in `86c8c40`, so a second call's write
+/// can no longer remove records the first folded, and `removeObject` twice is
+/// `removeObject` once. **The race still runs; it no longer has anything to
+/// destroy through.** Do not read the fix as having closed the race.
 Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
   required MethodChannel channel,
   required SharedPreferences prefs,
