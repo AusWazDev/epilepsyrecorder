@@ -39,6 +39,42 @@ import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 import '../theme/mer_type.dart';
 
+/// Serialises whole composite loads, so `_loadRecords` cannot run concurrently
+/// with itself.
+///
+/// ⭐ EXTRACTED SO IT CAN BE TESTED. `_loadRecords` is a private method on a
+/// State object and cannot be driven directly; the rationale for extracting a
+/// decision out of a widget for exactly this reason is already written down at
+/// `walkthrough_screen.dart:361-366` and was applied again for
+/// `resolveNotificationTarget` and `shouldReportNavChannelFailure`. Cited, not
+/// re-derived.
+///
+/// ⚠️ NOT A REPLACEMENT FOR `EventStore.serialise`, which queues individual
+/// `load` and `save` operations and still does. This queues the COMPOSITE that
+/// sits above it — load, reconcile, drain, persist, delete-keys — because that
+/// is the granularity at which the loss happens. Both are needed.
+///
+/// Static for the same reason `EventStore.serialise` is: what it guards is the
+/// store, the App Group mirror and the capture inbox, all of which are global,
+/// not this State object.
+class LoadSerialiser {
+  /// The chain is kept alive across failures. A rejected Future stored back
+  /// would poison every later load; the caller still sees its own error.
+  static Future<void> _chain = Future<void>.value();
+
+  static Future<T> run<T>(Future<T> Function() operation) {
+    final result = _chain.then((_) => operation());
+    _chain = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
+  /// A test process is one Dart isolate, so the chain outlives a single test.
+  /// Resetting between cases keeps them independent.
+  static void resetForTest() {
+    _chain = Future<void>.value();
+  }
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -529,7 +565,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// survive for the next attempt, and `persistEvents` raises the unsaved-events
   /// banner, which is exactly its existing meaning: the list on screen is ahead
   /// of storage. Re-draining is safe because every instruction is idempotent.
-  Future<void> _loadRecords({bool initial = false}) async {
+  ///
+  /// ## ⭐ THE INVARIANT: THIS MUST NOT RUN CONCURRENTLY WITH ITSELF
+  ///
+  /// ⛔ ESTABLISHED BY EXECUTION, 23 September 2026, not argued. A probe drove
+  /// two overlapping calls through this composite and the second DESTROYED the
+  /// first's work: both passed `reconcileLegacySharedRecords`' one-shot flag
+  /// check, both read the App Group mirror, both deleted it, and the second
+  /// then persisted a record list loaded BEFORE the first's fold — over the
+  /// top of it. A record that existed only in the mirror ended up in neither
+  /// the store nor the mirror. On a real device that is the once-per-device
+  /// upgrade from 1.0.2 and there is no second chance by construction.
+  ///
+  /// ⚠️ `EventStore.serialise` DOES NOT COVER THIS. It queues individual `load`
+  /// and `save` operations, which is why the `persist_race_test` lost update
+  /// does not recur. The hazard here is at the COMPOSITE's granularity — load,
+  /// reconcile, drain, persist, delete-keys — which sits above that queue. This
+  /// is the same idiom one level up, and deliberately so.
+  ///
+  /// ⛔ FIVE CALLERS, AND ONLY TWO WERE EVER NAMED. `initState`'s post-frame
+  /// (`initial: true`), `_openLatestEvent(reload: true)`, `_handleResume`, and
+  /// BOTH branches of `_endActiveEvent`. `_openingLatest` guards
+  /// `_openLatestEvent` and nothing else — `_handleResume` calls this directly
+  /// and bypasses it entirely — so a guard anywhere but here misses callers.
+  ///
+  /// ⭐ QUEUED, NOT DROPPED AND NOT COALESCED, and the difference is the point:
+  ///
+  ///   * DROPPING the second call would let `_openLatestEvent` fall through to
+  ///     `_openDetails(_records.first)` against a list it did not refresh. The
+  ///     notification tap would silently open stale state.
+  ///   * COALESCING — handing the second caller the first's result — loses work
+  ///     whenever the second caller's trigger happened AFTER the first call's
+  ///     `transport.read()`. A capture written by Swift in that window would
+  ///     not be drained until some later foreground.
+  ///   * QUEUEING gives every caller its own full pass over data current as of
+  ///     the moment that call started. Re-running is cheap and idempotent: the
+  ///     reconcile returns at its flag, the drain no-ops on an empty inbox, and
+  ///     the fold is a union by id.
+  ///
+  /// The cost is that a caller may wait for one in-flight pass before its own.
+  /// Nothing is dropped and nothing the user sees changes.
+  Future<void> _loadRecords({bool initial = false}) =>
+      LoadSerialiser.run(() => _loadRecordsInner(initial: initial));
+
+  Future<void> _loadRecordsInner({bool initial = false}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
 
