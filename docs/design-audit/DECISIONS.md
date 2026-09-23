@@ -3337,3 +3337,120 @@ DEVELOPER. IT IS OPEN AS AT 21 September 2026.** ⛔ **Until it is answered, thi
 read as having relaxed it.** ⚠️ **One instance decided by the owner is not a change to the standing
 rule** — and treating it as one would be the same move this register already forbids elsewhere: a
 precedent recorded without its limits is read as permission.
+
+---
+
+# ⛔ BRIEF 86 — THE prefs → SQLite MIGRATION: WHAT WAS SETTLED AND WHAT IS UNSWEPT — 23 September 2026
+
+Recorded at HEAD `41facbc`. A read; nothing in `lib/` or `ios/` was changed.
+
+## 1 · ⭐ THE SEVEN UNREAD KEYS ARE UNREACHABLE FOR EVERY USER WHO EXISTS
+
+`EventRecord.toMap` writes seventeen keys at HEAD. `rawMapToRow` reads ten. Seven are never
+read, and five of those seven carry **no warrant at all** — no comment, no `countAbsent`, no
+entry in `kMigratedOptionalKeys`: `rescueMedGiven`, `rescueMedHelped`, `rescueMedSecondDose`,
+`hidden`, `updatedAt`. ⛔ **`hidden` is worse than a NULL**: the column is
+`hidden INTEGER NOT NULL DEFAULT 0`, so a source record with `hidden: true` arrives **visible**
+— the app overriding a decision the user made about their own records, which in a capture tool
+is its own category and is not data loss.
+
+**It is unreachable, and that was established by dating each key's entry into `toMap` rather
+than by argument.** Every commit touching `event_record.dart` was walked with `--follow` and the
+`toMap` body brace-matched at each one — 48 of 48 commits carried a readable block; controls
+`timestamp` (earliest commit) and `zzNotAKey` (never) both behaved.
+
+    detailsCompleted       26 Aug 2026   77adc0b
+    rescueMedGiven         27 Aug 2026   216bef7
+    rescueMedHelped        27 Aug 2026   216bef7
+    rescueMedSecondDose    27 Aug 2026   216bef7
+    occurredAt             29 Aug 2026   e1575b2
+    hidden                 17 Sep 2026   bee5df7
+    updatedAt              17 Sep 2026   8f3a19e
+
+⭐ **ALL SEVEN LAND AFTER THE MIGRATION ITSELF** (`9461f27`, 25 August 2026); the earliest is
+one day later. And all seven land **at least 83 days after the 1.0.2 commit window closed**
+(6 May – 4 June 2026). A 1.0.2 payload was written by a nine-key `toMap` and cannot contain any
+of them.
+
+⚠️ **THE BOUND, STATED SO IT IS NOT READ AS "SAFE".** The discards are unreachable for the
+population that exists, not absent. They become live for: **a device running a build dated
+26 August 2026 or later, which FELL BACK to the prefs store, captured while fallen back — so
+`writeEventPayload` wrote a modern payload — and only then completed the migration.** Whether
+that population exists in the field is **unestablished**, and is not establishable from Windows.
+
+## 2 · ⛔ RETRY POISONING — MECHANISM CONFIRMED, ENTRY CONDITION UNREACHABLE FROM `lib/`
+
+`alreadyDone` (`storage_boot.dart:121`) tests `getMeta(...) == 'migrated'`, so a
+`failed_verification` state does **not** short-circuit and the migration runs again. Nothing
+clears the `event` table between attempts, the DDL carries no PRIMARY KEY or UNIQUE on `id`, and
+`verified` compares `loadableCount` against a **whole-table** `SELECT COUNT(*) FROM event`.
+Measured with a throwaway probe: a second run gave `loadable=3, insertedCount=5`. Verification
+can never again succeed, and the table grows by `loadableCount` every launch.
+
+⛔ **The entry condition is a separate claim and is NOT established.** The only way to produce a
+first failure was the `dropForNegativeControl` seam, which has **zero non-zero call sites
+outside `test/`**. On a fresh table the transaction either commits every row or rolls back, so
+`inserted != loadableCount` has no demonstrated path.
+
+⭐ **Recorded as two claims deliberately.** A confirmed mechanism with an unconfirmed entry is
+not a defect and must not be written up as one — nor dismissed, since the entry condition is
+unestablished rather than shown absent. **Not chased.**
+
+## 3 · ⛔ SCHEMA MIGRATION AND VOCABULARY SEEDING ARE UNSWEPT
+
+Brief 86 was scoped to the prefs → SQLite drain only. **"The migration" is three mechanisms
+inside `StorageBoot.init()`, not one** — the brief had treated it as singular on the strength of
+two line numbers, and that framing was reported as wrong.
+
+⛔ **NEITHER OF THE OTHER TWO IS TO BE READ AS CLEARED BY THIS READ.**
+
+  * **Schema migration** — `onUpgrade: upgradeSchema`, `kSqliteSchemaVersion = 11`, ten upgrade
+    branches (v2, v3, v4 two-sided, v5, v6, v7, v8, v9, v10, v11). `ALTER TABLE` rather than row
+    movement, so its risk profile is not the drain's. Its own comments record previously-live
+    defects in the v4 and v8 bounds and in a v10 assertion — evidence that the family has a
+    history, not that it is currently clean.
+  * **Vocabulary seeding** — `ensureSeeded` + `ensureTriggersSeeded`, `storage_boot.dart:99-109`,
+    run on **every open**, inside a bare `catch (_) {}` whose only warrant is *"A seed that fails
+    must not stop the app booting. The vocabulary falls back to the shipped lists below."*
+    ⚠️ Whether that warrant is about what the catch actually swallows is **not established** —
+    which is the same warrant-versus-object question Part C asked of the drain, unasked here.
+
+## 4 · ⚠️ THE PREDICTION RULE, NOW PAST BEING AN ESTIMATE PROBLEM
+
+Predicted floor 6, measured 19. **Seventh consecutive low, with two deliberate upward
+corrections both landing under.** Any count given from the CLI is a **floor**, and is to be
+stated as one rather than offered as an estimate.
+
+## 5 · ⭐ THE TRANSFERABLE HALF — A BOUNDED-OUT POPULATION BEATS AN UNESTABLISHED ONE
+
+**Brief 86 Part D asked one question — when did each key enter `toMap`, relative to the shipped
+1.0.2 window. The answer that matters is a stronger one than the question asked for, and it was
+free.**
+
+⛔ **All seven keys postdate not merely the shipped window (closed 4 June 2026) but THE MIGRATION
+ITSELF** (`9461f27`, 25 August 2026). `detailsCompleted` postdates it **by one day**.
+
+⭐ **THAT CHANGES THE KIND OF ANSWER, NOT JUST ITS MARGIN.** Against the shipped window alone,
+the conclusion is *"no shipped build can produce a payload carrying these keys"* — which leaves
+the affected population **open-ended**: some other, unenumerated build might. Against the
+migration commit, the population is **bounded from both sides** and can be written down in full:
+
+> a device running a build dated **26 August 2026 or later**, which **fell back** to the prefs
+> store, **captured while fallen back** — so `writeEventPayload` wrote a modern payload — and
+> **only then completed the migration**.
+
+⭐ **A POPULATION YOU CAN STATE IS NOT THE SAME AS A POPULATION YOU HAVE NOT OBSERVED.** The
+first is a closed description that a later session can test; the second is an absence of
+evidence that reads, on re-reading, exactly like safety. **The nineteen discards of Brief 86
+Part C are academic because of the first, not the second** — and the distinction is what stops
+the finding being re-opened every time someone rereads it and cannot tell which kind of "not
+reachable" was meant.
+
+⚠️ **THE PRACTICAL FORM, and it is cheap: when a date or version bounds a population, check it
+against EVERY boundary available, not only the one the question named.** Here the question named
+the store window; the repository also carried the migration commit, the fix commits and the
+`toMap` history. **The stronger bound cost one extra comparison against data already in hand.**
+
+⛔ **AND THE LIMIT, so this is not read as a clearance:** bounded-out is not *absent*. Whether
+that population exists in the field remains **unestablished**, and is not establishable from
+Windows. The claim is that the population is **describable and narrow**, not that it is empty.
