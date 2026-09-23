@@ -1754,6 +1754,35 @@ Dart. The proper fix is to replicate the snapshot in
 protection rather than none. Required before any migration (e.g. SQLite) that
 would want to roll back.
 
+> ⛔ **THE PREMISE OF THIS ITEM NO LONGER HOLDS — 23 September 2026. THE ITEM
+> NEEDS RE-DECIDING, NOT REWORDING.**
+>
+> **The superseded wording, quoted:** *"the native Swift capture path writes the
+> primary key without passing through Dart"* and *"The proper fix is to
+> replicate the snapshot in `AppDelegate.handleQuickLogStart` and
+> `EndMEREventIntent`."*
+>
+> **What is true at HEAD.** Swift posts FACTS to the capture inbox. **Dart's
+> drain is the sole writer of the record list, and it stamps.** The native side
+> neither reads nor rewrites the record list.
+>
+> ⛔ **SO THE PLANNED ACTION TARGETS TWO FUNCTIONS THAT NO LONGER WRITE THE
+> RECORD LIST.** Replicating a rollback snapshot inside them would protect
+> nothing, because there is no longer a native write to roll back. **Whether
+> iOS needs rollback protection AT ALL, and where it would now belong, is a
+> fresh question.** ⚠️ **It is NOT re-decided here — it is marked as needing
+> that.**
+>
+> ⭐ **HOW IT WAS FOUND, recorded because the method is the transferable part.**
+> By enumerating what a claim SAYS rather than searching for the wording it was
+> reported in — a search for *"creates records natively"* or *"the Dart write
+> path"* returns nothing on this line — **and by checking documents that PLAN
+> work as well as those that DESCRIBE it.** ⛔ Every descriptive artefact was
+> already correct: `docs/ARCHITECTURE.md` (two passages), `docs/DATA-MODEL.md`
+> (two), `CLAUDE.md`, and `lib/models/event_record.dart`'s own dated
+> annotation. **Only the planning document was stale**, and a stale plan
+> allocates effort where a stale description merely misleads.
+
 ### Stale — this repo's CLAUDE.md
 `CLAUDE.md` still records "Version: 1.0.3+4" (now 1.1.0+5) and describes iOS
 notifications as `awesome_notifications` with `ActionType.Default`. iOS has
