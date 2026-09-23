@@ -270,6 +270,33 @@ Omitting any one of these produces either no icon, a black circle, or incorrect 
 
 ---
 
+## Toolchain — BOTH MACHINES ALIGNED 23 September 2026
+
+Windows and the Mac now build from the same SDK. Before this they did not, and two toolchains
+were building one release: Windows was on 3.41.3 / Dart 3.11.1, the Mac on 3.41.7 / 3.11.5.
+
+    Flutter 3.41.7 · Dart 3.11.5 · framework cc0734ac71 · engine 59aa584fdf
+
+**Pinned by TAG, not by `flutter upgrade`** — `git -C <flutter sdk> checkout 3.41.7`. An upgrade
+takes the newest stable, which overshoots the moment one is released; a tag is the only way to
+land on a stated version. The SDK sits in detached HEAD as a result, so `flutter --version`
+reports `channel [user-branch] • unknown source`. That is expected and does not affect the four
+fields above.
+
+⛔ **THE ROLLBACK POINT IS THE ONLY THING BETWEEN THIS AND A ONE-WAY DOOR. Windows was at
+Flutter SDK commit `48c32af0345e9ad5747f78ddce828c7f795f7159` (tag `3.41.3`) before the move.**
+To go back: `git -C <flutter sdk> checkout 48c32af0345e9ad5747f78ddce828c7f795f7159`, then
+`flutter --version` to rebuild the tool. ⭐ **This is an IDENTITY, not a state** — it names which
+commit the SDK was, which is stable and cannot rot, unlike a claim about what any tree currently
+looks like.
+
+⚠️ **What the alignment did NOT do, measured rather than assumed.** It changed **nothing** in this
+machine's test output: all twelve `a11y_batch_render_comparison` cases came back byte-identical
+and the suite stayed at 995 passing / 0 failing. ⛔ **So the SDK version was never the cause of
+the Windows/Mac difference in that file, and the "SDK skew" explanation carried from Brief 148
+onward is dead.** Full record, with the prediction written before the run:
+`C:\dev\Claude outputs\Brief-151-prediction-2026-09-23.md`.
+
 ## Build Commands
 
 ```powershell
