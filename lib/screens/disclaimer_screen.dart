@@ -277,6 +277,15 @@ class DisclaimerScreen extends StatelessWidget {
                                 height: 1.5,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Your spreadsheet and backup files are plain, '
+                              'readable files. Anyone who opens one can read '
+                              'every event in it.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                height: 1.5,
+                              ),
+                            ),
                             const SizedBox(height: 10),
                             GestureDetector(
                               onTap: () => launchUrl(

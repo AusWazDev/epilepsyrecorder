@@ -2074,6 +2074,19 @@ Future<void> showExportOptions(
                 ],
               ),
             ),
+            // Mirrors the backup sheet's body, which carries the same claim
+            // about the same kind of file. NOT in `kSaveToDeviceSubtitle`:
+            // that constant renders on BOTH sheets, so the claim would be
+            // stated twice alongside this one.
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Text(
+                'Creates a spreadsheet of your events. Anyone who opens it '
+                'can read everything in it, so choose where it goes with '
+                'that in mind.',
+                style: MERType.bodyInherit,
+              ),
+            ),
             const Divider(height: 1),
 
             // ── SHARE ──

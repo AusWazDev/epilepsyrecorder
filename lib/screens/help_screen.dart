@@ -410,7 +410,9 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   body:      'Exporting or backing up is the only way to keep your events '
                              'independently of this device. Save the file somewhere else — a '
                              'computer, cloud storage, an email to yourself — and it will still '
-                             'be there whatever happens to the phone.',
+                             'be there whatever happens to the phone. Anyone who opens the file '
+                             'can read everything in it, so keep it where you would keep '
+                             'anything else private.',
                   isLast:    true,
                 ),
               ],
