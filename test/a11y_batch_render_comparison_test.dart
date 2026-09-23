@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:awesome_notifications/awesome_notifications_platform_interface.dart';
+
 import 'package:medical_event_recorder/constants.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/storage_boot.dart';
@@ -489,12 +491,64 @@ void main() {
 
   testWidgets('home — paragraphs unchanged at 375, 430, 800', (tester) async {
     addTearDown(tester.view.reset);
+
+    // ⛔ THE ONE PLATFORM-DEPENDENT THING ON THIS SCREEN, PINNED SHUT RATHER
+    // THAN BASELINED AROUND — 23 September 2026.
+    //
+    // Home's settings-nudge card renders behind `!_notificationsAllowed &&
+    // !Platform.isWindows`. `_notificationsAllowed` starts TRUE and is only
+    // ever set by `_checkNotificationStatus()`, which the same guard turns off
+    // on Windows — so on Windows the card is unreachable and the census was 26,
+    // while off Windows the plugin answers "denied" and the census was 31. The
+    // baseline below was captured on Windows, so it described one platform and
+    // called every other one a failure. Five paragraphs: an Icon glyph, the
+    // title, the body, and two button labels.
+    //
+    // ⭐ THE FIX IS TO REMOVE THE VARIABLE, NOT TO RECORD IT TWICE. A second
+    // golden per platform would have moved the blindness rather than removed
+    // it, and two goldens for one screen drift. The plugin is told notifications
+    // are ALLOWED, which is the state in which the card does not render on ANY
+    // platform — so one baseline is correct everywhere.
+    //
+    // ⚠️ AND THE CARD IS NOT LEFT UNCOVERED. It has its own test at every width
+    // and text scale: test/settings_nudge_card_layout_test.dart, which asserts
+    // it renders where it can and is absent where it cannot. THIS file's
+    // subject is whether a glyph moved, not whether the card exists.
+    //
+    // ⚠️ Off android/ios the plugin resolves to `AwesomeNotificationsEmpty`,
+    // whose `isNotificationAllowed()` returns false without reaching a channel
+    // — so the channel mock alone cannot move this and the operatingSystem
+    // override must come with it.
+    AwesomeNotificationsPlatform.resetInstance();
+    AwesomeNotificationsPlatform.operatingSystem = 'android';
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('awesome_notifications'),
+            (call) async => call.method == 'isNotificationAllowed' ? true : null);
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+              const MethodChannel('awesome_notifications'), null);
+      AwesomeNotificationsPlatform.resetInstance();
+      AwesomeNotificationsPlatform.operatingSystem = Platform.operatingSystem;
+    });
+
     final moved = <String>[];
     for (final w in kWidths) {
       setWidth(tester, w);
       await tester.pumpWidget(
           MaterialApp(theme: MERTheme.light, home: const HomeScreen()));
       await tester.pumpAndSettle();
+
+      // ⭐ ASSERT THE STATE BEFORE MEASURING IT. If the lever above ever stops
+      // working the census silently becomes platform-dependent again, and the
+      // failure would read as "a glyph moved" — which is the wrong diagnosis
+      // and cost most of a day to reach the first time.
+      expect(find.text('Notifications are off'), findsNothing,
+          reason: '⛔ home@${w.toInt()}: the nudge card must be suppressed for '
+              'this census. Present, it adds five paragraphs and the baseline '
+              'becomes a statement about one platform.');
+
       final m = check(tester, 'home@${w.toInt()}');
       if (m != null) moved.add(m);
     }
