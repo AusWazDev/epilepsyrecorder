@@ -266,10 +266,7 @@ class DisclaimerScreen extends StatelessWidget {
                                     ),
                                   ),
                                   TextSpan(
-                                    text: ' Your events are included in a '
-                                        'normal device backup, so restoring '
-                                        'one onto a new phone does bring them '
-                                        'across. Backing up or exporting to a '
+                                    text: ' Backing up or exporting to a '
                                         'file is the only way to keep a copy '
                                         'that does not depend on this device.',
                                   ),

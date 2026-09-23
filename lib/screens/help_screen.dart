@@ -391,15 +391,6 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const _HelpRow(
-                  icon:      Icons.phonelink_setup_outlined,
-                  iconColor: MERColours.positiveAccent,
-                  title:     'Moving to a new phone is different',
-                  body:      'Your events are included in a normal device backup. Restoring that '
-                             'backup onto a new phone brings them across with the app. '
-                             'That is not the same as deleting and reinstalling the app on this '
-                             'phone, which starts you with nothing.',
-                ),
-                const _HelpRow(
                   icon:      Icons.compare_arrows,
                   iconColor: MERColours.infoAccent,
                   title:     'Export and backup do different jobs',
