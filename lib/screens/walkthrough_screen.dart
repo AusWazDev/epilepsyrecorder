@@ -133,8 +133,24 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
             // times; a fresh draft would be a fourth thing to keep in step.
             'There is no account and no cloud copy. Notiva never receives your '
                 'events and cannot recover them.',
-            // "the only copy YOU control" is precise and must stay precise:
-            // Help also states events are included in a normal device backup.
+            // "the only copy YOU control" is precise and must stay precise.
+            //
+            // ⛔ CORRECTED 23 September 2026. The second half read:
+            //     "Help also states events are included in a normal device backup."
+            // ⭐ IT NO LONGER DOES. `e30125c` removed that claim from Help and
+            // from the disclaimer, so this comment was falsified by the fix
+            // rather than by drift — the same shape as the ⋮ comment `5dd372c`
+            // corrected in help_screen.
+            //
+            // ⚠️ REMOVED ON SCOPE GROUNDS, NOT CORRECTNESS. The Change
+            // Register records the sentence as probably still TRUE — device
+            // backups do include the database on Android and iOS. It went
+            // because it is a claim about Apple's and Google's backup systems,
+            // which this app cannot make and cannot keep true.
+            //
+            // ⭐ SO THE PRECISION STILL MATTERS, FOR A DIFFERENT REASON. It is
+            // no longer guarding against a neighbouring MER claim; it is the
+            // only place the distinction is drawn at all.
             'A backup file is the only copy you control. Take one, and keep it '
                 'somewhere else.',
           ],
