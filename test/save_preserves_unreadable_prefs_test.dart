@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:medical_event_recorder/constants.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 
-EventRecord rec(String id, DateTime ts) => EventRecord(
+EventRecord rec(String id, DateTime ts, {String notes = ''}) => EventRecord(
       id: id,
       timestamp: ts,
       duration: DurationCategory.lt1,
@@ -26,7 +26,7 @@ EventRecord rec(String id, DateTime ts) => EventRecord(
       feelings: const <String>[],
       triggers: const <String>[],
       referralRequired: false,
-      notes: '',
+      notes: notes,
       detailsCompleted: true,
     );
 
@@ -72,28 +72,73 @@ void main() {
         reason: 'TEST 4: and the readable record is still there.');
     expect(after, hasLength(2), reason: 'TEST 4: exactly two entries.');
 
-    // ── deletion still works ─────────────────────────────────────────────
+    // ── REBUILT 23 September 2026 · Brief 135R-2 ─────────────────────────
+    // ⛔ THIS SECTION PREVIOUSLY ASSERTED THE OPPOSITE, preserved here as a
+    // record rather than silently replaced. It read:
+    //
+    //     expect(ids2, isNot(contains('delete-me')), reason: 'TEST 4: ⚠️ no
+    //     resurrection here either. Deletion is a real feature on both boot
+    //     paths.'
+    //
+    // ⚠️ Nothing in the app removes a record — hiding is a flag and History's
+    // `onDelete:` is the hide. So the discriminator moves from DELETION to
+    // UPDATE, exactly as it does on the SQLite side. ⭐ The two stores reach
+    // this contract by different mechanisms — rowid there, an id set here —
+    // which is precisely why both are pinned rather than one.
     await prefs.clear();
     await prefs.setString(
       kEventStorageKey,
       jsonEncode([
         rec('keep-me', DateTime(2026, 9, 1)).toMap(),
-        rec('delete-me', DateTime(2026, 9, 2)).toMap(),
+        rec('edit-me', DateTime(2026, 9, 2)).toMap(),
         unreadableEntry,
       ]),
     );
-    final kept =
-        (await store.load()).where((r) => r.id != 'delete-me').toList();
-    await store.save(kept);
+
+    // The caller edits ONE record and hands back the whole list.
+    final loaded2 = await store.load();
+    expect(loaded2.map((r) => r.id), containsAll(['keep-me', 'edit-me']),
+        reason: 'CONTROL: both readable records must load, or the edit below '
+                'is not editing anything.');
+    await store.save([
+      for (final r in loaded2)
+        if (r.id == 'edit-me')
+          rec('edit-me', DateTime(2026, 9, 2), notes: 'edited')
+        else
+          r,
+    ]);
 
     final after2 = jsonDecode(prefs.getString(kEventStorageKey)!) as List;
     final ids2 = after2.whereType<Map>().map((e) => e['id']).toList();
-    expect(ids2, isNot(contains('delete-me')),
-        reason: 'TEST 4: ⚠️ no resurrection here either. Deletion is a real '
-                'feature on both boot paths.');
+    expect(ids2.where((id) => id == 'edit-me'), hasLength(1),
+        reason: '⛔ THE UPDATE REPLACES, IT DOES NOT ACCUMULATE. Two entries '
+                'here means the rebuild stopped dropping the old copy without '
+                'scoping what it keeps — every save would then duplicate its '
+                'own records.');
+    expect(
+        after2
+            .whereType<Map>()
+            .firstWhere((e) => e['id'] == 'edit-me')['notes'],
+        'edited',
+        reason: '⛔ AND THE NEW VALUE MUST WIN. A merge that preferred the '
+                'stored copy would silently discard every edit the user makes '
+                '— the failure at the opposite extreme from the clobber.');
     expect(ids2, contains('bad-1'),
-        reason: 'TEST 4: and the unreadable entry survives a genuine deletion '
-                '— both behaviours coexist.');
+        reason: 'TEST 4: and the unreadable entry survives a real update — '
+                'both behaviours coexist.');
+
+    // ⭐ THE OTHER HALF: an entry the snapshot never mentions is not the
+    // snapshot's to remove. This is the clobber, at store level.
+    await store.save([rec('keep-me', DateTime(2026, 9, 1))]);
+    final afterAbsent = jsonDecode(prefs.getString(kEventStorageKey)!) as List;
+    final idsAbsent = afterAbsent.whereType<Map>().map((e) => e['id']).toList();
+    expect(idsAbsent, contains('edit-me'),
+        reason: '⛔ THE CLOBBER, on the fallback store. Absence from a '
+                'snapshot means the caller never knew about the record, NOT '
+                'that the user deleted it. Removal is an operation '
+                '(`clearAll`), never a side effect of a save.');
+    expect(idsAbsent, contains('bad-1'),
+        reason: 'TEST 4: the unreadable entry is still carried through.');
 
     // ── a WHOLLY unreadable payload is quarantined, not overwritten ──────
     await prefs.clear();

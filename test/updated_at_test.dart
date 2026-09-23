@@ -205,7 +205,20 @@ void main() {
         full('unknown', DateTime(2026, 8, 23, 18, 30)),
       ]);
       final back = await store.load();
-      expect(back, hasLength(2), reason: 'positive control');
+      // ⚠️ REBUILT 23 September 2026 · Brief 135R-2. This read
+      // `expect(back, hasLength(2), reason: 'positive control')` and went red
+      // when `save` became add-or-update. ⛔ IT WAS NOT TESTING WHAT THE
+      // LENGTH SUGGESTED. `v1ThenUpgrade` seeds a row `'old'` to exercise the
+      // v1 -> v11 upgrade, and the 2 was only reachable because a save used to
+      // destroy every row its list did not name. ⭐ So the old assertion was
+      // silently depending on the clobber, in a test about NULL survival.
+      expect(back.map((r) => r.id), containsAll(['stamped', 'unknown']),
+          reason: 'positive control: both written records must come back, or '
+                  'the field assertions below are vacuous.');
+      expect(back.map((r) => r.id), contains('old'),
+          reason: '⭐ AND THE SEEDED ROW SURVIVES A SAVE THAT NEVER MENTIONED '
+                  'IT — add-or-update, demonstrated incidentally by a fixture '
+                  'that was not built to test it.');
       expect(back.firstWhere((r) => r.id == 'stamped').updatedAt, changed);
       expect(back.firstWhere((r) => r.id == 'unknown').updatedAt, isNull,
           reason: 'unknown must not become a value on the way through');

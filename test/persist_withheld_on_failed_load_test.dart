@@ -34,7 +34,7 @@ import 'package:medical_event_recorder/models/capture_instruction.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/event_store_sqlite.dart';
 
-EventRecord rec(String id, DateTime ts) => EventRecord(
+EventRecord rec(String id, DateTime ts, {String notes = ''}) => EventRecord(
       id: id,
       timestamp: ts,
       duration: DurationCategory.lt1,
@@ -44,7 +44,7 @@ EventRecord rec(String id, DateTime ts) => EventRecord(
       feelings: const <String>[],
       triggers: const <String>[],
       referralRequired: false,
-      notes: '',
+      notes: notes,
       detailsCompleted: true,
     );
 
@@ -71,6 +71,15 @@ void main() {
 
   Future<int> count(Database db) async =>
       (await db.rawQuery('SELECT COUNT(*) AS n FROM event')).first['n'] as int;
+
+  /// The `notes` cell — the field a WRITE is watched through now that a write
+  /// no longer announces itself by removing a row. See test 2's rebuild note.
+  Future<String?> notesOf(Database db, String id) async =>
+      (await db.query('event', where: 'id = ?', whereArgs: [id]))
+          .first['notes'] as String?;
+
+  Future<bool> rowExists(Database db, String id) async =>
+      (await db.query('event', where: 'id = ?', whereArgs: [id])).isNotEmpty;
 
   test('1 · ⛔ THE REGRESSION — twelve readable rows survive a capture taken '
       'while the load has FAILED, and the capture survives too', () async {
@@ -106,6 +115,18 @@ void main() {
                 'list did not contain. Nothing may be deleted by a write '
                 'derived from a load that never happened.');
 
+    // ⚠️ WHY THIS ASSERTION STILL DISCRIMINATES, 23 September 2026. `save` is
+    // now add-or-update, so an APPLIED write here would no longer collapse the
+    // table to 1 — it would ADD the capture and read 13. Either way the count
+    // leaves 12, so `12` still separates "withheld" from "written". ⛔ Recorded
+    // because the number is unchanged while the reason for it is not, and a
+    // reader checking this test against the new `save` would otherwise
+    // conclude it had stopped testing anything.
+    expect(await rowExists(db, captured.id), isFalse,
+        reason: '⭐ THE DIRECT FORM OF THE SAME CLAIM, added because it does '
+                'not depend on arithmetic: the withheld capture is NOT in '
+                'storage. A guard that wrote anyway would put it there.');
+
     // ── the refuge: the capture is durable even though it was not stored ──
     final prefs = await SharedPreferences.getInstance();
     await writeStartInstruction(prefs,
@@ -134,31 +155,60 @@ void main() {
     await db.close();
   });
 
-  test('2 · ⚠️ THE DISCRIMINATING CONTROL — a COMPLETED load still deletes, so '
-      'hide and delete keep working', () async {
+  // ── REBUILT 23 September 2026 · Brief 135R-2 ─────────────────────────────
+  // ⛔ THE OBSERVABLE MOVED FROM ROW COUNT TO ROW CONTENT. This test used to
+  // read, and is preserved here rather than silently replaced:
+  //
+  //     '2 · ⚠️ THE DISCRIMINATING CONTROL — a COMPLETED load still deletes,
+  //      so hide and delete keep working'
+  //     expect(await count(db), 1, reason: '… Deletion is a real feature …'
+  //
+  // ⚠️ `save` is now add-or-update, so a short list no longer deletes and that
+  // assertion can never pass again. ⛔ THE PROPERTY IT PROTECTED IS NOT
+  // NEGOTIABLE THOUGH, and it is the reason this test could not simply be
+  // deleted: without it, a guard that withheld EVERY write would pass test 1
+  // and the suite would report a blanket refusal as a fix.
+  //
+  // ⭐ SO IT IS REBUILT ON A DIFFERENT OBSERVABLE. A completed load's write is
+  // watched through a field it CHANGES rather than a row it removes. Tests 1
+  // and 2 still differ ONLY in `from`, and the two failure modes stay
+  // separable:
+  //     withholds everything  -> test 2 fails, `notes` still empty
+  //     writes everything     -> test 1 fails, the row count moves off 12
+  test('2 · ⚠️ THE DISCRIMINATING CONTROL — a COMPLETED load still WRITES, so '
+      'hide and edit keep working', () async {
     final db = await freshDb();
     final store = SqliteEventStore(db);
 
     await store.save([
-      rec('keep-me',   DateTime(2026, 9, 1)),
-      rec('delete-me', DateTime(2026, 9, 2)),
+      rec('keep-me', DateTime(2026, 9, 1)),
+      rec('edit-me', DateTime(2026, 9, 2)),
     ]);
     expect(await count(db), 2, reason: 'CONTROL: two rows to start.');
+    expect(await notesOf(db, 'edit-me'), '',
+        reason: 'CONTROL: the watched field must start empty, or "the write '
+                'landed" cannot be told from "it was always like that".');
 
-    // The user removed one. The list is SHORT ON PURPOSE, from a load that
-    // completed.
-    final ok = await persistEvents(store, [rec('keep-me', DateTime(2026, 9, 1))],
+    // The user edits one. The list came from a load that COMPLETED.
+    final ok = await persistEvents(
+        store,
+        [
+          rec('keep-me', DateTime(2026, 9, 1)),
+          rec('edit-me', DateTime(2026, 9, 2), notes: 'edited'),
+        ],
         from: LoadState.completed);
 
     expect(ok, isTrue, reason: 'a completed load still writes.');
-    expect(await count(db), 1,
+    expect(await notesOf(db, 'edit-me'), 'edited',
         reason: '⛔ THE TEST THAT STOPS THIS FIX BECOMING A BLANKET REFUSAL. '
-                'Deletion is a real feature: hiding or removing a record takes '
-                'it out of the list and the row must go. A guard that '
-                'preserved rows here would resurrect deleted records, which is '
-                'a worse defect than the one being fixed. ⭐ Tests 1 and 2 '
-                'differ ONLY in `from`, so a harness that passed both by '
-                'preserving everything is impossible.');
+                'Hiding and editing are real features and they are WRITES: a '
+                'guard that withheld here would freeze the record list into '
+                'read-only, which is a worse defect than the one being fixed. '
+                '⭐ Tests 1 and 2 differ ONLY in `from`, so a harness that '
+                'passed both by withholding everything is impossible.');
+    expect(await count(db), 2,
+        reason: 'and the write UPDATED rather than duplicating — 3 here would '
+                'mean every hide grew the history by one.');
     await db.close();
   });
 

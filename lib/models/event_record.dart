@@ -1008,6 +1008,17 @@ class EventStore {
     final prefs = await SharedPreferences.getInstance();
     final raw   = prefs.getString(kEventStorageKey);
     final preserved = <dynamic>[];
+    // ⛔ ADD-OR-UPDATE, 23 September 2026. Entries already in the payload whose
+    // id this write does NOT name. They are not this write's to remove:
+    // absence from a snapshot means the caller never knew about the record,
+    // not that the user deleted it. Kept separate from `preserved` so the
+    // Brief 84 unreadable-entry guarantee stays legible as its own thing.
+    //
+    // ⭐ The SQLite store reaches the same contract by rowid — see
+    // `SqliteEventStore.save`. Two mechanisms, one behaviour, which is why the
+    // reproduction is parameterised over both.
+    final untouched = <dynamic>[];
+    final writing = <String>{for (final e in snapshot) e.id};
     if (raw != null && raw.isNotEmpty) {
       try {
         final decoded = jsonDecode(raw);
@@ -1019,8 +1030,13 @@ class EventStore {
               preserved.add(e);
               continue;
             }
-            if (EventRecord.fromMap(Map<String, dynamic>.from(e)) == null) {
+            final parsed = EventRecord.fromMap(Map<String, dynamic>.from(e));
+            if (parsed == null) {
               preserved.add(e);
+            } else if (!writing.contains(parsed.id)) {
+              // ⭐ The id comes from the PARSED record, not from `e['id']`, so
+              // it is the same notion of identity the snapshot is using.
+              untouched.add(e);
             }
           }
         }
@@ -1033,8 +1049,8 @@ class EventStore {
       }
     }
 
-    final payload =
-        jsonEncode([...snapshot.map((e) => e.toMap()), ...preserved]);
+    final payload = jsonEncode(
+        [...snapshot.map((e) => e.toMap()), ...untouched, ...preserved]);
     await _write(payload);
   }
 

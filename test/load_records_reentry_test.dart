@@ -188,14 +188,42 @@ records in store         ${unguarded.stored}  ${guarded.stored}  ${serialControl
     // 23 September 2026. Asserted rather than described, so that if the
     // underlying check-then-act is ever fixed at its own site this test says
     // so loudly instead of passing for the wrong reason.
-    expect(unguarded.stored, ['onDevice'],
-        reason: '⛔ THE HAZARD. Unguarded, two overlapping composite loads '
-            'destroy the mirror-only record: both fold, both delete, and the '
-            'second persists a base loaded before the first fold. If this now '
-            'shows NO loss, the check-then-act in '
-            'reconcileLegacySharedRecords has been fixed at its own site — '
-            'which is good, but it means the guard below is no longer being '
-            'tested by this file and the file needs revisiting.');
+    // ── REVISITED 23 September 2026 · Brief 135R-2 ───────────────────────
+    // ⭐ THIS TEST ASKED TO BE REVISITED AND THEN WAS, BY ITS OWN TERMS. It
+    // read, and is preserved here rather than silently replaced:
+    //
+    //     expect(unguarded.stored, ['onDevice'], reason: '⛔ THE HAZARD …
+    //     If this now shows NO loss, the check-then-act in
+    //     reconcileLegacySharedRecords has been fixed at its own site …'
+    //
+    // ⛔ IT NOW SHOWS NO LOSS — AND THE CAUSE IS NOT THE ONE THE NOTE
+    // ANTICIPATED. `reconcileLegacySharedRecords` is untouched: the
+    // check-then-act is still there and the race still runs, measured in the
+    // two rows above this one. What changed is `save`, which stopped deleting
+    // records a caller's list does not name (Brief 135R). ⭐ So the race no
+    // longer has a mechanism through which to destroy anything.
+    //
+    // ⚠️ THE HAZARD ASSERTION THEREFORE MOVES OFF THE CONSEQUENCE AND ONTO
+    // THE RACE, which is both more direct and still able to fail. The old
+    // form could only ever have been evidence about `save`.
+    expect(unguarded.reads, 2,
+        reason: '⛔ THE HAZARD, STATED DIRECTLY. Unguarded, both callers pass '
+            'the one-shot flag check and read the mirror — the check-then-act '
+            'is unfixed at its own site. If this drops to 1 it HAS been fixed '
+            'there, and the guard below is no longer being tested by this '
+            'file.');
+    expect(unguarded.clears, 2,
+        reason: '⛔ AND THE IRREVERSIBLE HALF. `clearLegacySharedRecords` runs '
+            'TWICE unguarded. It is irreversible, so this is a live hazard in '
+            'its own right and is NOT addressed by the save fix — it is '
+            'exactly what LoadSerialiser is for.');
+    expect(unguarded.stored, ['mirrorOnly', 'onDevice'],
+        reason: '⚠️ NO LONGER A DISCRIMINATOR, AND SAID SO RATHER THAN LEFT '
+            'TO READ AS ONE. All three columns now agree because `save` is '
+            'add-or-update, so the second persist can no longer overwrite the '
+            'fold with a stale base. Kept as a regression pin on the save fix '
+            'reached through a different route — NOT as evidence about the '
+            'guard.');
 
     // ── THE FIX, collected not thrown ─────────────────────────────────────
     // ⛔ CLAUDE.md: at test granularity a control that fired and a control that
@@ -213,8 +241,15 @@ records in store         ${unguarded.stored}  ${guarded.stored}  ${serialControl
         'exactly one caller may pass the one-shot flag check and read the mirror');
     check('F3   ', guarded.clears, 1,
         'clearLegacySharedRecords must run exactly once — it is irreversible');
+    // ⚠️ F4 NO LONGER DISCRIMINATES, 23 September 2026. It passes unguarded
+    // too, because `save` stopped deleting what a list does not name. ⛔ Kept
+    // and REPORTED AS NON-DISCRIMINATING rather than removed: a passing form
+    // that cannot fail reads exactly like a discharged control, which is the
+    // masking class CLAUDE.md records. F1/F2 and F3 are what test the guard.
     check('F4   ', guarded.stored, ['mirrorOnly', 'onDevice'],
-        'the mirror-only record must survive: no stale base persisted over the fold');
+        'the mirror-only record must survive — ⚠️ NON-DISCRIMINATING since the '
+        'save fix: true unguarded as well, so it is evidence about `save`, '
+        'not about LoadSerialiser');
 
     // ignore: avoid_print
     print('--- GUARDED ---\n${findings.join('\n')}\n');

@@ -578,6 +578,63 @@ class SqliteEventStore implements EventStore {
   /// fixes. So the delete still removes everything the list does not contain,
   /// **except rows the database itself cannot read.**
   ///
+  /// ── ANNOTATION, 23 September 2026 ────────────────────────────────────────
+  /// ⛔ **THE PARAGRAPH ABOVE IS PRESERVED AS WRITTEN AND IS FALSE. IT WAS
+  /// FALSE WHEN IT WAS WRITTEN — it is not a claim that went stale.** `save`
+  /// IS an add-or-update as of today, and the sentence that argued against it
+  /// rested on a premise the repository had already removed.
+  ///
+  /// **THE MECHANISM, and both halves of the premise fail independently:**
+  ///
+  ///   · **Hiding does not take a row out.** `bee5df7` (17 Sep 2026) added
+  ///     `event.hidden`, and `a69f0a7` (17 Sep 2026) wired the control to it.
+  ///     Hiding sets a FLAG; the row stays. See [EventRecord.hidden].
+  ///   · **Nothing "removes a record" at all.** History's `onDelete:` callback
+  ///     calls `_toggleHiddenAndPersist` — the delete-looking control IS the
+  ///     hide. The only paths that take rows out of this table are
+  ///     [clearAll] (the user's own Reset) and, until today, this method.
+  ///
+  /// ⛔ **THE DATES ARE THE POINT: `3c3a6fd` wrote it on 21 September, FOUR
+  /// DAYS AFTER `a69f0a7`.** The justification was not overtaken by later
+  /// work; it described a behaviour that had already stopped existing.
+  /// ⭐ **So the resurrection it warns about was never reachable** — an upsert
+  /// cannot resurrect a deleted record in a design where nothing deletes one.
+  /// The argument was sound in form and wrong in its facts, which is why it
+  /// read as settled and survived two readings.
+  ///
+  /// ⚠️ **WHAT IT COST:** the delete stayed scoped to "everything the list
+  /// does not contain", and any caller holding a list older than storage
+  /// removed the difference. A record drained into storage while History was
+  /// open was gone the moment History wrote its own snapshot back — measured,
+  /// not inferred, on BOTH stores.
+  ///
+  /// ── THE ID-UNIQUENESS TRADE, as a property of the design ─────────────────
+  /// ⭐ **Add-or-update is keyed on `id`, and `id` IS NOT UNIQUE HERE — by
+  /// deliberate design, for the reason recorded at [createEventSql].** That is
+  /// a trade, and it is taken knowingly in this direction:
+  ///
+  ///   · **What it buys.** A row whose id no caller mentions is never touched
+  ///     by that caller's save. Absence from a snapshot stops meaning
+  ///     "delete this", which is the whole defect.
+  ///   · **What it costs.** "The record with this id" can name more than one
+  ///     row. A save naming that id replaces EVERY row carrying it with
+  ///     whatever the snapshot holds for it. Where the snapshot came from a
+  ///     load, it carries both duplicates and both are written back; where a
+  ///     caller has dropped one, the duplicate collapses.
+  ///   · **Why that is the right way round.** Collapsing a duplicate loses a
+  ///     copy of a record the user still has. The alternative — making `id`
+  ///     unique so an upsert is exact — turns a duplicate into an INSERT
+  ///     failure and loses the record outright, which is the outcome
+  ///     [createEventSql] exists to rule out. ⛔ **Do not add a UNIQUE
+  ///     constraint on `id` to make this method tidier.**
+  ///
+  /// ⚠️ **`ordinal` is no longer dense after this change**, and that is
+  /// accepted rather than overlooked. Surviving rows keep the ordinal they
+  /// had while inserted rows are numbered from zero, so two rows can share
+  /// one. `_load` orders by `ordinal` and then re-sorts by timestamp, so the
+  /// order of any two records with DIFFERENT timestamps is unaffected; only
+  /// the tie-break between equal timestamps becomes unspecified.
+  ///
   /// ⭐ **PRESERVED BY `rowid`, NOT BY `id`.** `rowid` is SQLite's own identity
   /// and exists whatever the row contains; a row whose `logged_at` is
   /// unreadable may have an unreadable `id` too, so identifying it by its own
@@ -597,25 +654,35 @@ class SqliteEventStore implements EventStore {
   Future<void> save(List<EventRecord> records) {
     final snapshot = List<EventRecord>.of(records);
     return EventStore.serialise(() => db.transaction((txn) async {
-          // Rows the table holds that this build cannot read. Read inside the
-          // same transaction, so nothing can change between the survey and the
-          // delete.
+          // Rows this write is REPLACING: the ones whose id the snapshot
+          // actually names. Read inside the same transaction, so nothing can
+          // change between the survey and the delete.
+          //
+          // ⛔ A ROW THIS BUILD CANNOT READ IS NEVER IN THIS SET, and the
+          // check is kept for a reason that survives add-or-update: such a
+          // row's `id` cell may still collide with one being written, and
+          // deleting it on that basis would destroy a record on the strength
+          // of the one field of it we managed to parse.
+          final writing = <String>{for (final r in snapshot) r.id};
           final existing =
               await txn.rawQuery('SELECT rowid AS _rowid, * FROM event');
-          final keep = <int>[];
+          final replacing = <int>[];
           for (final row in existing) {
-            if (eventFromRow(row) != null) continue;
+            if (eventFromRow(row) == null) continue;
+            if (!writing.contains(row['id'])) continue;
             final rid = row['_rowid'];
-            if (rid is int) keep.add(rid);
+            if (rid is int) replacing.add(rid);
           }
 
-          if (keep.isEmpty) {
-            await txn.delete('event');
-          } else {
+          if (replacing.isNotEmpty) {
             // ⛔ LITERALS, NOT BOUND PARAMETERS, AND THE REASON IS THE STANDING
-            // RULE. One `?` per preserved row means the count is capped by
-            // `SQLITE_MAX_VARIABLE_NUMBER` — 999 on older builds. A table with
-            // more unreadable rows than that would make EVERY save throw:
+            // RULE. One `?` per replaced row means the count is capped by
+            // `SQLITE_MAX_VARIABLE_NUMBER` — 999 on older builds. ⚠️ **THAT
+            // BOUND GOT NEARER WHEN THE DELETE BECAME ADD-OR-UPDATE, 23
+            // September 2026.** It used to count UNREADABLE rows, which are
+            // rare. It now counts the rows a save REPLACES — at most one per
+            // record in the snapshot — so a user with a thousand events would
+            // reach it in ordinary use, and EVERY save would throw:
             // `persistEvents` would report it, so it would be visible rather
             // than silent, but the user could no longer record anything.
             //
@@ -629,9 +696,10 @@ class SqliteEventStore implements EventStore {
             // anything the user typed here would be a different matter.
             //
             // ⚠️ The remaining bound is `SQLITE_MAX_SQL_LENGTH`, one billion
-            // bytes by default — around a hundred million preserved rows. Not
+            // bytes by default — around a hundred million replaced rows. Not
             // reachable on a personal event log.
-            await txn.delete('event', where: 'rowid NOT IN (${keep.join(',')})');
+            await txn.delete('event',
+                where: 'rowid IN (${replacing.join(',')})');
           }
 
           final batch = txn.batch();

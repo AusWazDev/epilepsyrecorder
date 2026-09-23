@@ -23,7 +23,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
 import 'package:medical_event_recorder/models/event_store_sqlite.dart';
 
-EventRecord rec(String id, DateTime ts) => EventRecord(
+EventRecord rec(String id, DateTime ts, {String notes = ''}) => EventRecord(
       id: id,
       timestamp: ts,
       duration: DurationCategory.lt1,
@@ -33,7 +33,7 @@ EventRecord rec(String id, DateTime ts) => EventRecord(
       feelings: const <String>[],
       triggers: const <String>[],
       referralRequired: false,
-      notes: '',
+      notes: notes,
       detailsCompleted: true,
     );
 
@@ -70,6 +70,17 @@ void main() {
 
   Future<bool> rowExists(String id) async =>
       (await db.query('event', where: 'id = ?', whereArgs: [id])).isNotEmpty;
+
+  /// How many rows carry this id. ⭐ NOT `rowExists`: the discriminator for
+  /// add-or-update is whether an update REPLACED a row or ADDED a second one,
+  /// and `isNotEmpty` cannot tell those apart.
+  Future<int> rowsWithId(String id) async =>
+      (await db.query('event', where: 'id = ?', whereArgs: [id])).length;
+
+  /// The `notes` cell, as the single field an update is watched through.
+  Future<String?> notesOf(String id) async =>
+      (await db.query('event', where: 'id = ?', whereArgs: [id]))
+          .first['notes'] as String?;
 
   test('1 · load still drops the unreadable row — behaviour unchanged', () async {
     await store.save([rec('good-1', DateTime(2026, 9, 1))]);
@@ -108,35 +119,102 @@ void main() {
     expect(await rowCount(), 2, reason: 'TEST 2: exactly the two rows.');
   });
 
-  test('3 · ⚠️ a record the user DELETED is still removed — no resurrection',
+  // ── REBUILT 23 September 2026 · Brief 135R-2 ─────────────────────────────
+  // ⛔ THIS TEST PREVIOUSLY ASSERTED THE OPPOSITE, and it is preserved here as
+  // a record rather than silently replaced. It read:
+  //
+  //     '3 · ⚠️ a record the user DELETED is still removed — no resurrection'
+  //     expect(await rowExists('delete-me'), isFalse, reason: 'TEST 3: ⚠️ THE
+  //     RESURRECTION TEST … Deletion is a real feature — hiding or removing a
+  //     record takes it out of the list and the row must go.'
+  //
+  // ⚠️ IT PINNED A PREMISE THAT WAS ALREADY FALSE WHEN IT WAS WRITTEN. Nothing
+  // in the app removes a record: hiding sets `event.hidden` (v10, 17 Sep) and
+  // History's `onDelete:` calls `_toggleHiddenAndPersist`. The only removal is
+  // `clearAll()`, the user's own Reset, which is tested separately and
+  // unchanged. See the annotation on `SqliteEventStore.save`.
+  //
+  // ⭐ SO THE DISCRIMINATOR MOVES FROM DELETION TO UPDATE. That is not a
+  // weaker test — it is a strictly sharper one, because it separates THREE
+  // outcomes where the old one separated two:
+  //     · the clobber        an absent record is destroyed        -> caught
+  //     · a naive fix        the delete is simply removed, so a   -> caught
+  //                          save DUPLICATES every record it holds
+  //     · add-or-update      updated in place, absent untouched   -> passes
+  // The old test could not see the middle one at all.
+  test('3 · ⭐ an UPDATE replaces the row it names and touches nothing else',
       () async {
     await store.save([
       rec('keep-me', DateTime(2026, 9, 1)),
-      rec('delete-me', DateTime(2026, 9, 2)),
+      rec('edit-me', DateTime(2026, 9, 2)),
     ]);
     await insertUnreadable('bad-1');
 
-    // The user removes one. The list shrinks deliberately, not by failure.
-    final after = (await store.load()).where((r) => r.id != 'delete-me').toList();
-    await store.save(after);
+    expect(await notesOf('edit-me'), '',
+        reason: 'CONTROL: the field this test watches must start empty, or '
+                '"it changed" cannot be distinguished from "it was always so".');
+    expect(await rowsWithId('edit-me'), 1,
+        reason: 'CONTROL: exactly one row to start, or the duplication '
+                'assertion below has nothing to measure.');
 
-    expect(await rowExists('delete-me'), isFalse,
-        reason: 'TEST 3: ⚠️ THE RESURRECTION TEST, and the one a careless fix '
-                'gets wrong. Deletion is a real feature — hiding or removing a '
-                'record takes it out of the list and the row must go. Making '
-                'save an upsert would bring deleted records back, which is a '
-                'worse defect than the one being fixed.');
-    expect(await rowExists('keep-me'), isTrue, reason: 'TEST 3: kept.');
+    // The user edits one record. Every other record is still in the list.
+    final loaded = await store.load();
+    await store.save([
+      for (final r in loaded)
+        if (r.id == 'edit-me')
+          rec('edit-me', DateTime(2026, 9, 2), notes: 'edited')
+        else
+          r,
+    ]);
+
+    // ⛔ ORDER MATTERS HERE AND IT IS NOT COSMETIC. The structural assertion
+    // comes FIRST because `notesOf` reads the first matching row: against a
+    // save that appends instead of replacing, it returns the STALE row and
+    // fails with "expected 'edited', got ''" — which reads as "the write did
+    // not land" when the write landed twice. ⭐ Caught by running the control,
+    // where it masked the duplication assertion exactly as CLAUDE.md's
+    // attribution rule predicts.
+    expect(await rowsWithId('edit-me'), 1,
+        reason: '⛔ IT MUST REPLACE, NOT ACCUMULATE. Two rows here means the '
+                'delete was removed without being re-scoped, so every save '
+                'would duplicate its own records and the history would grow '
+                'without bound. This is the assertion that makes '
+                'add-or-update different from add-only.');
+    expect(await notesOf('edit-me'), 'edited',
+        reason: '⛔ AND THE UPDATE MUST LAND. A save that preserved everything '
+                'and wrote nothing would leave this empty — the failure mode '
+                'at the opposite extreme from the clobber, and the reason this '
+                'fix cannot be "stop deleting" on its own.');
+
+    expect(await rowExists('keep-me'), isTrue,
+        reason: 'TEST 3: the untouched record is still there.');
     expect(await rowExists('bad-1'), isTrue,
         reason: 'TEST 3: and the unreadable row still survives ALONGSIDE a '
-                'genuine deletion — the two behaviours coexist rather than one '
+                'real update — the two behaviours coexist rather than one '
                 'being traded for the other.');
+  });
 
-    // ⭐ THE CONTROL THAT MATTERS: this suite observes BOTH outcomes. A harness
-    // that can only see "survived" would pass against an upsert; one that can
-    // only see "deleted" would pass against the original defect.
-    expect(await rowExists('delete-me'), isFalse);   // deleted
-    expect(await rowExists('bad-1'), isTrue);        // survived
+  // ⭐ THE OTHER HALF OF THE SAME CONTRACT, AND THE ONE THE OLD TEST 3 HAD
+  // BACKWARDS. A record the list does not mention is NOT the list's to remove.
+  test('3b · ⛔ a record absent from the snapshot SURVIVES the save', () async {
+    await store.save([
+      rec('keep-me', DateTime(2026, 9, 1)),
+      rec('not-in-the-list', DateTime(2026, 9, 2)),
+    ]);
+    expect(await rowExists('not-in-the-list'), isTrue,
+        reason: 'CONTROL: it must be there before a save can fail to keep it.');
+
+    // A caller writes a list that never mentions it — the shape History takes
+    // when a record was drained into storage after its snapshot was taken.
+    await store.save([rec('keep-me', DateTime(2026, 9, 1))]);
+
+    expect(await rowExists('not-in-the-list'), isTrue,
+        reason: '⛔ THE CLOBBER, AT STORE LEVEL. Absence from a snapshot means '
+                'the caller never knew about the record, NOT that the user '
+                'deleted it — nothing in the app deletes one. Removal is an '
+                'operation (`clearAll`), never a side effect of a save.');
+    expect(await rowExists('keep-me'), isTrue, reason: 'TEST 3b: and the '
+        'record that WAS named is still there.');
   });
 
   test('5 · the single-transaction property survives', () async {
@@ -203,12 +281,19 @@ void main() {
     // is exposed to it.
     final src = File('lib/models/event_store_sqlite.dart').readAsStringSync();
 
+    // ⭐ UPDATED 23 September 2026 · Brief 135R-2. The clause was
+    // `rowid NOT IN (…)` — keep everything absent — and is now `rowid IN (…)`,
+    // replace only what the snapshot names. ⛔ THIS CONTROL DID ITS JOB: it
+    // reported the old token missing rather than passing over a changed file,
+    // which is the whole reason a source pin carries one.
+    const clauseToken = 'rowid IN (';
+
     // CONTROL: the reader must find the clause, or this is vacuous.
-    expect(src.contains('rowid NOT IN'), isTrue,
+    expect(src.contains(clauseToken), isTrue,
         reason: 'CONTROL: the preserve clause was not found — either it was '
                 'removed or this scan reads the wrong file.');
 
-    final i = src.indexOf('rowid NOT IN');
+    final i = src.indexOf(clauseToken);
     final clause = src.substring(i - 200, i + 200);
     expect(clause.contains('whereArgs'), isFalse,
         reason: '⛔ The rowid list must be INLINE LITERALS. One placeholder per '
