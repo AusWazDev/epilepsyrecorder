@@ -529,3 +529,29 @@ RE-MEASUREMENT, correct clock, no simulator booted:
   mer_active_event removed from private; endLiveActivity() called, but with NO activities to end, so the 13:43-style "Ending activity"
   line is NOT expected and its absence is NOT a failed prediction; records untouched: 6 records, with 1B14D71F / 54605897 / CBE84F1D still
   lt1. ⛔ STOP rule unchanged: if the markers do not clear, STOP, and do not relaunch.
+20:01:22  SCREENSHOT screenshots/176-attempt3-postboot-prelaunch.png (sha256 734c5d25dd63b9f2c1399bcc849f00169e284fad9353a0f5b2f06d6fd933302d):
+  Home Screen page 1, Dynamic Island empty. Consistent with there being no activities. Lock Screen not captured.
+20:01:38  pre-launch re-hash: 04b5a8eb… / 19323e02… / awn 22b11abb… MATCH.
+20:01:38  `xcrun simctl launch` 1.0.2 → pid 3633.
+FOREGROUND CONFIRMED FROM THE DEVICE LOG (not from the command): 20:01:39.378 SpringBoard "Bootstrapping … with intent
+  foreground-interactive" · deactivation reasons 32 → 0 at 20:01:45.430 · then the didBecomeActive pair: "Setting 2 notification
+  categories" 20:01:45.430 + "Requesting authorization with options 7" 20:01:45.434 · then the timeout-branch signature seen at 13:43:
+  "Removing 2 delivered notifications" + "Adding notification request 356A-192B" 20:01:45.951. No watchdog, and the process stayed alive.
+(ii) RESULT, read 20:02:53 — MATCHES THE AMENDED PREDICTION:
+  main  au.com.notiva.medicaleventrecorder.plist        cf9c5eec210476d88162d27773b0d4e723c4d42834cf8ec6946d4f07272c943c  mtime 20:01:47
+        keys now: flutter.disclaimerAcceptedVersion, flutter.epilepsy_event_records_v1. REMOVED: flutter.mer_active_event
+        (was {"id":"CBE84F1D-AEF1-44A2-A238-CB8E4FC9910D","startIso":"2026-09-24T07:18:25Z"}). No other key added or changed.
+  priv  group.au.com.notiva.medicaleventrecorder.plist  d850600fc64685b73f68628bea45bd2d620107eac68ac75d477d5f6a32894f85  mtime 20:01:47
+        keys now: mer_records. REMOVED: mer_active_event.
+  Records: 6 in both suites; mirror == main; record strings BYTE-IDENTICAL to the pre-(ii) plists (compared against the untouched
+  POSTINCIDENT clone, whose plists hash 04b5a8eb… / 19323e02…). CBE84F1D / 54605897 / 1B14D71F all still "lt1": ABANDONED, not ended.
+  Real group 5AB1F785…/Library/Preferences: still 0 files.
+  endLiveActivity(): no liveactivitiesd "Ending activity" line and no activity request, as amended (nothing to end). Its CALL is
+  therefore NOT observed; it is inferred from the timeout branch having run (the removed/re-added notifications and both markers gone).
+  group.awn.0be43e74.plist → f355e4b8… (the 13:02 pre-gate foreground value; awn lifecycle bookkeeping).
+OTHER CONTAINER CHANGES from this planned foreground launch (pre-boot manifest vs 20:02 read; 65 → 64 entries):
+  expected (FIXTURE CHECKS list): com.apple.metal/*.list + dir, *.data ctime, Saved Application State, Library/Preferences dir mtime.
+  io.sentry/* rewritten, and io.sentry/lastInForeground.timestamp DELETED (by the SDK). Moot: io.sentry is deleted at the freeze.
+  ⚠️ NOT IN EITHER LIST before tonight, now classified as expected-on-LAUNCH: Library/Caches/async.log (0 bytes, 20:01:46) and
+  Library/Caches/SentryCrash/Medical Event Recorder/Data/CrashState.json (20:01:46). SentryCrash is NOT deleted by the freeze brief;
+  it stays and is in the manifest's expected-to-change list.
