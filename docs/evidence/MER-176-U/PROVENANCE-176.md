@@ -495,3 +495,37 @@ RE-MEASUREMENT, correct clock, no simulator booted:
   19:48:42  load 2.49 / 96.48 / 165.17 · swap 172/1024 MB used · free 59% · 4089 pages free · swapouts since boot 809881 (static
             across the 30 s), swapins 719334
   Top CPU at 19:48:42: biomesyncd 45.7%, mobileassetd 42.5% (post-boot system daemons), then Terminal and diskimagesiod.
+
+## RESUME ATTEMPT 3 — (ii) and the freeze (24 Sep 2026, same session; GO from Waz via chat)
+⚠️ CLOCK: every host time BEFORE 19:48 tonight is ±3 min (see the clock-step note above). All times from 19:48 on are sntp-correct.
+  Device-log times are the simulator's, and it takes the host clock, so the same caveat applies to device-log times before 19:48 tonight.
+  Last night's times (before the 19:33 restart) are NOT affected.
+19:54:44  PRE-FLIGHT: booted devices = NONE (no launchd_sim). Simulator.app pid 442 (from the 19:33 login) open, no device.
+  Host: load 2.17 / 30.71 / 109.07 · swap 172/1024 MB · free 58%. Pre-boot manifest of Data container 6AF194C4: 65 entries
+  (40 files hashed), same entry count as the 18:05 gap sweep. Real group Preferences 0 files. Plists 04b5a8eb… / 19323e02… / awn 22b11abb….
+19:54:54–19:54:56  `xcrun simctl boot` MER-176-U ONLY. Re-hash IMMEDIATELY (19:54:56): 04b5a8eb… / 19323e02… MATCH.
+19:56:11  bootstatus finished. Re-hash: MATCH.
+⛔ EXPECTED BACKGROUND LAUNCH DID NOT HAPPEN. Device log 19:55:07.596 liveactivitiesd "Restored activities:" — an EMPTY list (last night
+  19:04:54.653 it listed 82C24452, C63A9B39, 3EABFE8B). No "Launching au.com.notiva…", no Runner process. UNCLASSIFIED (device-level;
+  in neither FIXTURE CHECKS list). ADJUDICATED from the device's own log, not inferred:
+⛔ PROVENANCE CORRECTION to the 19:04–19:16 entries above: last night's record MISSED A SECOND UNCONTROLLED LAUNCH, and the ending of all
+  three activities. Read tonight from the device log:
+    19:09:36.217  liveactivitiesd "Ending activity 82C24452… for XPC participant content source process(target: com.apple.chronod)"
+    19:09:36.244  liveactivitiesd "Launching au.com.notiva.medicaleventrecorder" → 19:09:36.370 SpringBoard "Bootstrapping … with
+                  intent background" → Runner pid 66201: didFinishLaunching only ("Got 2 … Setting 3 notification categories"
+                  19:09:55.525, then "Setting 2 notification categories" 19:09:55.532); deactivation reasons 0 → 1024 → 3072, never back to 0
+                  (never active, so no applicationDidBecomeActive and no timeout branch) → 19:10:14.983 SpringBoard WATCHDOG
+                  "watchdog provision violated", process exited.
+    19:09:51.187  "Ending activity C63A9B39…", same source (chronod)
+    19:10:06.192  "Ending activity 3EABFE8B…", same source (chronod)
+  So all three 1.0.2 activities were ENDED BY THE SYSTEM (content source chronod, NOT Runner, NOT by us) ~3–4 min after the 19:06:15
+  watchdog kill. That is why tonight's boot restores none and launches nothing. WHY chronod ended them is NOT established. The line
+  "19:10:55 … app NOT running" stands (pid 66201 had exited 19:10:14). The 19:16 hashes show pid 66201 wrote neither MER plist;
+  group.awn mtime stayed 19:06:15.
+  Consequences: FIXTURE CHECKS #1 ("booting triggers an unrequested 1.0.2 launch") is OUT OF DATE for the current state. It held
+  while the activities existed. The post-freeze note ("(ii) should have ended the activities") is moot: they were already gone.
+(ii) PREDICTION, AMENDED BEFORE RUNNING (20:0x, from the finding above; the 18:05 source reading is unchanged): foreground launch →
+  applicationDidBecomeActive → 1.0.2 restorePersistentNotification timeout branch → flutter.mer_active_event removed from main AND
+  mer_active_event removed from private; endLiveActivity() called, but with NO activities to end, so the 13:43-style "Ending activity"
+  line is NOT expected and its absence is NOT a failed prediction; records untouched: 6 records, with 1B14D71F / 54605897 / CBE84F1D still
+  lt1. ⛔ STOP rule unchanged: if the markers do not clear, STOP, and do not relaunch.
