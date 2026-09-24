@@ -1,0 +1,7 @@
+{
+  "Simulator Target Bundle": "au.com.notiva.medicaleventrecorder",
+  "aps": {
+    "alert": { "title": "Medical Event Recorder", "body": "SYNTHETIC seed-start-2 (simctl push) — pull down, tap Log Event Now" },
+    "category": "MER_NORMAL"
+  }
+}

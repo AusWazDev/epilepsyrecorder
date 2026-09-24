@@ -1,0 +1,7 @@
+{
+  "Simulator Target Bundle": "au.com.notiva.medicaleventrecorder",
+  "aps": {
+    "alert": { "title": "Medical Event Recorder", "body": "SYNTHETIC (simctl push, Brief 176) — long-press to log an event" },
+    "category": "MER_NORMAL"
+  }
+}

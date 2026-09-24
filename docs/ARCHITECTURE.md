@@ -443,6 +443,42 @@ which is the abandoned-duration defect recorded in the backlog.
 
 Do not add a capture or end path that depends on `didReceive` reaching us cold.
 
+> ⛔ **FLAGGED, NOT RESOLVED — 24 September 2026. THIS SECTION CONTRADICTS ITSELF ON COLD START.**
+> The platform table above says iOS can start without unlocking (**Start only**). The
+> established boundary directly above says `didReceive` is not entered for a notification
+> response while cold, **and draws the consequence for ENDING only** ("reliable for visibility
+> and unreliable for ending"). **A quick-log START is delivered on the same path**, so by this
+> section's own boundary a cold Lock Screen start fails too. D2 below observes exactly that on
+> 1.0.2. ⚠️ **Left as found, deliberately**: it was held open for Brief 181, and resolving it
+> here would decide the headline store claim ("start … without unlocking") from one Debug
+> simulator run. HEAD's `0bb8aa7` reclaim is unverified (181d pending).
+
+### iOS behaviours found on 1.0.2, 24 September 2026 (variant U) — D1 to D4
+
+⚠️ **CONFIGURATION, stated per the build-configuration rule in `CLAUDE.md`: every OBSERVED item
+below is from the SIMULATOR, so it is from DEBUG.** Variant U is a 1.0.2 (`192ae40`) worktree with
+Runner's entitlements reference removed, to reproduce the unentitled Release signature that
+shipped. iPhone 17 Pro simulator, iOS 26.3. Full action log and evidence:
+`docs/evidence/MER-176-U/PROVENANCE-176.md`.
+
+⛔ **The labels are the point. D2 and D3 are OBSERVED. D1's mechanism is observed and its
+consequence is read. D4 is READ ONLY.** A register that flattens these reads as four equally
+established facts, and three of them would then be quoted as verified.
+
+| | Behaviour | Status, and date |
+|---|---|---|
+| **D1** | Shipped 1.0.2's Runner carries no `application-groups` entitlement, so `UserDefaults(suiteName:)` is backed by a **private plist in the app's own container**, while the entitled `MERWidget` reads the real group. Consequence: the Live Activity's **Event Ended** records **no duration** | **Mechanism OBSERVED** 24 Sep 2026 (181b: the private plist appeared in the app's own container and the real group stayed empty; the archive signature lacks the entitlement). **Consequence READ, NOT OBSERVED**: Event Ended has never been pressed on the fixture. Fixed at HEAD by `824cd16` (24 Aug 2026) |
+| **D2** | A **cold** `QUICK_LOG_START` is **silently swallowed**: the app cold-launches in the background, awesome_notifications has taken the delegate, and `handleQuickLogStart` never runs (Backlog 26) | **OBSERVED on 1.0.2 only**, 24 Sep 2026 (181c: background launch, the awn "doesn't contain any awesome information" line, plists byte-identical, never became active). **HEAD UNVERIFIED** (the `0bb8aa7` reclaim; 181d pending) |
+| **D3** | 1.0.2 displays Swift-written `…Z` records at **UTC wall time**: an event logged at 13:13 AEST shows as 03:13 | **OBSERVED** 24 Sep 2026, 1.0.2 home screen. Whether HEAD shows 13:13 after upgrade: **unverified** |
+| **D4** | **"The banner a user taps is not necessarily the event they end."** `EndMEREventIntent` is instantiated with no argument, so the tapped activity's `ContentState.eventId` never reaches it. The intent keys off the App Group `mer_active_event` marker, then ends **every** MER activity. A start neither refuses nor ends a prior activity, and overwrites the marker | **READ, NOT OBSERVED** (1.0.2 and HEAD source, 24 Sep 2026). Two concurrent activities with the marker on the newer one were **observed** at seed start 2 (24 Sep 2026); the **mis-attribution itself was never tested** |
+
+**D4, the parts that must stay marked:**
+- **Shipping 1.0.2:** reachable, but D1 breaks the end: no duration is written for either event, and one tap ends both banners. The shipping consequence is lost durations, **not** mis-attribution.
+- **HEAD (entitled):** an end would write real seconds against the marker's (newer) event and orphan the older one. HEAD's start path removes the "Log Event Now" notification (`scheduleActiveNotification`), so MER itself offers no second Lock Screen start while an event is live. **The two remaining routes are UNVERIFIED:** a `MER_NORMAL` notification surviving from elsewhere, and a 1.0.2 Live Activity surviving the app update alongside a first HEAD start.
+- ⛔ **The synthetic `simctl push` route is OUR APPARATUS, NOT A USER PATH**, and must never be written up as one.
+- ⭐ **Case (b), upgrade mid-event, is LOAD-BEARING**: it is the only plausible USER route into D4 at HEAD. **Whether ActivityKit activities survive an app UPDATE is untested.** (On 24 Sep 2026 three 1.0.2 activities were observed surviving a simulator device **shutdown** and reboot. That is a different lifecycle and is **not** evidence about an update.)
+- ⛔ **Developer's position, recorded 24 Sep 2026: "D1 and D4 ship together or neither ships."** D1's fix alone turns a gap (no duration) into a falsehood (a real duration on the wrong event). **D1's fix has already landed at HEAD (`824cd16`), and D4 is unfixed.**
+
 ### Windows, stated plainly
 
 **In-app capture only.** No notification path exists. The store copy's headline

@@ -5,6 +5,58 @@
 
 ---
 
+## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
+
+**The variant U fixture (MER-176-U) is seeded and NOT frozen. A forced host logout interrupted
+(ii); the gap it left is bounded by measurement; (ii) is deferred to after a host restart.**
+Documents and evidence only. No `lib/` or `ios/` change. **Next session starts at the RESUME
+block at the top of `docs/evidence/MER-176-U/PROVENANCE-176.md`.**
+
+- **Host event, 17:37:48.** The watchdog killed WindowServer ("Display … not ready"), and
+  loginwindow ended the session ("Window Server exited, closing down the session immediately").
+  **A forced logout, not a restart** (boot 7 Sep). **The same failure happened at 11:04 the same
+  day.** At the time: 885 processes on an 8 GB Intel MacBook Air, two simulators booted, Claude
+  desktop's VM ~1.1 GB, and swap near full. MER-176-U went to Shutdown at 17:37:51. The running
+  session was killed.
+- **Rescue first.** The `/private/tmp` scratchpad was copied to
+  `~/dev/_rescue/2026-09-24-claude-502-scratchpad/` (Mac, not in git), all 592 files hash-verified.
+  The three seed screenshots match their recorded hashes (16-char prefixes only were ever recorded).
+- **The gap, 17:19:15 → 17:37:50, bounded by measurement.** Nothing in the app Data or App Group
+  container was written after 17:18:30 (files and directories, mtime and ctime). An offline read
+  of the device's own log found **no app lines in the window. ⭐ The control: the same log DOES hold
+  the app's own 17:18:25 lines**, and it is continuous minute by minute, so the absence means
+  something. **Residual unknowns:** sub-Default activity, the exit signal, and two Metal cache
+  files (ctime only; not app data).
+- **Rollback taken before any boot:** `MER-176-U-POSTINCIDENT-1737-NOT-FROZEN`
+  (`8E484F3D-67D5-4B5A-BA9B-D3E8BD2040F2`). ⛔ **NOT the fixture.** Full-device manifests show the
+  clone left the source unchanged.
+- **Resume attempt, 19:04, stopped before the launch.** Booting MER-176-U made swap jump from 1.6
+  to 2.5 GB and beyond, past the stop line. ⭐ **The boot itself caused an UNREQUESTED BACKGROUND
+  LAUNCH of 1.0.2:** liveactivitiesd restored the three Live Activities and asked SpringBoard to
+  open the app. It ran `didFinishLaunching` only (so no timeout branch) and was watchdog-killed.
+  MER's two plists were unchanged; awn's plist, the saved state and the Metal lists were written.
+  Orderly `simctl shutdown` at 19:16. Plists re-hashed after: unchanged.
+- **Two lessons written INTO the fixture's documentation, not as notes here:** (1) booting the
+  fixture triggers an uncontrolled 1.0.2 launch, so re-verify both MER plist hashes after every
+  boot; (2) the freeze manifest has a MUST-MATCH list and an EXPECTED-TO-CHANGE-ON-BOOT list.
+  Both are in the FIXTURE CHECKS block of the provenance.
+- **Scope, recorded so it cannot be promoted:** the activities survived a device SHUTDOWN. **That
+  is NOT case (b)** (survival across an app UPDATE), which remains untested and is the release
+  blocker's only plausible user route into D4.
+- **D1–D4 copied into `ARCHITECTURE.md` §5** with their labels and dates: D2 and D3 OBSERVED
+  (Debug, simulator), D1's mechanism observed and its consequence READ, D4 READ. §5's cold-start
+  self-contradiction is **flagged there and left unresolved**, as held for Brief 181.
+- **Provenance correction:** the first 1.0.2 process on MER-176-U was not "terminated by the
+  system". **It crashed: SIGSEGV at 12:06:59 (pid 21814). OPEN, cause not analysed.** Report kept
+  off this public repo; its hash is in `docs/evidence/MER-176-U/README.md`.
+- **Host changes:** MER-audit-SE3 shut down. `com.apple.iphonesimulator ApplePersistenceIgnoreState`
+  set to YES (prior value: unset). **Not verified** to stop a login from booting a device.
+- **Not done this session, and why:** the Change Register could not be read (OneDrive on-demand
+  file, "Operation timed out"), so it was not written blind. The ClickUp handoff was not updated
+  (no ClickUp connector live on this Mac).
+
+---
+
 ## Session: 24 September 2026 (afternoon) — Windows (Claude Code CLI)
 
 **The claude.ai paste was AHEAD of its source file, and this morning's re-paste overwrote it.**
