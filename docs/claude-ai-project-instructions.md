@@ -113,6 +113,14 @@ that could not be read:
   a false warning about the safe action into medical safety copy.
 - A brief undercounted MER's record-creation sites, because some are native
   Swift and invisible from Dart.
+  ⚠️ **ANNOTATED 24 September 2026 — the INCIDENT stands, the REASON no longer
+  describes the code.** *"some are native Swift and invisible from Dart"* was
+  true when written and is not now: Dart's main isolate is the only writer of
+  the record list. Kept because the lesson is about asserting an unreadable
+  fact, which is unaffected. ⛔ **Do not read this line as current
+  architecture** — see the annotation on MER premise 4 below. **Found by
+  sweeping the file for the concept rather than by trusting a list of known
+  occurrences.**
 - A brief stated a version that had already moved.
 
 None were reasoning failures. All were unreadable facts asserted as read.
@@ -239,6 +247,43 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
 4. **iOS notifications are native Swift, not the Flutter plugin**, and iOS
    creates records natively without passing through the Dart write path.
    Anything added to the Dart storage path is absent on iOS quick-log.
+   ⚠️ **SUPERSEDED IN PART, 24 September 2026. The wording above is kept and
+   its STATUS is corrected; it is NOT deleted.** The first clause stands. The
+   rest is false and has been shaping briefs written from this file.
+   • **Still true:** *"iOS notifications are native Swift, not the Flutter
+     plugin"*. The Dart plugin returns early on iOS and the actions are handled
+     natively, for the delegate reason recorded in the CLI's `CLAUDE.md`.
+   • **Superseded, quoted:** *"iOS creates records natively without passing
+     through the Dart write path"* and *"Anything added to the Dart storage
+     path is absent on iOS quick-log."*
+   ⭐ **WHAT IS TRUE NOW: iOS quick-log posts FACTS, NOT RECORDS.** Swift writes
+     one `mer_inbox_<uuid>` instruction per action into the App Group, and
+     **Dart's main isolate is the only writer of the record list**, applying
+     those instructions on the next foreground. The write sites span both the
+     app and the widget extension; ask the CLI to enumerate them rather than
+     carrying a count here.
+   ⛔ **SO THE CONSEQUENCE INVERTS, AND THAT IS THE COSTLY HALF.** Anything
+     added to the Dart storage path **does** reach an iOS quick-log record,
+     because Dart is what creates it. A brief reasoning from the old sentence
+     excludes iOS from exactly the changes that now apply to it.
+   ⭐ **IT IS ENFORCED, NOT MERELY INTENDED.** A test asserts that NO Swift file
+     mentions the record-list key, and carries its own positive control that
+     Swift files were scanned. Ask the CLI to run it rather than trusting this
+     line.
+   ⚠️ **THE DECISIONS TABLE ABOVE ALREADY SAID SO, AND THIS SECTION CONTRADICTED
+     IT.** D5 describes `epilepsy_event_records_v1` as *"the inbox the iOS
+     native path and the Android background isolate write into, drained into
+     SQLite on the next foreground"* — the inbox model, stated correctly, in the
+     same file. **One document held both the corrected claim and the superseded
+     one, and the superseded one is the half that reads like architecture.**
+   ⛔ **HOW IT SURVIVED, which is the part worth keeping:** the CLI's own
+     `CLAUDE.md` corrected this on 29 August 2026 and **this file was not
+     updated with it**, so the two halves of the project disagreed for four
+     weeks. The CURRENT DECISIONS block exists to stop exactly that — and does
+     not cover it, because it covers DECISIONS, not ARCHITECTURE. **Treat every
+     numbered premise in this section the way a decision is treated: when the
+     CLI corrects one, correct it here in the same pass, or the chat half keeps
+     briefing from the old one.**
 5. **Windows has no notification path at all.** Capture there is in-app only, so
    lock-screen capture is not a cross-platform claim.
 6. **Export is the only preservation path.** No backend means uninstall or a
