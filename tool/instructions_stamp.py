@@ -34,6 +34,22 @@ WHAT IT CANNOT DO. It cannot read the paste, so it can never say the paste is
 current - only that a stamp somebody quoted from it is or is not. A session that
 never quotes the stamp is not covered, and that is the residual, stated rather
 than left to be discovered.
+
+AND IT FIRES AT SESSION START, NOWHERE ELSE. Project instructions are injected
+into the chat half when a session BEGINS. The chat half cannot quote a stamp it
+was never given, so an update made mid-session is invisible to it until a new
+session starts.
+
+  THE CONSEQUENCE, written here because the first person to meet it will misread
+  it: between a re-paste and the next session, the .md, the .txt and the paste
+  all agree AND NOTHING CAN DEMONSTRATE IT. It is worse than silence - a
+  --quoted run inside that window compares against the stamp the chat half was
+  injected with at session start, so it reports RE-PASTE OWED for a paste that
+  has just been made.
+
+  THAT IS NOT A GAP IN THE CHECK. It is what "an invisible copy is only
+  observable by asking its reader" costs. The answer is to re-quote in the NEXT
+  session, never to re-paste again and never to doubt the paste.
 """
 import sys, io, os, re, hashlib, argparse, datetime, tempfile
 
@@ -176,6 +192,11 @@ def main():
         print('     this file says       : %s' % stamp)
         print('     Re-paste docs/claude-ai-project-instructions.txt into the')
         print('     claude.ai project settings. Do not edit the stamp to agree.')
+        print('')
+        print('     ⚠️  UNLESS YOU ALREADY RE-PASTED THIS SESSION. Instructions are')
+        print('         injected at session START, so a fresh paste cannot be quoted')
+        print('         until the NEXT session. In that window this red is EXPECTED')
+        print('         and means nothing is wrong - re-quote next session.')
         return 1
 
     ok, problems = check(md_text, txt_text)
