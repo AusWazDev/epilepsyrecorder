@@ -1,3 +1,9 @@
+# ⭐⭐ STATUS 24 Sep 2026 20:05 AEST — FROZEN. The RESUME block below is HISTORICAL (it is what was run tonight).
+**(ii) ran at 20:01 and matched the prediction. The frozen fixture is `MER-176-U-FROZEN-FIXTURE-20260924` (427DB6D1-65C0-4B86-88E9-95DE770CD88E).**
+Must-match now: main `cf9c5eec…` · private `d850600f…` · marker file `f503e7f8…` · real group EMPTY. Both lists are in
+`manifests/MER-176-U-FROZEN-FIXTURE-20260924.MANIFEST.md`. The hashes in the RESUME block below (04b5a8eb… / 19323e02…) are PRE-(ii) and
+now describe ONLY the POSTINCIDENT rollback. The PRE-FLIGHT check below still applies to every session.
+
 # ⭐ RESUME HERE — read this block before touching MER-176-U (written 24 Sep 2026 ~19:25 AEST)
 
 **State at hand-off:** MER-176-U (2E364C3F-DA09-4B82-9EAD-21EDE359692D) is SHUT DOWN (orderly, 19:16). Seed content complete: 6 records.
@@ -41,6 +47,8 @@ background"; it ran didFinishLaunching only and was watchdog-killed. **So 180b d
 frozen state plus one uncontrolled 1.0.2 launch, before the upgrade is installed.** ⛔ REQUIRED CHECK: re-verify both MER plist hashes
 after EVERY boot, before doing anything else. A session that skips it will attribute a boot-time change to the upgrade.
 (After the freeze, (ii) should have ended the activities, which may remove this trigger. That is UNVERIFIED until a post-freeze boot shows it.)
+⚠️ OUT OF DATE, 24 Sep 20:05: the system ended all three activities at 19:09–19:10 (content source chronod). The 19:55 boot restored none
+and launched nothing. A boot of the frozen state is expected NOT to launch the app. Still re-hash after every boot.
 
 **2. "THE FIXTURE IS UNCHANGED" IS NOT TRUE AT CONTAINER LEVEL. VERIFY AGAINST TWO LISTS, NOT ONE.**
 - **MUST MATCH on every check** (a mismatch is a finding):
@@ -555,3 +563,20 @@ OTHER CONTAINER CHANGES from this planned foreground launch (pre-boot manifest v
   ⚠️ NOT IN EITHER LIST before tonight, now classified as expected-on-LAUNCH: Library/Caches/async.log (0 bytes, 20:01:46) and
   Library/Caches/SentryCrash/Medical Event Recorder/Data/CrashState.json (20:01:46). SentryCrash is NOT deleted by the freeze brief;
   it stays and is in the manifest's expected-to-change list.
+## ⭐ FREEZE (24 Sep 2026 20:04–20:05 AEST; clock correct)
+20:04:05  `simctl terminate` 1.0.2 (pid 3633). Gone from launchctl by 20:04:07. Re-hash: cf9c5eec… / d850600f… / awn f355e4b8…, UNCHANGED by the kill.
+20:04:2x  host copies → docs/evidence/MER-176-U/frozen/ (three plists + host-copies.sha256). Marker file written to the Data container root:
+  MER-176-U-FIXTURE-FROZEN.txt, sha256 f503e7f8e5d925f12066f46465c65f8d046a2e6f15458041f348d1e3deb4be0a.
+20:04:23  DELETED Library/Caches/io.sentry (14 files + empty envelopes/; newest 20:01, previous.* from 14:19–16:39). rm rc 0. By design, per the brief.
+  Library/Caches/SentryCrash was NOT deleted (not in the brief). It is listed as expected-to-change.
+20:04:31–20:04:32  `simctl shutdown` MER-176-U (orderly, requested).
+20:04:45  full-device manifest of the source: 11107 files.
+20:04:45–20:05:18  `simctl clone` → **MER-176-U-FROZEN-FIXTURE-20260924, UDID 427DB6D1-65C0-4B86-88E9-95DE770CD88E**.
+  Source manifest post-clone == pre-clone. Clone manifest: 11106 files. It equals the source except device.plist and one host token
+  (datacom.apple.modelcatalog/tokenStore/0C47801D-…), the same pattern as the POSTINCIDENT clone.
+  Verified INSIDE the clone: main cf9c5eec… · private d850600f… · marker file f503e7f8… · real group Preferences 0 files.
+Manifest with BOTH lists: manifests/MER-176-U-FROZEN-FIXTURE-20260924.MANIFEST.md.
+THE THREE DEVICES: MER-176-U-FROZEN-FIXTURE-20260924 (427DB6D1…) = THE FROZEN FIXTURE · MER-176-U (2E364C3F…) = source, same frozen state,
+  shut down · MER-176-U-POSTINCIDENT-1737-NOT-FROZEN (8E484F3D…) = pre-(ii) rollback, NOT the fixture. All three Shutdown at 20:05.
+STILL OPEN, not part of this run: the 12:06:59 1.0.2 SIGSEGV. Separate: the D4 "ends all three activities" observation. Also open: why
+  chronod ended the three activities at 19:09–19:10.
