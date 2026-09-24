@@ -3697,3 +3697,72 @@ it.** Once removed from the App Group there is no copy anywhere.
 **That the race is harmless, or that the function is correct.** It is neither. It says the race
 is unreachable in this release by two independent mechanisms, that fixing it cannot be verified,
 and that the condition under which that judgement expires is named and has a test behind it.
+
+---
+
+# ⛔ THE ALREADY-MIGRATED BACKUP FILE — **NOT CLEANED UP, DELIBERATELY** — 24 September 2026
+
+## The decision
+
+**The pre-migration backup moved from `getApplicationDocumentsDirectory()` to
+`getApplicationSupportDirectory()` (`9eed24f`). Devices that had ALREADY migrated keep their file
+at the old path, with `migration_backup_path` still pointing at it. Nothing moves it, and nothing
+deletes it.** That is a decision, not an oversight.
+
+## Why the move happened, scoped honestly
+
+⚠️ **A WINDOWS FIX, AND ONLY A WINDOWS FIX.** On Windows `path_provider` maps Documents to
+`WindowsKnownFolder.Documents`, which OneDrive's Known Folder Move redirects — measured on the
+developer's machine, `MyDocuments` resolves to `C:\Users\<user>\OneDrive\Documents` while
+`RoamingAppData` does not. The file is the user's entire pre-migration history in plaintext JSON.
+
+⛔ **IT CHANGES NOTHING ON ANDROID OR iOS.** There, Support and Documents both sit inside the app
+container and are equally eligible for platform backup — `/data/data/<pkg>/files` and
+`NSApplicationSupportDirectory` are backed up exactly as Documents was. **Do not record this as a
+general privacy improvement anywhere.**
+
+## Why the old file is not cleaned up
+
+⭐ **Cleanup would mean writing the FIRST file deletion in this codebase**, against a user's
+medical rollback artefact, inside a ship window. `.delete()` and `deleteSync` currently return
+**zero** hits across all of `lib/` — verified with a live control (`File(` in three files, eight
+`writeAsString` calls). That is not a property to break casually, and least of all on the one file
+that exists to be a rollback.
+
+⚠️ **AND THE MOVE WOULD BUY THOSE DEVICES NOTHING.** `alreadyDone` means a migrated device never
+re-runs the backup write, so the new destination cannot apply retroactively. The only way to help
+them is to move or delete the existing file — which is the deletion above.
+
+## ⭐ The tail is EMPTY on the platform that motivated the change
+
+**No Windows user has ever run the migration, so no Windows device has a file in a OneDrive-synced
+folder.** Established from two independent readings that agree:
+
+  · **The repo.** `writeMigrationBackup` and the Documents call site both landed in `9461f27`,
+    25 August 2026 13:07:34. An MSIX built on the developer's machine at 19:57:57 the same day
+    (`Version="1.1.6.0"`) does contain the migration — `mer_pre_sqlite_backup_`,
+    `migration_backup_path`, `epilepsy_event_records_v1` and `mer_events.db` all extract from its
+    `app.so`. **It was never distributed.**
+  · **Partner Center, read by the developer 24 September 2026.** Live package **v1.0.0.0**,
+    Submission 2 last modified 27 April 2026, Submission 3 still in draft from 28 April, no
+    package flights, nothing distributed outside the Store.
+
+**The devices that DO carry an old-path file are the developer's own iPhone and the Teclast** —
+Android and iOS, where Support and Documents are treated alike, so the file is in exactly the same
+backup position it would have been in either way. ⛔ **Nothing is at risk on those devices that the
+move would have prevented.**
+
+## ⚠️ What would change this decision
+
+**A Windows build containing the migration reaching a user before this fix ships.** That is now
+impossible for the current artefact, but a submission made from a commit between `9461f27` and
+`9eed24f` would do it. **If that ever happens, the tail stops being empty and the cleanup question
+reopens** — and it reopens as a real one, because those users would have a plaintext medical
+history sitting in OneDrive with no code path able to reach it.
+
+## ⛔ What this entry does NOT say
+
+**That leaving the file is harmless, or that a cleanup is unnecessary in general.** It says the
+cleanup is out of scope for this ship window, that the platform it would protect has no affected
+users, and that writing the codebase's first file deletion against a medical rollback artefact is
+not a change to make under time pressure.
