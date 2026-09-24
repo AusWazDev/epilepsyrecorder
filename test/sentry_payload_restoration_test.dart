@@ -19,6 +19,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -107,6 +108,72 @@ void main() {
           reason: 'offset is kept — it locates the fault without quoting it.');
       expect(value, contains('message:'),
           reason: 'and the parser message is kept.');
+    });
+
+    test('a FileSystemException carrying a user-chosen filename keeps only '
+        'the OS error code', () {
+      // ⭐ A REAL exception from the SDK, not a constructed one. Reading a
+      // missing file raises PathNotFoundException — a FileSystemException
+      // subclass — with the path as a field, which is the shape a file error
+      // at backup_service.dart:416 arrives in.
+      const chosen = 'my seizure diary 2026 FINAL.json';
+      Object? caught;
+      try {
+        File('${Directory.systemTemp.path}/$chosen').readAsStringSync();
+      } catch (e) {
+        caught = e;
+      }
+
+      // ── RUN CONTROL ────────────────────────────────────────────────────
+      expect(caught, isA<FileSystemException>(),
+          reason: 'RUN CONTROL: no FileSystemException was raised.');
+      expect(caught.toString(), contains(chosen),
+          reason: '⛔ RUN CONTROL, AND THE PREMISE: the SDK renders `path` '
+              'into the exception, and on this path that is a filename the '
+              'user typed into a save dialog.');
+
+      final event = sanitiseEventValues(SentryEvent(
+        throwable: caught,
+        exceptions: [SentryException(type: 'x', value: caught.toString())],
+      ));
+      final value = event.exceptions!.single.value!;
+
+      expect(value, isNot(contains(chosen)),
+          reason: '⛔ THE FILENAME MUST BE GONE.');
+      expect(value, isNot(contains('seizure')),
+          reason: '⛔ AND NO FRAGMENT OF IT EITHER — a filename can name the '
+              'condition being recorded.');
+      expect(value, contains('kind: pathNotFound'),
+          reason: 'the subclass survives, tested by `is` rather than by a '
+              'rendered type name, which --obfuscate would destroy.');
+      expect(value, contains('osErrorCode:'),
+          reason: 'and the OS classification survives as an int.');
+    });
+
+    test('a PlatformException keeps code, drops message and details', () {
+      // The picker shape: plugins routinely put a path in message or details.
+      const chosen = '/storage/emulated/0/Download/epilepsy log.json';
+      final e = PlatformException(
+        code: 'read_error',
+        message: 'Failed to read $chosen',
+        details: {'path': chosen},
+      );
+
+      // ── RUN CONTROL ────────────────────────────────────────────────────
+      expect(e.toString(), contains(chosen),
+          reason: 'RUN CONTROL: the rendering must embed the path, or this '
+              'test asserts nothing.');
+
+      final event = sanitiseEventValues(SentryEvent(
+        throwable: e,
+        exceptions: [SentryException(type: 'x', value: e.toString())],
+      ));
+      final value = event.exceptions!.single.value!;
+
+      expect(value, isNot(contains(chosen)),
+          reason: '⛔ THE PATH MUST BE GONE, from message AND details.');
+      expect(value, 'PlatformException(code: read_error)',
+          reason: 'only the error identifier set by the channel survives.');
     });
 
     test('⭐ an UNRECOGNISED type is left alone — this is a whitelist', () {

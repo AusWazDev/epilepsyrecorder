@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io' show FileSystemException, PathAccessException, PathExistsException, PathNotFoundException;
 
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -287,6 +289,35 @@ String? sanitisedErrorText(Object? error) {
 }
 
 /// The categorical rendering for a recognised throwable, or null to leave it.
+///
+/// ## ⛔ THIS IS A BLOCKLIST, AND THAT IS A DECISION — 24 September 2026
+///
+/// **An unrecognised type passes through UNSANITISED.** The alternative is an
+/// allowlist: strip every exception value by default and re-admit types one at
+/// a time. That would be safer and was rejected, because it would cost the
+/// diagnostic text of every exception in the app — including the ones whose
+/// rendering is the only reason a defect was ever found. The trade is stated
+/// rather than left implicit.
+///
+/// **THE RESIDUAL RISK, NAMED:** a type not listed here whose `toString()`
+/// embeds user-entered text will send it. Nothing detects that; it would be
+/// found the way these four were, by reading the type's source.
+///
+/// ⚠️ **THIS IS AN ABSENCE CLAIM IN DISGUISE — "these are the types that can
+/// carry user text, AS AT 24 September 2026" — AND IT WILL ROT.** A package
+/// upgrade can change a rendering, and a new dependency can add a type, with
+/// no test failing either time. The four listed were each confirmed by reading
+/// the type's own source, and re-confirming is the only way to renew the
+/// claim. ⛔ A green suite is not evidence that the list is still complete.
+///
+/// ⭐ **AND "EXPORTED" IS NOT "REACHABLE".** `DatabaseException` exports the
+/// abstract type but not `message`, which is declared on a subclass that is
+/// not exported — so the obvious implementation could not be written. Confirm
+/// what a type actually exposes before adding it; do not assume from its name.
+///
+/// **Listed as at that date:** `DatabaseException` (bound arguments, via the
+/// storage layer), `FormatException` (`source`), `FileSystemException`
+/// (`path`), `PlatformException` (`message`, `details`).
 String? _categoricalValueFor(Object? throwable) {
   // ⛔ DELEGATED, NOT DUPLICATED. `DatabaseException` is the storage layer's
   // type and only the storage layer may import sqflite — an invariant held by
@@ -300,6 +331,37 @@ String? _categoricalValueFor(Object? throwable) {
     // path that existed in 1.0.2, before SQLite (Brief 173b).
     return 'FormatException(message: ${throwable.message}, '
         'offset: ${throwable.offset})';
+  }
+  if (throwable is FileSystemException) {
+    // ⛔ `path` IS A FIELD, and it is the user's chosen filename. Confirmed
+    // from the SDK rather than assumed: `final String? path` on
+    // `FileSystemException`, rendered by its `_toStringHelper`. This is the
+    // shape `backup_service.dart`'s picker failure arrives in.
+    //
+    // ⭐ `osError.errorCode` is an `int` on `OSError` and carries no path, so
+    // the OS's own classification survives while the filename does not.
+    // `message` is dropped: its docstring promises only that it excludes the
+    // OS detail, not that it excludes the path.
+    //
+    // ⚠️ THE SUBCLASS IS TESTED BY `is`, NOT BY `runtimeType.toString()`.
+    // `PathAccessException` / `PathExistsException` / `PathNotFoundException`
+    // are the useful distinction, and a rendered type name is meaningless
+    // under `--obfuscate` — the same reason the rule keys on the object.
+    final kind = throwable is PathAccessException
+        ? 'pathAccess'
+        : throwable is PathExistsException
+            ? 'pathExists'
+            : throwable is PathNotFoundException
+                ? 'pathNotFound'
+                : 'fileSystem';
+    return 'FileSystemException(kind: $kind, '
+        'osErrorCode: ${throwable.osError?.errorCode})';
+  }
+  if (throwable is PlatformException) {
+    // ⭐ `code` is the channel's own error identifier — categorical, set by
+    // the plugin, never user text. `message` and `details` are free-form and
+    // are dropped: a picker or a file plugin routinely puts a path in one.
+    return 'PlatformException(code: ${throwable.code})';
   }
   return null;
 }
