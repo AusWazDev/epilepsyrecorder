@@ -63,6 +63,16 @@ defect.
 > offer; **the wizard does not show one**, but carries the value through to save unchanged and
 > lists it on the summary step. A display gap, not data loss.
 >
+> **PASTE CALIBRATION, 24 September 2026: the paste-discipline held, MEASURED for the first
+> time.** Waz copied the claude.ai Project instructions field directly (not via the chat half's
+> context), before the `15578e1f` re-paste. Its body hashes to **`30a561fa`**, identical to the
+> `.txt` at `3eebe36`: 484 lines each, zero diff lines, no terminal artefacts. Controls: the
+> reference itself must hash to `30a561fa` (it does; the first run's reference read was EMPTY
+> through a path error and was caught by exactly this control), and a one-character edit must
+> change the digest (it does). ⚠️ The sample reached disk through the CLI's own `Write` call, so a
+> red would have needed the diff to separate an edit from a transcription slip; a green over
+> 484 lines cannot be produced by a slip.
+>
 > **User-facing copy, searched by meaning (Brief 2b, nothing changed):** the Your data screen says
 > *"A backup file holds everything"*. That is the promise, and it does not hold. Details in the
 > Change Register entry of the same date.
