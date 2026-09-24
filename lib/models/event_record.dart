@@ -1328,7 +1328,9 @@ Future<void> _reportPersistStrand(
       // prefs store entirely.
       'store': store.runtimeType.toString(),
       'threshold_seconds': threshold.inSeconds,
-      'records': records,
+      // ⛔ `records` REMOVED — it was the size of the user's history. Which
+      // backend stranded and at what threshold is the diagnosis; the count
+      // never was.
       // ⭐ WHAT KIND OF FAILURE, stated rather than inferred from the absence of
       // a stack trace. This is NOT an error the save reported: it neither
       // returned nor threw. Anything searching Sentry for save failures will
@@ -1358,9 +1360,10 @@ Future<bool> persistEvents(
     await Sentry.captureMessage(
       'Persist withheld: the record list is not known to be complete',
       level: SentryLevel.warning,
+      // ⛔ `records` REMOVED — a count of the user's records. `from` is the
+      // whole point of this report: it separates `failed` from `notAttempted`.
       withScope: (scope) => scope.setContexts('persist', {
-        'from':    from.name,
-        'records': records.length,
+        'from': from.name,
       }),
     );
     try {

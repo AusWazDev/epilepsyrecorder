@@ -72,6 +72,52 @@ const String kSqliteDbFileName = 'mer_events.db';
 const String kMetaSchemaVersion  = 'schema_version';
 const String kMetaMigrationState = 'migration_state';
 const String kMetaMigratedAt     = 'migrated_at';
+
+/// Set BEFORE the insert transaction, cleared only on a verified migration.
+///
+/// ⛔ **THE ABSORBING STATE THIS EXISTS FOR.** Rows are committed before
+/// `migration_state` is written, so a kill in between leaves rows in the table
+/// with no marker. The next launch re-inserted them, `COUNT(*)` then exceeded
+/// `loadableCount`, verification failed — and because verification compares a
+/// count that only ever grows, it could NEVER succeed again. Measured at
+/// `aa2285f`: 9 rows, then 19, then 29, then 39, with `COUNT(DISTINCT id)`
+/// frozen at 10 and the state stuck at `failed_verification` forever.
+///
+/// ⭐ **THE RECOVERY.** On launch, in-progress set and `migration_state` not
+/// `migrated` means the last attempt died mid-flight: delete the rows and
+/// migrate again from the legacy payload.
+///
+/// ⛔ **THE SAFETY PROPERTY THE DELETE RESTS ON, AND IT IS NOT "THE JSON
+/// SURVIVES".** In every state where the migration did not complete,
+/// `StorageBoot` selects the PREFS store — `SqliteEventStore` is chosen at
+/// exactly one place and only when `succeeded` is true. So in the failed state
+/// the legacy payload is the LIVE, AUTHORITATIVE store: it is still being
+/// written by captures and drained into. The rows deleted here are provably a
+/// subset of what prefs still holds.
+///
+/// ⚠️ **A RE-RUN MIGRATES A MOVING TARGET.** Because prefs keeps accumulating
+/// while the device is in the failed state, `sourceEntries` legitimately GROWS
+/// between attempts. **Nothing may treat that growth as corruption** — it is
+/// the user recording events, which is the app working.
+///
+/// ## ⛔ Two decisions recorded HERE, at the definition, and nowhere else
+///
+/// This project has already had to correct one provenance claim in four files
+/// because the prose was duplicated. These are stated once.
+///
+///  1. **NOT cleared on `failed_verification`.** Leaving it set IS the
+///     mechanism — it is what makes the next launch delete and retry rather
+///     than add another copy. Clearing it there would restore the absorbing
+///     state exactly.
+///  2. **NOT cleared in the `catch`.** A throw mid-transaction is precisely
+///     the case this key exists to catch. Clearing it would lose the signal.
+///
+/// ⭐ **`migration_state == 'migrated'` IS AUTHORITATIVE, whatever this says.**
+/// A kill between the two `putMeta` calls on the verified branch can leave the
+/// marker set AND the state migrated. That means the migration COMPLETED and
+/// the rows are correct, so the right action is to clear the marker and
+/// proceed — never to delete. The launch check tests `migrated` first.
+const String kMetaMigrationInProgress = 'migration_in_progress';
 const String kMetaSourceCount    = 'migration_source_count';
 const String kMetaInsertedCount  = 'migration_inserted_count';
 const String kMetaDistinctIds    = 'migration_distinct_ids';
@@ -84,6 +130,48 @@ const String kMetaBackupPath     = 'migration_backup_path';
 /// after migration replaces each NULL with the fallback the model has always
 /// applied. These counts survive that, and are what the expansion needs.
 const String kMetaAbsentPrefix = 'migration_absent_';
+
+/// A categorical rendering of a database error, or null if it is not one.
+///
+/// ⛔ **THIS LIVES IN THE STORAGE LAYER BECAUSE `DatabaseException` DOES.**
+/// `sqlite_single_writer_test` holds that only the storage layer may import
+/// sqflite, and it caught this the first time the sanitiser was written into
+/// `main.dart` instead. The invariant is right: knowledge of the store's own
+/// exception type belongs with the store, and callers get a `String?`.
+///
+/// ⚠️ **`message` IS NOT REACHABLE, and that is the package's shape rather
+/// than a choice.** `sqflite_common` exports only the ABSTRACT
+/// `DatabaseException`; `message` is declared on `SqfliteDatabaseException`,
+/// which is not exported. So the safe rendering is rebuilt from the public
+/// categorical accessors, and the human-readable SQLite text — "no such
+/// table: event", "database is locked" — does NOT survive. That cost is real
+/// and is accepted: `toString()` embeds the bound arguments, and one of those
+/// is `notes`, free text the user typed.
+///
+/// ⭐ `getResultCode()` parses the native message internally but RETURNS AN
+/// INT. Nothing of the message escapes through it.
+String? categoricalDatabaseErrorText(Object? error) {
+  if (error is! DatabaseException) return null;
+  return 'DatabaseException(resultCode: ${error.getResultCode()}, '
+      'class: ${_databaseErrorClass(error)})';
+}
+
+/// Which of the package's own classifications matched, or `unclassified`.
+///
+/// Each predicate is a `contains` over the native message INSIDE the package.
+/// They are called rather than reimplemented, so the classification stays the
+/// package's and only a boolean crosses the boundary.
+String _databaseErrorClass(DatabaseException e) {
+  if (e.isNoSuchTableError()) return 'noSuchTable';
+  if (e.isDuplicateColumnError()) return 'duplicateColumn';
+  if (e.isSyntaxError()) return 'syntax';
+  if (e.isOpenFailedError()) return 'openFailed';
+  if (e.isDatabaseClosedError()) return 'databaseClosed';
+  if (e.isReadOnlyError()) return 'readOnly';
+  if (e.isUniqueConstraintError()) return 'uniqueConstraint';
+  if (e.isNotNullConstraintError()) return 'notNullConstraint';
+  return 'unclassified';
+}
 
 const String createSchemaMetaSql =
     'CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT)';

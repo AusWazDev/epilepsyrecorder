@@ -10,6 +10,7 @@ import 'constants.dart';
 import 'theme/mer_theme.dart';
 import 'screens/disclaimer_screen.dart';
 import 'screens/home_screen.dart';
+import 'models/event_store_sqlite.dart';
 import 'models/storage_boot.dart';
 import 'models/storage_migration.dart';
 import 'services/notification_service.dart';
@@ -36,7 +37,7 @@ void main() async {
       options.beforeSend = (event, hint) async {
         await AppInfo.load();
         if (AppInfo.isLoaded) event.release = AppInfo.sentryRelease;
-        return event;
+        return sanitiseEventValues(event);
       };
       // ⛔ A DEV BUILD REPORTED AS 'production' AND SENTRY COULD NOT SEPARATE A
       // DEVELOPER'S CRASH FROM A USER'S — the instrument the release is read
@@ -70,26 +71,25 @@ void main() async {
         await Sentry.captureMessage(
           'Storage migration did not complete; running on shared_preferences',
           level: SentryLevel.error,
+          // ⛔ COUNTS REMOVED. `sourceEntries`, `loadable` and `insertedCount`
+          // are counts of the user's medical records, and this site fires on
+          // EVERY LAUNCH while the device stays unverified — so they left
+          // continuously, not once. What remains is categorical: which failure
+          // mode, and the sanitised error.
           withScope: (scope) => scope.setContexts('storage', {
-            'state':         storage.state.name,
-            'sourceEntries': storage.sourceEntries,
-            'loadable':      storage.loadableCount,
-            'inserted':      storage.insertedCount,
-            'error':         storage.error?.toString(),
+            'state': storage.state.name,
+            'error': sanitisedErrorText(storage.error),
           }),
         );
       } else if (storage.state == MigrationState.migrated) {
         await Sentry.captureMessage(
           'Storage migrated to SQLite',
           level: SentryLevel.info,
-          withScope: (scope) => scope.setContexts('storage', {
-            'sourceEntries': storage.sourceEntries,
-            'loadable':      storage.loadableCount,
-            'inserted':      storage.insertedCount,
-            'distinctIds':   storage.distinctIds,
-            'skipped':       storage.skipped,
-            'absent':        storage.absentCounts,
-          }),
+          // ⛔ EVERY FIELD HERE WAS A COUNT, so the context goes entirely.
+          // `absent` was a per-key map of how many of the user's records
+          // lacked a field — record-derived in the same way. What is left is
+          // the fact that a migration completed, which is the adoption signal;
+          // the diagnosis was never in these numbers.
         );
       }
       await NotificationService.instance.init();
@@ -235,4 +235,71 @@ class _SplashLoadingScreen extends StatelessWidget {
       ),
     );
   }
+}
+/* ===========================
+   SENTRY VALUE SANITISATION
+   =========================== */
+
+/// Replaces an exception's RENDERED value with a categorical one, for the
+/// exception types whose `toString()` embeds user-entered text.
+///
+/// ⛔ **THE RULE, AND IT IS THE ONE THE DISCLOSURE IS WRITTEN AGAINST:
+/// categorical and boolean facts about the OPERATION may be sent; values
+/// derived from the USER'S RECORDS may not.** `disclaimer_screen.dart` tells
+/// the user these reports "contain no event data".
+///
+/// ⭐ **KEYED ON THE OBJECT, NEVER ON THE TYPE STRING.** `SentryEvent.throwable`
+/// carries the original throwable, so this is a real `is` test.
+/// `SentryException.type` is `throwable.runtimeType.toString()`, and the SDK's
+/// own source warns that under `--obfuscate` that name "won't be human
+/// readable" — so a string-keyed rule would fail silently in exactly the builds
+/// that ship, and NO TEST WOULD CATCH IT, because tests are not obfuscated.
+///
+/// ⚠️ **AN UNRECOGNISED TYPE IS LEFT ALONE.** This is a whitelist, not a
+/// scrubber: it cannot know what an arbitrary exception's rendering contains,
+/// and inventing a redaction for one would be a matcher by another name.
+SentryEvent sanitiseEventValues(SentryEvent event) {
+  final replacement = _categoricalValueFor(event.throwable);
+  if (replacement == null) return event;
+
+  final exceptions = event.exceptions;
+  if (exceptions == null || exceptions.isEmpty) return event;
+
+  // Every entry, not a chosen one. MER's captures carry a single exception,
+  // and where they did not, over-removing is the safe direction for a privacy
+  // control — the same bias the workspace rules require of a resolution
+  // instrument, pointed the other way.
+  for (final e in exceptions) {
+    e.value = replacement;
+  }
+  return event;
+}
+
+/// The same rule, applied to an error captured as a STRING rather than thrown.
+///
+/// ⭐ `MigrationOutcome.error` holds an `Object?` that was caught and stored,
+/// so it never reaches `beforeSend` as a throwable — it is stringified into a
+/// context. Without this it would bypass the sanitisation entirely, which is
+/// the gap a rule applied in only one place always has.
+String? sanitisedErrorText(Object? error) {
+  if (error == null) return null;
+  return _categoricalValueFor(error) ?? error.toString();
+}
+
+/// The categorical rendering for a recognised throwable, or null to leave it.
+String? _categoricalValueFor(Object? throwable) {
+  // ⛔ DELEGATED, NOT DUPLICATED. `DatabaseException` is the storage layer's
+  // type and only the storage layer may import sqflite — an invariant held by
+  // `sqlite_single_writer_test`, which caught this file importing it directly.
+  final db = categoricalDatabaseErrorText(throwable);
+  if (db != null) return db;
+  if (throwable is FormatException) {
+    // ⭐ `message` and `offset` are public and carry no user text; `source`
+    // does. Dart's own `FormatException.toString()` renders up to ~78
+    // characters of `source`, which for MER is the legacy JSON payload — the
+    // path that existed in 1.0.2, before SQLite (Brief 173b).
+    return 'FormatException(message: ${throwable.message}, '
+        'offset: ${throwable.offset})';
+  }
+  return null;
 }

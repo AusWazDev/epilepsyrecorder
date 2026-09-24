@@ -848,10 +848,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await Sentry.captureMessage(
           'iOS handoff: legacy shared records folded in',
           level: SentryLevel.info,
+          // ⛔ COUNTS BECOME BOOLEANS. Whether anything was folded, and
+          // whether the write landed, are facts about the operation; HOW MANY
+          // records were folded is a fact about the user's history.
           withScope: (scope) => scope.setContexts('handoff', {
-            'added':              fold.addedIds.length,
-            'durationsRecovered': fold.durationsRecovered.length,
-            'wrote':              fold.wrote,
+            'anyAdded':              fold.addedIds.isNotEmpty,
+            'anyDurationsRecovered': fold.durationsRecovered.isNotEmpty,
+            'wrote':                 fold.wrote,
           }),
         );
       }
@@ -864,14 +867,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
     final loaded = drain.records;
 
-    for (final id in drain.orphanEndIds) {
+    // ⛔ `eventId` REMOVED — it was a per-record identifier, the only one
+    // leaving the device anywhere in the app. The loop no longer binds the id
+    // at all, so there is nothing to leak back in by accident.
+    //
+    // ⚠️ STILL ONE REPORT PER ORPHAN, not one per drain: the frequency is
+    // unchanged, only the payload. What is actionable is that an orphaned end
+    // instruction occurred, which the message itself says.
+    for (var i = 0; i < drain.orphanEndIds.length; i++) {
       // An end with no record to attach to. Dropped, never fabricated: a
       // record invented here would need a start time, and a wrong timestamp in
       // a medical record is worse than an absent duration.
       await Sentry.captureMessage(
         'Capture inbox: end instruction with no matching record',
         level: SentryLevel.warning,
-        withScope: (scope) => scope.setContexts('inbox', {'eventId': id}),
       );
     }
 
@@ -882,9 +891,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       await Sentry.captureMessage(
         'Capture inbox: entries left in place, not applied',
         level: SentryLevel.warning,
+        // ⛔ `count` REMOVED — a count of the user's pending entries.
+        // `reasons` is categorical and is why the entries were deferred.
         withScope: (scope) => scope.setContexts('inbox', {
           'reasons': drain.deferReasons.map((r) => r.name).toList(),
-          'count':   drain.deferredCount,
         }),
       );
     }
