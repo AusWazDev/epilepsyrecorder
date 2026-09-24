@@ -167,6 +167,46 @@ void main() {
         isTrue, reason: 'predicted reset to the seeded default (offered)');
   }, timeout: const Timeout(Duration(seconds: 45)));
 
+  // ── RE-ADDING AFTER A RESTORE ── added 24 September 2026.
+  //
+  // Records hold vocabulary as TEXT (`feelings_json`, `triggers_json`), not as
+  // ids, and as at 24 September 2026 nothing in lib/ reads the id join tables
+  // at runtime. So the question is not "same id or a second id" but "does the
+  // re-added entry's text match the text the records hold". `addUserEntry`
+  // dedupes against vocabulary ROWS only, and after a restore there are none,
+  // so what it stores is whatever the user types.
+
+  Future<List<String>> valuesLike(Database db, String table, String v) async =>
+      (await loadVocabulary(db, table))
+          .where((e) => e.value.toLowerCase() == v.toLowerCase())
+          .map((e) => e.value)
+          .toList();
+
+  test('RE-ADD, exact text: ONE entry, and it matches the records', () async {
+    await restoreOntoNewDevice();
+    await addUserEntry(newDevice, kObservationTable, _customObservation);
+    await addUserEntry(newDevice, kObservationTable, _customObservation);
+    expect(await valuesLike(newDevice, kObservationTable, _customObservation),
+        <String>[_customObservation],
+        reason: 'one row, whose value is the string the record already holds');
+    final record = (await SqliteEventStore(newDevice).load()).single;
+    expect(record.feelings, <String>[_customObservation]);
+  }, timeout: const Timeout(Duration(seconds: 45)));
+
+  test('RE-ADD, different case: ONE entry, and it does NOT match the records',
+      () async {
+    await restoreOntoNewDevice();
+    final typed = _customObservation.toLowerCase();
+    expect(typed, isNot(_customObservation), reason: 'the variant must differ');
+    await addUserEntry(newDevice, kObservationTable, typed);
+    expect(await valuesLike(newDevice, kObservationTable, _customObservation),
+        <String>[typed],
+        reason: 'no duplicate row, but its value is the new spelling');
+    final record = (await SqliteEventStore(newDevice).load()).single;
+    expect(record.feelings, <String>[_customObservation],
+        reason: 'the record keeps the OLD spelling; nothing rewrites it');
+  }, timeout: const Timeout(Duration(seconds: 45)));
+
   test('control 3: the absence check can fail — add the value and it is found',
       () async {
     await restoreOntoNewDevice();

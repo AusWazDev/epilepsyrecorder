@@ -53,6 +53,16 @@ defect.
 > is dropped, because HomeScreen's restore loop skips types the device does not have **(read
 > from the loop and its own comment, not tested; the test does not drive HomeScreen)**.
 >
+> **RE-ADDING AFTER A RESTORE, TESTED 24 September 2026** (two cases added to the same file, 7 of
+> 7 pass). Records hold vocabulary as TEXT (`feelings_json`, `triggers_json`), not ids, and as at
+> 24 September 2026 nothing in `lib/` reads the id join tables at runtime. So a re-add can never
+> leave "two entries pointing at different ids". What it CAN do: typed exactly, it makes ONE entry
+> that matches the records; typed with different casing, it makes ONE entry in the new spelling
+> while the records keep the old one, and nothing reconciles them.
+> ⚠️ **Read, not tested:** the single-page form keeps a chip for a value the lists no longer
+> offer; **the wizard does not show one**, but carries the value through to save unchanged and
+> lists it on the summary step. A display gap, not data loss.
+>
 > **User-facing copy, searched by meaning (Brief 2b, nothing changed):** the Your data screen says
 > *"A backup file holds everything"*. That is the promise, and it does not hold. Details in the
 > Change Register entry of the same date.
