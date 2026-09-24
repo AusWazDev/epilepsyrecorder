@@ -80,6 +80,19 @@ things in them are wrong.
      procedural: the paste is never edited directly, corrections go to the CLI,
      and the CLI settles them against the code. Two-way drift needs a different
      instrument, and this is not it.
+
+  3. THE CHECK IS ONE-SIDED. Added 24 September 2026, raised by the chat half.
+     This tool hashes the FILE. Nothing hashes the PASTE: the chat half cannot
+     compute the digest, it can only read its stamp LINE and quote it. So a
+     quote proves what the stamp line SAYS, never what the body CONTAINS.
+       detects:        a re-paste that never happened
+       cannot detect:  an edit to the pasted body that left the stamp line alone
+     That second case quotes GREEN. A "nothing was edited in the paste" answer
+     therefore rests on discipline, not measurement, and must be recorded as
+     such, never as a verified null.
+     The only closure is to have the chat half send its copy back in full and
+     run digest_of over it. Worth doing once as a calibration of whether the
+     discipline has held; not on every session.
 """
 import sys, io, os, re, hashlib, argparse, datetime, tempfile
 
