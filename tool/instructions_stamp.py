@@ -93,6 +93,21 @@ things in them are wrong.
      The only closure is to have the chat half send its copy back in full and
      run digest_of over it. Worth doing once as a calibration of whether the
      discipline has held; not on every session.
+     ⭐ Done once, 24 September 2026: a byte copy of the field hashed to
+     30a561fa, zero diff. As at that date, measured green; a point
+     measurement, not a property of the process.
+
+  4. BATCH PASTE-AFFECTING EDITS; RE-PASTE ONCE, AT SESSION END. Added 24
+     September 2026. This sharpens point 1: a re-paste does NOT reach a
+     running chat session. It appears only if that session's context happens
+     to be re-read [report: the chat half's account]. So every stamp move
+     during a session leaves the chat half quoting a value the file no
+     longer carries, with no way to refresh. That is why 24 September took
+     three quote loops instead of one. Same family as point 3: the paste is
+     observable only through its reader, on the reader's schedule.
+       rule:  hold every edit that moves the stamp, apply them together,
+              run --write once, re-paste at session end, and quote at the
+              start of the next session.
 """
 import sys, io, os, re, hashlib, argparse, datetime, tempfile
 

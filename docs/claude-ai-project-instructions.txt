@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-24-e06cb734
+INSTRUCTIONS STAMP: 2026-09-24-8423ca56
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -27,6 +27,10 @@ over newer. The drift ran BOTH ways: the file also held text the paste lacked.
 ⭐ **Before a re-paste, if this copy holds anything the file might lack, send
   it to the CLI first.** Detail is not evidence. The CLI settles it from the
   code, not from whichever copy is longer.
+⭐ **Batch, then re-paste ONCE, at session end** (added 24 September 2026). A
+  re-paste does not reach a running chat session unless its context is re-read,
+  so a stamp moved mid-session leaves this copy quoting a value the file no
+  longer carries. Quote the new stamp at the start of the next session.
 
 <!-- CURRENT-DECISIONS:BEGIN — byte-identical copy required in BOTH files. See the note below. -->
 ## CURRENT DECISIONS — the only block that reaches both halves
@@ -81,7 +85,7 @@ neither claim is dated, neither governs: say the question is open.
 | D3 | **Export-shape changes need no compatibility layer.** One user, manual amendment acceptable. No compatibility mode, no second export option, no version negotiation. Shape is tracked by a filename marker, not a column. | 26 Aug 2026 | ✅ marker `v4` |
 | D4 | **The seeded catalogue is EPILEPSY ONLY this release.** Migraine needs its own research pass; shipping one well beats two thinly. | 20 Aug 2026 | ✅ |
 | D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** | SQLite v1 | ✅ |
-| D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. | 27 Aug 2026 | ✅ "Your lists" |
+| D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. ⚠️ **Added later the same day.** The same census found **0 of 32 triggers** affected, so the harm is UNEVEN: a reader arguing from triggers alone would conclude a delete is harmless. And the list-and-history sentence just above is the chat half's SECONDARY ARGUMENT, offered before the count existed. It is not the measured reason, and the chat half has recorded that it replaced one wrong reason with another before the measurement settled it. | 27 Aug 2026 | ✅ "Your lists" |
 
 **Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
 Claude\Medical Event Recorder — Change Register.md`). This table says WHAT is
