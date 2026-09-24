@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-24-30a561fa
+INSTRUCTIONS STAMP: 2026-09-24-15578e1f
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -459,6 +459,15 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
      choices go back to the defaults. ⚠️ Read from `triggerRowFor` and
      `backup.dart`, **not tested**; observations and event types are expected to
      follow the same pattern but were not traced.
+   ⚠️ **CORRECTED LATER ON 24 September 2026, BY TEST. The bullet above is kept;
+     its mechanism was wrong, and the gap is WORSE than it says.** A user's own
+     entries do not come back hidden. **They do not come back at all:** no row,
+     not even an inactive one. `triggerRowFor` and `observationRowFor` run only
+     during schema migration, and a restore writes `event` rows and nothing else.
+     A seeded entry the user hid is offered again. The records themselves arrive
+     intact, custom values included. Observations, triggers and event types were
+     all tested; `test/restore_vocabulary_state_test.dart`, with controls showing
+     each check can fail.
 
 **Regulatory:** positioned as a data capture tool only, never diagnostic. Claim
 wording is load-bearing. Route anything touching diagnosis, prognosis,

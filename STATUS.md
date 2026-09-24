@@ -42,6 +42,21 @@ defaults. **Read from the code, not tested.** Observations and event types are e
 follow the same pattern and were not traced. Needs a brief and a test before it is called a
 defect.
 
+> ⚠️ **CONFIRMED BY TEST, AND CORRECTED, later on 24 September 2026. The paragraph above is kept.**
+> The gap is real and **worse than stated**: a user's own observations, triggers and event types
+> have **no row at all** on the new device, not an inactive one. The `RowFor` functions run only
+> during schema migration; a restore writes `event` rows only. A hidden seeded entry is offered
+> again. Records arrive intact, custom values included. `test/restore_vocabulary_state_test.dart`
+> (5 cases, 3 of them controls; prediction written in its header before the first run).
+> **Why "no row" matters beyond the lists:** the entry cannot be un-hidden, because nothing
+> exists to un-hide; the user must type it again. And a custom event type's condition assignment
+> is dropped, because HomeScreen's restore loop skips types the device does not have **(read
+> from the loop and its own comment, not tested; the test does not drive HomeScreen)**.
+>
+> **User-facing copy, searched by meaning (Brief 2b, nothing changed):** the Your data screen says
+> *"A backup file holds everything"*. That is the promise, and it does not hold. Details in the
+> Change Register entry of the same date.
+
 ---
 
 ## Session: 7 September 2026 (evening) — Mac (Claude Code CLI)
