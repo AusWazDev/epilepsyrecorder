@@ -5,6 +5,45 @@
 
 ---
 
+## Session: 24 September 2026 (afternoon) — Windows (Claude Code CLI)
+
+**The claude.ai paste was AHEAD of its source file, and this morning's re-paste overwrote it.**
+Documents and one tool only. No `lib/` change.
+
+- **What happened.** The chat half compared its earlier paste against the re-pasted `.txt`.
+  Neither was a superset. The paste held premise 3 (a date and time picker exists), premise 6
+  (backup is the preservation path), two whole sections and seven further passages. **The .md
+  never held any of it** — `git log -S occurred_at_field` finds that wording in no version of
+  the file. The .md held what the paste lacked: the CURRENT DECISIONS block and the premise 1
+  and 4 annotations.
+- **Settled from the code, not from either copy.** Every factual claim in the morning paste was
+  checked against `lib/`. Most were true. Three were not: backup and the edit screen's change
+  list do not read `occurredAt ?? timestamp`; and restore onto a fresh install is **not** a full
+  reconstruction (see the finding below). All of it is annotated into the .md, marked RECOVERED
+  and dated, with the original wording kept.
+- **Diffed mechanically** against the full morning paste, sentence by sentence, with a live
+  control: 153 of 167 present verbatim, and all 14 misses adjudicated as covered by annotation.
+- **Mechanism finding.** A stamp proves paste == file. **It cannot say which copy is newer.** The
+  tool assumed one-way drift. Its docstring and its `--quoted` message now say so, and the paste
+  now carries a rule: the paste is never edited directly; corrections go through the CLI.
+- **Property corrected.** A fresh paste can reach the chat half on a MID-SESSION context re-read,
+  not only at a new session. [report: the chat half's account; not observable from here.]
+- **Stamp `2026-09-24-30a561fa`.** Re-pasted by the developer. The chat half quoted the previous
+  value, `530f428a`, and declined to quote the new one because it knew it only from being told.
+  **Correct, and recorded as correct:** a told value would make the check confirm itself.
+  **Still to be quoted** at its next context re-read.
+
+### 🔴 FINDING — A RESTORE ONTO A FRESH INSTALL DOES NOT RESTORE THE USER'S LISTS
+
+A backup carries no vocabulary state. On restore, a value the new device does not know is
+recreated as recorded but NOT OFFERED (`is_active: 0`, per `triggerRowFor`). So a user's own
+entries come back hidden from the pickers, and their hide and unhide choices go back to the
+defaults. **Read from the code, not tested.** Observations and event types are expected to
+follow the same pattern and were not traced. Needs a brief and a test before it is called a
+defect.
+
+---
+
 ## Session: 7 September 2026 (evening) — Mac (Claude Code CLI)
 
 **First real-iOS capture set, and a build-ordering defect found the hard way — by shipping it

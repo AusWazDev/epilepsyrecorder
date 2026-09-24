@@ -50,6 +50,36 @@ session starts.
   THAT IS NOT A GAP IN THE CHECK. It is what "an invisible copy is only
   observable by asking its reader" costs. The answer is to re-quote in the NEXT
   session, never to re-paste again and never to doubt the paste.
+
+CORRECTED 24 September 2026. The two sections above are kept as written. Two
+things in them are wrong.
+
+  1. "UNTIL A NEW SESSION STARTS" IS TOO STRONG. On 24 September 2026 the chat
+     half got a fresh paste on a MID-SESSION context re-read and quoted the new
+     stamp in the same session. [report: the chat half's account. It cannot be
+     observed from here.] So the window is shorter than stated. Before calling a
+     red "the expected window", ask the chat half to re-quote.
+
+  2. THE MISMATCH TABLE ASSUMES ONE-WAY DRIFT, and that was false the same day.
+     "The file moved on; the paste is the older copy" is only one of two cases.
+     Premises 3 and 6, two whole sections (absence claims carry an expiry
+     date; where the record lives) and seven further passages existed IN THE
+     PASTE and never in the .md. Re-pasting put the older text back.
+     `git log -S occurred_at_field` finds that wording in no version of the .md.
+     AND THE DRIFT RAN BOTH WAYS: the .md also held text the paste lacked (the
+     CURRENT DECISIONS block, the premise 1 and 4 annotations). Neither copy
+     was a superset, so neither "re-paste" nor "copy the paste back" was safe.
+
+     A STAMP PROVES EQUALITY. IT CANNOT PROVE DIRECTION. The digest is taken over
+     the .md, so an edit made only in the paste leaves the paste's stamp line
+     untouched. The chat half then quotes a stamp that matches an OLDER .md, or a
+     stamp that doesn't match, and either way it reads as "re-paste owed". Nothing
+     here can see which copy is ahead.
+
+     Nothing mechanical is built for that yet. The rule in the pasted text is
+     procedural: the paste is never edited directly, corrections go to the CLI,
+     and the CLI settles them against the code. Two-way drift needs a different
+     instrument, and this is not it.
 """
 import sys, io, os, re, hashlib, argparse, datetime, tempfile
 
@@ -193,10 +223,15 @@ def main():
         print('     Re-paste docs/claude-ai-project-instructions.txt into the')
         print('     claude.ai project settings. Do not edit the stamp to agree.')
         print('')
-        print('     ⚠️  UNLESS YOU ALREADY RE-PASTED THIS SESSION. Instructions are')
-        print('         injected at session START, so a fresh paste cannot be quoted')
-        print('         until the NEXT session. In that window this red is EXPECTED')
-        print('         and means nothing is wrong - re-quote next session.')
+        print('     ⚠️  UNLESS YOU ALREADY RE-PASTED THIS SESSION. A fresh paste may')
+        print('         not have reached the chat half yet. It has arrived on a')
+        print('         mid-session re-read before, so ask for a re-quote first.')
+        print('')
+        print('     ⛔  AND BEFORE RE-PASTING: a mismatch does NOT prove this file is')
+        print('         newer. If the paste was edited directly, IT is ahead, and a')
+        print('         re-paste overwrites the newer text. Ask the chat half whether')
+        print('         its copy holds anything this file lacks, and settle it')
+        print('         against the code first.')
         return 1
 
     ok, problems = check(md_text, txt_text)
