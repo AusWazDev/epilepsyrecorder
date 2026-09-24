@@ -318,6 +318,9 @@ Start 2, step 2 (developer, by hand). Developer's words, verbatim: "Two banners,
   Case (b) (upgrade mid-event: a 1.0.2 Live Activity + marker surviving into HEAD) is the only plausible USER route into D4 at HEAD.
   Not to be dropped as an edge case. The synthetic-push route into D4 is OUR APPARATUS, not a user path, and must never be written up
   as one. Unverified: whether ActivityKit activities survive an app update at all.
+  ⛔ CROSS-REFERENCE (added 24 Sep 2026 ~20:15): READ "OPEN — THE SYSTEM ENDED ALL THREE 1.0.2 LIVE ACTIVITIES (chronod)" BEFORE
+  DESIGNING THE CASE (b) TEST. The system ends activities for reasons of its own, which are not established. If the same mechanism
+  fires around an update, the result would be "the activity was gone", but it would not be a survival result about the update.
 Start 3: developer ran push-seed3.apns himself via `!`. ⚠️ DEVIATION FROM PROTOCOL: the action was taken WITHOUT the step-1 report /
   step-2 prompt — 17:18:12.868 SpringBoard adds 55E5-4461 (identifier 524368F1-4CF6-4400-9DE8-B18643C064C4, NEW — not stale
   541B9177) · 17:18:25.633 "Received response to 55E5-4461 for action QUICK_LOG_START" (12.8 s later) · 17:18:25.670 background launch
@@ -421,6 +424,23 @@ HOST at 17:37 (from the watchdog stackshot): 885 processes, 8 GB Intel MacBook A
   Lock/Home/cliclick attempts. CAUSE UNKNOWN, NOT ANALYSED. It is outside the seed's gate and does not affect the records. It is an
   unexplained crash of the app under test, days before a release. Status: OPEN.
 
+## ⛔ OPEN — THE SYSTEM ENDED ALL THREE 1.0.2 LIVE ACTIVITIES (chronod), 24 Sep 2026 19:09:36–19:10:06 AEST (opened 24 Sep ~20:15)
+  OBSERVATION, from MER-176-U's own device log (read 24 Sep ~19:57–20:00; last night's times, NOT affected by tonight's clock step):
+    19:09:36.217  liveactivitiesd "Ending activity 82C24452-361F-4EDF-AF88-B1E577117849 for XPC participant content source
+                  process(target: com.apple.chronod)" → "Activity discarded" (82C24452 = start 1's activity, created 06:39:25Z)
+    19:09:51.187  same for C63A9B39-089B-42D5-98E0-F6426A9F43A1 (start 2's)
+    19:10:06.192  same for 3EABFE8B-04E4-4193-9832-FA35FB22BD7E (start 3's)
+  Context: ~3–4 min after SpringBoard watchdog-killed the boot-triggered background launch (pid 65836, 19:06:15); ~15 s apart;
+  interleaved with a SECOND background launch (pid 66201, 19:09:36 → watchdog 19:10:14). The ending came from the SYSTEM. The content
+  source was chronod, NOT Runner, and nothing we did. The activities were ~1.9–2.5 h old (created 16:39, 16:51 and 17:18); liveactivitiesd had scheduled their "Ending
+  activities" task for 2026-09-25 00:51 / 01:18, so this was NOT that scheduled expiry.
+  ⛔ CAUSE NOT ESTABLISHED. Candidates such as the watchdog kills, chronod renderer timeouts, or host starvation are NOT tested and
+  must not be cited as the cause.
+  WHY IT MATTERS (adjacent to the release blocker, not part of it): case (b) asks whether a 1.0.2 activity survives an app update.
+  This shows the system ends activities on its own schedule. It also gives the earlier observation (the activities "SURVIVED A
+  SIMULATOR DEVICE SHUTDOWN + reboot", 19:04) a shelf life nobody has measured: here they were ended within ~5 min of that boot.
+  ⛔ NOT to be resolved as part of case (b), and NOT to be folded into the survival question. It is its own item. Status: OPEN.
+
 ## RESUME ATTEMPT — (ii) on MER-176-U (original). STOPPED BEFORE THE LAUNCH (24 Sep 19:04–19:11 AEST)
 Decision (Waz, via chat): resume (ii) on the ORIGINAL, not the clone. It rests on a BOUNDED gap 17:19:15 → 17:37:50, bounded by:
   (1) a container-wide sweep of files AND directories, mtime and ctime: nothing in the app Data or App Group container written after 17:18:30;
@@ -452,6 +472,16 @@ OBSERVATION, own scope: three ActivityKit activities of 1.0.2 SURVIVED A SIMULAT
   That is untested, and should be expected.
 19:10:55 swap 3014/4096 MB used (the OS grew swap from 3 to 4 GB). STOPPED before the foreground launch per the stop rule. Device left
   BOOTED, app NOT running, markers present.
+  ⛔ ANNOTATION, 24 Sep 2026 ~20:15 AEST — THIS RECORD WAS INCOMPLETE. The entry above stands as written, and nothing in it is wrong
+  as stated. It did NOT contain two events that happened inside its own window:
+    (1) a SECOND uncontrolled background launch of 1.0.2: liveactivitiesd "Launching …" 19:09:36.244 → SpringBoard "Bootstrapping …
+        with intent background" 19:09:36.370 → Runner pid 66201, never active → SpringBoard watchdog, exited 19:10:14.983;
+    (2) the SYSTEM ENDING all three Live Activities, 19:09:36 / 19:09:51 / 19:10:06, content source chronod (see OPEN item above).
+  So "app NOT running" at 19:10:55 was true, but it had been running 40 s earlier. And the three activities this entry describes
+  surviving no longer existed when it was written.
+  HOW IT WAS FOUND: tonight's 19:55 boot restored NO activities (empty "Restored activities:") and launched nothing. Adjudicating that
+  unclassified change meant reading this window's device log, and this entry's log citations stop at the 19:06:15 kill. Whether that session read further is not known.
+  ⭐ The failure: an incomplete record that READ AS COMPLETE. Nothing in it said the log after 19:06:15 had not been read.
 
 ## DEFERRED PATH — ORDERLY SHUTDOWN (24 Sep 19:13–19:16 AEST)
 19:13:35 Dropbox and OneDrive still running; swap 3272/4096 MB used. Waz chose the deferred path: no launch tonight; Mac to be
@@ -465,6 +495,8 @@ OBSERVATION, own scope: three ActivityKit activities of 1.0.2 SURVIVED A SIMULAT
 19:16 re-hash after shutdown: main 04b5a8eb40791948768d5d42e5d673b6057a015449f141c24ffbd8a27b24a650 · private
   19323e02bbe0559b82d34c89c5be26fb2b5678ece701815db9fa4f8ca9d774ca (both mtime 17:18:30, UNCHANGED through the boot and the
   uncontrolled background launch) · group.awn.0be43e74.plist 22b11abb19abf9c280f989ff2419e0bba1377c0108978fb1190dd1ed3b982c21 (19:06:15).
+  ⛔ ANNOTATION 24 Sep ~20:15: "the uncontrolled background launch" was TWO launches (19:05:37 and 19:09:36). This record was incomplete;
+  see the annotation under 19:10:55 above. The hashes stand, so neither launch wrote either MER plist.
 (ii) has NOT run. The freeze has NOT happened. Markers CBE84F1D are still present in both suites.
 
 ## RESUME ATTEMPT 2 — STOPPED AT STEP 1, HOST CHECK (24 Sep 2026 19:41–19:43 AEST, new session)
@@ -537,6 +569,18 @@ RE-MEASUREMENT, correct clock, no simulator booted:
   mer_active_event removed from private; endLiveActivity() called, but with NO activities to end, so the 13:43-style "Ending activity"
   line is NOT expected and its absence is NOT a failed prediction; records untouched: 6 records, with 1B14D71F / 54605897 / CBE84F1D still
   lt1. ⛔ STOP rule unchanged: if the markers do not clear, STOP, and do not relaunch.
+  ⭐ TIMING OF THE AMENDMENT, recorded 24 Sep ~20:15 so a reader can see it was NOT fitted to the result:
+    · WRITTEN BEFORE THE RUN. It is part of commit f68ec7c, committed 2026-09-24 20:01:19 +1000 and pushed in the same command.
+      The foreground launch was issued at 20:01:38 and its first log line is 20:01:39.378. Both times are from the host clock, which
+      was sntp-correct from 19:48. The "20:0x" in the heading above means 20:00:47–20:01:19.
+    · WHAT PROMPTED IT: (a) tonight's 19:55:07.596 liveactivitiesd "Restored activities:" with an EMPTY list; (b) last night's
+      19:09:36 / 19:09:51 / 19:10:06 "Ending activity … content source chronod" lines, read ~19:57–20:00. Neither involved launching the app.
+    · WHAT IT CHANGED: only the expected presence of an "Ending activity" line. The marker, record and duration predictions are
+      unchanged from 18:05.
+  ⚠️ THE HONEST EDGE: endLiveActivity() was NOT OBSERVED in (ii). It is inferred from the timeout branch having run. With nothing to
+    end, the log would look the same whether it ran or not. So (ii) is NO evidence for the D4 "ends EVERY MER activity" claim. That
+    observation is STILL OWED (any scratch simulator, 1.0.2, three starts, then one end). FIXTURE CHECKS #1 being out of date does not
+    change that.
 20:01:22  SCREENSHOT screenshots/176-attempt3-postboot-prelaunch.png (sha256 734c5d25dd63b9f2c1399bcc849f00169e284fad9353a0f5b2f06d6fd933302d):
   Home Screen page 1, Dynamic Island empty. Consistent with there being no activities. Lock Screen not captured.
 20:01:38  pre-launch re-hash: 04b5a8eb… / 19323e02… / awn 22b11abb… MATCH.
