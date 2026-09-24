@@ -63,6 +63,34 @@ defect.
 > offer; **the wizard does not show one**, but carries the value through to save unchanged and
 > lists it on the summary step. A display gap, not data loss.
 >
+> **D6: THE CORRECTION TO THE CORRECTION, RECORDED AS THE CHAT HALF'S OWN (24 September 2026).**
+> The chat half's words, in substance: *"I replaced a wrong reason with a different wrong reason."*
+> The recorded reason (*"a delete orphans every record"*) was false. The chat half then offered
+> list-and-history divergence in its place, by ARGUMENT. The real reason came from a MEASUREMENT:
+> screens show records through the entry's label, and on a fresh schema 4 of 4 event types and
+> 23 of 56 observations have a label that differs from the value, with **0 of 32 triggers**
+> affected, so the harm is UNEVEN and a reader arguing from triggers alone would call a delete
+> harmless. `kWhyNoDelete` in the code already said so. ⭐ **The rule it broke was already in the
+> instructions: where an argument and a measurement are both available, ask for the
+> measurement.**
+> ⏸ **PENDING PASTE EDIT, held until the `e06cb734` quote loop closes:** the D6 annotation lacks
+> the 0-of-32 triggers figure, and its list-and-history sentence needs marking as the chat half's
+> secondary argument, not the measured reason.
+>
+> **TIER A, DECIDED BY THE CHAT HALF 24 September 2026: recreated entries are ACTIVE.** Its
+> reasons: A only recreates entries a restored RECORD USES, which is evidence of use, unlike the
+> migration path's values of unknown origin; wrongly-active is visible and reversible, while
+> wrongly-inactive is silent; and `addUserEntry` refuses to revive an entry MER retired, so D6
+> holds by construction. ⚠️ **Known residual, not an oversight:** a backup carries no hide
+> choices, so an entry the user had hidden themselves comes back offered. Tier B closes that.
+> **Placement confirmed, with evidence:** after `_persist()`, before the conditions guard, with
+> its own `Vocabularies.load(db)`. A schema 2 backup's plan has `conditionsToAdd` and
+> `typeAssignmentsToAdd` both EMPTY (`condition_backup_test.dart`, run 24 September 2026, 16 of
+> 16 pass), so the guard is false for it and A placed inside would skip it. Schema 1 is read,
+> not tested: `ParsedBackup` defaults both to empty. The loop's comment *"Restore does not
+> create vocabulary rows"* is to be ANNOTATED as superseded, naming `addUserEntry` as the single
+> writer, not replaced.
+>
 > ⭐ **THE CONTROL FIRST, BECAUSE THE VERDICT IS ONLY WORTH WHAT IT IS WORTH.** The first run's
 > reference read came back EMPTY through a path error. Without the reference control, the
 > sample would have been compared against nothing and reported as a clean-looking pass: a null
