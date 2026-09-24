@@ -5,6 +5,13 @@ Markers `CBE84F1D` present in BOTH suites. **(ii) has NOT run. The freeze has NO
 Must-match hashes right now: main `04b5a8eb40791948768d5d42e5d673b6057a015449f141c24ffbd8a27b24a650` ·
 private `19323e02bbe0559b82d34c89c5be26fb2b5678ece701815db9fa4f8ca9d774ca`.
 
+**⛔ PRE-FLIGHT — runs FIRST, every session, before any rig work (added 24 Sep 2026 ~19:45, after resume attempt 2):**
+`xcrun simctl list devices booted`. Shut down every device that is not the device under test (`xcrun simctl shutdown <UDID>`),
+and REPORT what was found booted, by name and UDID, even when that is nothing. This is a CHECK, not a setting, on purpose:
+the setting that preceded it (`ApplePersistenceIgnoreState`) failed without anyone noticing (see RESUME ATTEMPT 2). A check
+that runs every time cannot fail silently. ⛔ Do NOT "fix" login boots by changing `CurrentDeviceUDID`. That does not stop a
+boot, only changes which device boots. Pointed at the wrong device, a login would boot THE FIXTURE.
+
 **Next session, in order:**
 1. Confirm the host was restarted (`sysctl kern.boottime` after 24 Sep 19:16). Before booting, check swap and free memory, with only
    MER-176-U to be booted. Do not open Simulator.app first: it may restore MER-audit-SE3.
@@ -451,3 +458,40 @@ OBSERVATION, own scope: three ActivityKit activities of 1.0.2 SURVIVED A SIMULAT
   19323e02bbe0559b82d34c89c5be26fb2b5678ece701815db9fa4f8ca9d774ca (both mtime 17:18:30, UNCHANGED through the boot and the
   uncontrolled background launch) · group.awn.0be43e74.plist 22b11abb19abf9c280f989ff2419e0bba1377c0108978fb1190dd1ed3b982c21 (19:06:15).
 (ii) has NOT run. The freeze has NOT happened. Markers CBE84F1D are still present in both suites.
+
+## RESUME ATTEMPT 2 — STOPPED AT STEP 1, HOST CHECK (24 Sep 2026 19:41–19:43 AEST, new session)
+Host restarted: kern.boottime 19:33:03 (after the 19:16 shutdown). Checks were read-only. No simctl boot, no launch, nothing quit.
+19:41:49  uptime 9 min · load 48.63 / 359.83 / 262.03 · swap 853/2048 MB used · 6092 pages free (~24 MB) · memory_pressure
+  free 49% · 8 GB. 19:42:22: load 42.20 / 328.56 / 254.08 · swap 856/2048 MB · free 48% · swapouts since boot 610575, swapins 397390.
+⛔ UNREQUESTED BOOT AT LOGIN: MER-audit-SE3 (B66C68DF) was already BOOTED, device.plist written 19:34. Simulator.app (pid 442) started
+  19:33:29, which is login-item / reopen-at-login timing. ApplePersistenceIgnoreState = 1 (set 18:08) did NOT stop it. CurrentDeviceUDID
+  is still B66C68DF. The 18:08 entry recorded this as NOT VERIFIED; it has now failed.
+Dropbox (pid 765 and others) and OneDrive (pid 764) auto-started. They were NOT quit, because the stop was taken first.
+Fixture untouched (Shutdown), hashed read-only 19:42: main 04b5a8eb… · private 19323e02… (both mtime 17:18:30) · group.awn 22b11abb…
+  (19:06:15) · real group Preferences 0 files. All UNCHANGED from 19:16.
+Stopped per the brief: the numbers are poor on a freshly restarted host, and a second simulator is up that nobody booted.
+
+## REMEDIATION AFTER ATTEMPT 2 (approved by Waz via chat) + RE-MEASUREMENT (24 Sep 2026, same session)
+⚠️ HOST CLOCK STEP, applies to EVERY time in this entry and in "RESUME ATTEMPT 2" above: the host clock ran FAST after the 19:33 boot
+  and was stepped BACK by ≥ 2 m 48 s. Evidence: a wait loop exited reading 19:51:00, and the next command read 19:48:12. At 19:48:53
+  `sntp time.apple.com` gave offset +0.028 s (correct from then on). The size of the error at each earlier reading is NOT known;
+  up to ~3 min fast. It does not reorder anything below. No `timed` log line for the step was found.
+(fast clock) 19:44:17–19:44:21  `xcrun simctl shutdown` MER-audit-SE3 (B66C68DF), rc 0.
+(fast clock) 19:44:21–19:44:29  Dropbox and OneDrive quit via AppleScript `quit`, rc 0. Afterwards the Dropbox FileProvider extension
+  was still running (it had gone by the re-measurement); OneDrive Sync Service helper (pid 764) and StandaloneUpdaterDaemon (pid 1085)
+  are STILL running. Neither was killed.
+Login-item check: System Events login items = "OneDrive Sync Service", "Dropbox". Simulator is NOT a login item. No Simulator
+  LaunchAgent in ~/Library/LaunchAgents. So nothing was removed. A loginwindow log query for "simulator" in 19:33:00–19:34:30 returned
+  no lines. The 19:33:29 relaunch of Simulator.app is UNATTRIBUTED from the log; the 17:38 relaunch yesterday was PersistentAppsSupport.
+(fast clock) 19:47:58  ⛔ ApplePersistenceIgnoreState REVERTED: `defaults delete com.apple.iphonesimulator ApplePersistenceIgnoreState`.
+  Before 1, after "does not exist" (unset, its value before 18:08). DEMONSTRABLY INEFFECTIVE: it was set during the 19:33 login, and
+  SE3 was booted anyway (device.plist 19:34, Simulator.app 19:33:29). ⛔ It must NEVER be cited as a control. It was reverted so that
+  no future reader counts a setting that did not work as protection.
+REJECTED, with the reasons recorded: changing CurrentDeviceUDID (it changes WHICH device boots, not WHETHER one does; pointed wrongly,
+  it boots the fixture). Changing the global "reopen windows at login" setting (a machine-wide preference; not ours to change for a
+  test rig). REPLACED BY: the PRE-FLIGHT check at the top of the RESUME block.
+RE-MEASUREMENT, correct clock, no simulator booted:
+  19:48:12  load 3.35 / 106.55 / 171.06 · swap 172/1024 MB used · memory_pressure free 58% · 5577 pages free
+  19:48:42  load 2.49 / 96.48 / 165.17 · swap 172/1024 MB used · free 59% · 4089 pages free · swapouts since boot 809881 (static
+            across the 30 s), swapins 719334
+  Top CPU at 19:48:42: biomesyncd 45.7%, mobileassetd 42.5% (post-boot system daemons), then Terminal and diskimagesiod.
