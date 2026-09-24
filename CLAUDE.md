@@ -374,6 +374,61 @@ that happens later. ⛔ **A load that throws after a successful boot is still si
 case Brief 91 measured. **That is why this line is annotated rather than deleted: the warning it
 gives is still true of the case it was written about.**
 
+### ⛔ A SIMULATOR CHECK IS A DEBUG CHECK — THE BUILD CONFIGURATION IS PART OF THE FIXTURE
+
+⚠️ **Recorded 24 September 2026. Filed beside the build-hygiene rule above because both are
+simulator traps and a reader who meets one should meet the other — but they are different
+defects: that one is a stale CACHE, this one is the SDK silently choosing a different
+CONFIGURATION.**
+
+⛔ **FLUTTER CANNOT BUILD A RELEASE FOR THE SIMULATOR, AND IT DOES NOT WARN — IT SWITCHES.**
+Read from the SDK source at the pinned 3.41.7, not inferred:
+
+- `packages/flutter_tools/lib/src/commands/build_ios.dart` —
+  `defaultBuildMode = environmentType == EnvironmentType.simulator ? BuildMode.debug : BuildMode.release`
+- and asking for one anyway is a hard stop, not a fallback:
+  `if (environmentType == EnvironmentType.simulator && !buildInfo.supportsSimulator)
+  throwToolExit('<MODE> mode is not supported for simulators.')`
+- where `BuildInfo.supportsSimulator` is `isEmulatorBuildMode(mode)`, and
+  `packages/flutter_tools/lib/src/build_info.dart` defines that as **`mode == BuildMode.debug`**.
+
+⭐ **SO EVERY SIMULATOR OBSERVATION IS AN OBSERVATION OF THE DEBUG CONFIGURATION**, whatever tag
+is checked out. **On this project the two configurations have already differed in a way that
+decided a behaviour:**
+
+    at 1.0.2, Runner/Debug and Runner/Profile referenced Runner.entitlements.
+    Runner/RELEASE DID NOT.  MERWidget referenced its own on all three.
+
+**Measured in the SIGNED BINARY, not the project file** — `824cd16`, 24 August 2026 — and the
+commit says why: *"the project file looked fine at a glance for four months."* Every Release
+build from `17a0a4b` (CR-42, 4 May 2026) signed without
+`com.apple.security.application-groups`, while the widget extension had it.
+
+⭐ **AND AN UNENTITLED SUITE NAME DOES NOT FAIL.** iOS backs it with a private plist inside the
+app's own container, so the app and the extension read and write two stores that look identical
+from inside each process. `EndMEREventIntent`'s end instructions were unreachable and
+`readLegacySharedRecords` always returned empty — *"a clean result that could not have been
+anything else."*
+
+⛔ **THEREFORE A SIMULATOR RUN OF 1.0.2 WOULD HAVE SHOWN THE CROSS-PROCESS PATH WORKING.** It was
+entitled — in Debug. **A debug build of a release tag is not the release.**
+
+**1. MUST: name the configuration beside any iOS observation.** *"On the simulator"* means
+*"in Debug"*, and it should be written that way, the same way the Windows-green rule requires
+naming the host.
+
+**2. MUST: settle anything that depends on signing, entitlements, App Group, obfuscation or AOT
+on a DEVICE build in RELEASE.** ⭐ `tool/verify_release_signing.sh` (added `b6d16fe`,
+24 August 2026) exists for exactly this and reads the signed binary rather than the project.
+
+**3. MUST NOT: carry a simulator result forward as evidence about a shipped build**, and
+MUST NOT read a passing simulator check as covering the configuration that ships.
+
+⭐ **SAME FAMILY AS WINDOWS-GREEN AND THE ONE-EM-PER-GLYPH FONT: a harness quietly substituting
+its own conditions for the ones that ship.** ⛔ **The axis is what differs each time — there the
+HOST, here the CONFIGURATION — and the substitution is made by the SDK, in one line, with no
+output.** Ask what the harness is standing in for, not only whether it is working.
+
 ---
 
 ## Signing & Build Credentials
@@ -1147,6 +1202,98 @@ byte-identical:
 **Strip heading lines and blockquote markers, split on `(?<=[.!?])\**\s+`, and hand-check
 what survives.** ⭐ **A flag is a candidate, not a finding** — the same rule this project
 already applies to null results.
+
+### ⛔ DRIVE THE COMPOSITION, NOT THE UNIT — WHERE THE DEFECT LIVES IN THE WIRING, A UNIT TEST PASSES
+
+⚠️ **Recorded 24 September 2026, from Brief 166.** The pre-migration backup — the user's entire
+history in plaintext — was being written to the Documents directory, which OneDrive's Known
+Folder Move redirects into cloud sync on Windows.
+
+⛔ **THE FUNCTION THAT WRITES IT CANNOT BE WRONG ABOUT WHERE IT WRITES.**
+`writeMigrationBackup(Directory dir, String? rawJson)` takes the destination **as a parameter**.
+The decision is made one frame up, at its single call site in `StorageBoot.init()`. **The fix was
+one argument** (`9eed24f`, 24 September 2026; the Documents call had stood since `9461f27`,
+25 August 2026).
+
+⭐ **SO A TEST OF THE HELPER WOULD HAVE PASSED AGAINST BOTH VERSIONS, BY CONSTRUCTION** — hand it
+a directory, it writes there, green, before and after. It would pin the helper and not the
+decision, and it would have read exactly like coverage of the defect.
+
+**1. MUST: ask WHICH FRAME OWNS THE DECISION before choosing what a test drives.** ⭐ **The tell
+is cheap and mechanical: if the value under test arrives as a PARAMETER, the function taking it
+is not where the defect can be.** Follow it up until you reach the frame that chooses it.
+
+**2. MUST: drive the real entry point wherever the behaviour is a composition of choices.**
+`test/migration_backup_destination_test.dart` drives `StorageBoot.init()` with two distinct
+directories, so *"which one did it choose"* is answerable.
+
+**3. MUST NOT: read a green unit test as coverage of a call-site defect.** It is evidence about
+the unit and says nothing about the wiring — which is where the last two defects in this area
+both were.
+
+⭐ **SECOND INSTANCE, SAME DAY AND SAME FILE, IN THE PLACEMENT DIMENSION RATHER THAN THE TEST
+ONE.** Brief 175d's migration-recovery check had to live in `StorageBoot.init()` too: putting it
+inside `migrateJsonToSqlite` — the obvious place — would have skipped it on exactly the launches
+that reach the insert path, because that function returns `alreadyMigrated` early when the state
+says so. ⛔ **The composition decided the behaviour there as well, and the obvious placement was
+a live bug.**
+
+⚠️ **THIS RULE ALREADY EXISTED IN THAT TEST'S OWN HEADER, WHICH IS THE ARGUMENT FOR PROMOTING IT
+HERE.** The header says the test drives the real call site *"and would pass against the old code,
+which is exactly the failure this test exists to avoid."* ⭐ **A test header is read by whoever
+opens that test — never by whoever is about to write the next one.** Same reason the fake-clock
+rule was promoted out of the Change Register.
+
+⭐ **KINSHIP, NAMED SO THIS IS NOT READ AS NOVEL: the workspace rules' *derived scope is not the
+same as complete coverage*** — a check derived from an artefact says nothing about anything
+downstream of it. ⛔ **This is that shape one level down and pointing UPWARD: a test derived from
+a function says nothing about the frame that CALLS it.** Filed separately because the tell is
+different and is specific to test design — a parameter, not a payload boundary.
+
+### ⛔ STRING MATCHING IS ACCEPTABLE WHEN THE OUTPUT IS A LABEL. THE SAME MATCHER EMITTING TEXT FAILS OPEN
+
+⚠️ **Recorded 24 September 2026, from Brief 175b.** This project treats matchers with suspicion
+everywhere else — the marker search that matched CLOSED inside its own negation, the range
+substitution that fabricated endpoints. ⭐ **Here one was accepted deliberately, and the reason
+generalises.**
+
+**THE INSTANCE, read from `sqflite_common` 2.5.8 `lib/src/exception.dart`.** `getResultCode()`
+lowercases the raw native message, `indexOf`s three prefixes — `'(sqlite code '`, `'(code '` and
+iOS's `'code='` — `int.tryParse`s what follows, and **returns `int?`**. On a miss it returns
+`null`. It is string matching on a message that can embed bound arguments, one of which is
+`notes`, free text the user typed.
+
+⭐ **AND IT IS SAFE TO BUILD ON, BECAUSE OF WHAT A NO-MATCH EMITS.** An unrecognised message
+yields **no code** — nothing of the message escapes through an `int`. ⛔ **The identical matcher
+returning a `String` would, on the same miss, emit the input it failed to classify**: the raw
+message, with the user's text in it, into a crash report. **Same patterns, same coverage, same
+author — opposite failure direction, decided entirely by the return type.**
+
+**1. MUST: judge a matcher by what a NO-MATCH produces, before judging its patterns.** Nothing,
+or the input? That is the question the pattern list cannot answer.
+
+**2. MUST: make the unmatched case the closed one wherever the output leaves the device, or
+reaches a user, or is acted on.** A classifier that emits a LABEL fails closed by construction:
+an unrecognised input simply is not labelled.
+
+**3. MUST NOT: substitute a matcher's coverage for its failure direction.** ⭐ **Coverage bounds
+how OFTEN it fires. The output type bounds what a MISS COSTS** — and only the second one is a
+safety property.
+
+⭐ **AND THE RELATED RULE, DELIBERATELY NOT RESTATED HERE — "EXPORTED" IS NOT "REACHABLE".** The
+reason that classifier is rebuilt from categorical accessors at all is that `sqflite_common`
+exports only the abstract `DatabaseException` (`sqlite_api.dart`, a `show` clause naming exactly
+that one type), while `message` is declared on `SqfliteDatabaseException`, which is not exported.
+⛔ **Confirm what a type EXPOSES before designing around it; do not infer it from the name.**
+**IT IS NOT RESTATED HERE BECAUSE IT IS ALREADY WRITTEN TWICE, AND THE TWO SAY DIFFERENT
+THINGS** — checked rather than assumed when this pointer was written: the generalised rule sits
+on `_categoricalValueFor` in `lib/main.dart`, and the package fact with the cost it accepts —
+that the human-readable SQLite text does not survive — sits on `categoricalDatabaseErrorText` in
+`lib/models/event_store_sqlite.dart`. Both cited by symbol, not by line, per the rule above.
+
+⭐ **KINSHIP: *bias a resolution instrument toward OVER-reporting*.** ⛔ **That rule chooses which
+error to PREFER once both are possible. This one asks whether the dangerous error is possible AT
+ALL** — and that is a property of the output type, not of the patterns.
 
 ---
 
