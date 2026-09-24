@@ -63,6 +63,15 @@ defect.
 > offer; **the wizard does not show one**, but carries the value through to save unchanged and
 > lists it on the summary step. A display gap, not data loss.
 >
+> ⭐ **THE CONTROL FIRST, BECAUSE THE VERDICT IS ONLY WORTH WHAT IT IS WORTH.** The first run's
+> reference read came back EMPTY through a path error. Without the reference control, the
+> sample would have been compared against nothing and reported as a clean-looking pass: a null
+> that read as green.
+> ⚠️ **A POINT MEASUREMENT, NOT A PROPERTY OF THE PROCESS: as at 24 September 2026, measured
+> green.** It proves the field was byte-identical to the file at `3eebe36` on that date. It does
+> not prove that no edit was ever made and later reverted, and it says nothing about any later
+> date. Quote it with its date or not at all.
+>
 > **PASTE CALIBRATION, 24 September 2026: the paste-discipline held, MEASURED for the first
 > time.** Waz copied the claude.ai Project instructions field directly (not via the chat half's
 > context), before the `15578e1f` re-paste. Its body hashes to **`30a561fa`**, identical to the
