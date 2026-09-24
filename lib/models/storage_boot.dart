@@ -167,6 +167,29 @@ class StorageBoot {
         }
       }
 
+      // ⛔ THE RECOVERY CHECK, AND IT MUST LIVE HERE — not inside the
+      // migration. `migrateJsonToSqlite` returns `alreadyMigrated` early when
+      // the state says `migrated`, so a check placed inside it would be
+      // skipped on exactly the launches that reach the insert path.
+      //
+      // ⭐ `migrated` IS TESTED FIRST, AND THAT ORDER IS LOAD-BEARING. A kill
+      // between the two `putMeta` calls on the verified branch can leave the
+      // marker set AND the state migrated. That means the migration COMPLETED
+      // and the rows are correct — so clear the marker and proceed. Deleting
+      // there would destroy a good migration.
+      final stateBefore = await getMeta(db, kMetaMigrationState);
+      if (stateBefore == 'migrated') {
+        // Authoritative. Tidy the marker if a crash left it set.
+        if (await getMeta(db, kMetaMigrationInProgress) == '1') {
+          await putMeta(db, kMetaMigrationInProgress, '0');
+        }
+      } else if (await getMeta(db, kMetaMigrationInProgress) == '1') {
+        // The last attempt died mid-flight. The rows it left are a subset of
+        // what the legacy payload still holds — see [kMetaMigrationInProgress]
+        // for why that is safe — so clear them and migrate again.
+        await db.delete('event');
+      }
+
       final result = await migrateJsonToSqlite(
         db: db,
         rawJson: rawJson,

@@ -224,6 +224,12 @@ Future<MigrationOutcome> migrateJsonToSqlite({
     final loadableCount = rows.length;
     final toInsert = rows.length - dropForNegativeControl;
 
+    // ⛔ SET BEFORE THE INSERTS, so a kill between the commit below and the
+    // state write at the end of this function is recoverable. See
+    // [kMetaMigrationInProgress] for why it is cleared where it is and not
+    // anywhere else.
+    await putMeta(db, kMetaMigrationInProgress, '1');
+
     await db.transaction((txn) async {
       final batch = txn.batch();
       for (var i = 0; i < toInsert; i++) {
@@ -255,6 +261,9 @@ Future<MigrationOutcome> migrateJsonToSqlite({
     if (verified) {
       await putMeta(db, kMetaMigrationState, 'migrated');
       await putMeta(db, kMetaMigratedAt, DateTime.now().toIso8601String());
+      // The ONLY place this is cleared. Deliberately not on the else branch
+      // and not in the catch — [kMetaMigrationInProgress] says why, once.
+      await putMeta(db, kMetaMigrationInProgress, '0');
     } else {
       await putMeta(db, kMetaMigrationState, 'failed_verification');
     }
