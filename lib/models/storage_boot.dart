@@ -121,8 +121,33 @@ class StorageBoot {
       final alreadyDone = await getMeta(db, kMetaMigrationState) == 'migrated';
       if (!alreadyDone) {
         try {
+          // ⛔ SUPPORT, NOT DOCUMENTS — 24 September 2026, and this is a
+          // WINDOWS fix. It was `getApplicationDocumentsDirectory()`.
+          //
+          // On Windows `path_provider` maps Documents to
+          // `WindowsKnownFolder.Documents`, and OneDrive's Known Folder Move
+          // redirects that: measured on the developer's machine,
+          // `MyDocuments` resolves to `C:\Users\<user>\OneDrive\Documents`,
+          // which is continuously synced. This file is the user's entire
+          // pre-migration history in plaintext JSON, so writing it there put
+          // a medical record into cloud sync. Support maps to
+          // `RoamingAppData` — measured as NOT inside OneDrive on the same
+          // machine.
+          //
+          // ⚠️ IT CHANGES NOTHING ON ANDROID OR iOS, and must not be read as
+          // a general privacy improvement. There, Support and Documents are
+          // both inside the app container and both eligible for platform
+          // backup — `/data/data/<pkg>/files` and
+          // `NSApplicationSupportDirectory` are backed up exactly as
+          // Documents was. The exposure this removes is Windows-only.
+          //
+          // ⭐ SAFE TO MOVE BECAUSE NOTHING READS IT BY PATH. The only
+          // occurrence of the filename in `lib/`, `ios/`, `android/` and
+          // `test/` is the writer itself; `kMetaBackupPath` records where it
+          // went and is read once, to populate an outcome object nothing acts
+          // on. The filename and the meta key are unchanged.
           backupPath = await writeMigrationBackup(
-              await getApplicationDocumentsDirectory(), rawJson);
+              await getApplicationSupportDirectory(), rawJson);
         } catch (_) {
           // A backup that cannot be written must not stop the app booting, but
           // it DOES stop the migration: converting without one removes the
