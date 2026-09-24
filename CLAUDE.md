@@ -48,6 +48,36 @@ dropped on that ground.
 
 ---
 
+### ⛔ A DATE ON A CLAIM MUST MEAN *LAST VERIFIED*. A CORRECTION DATE IS NOT ONE
+
+⚠️ **Added 24 September 2026. This is a PRECONDITION for the sweep above, not a footnote to it.**
+
+**MEASURED, in `docs/claude-ai-project-instructions.md`: of 6 MER architecture premises, exactly
+TWO carry a date — and both got one only because they were CORRECTED** (premise 1 on 23 September
+2026, premise 4 on 24 September 2026). ⛔ **So a date there currently marks *"was found wrong"*,
+not *"was checked"* — two opposite signals wearing the same notation.**
+
+⭐ **THE DEFECT IS NOT THE UNDATED CLAIM. IT IS THAT AN UNDATED CLAIM AND A NEVER-VERIFIED ONE
+ARE INDISTINGUISHABLE**, while a corrected claim reads as the best-attested thing on the page
+when it is merely the most recently wrong.
+
+**1. MUST: advance a claim's date when it is VERIFIED, whatever the outcome.** A re-read that
+CONFIRMS a claim is exactly the event a date should record. **A claim nobody re-read keeps its
+old date, and that is the point.**
+
+**2. MUST: notate a correction distinctly from a verification.** This corpus already has the
+vocabulary — `CORRECTED <date>` with the superseded wording quoted — **so the two must not be
+collapsed into one bare date.**
+
+**3. MUST NOT: run an age sweep over claims whose dates do not yet mean this.** ⛔ **It would rank
+the corrected claims as freshest and leave the never-checked ones merely undated** — ordering the
+corpus by how recently it was wrong, and calling that confidence.
+
+⚠️ **WHICH IS WHY THE AGE SWEEP IS NOT BUILT YET**, and the sequencing is deliberate: **fix what
+a date MEANS before scaling a mechanism that reads dates.** ⭐ **And note the sweep baseline above
+declares its corpus as ONE FILE** — the scope class the workspace rules have already recorded
+twice. **A mechanism scaled across a mis-scoped corpus inherits both defects at once.**
+
 ## Project Identity
 
 - **App name:** Medical Event Recorder (MER)

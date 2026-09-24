@@ -176,6 +176,34 @@ Sites 6 and 7 **do not pass through `writeEventPayload`** and know nothing about
 any Dart-side storage convention. Anything added to the Dart write path must be
 assumed absent on iOS quick-log until proven otherwise.
 
+⛔ **AND THE SENTENCE ABOVE IS SUPERSEDED TOO, 24 September 2026 — ANNOTATED, NOT REWRITTEN.**
+The two rows were corrected on 8 September. **The paragraph that draws the CONSEQUENCE from them
+was left behind**, so the table and the sentence beneath it have contradicted each other for
+sixteen days.
+
+**Superseded, quoted exactly:** *"Anything added to the Dart write path must be assumed absent on
+iOS quick-log until proven otherwise."*
+
+⭐ **IT INVERTS THE TRUTH.** Sites 6 and 7 post FACTS, not records. **Dart's main isolate is the
+only writer of the record list**, so Dart is what CREATES an iOS quick-log record when the inbox
+drains — and anything added to the Dart write path therefore **DOES** reach it.
+
+⚠️ **THE FIRST SENTENCE OF THAT PARAGRAPH STANDS AND IS NOT SUPERSEDED.** *"Sites 6 and 7 do not
+pass through `writeEventPayload` and know nothing about any Dart-side storage convention"* is
+true: at the moment of the action, no Dart runs. ⛔ **The error is the INFERENCE, not the
+observation** — the record is created later, in Dart, from the posted fact.
+
+⛔ **AND THE HEDGE IS WHY IT SURVIVED A CORRECTION PASS AIMED AT THIS EXACT AXIS.** *"must be
+assumed … until proven otherwise"* reads as caution rather than as an assertion, so a sweep
+looking for false CLAIMS did not stop on it. ⭐ **A conservative-sounding sentence is still a
+claim, and a wrong one misdirects work just as reliably** — here, toward excluding iOS from
+precisely the Dart-path changes that now reach it.
+
+⚠️ **THE SAME SENTENCE REACHED THE CHAT HALF AND SHAPED BRIEFS.** It entered this document and
+`docs/claude-ai-project-instructions.md` on the same day, from the same generation pass, and was
+annotated there on 24 September 2026 as MER premise 4. **Both copies are now annotated; neither
+is rewritten.**
+
 ⛔ **ROWS 6 AND 7 WERE FALSE AND ARE CORRECTED IN PLACE, 8 September 2026. THE SUPERSEDED
 WORDING IS QUOTED HERE VERBATIM so the record of what this document said stays true.**
 

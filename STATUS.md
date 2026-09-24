@@ -1782,6 +1782,16 @@ would want to roll back.
 > (two), `CLAUDE.md`, and `lib/models/event_record.dart`'s own dated
 > annotation. **Only the planning document was stale**, and a stale plan
 > allocates effort where a stale description merely misleads.
+>
+> ⛔ **CORRECTED 24 September 2026 — *"`docs/ARCHITECTURE.md` (two passages)"* WAS A DECLARED
+> SCOPE, AND A THIRD PASSAGE WAS STALE.** The sentence beneath that document's record-creation
+> table — *"Anything added to the Dart write path must be assumed absent on iOS quick-log until
+> proven otherwise"* — still carried the superseded inference and was annotated in Brief 185a.
+> ⭐ **The two passages that were checked WERE correct. *"Every descriptive artefact was already
+> correct"* was not** — it generalised from the passages the sweep chose to the documents it did
+> not finish reading. **Left as written above, because the method note is still the transferable
+> part; only its clearance is withdrawn.**
+
 
 ### Stale — this repo's CLAUDE.md
 `CLAUDE.md` still records "Version: 1.0.3+4" (now 1.1.0+5) and describes iOS
