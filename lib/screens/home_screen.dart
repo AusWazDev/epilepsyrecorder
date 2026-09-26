@@ -2372,6 +2372,35 @@ class _FailedWriteBanner extends StatelessWidget {
 /// > look shorter than it is. Nothing has been deleted. Closing and reopening
 /// > the app usually resolves it."*
 ///
+/// ## 🔴 REVISED AGAIN 26 SEPTEMBER 2026 (Brief 190) — THE ADVICE COMPLETED THE HARM
+///
+/// The body that replaced the wording above read, until this date:
+///
+/// > *"Your history is not showing, or is showing only partly. Nothing has
+/// > been deleted — the records are still on this device. Closing and
+/// > reopening the app usually resolves it."*
+///
+/// ⛔ **"Closing and reopening the app usually resolves it" is REMOVED.** It is
+/// false in the two persistent cases (a corrupt database file, an upgrade step
+/// that throws), where every launch falls back. And where reopening DOES reach
+/// SQLite, it is what takes the session's records out of view: anything
+/// recorded during a fallback on a migrated device is written only to the
+/// legacy key, and nothing imports it afterwards (Brief 188).
+///
+/// ⭐ **Why each sentence of the current body, so it is not "improved" later:**
+///   * **"Nothing has been deleted" is kept.** It is true, it is the
+///     reassurance a frightened user needs, and it was never the problem.
+///   * **"may not appear" is deliberate, not hedging.** The app cannot tell a
+///     never-migrated device (the records WILL be imported) from a migrated one
+///     (they will not): the state that decides it is inside the database that
+///     failed to open (Brief 189). "may not appear" is the strongest claim true
+///     in both. ⛔ **Do not reintroduce a branch** without a readable signal.
+///   * **The backup sentence is the point of the change.** A backup taken
+///     during the fallback, restored later, merges by id into SQLite, and
+///     existing records win, so records missing from SQLite come back (Brief
+///     188 A1(a)). ⚠️ An EDIT made during the fallback to a record SQLite
+///     already has does not come back: existing wins.
+///
 /// ⛔ **"MAY LOOK SHORTER THAN IT IS" DESCRIBES ONLY ONE OF THE TWO FALLBACK
 /// STATES, AND UNDERSTATES THE OTHER.**
 ///
@@ -2428,6 +2457,20 @@ class _FailedWriteBanner extends StatelessWidget {
 ///
 /// ⛔ **It does not imply an action that does not exist.** Closing and
 /// reopening is what usually resolves it; there is nothing to tap.
+///
+/// ⚠️ **CORRECTED 26 September 2026 (Brief 190), and left as written above.**
+/// *"Closing and reopening is what usually resolves it"* is FALSE: in the two
+/// persistent cases every launch falls back, and where reopening does reach
+/// SQLite it takes the session's records out of view. The action that helps is
+/// a BACKUP, which the body now tells the user to take. *"there is nothing to
+/// tap"* is still literally true, because the banner has no button; ⛔ **that
+/// is now a gap, not a principle**, since the body names an action the banner
+/// does not offer. Wiring the existing backup action in was scoped and STOPPED
+/// in the same brief: it is an inline closure inside `_openYourData`, so it
+/// would need extracting first. The same applies to the class comment's
+/// *"This condition clears only on RELAUNCH, so a button would imply an action
+/// that does not exist"*: a relaunch may not clear it, and a backup button
+/// would not imply a non-existent action.
 class _StorageFallbackBanner extends StatelessWidget {
   const _StorageFallbackBanner();
 
@@ -2464,7 +2507,12 @@ class _StorageFallbackBanner extends StatelessWidget {
           Text(
             'Your history is not showing, or is showing only partly. '
             'Nothing has been deleted — the records are still on this '
-            'device. Closing and reopening the app usually resolves it.',
+            'device.\n\n'
+            'You can keep recording, and what you record now is saved. It '
+            'may not appear in your history once the app can read its '
+            'records again.\n\n'
+            'Save a backup before you close the app. If anything is missing '
+            'later, restoring it puts the records back.',
             style: MERType.bodyCautionOnContainer.copyWith(height: 1.4),
           ),
         ],

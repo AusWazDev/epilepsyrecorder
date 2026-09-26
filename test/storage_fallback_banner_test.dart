@@ -132,6 +132,41 @@ void main() {
           'untouched and merely unopened',
     );
 
+    // ⛔ BRIEF 190, 26 September 2026 — THE REVISED ADVICE, PINNED CLAUSE BY
+    // CLAUSE. Each is load-bearing and each is asserted on its own, so none
+    // can be dropped silently. The reasons are on _StorageFallbackBanner.
+    expect(
+      find.textContaining('You can keep recording, and what you record now '
+          'is saved.'),
+      findsOneWidget,
+      reason: 'the user may keep capturing during a fallback, and the record '
+          'IS written, to the fallback store',
+    );
+    expect(
+      find.textContaining('It may not appear in your history once the app can '
+          'read its records again.'),
+      findsOneWidget,
+      reason: '"may not" is the strongest claim true on BOTH a never-migrated '
+          'and a migrated device, which the app cannot tell apart',
+    );
+    expect(
+      find.textContaining('Save a backup before you close the app.'),
+      findsOneWidget,
+      reason: '⛔ THE POINT OF THE CHANGE. A backup taken now and restored '
+          'later is the path that brings a fallback session\'s records back',
+    );
+    expect(
+      find.textContaining('restoring it puts the records back.'),
+      findsOneWidget,
+      reason: 'what the backup is for, stated, so the instruction is not a '
+          'bare command',
+    );
+    // ⛔ AND THE REMOVED ADVICE MUST NOT RETURN. It was false in the persistent
+    // cases, and reopening is what takes the session's records out of view.
+    expect(find.textContaining('usually resolves it'), findsNothing,
+        reason: 'the removed advice ("Closing and reopening the app usually '
+            'resolves it") must not come back');
+
     // ⛔ NO OVERFLOW AT PHONE WIDTH. Flutter surfaces a RenderFlex overflow as
     // an exception during pump, so this fails loudly rather than rendering a
     // yellow-and-black stripe nobody looks at.
