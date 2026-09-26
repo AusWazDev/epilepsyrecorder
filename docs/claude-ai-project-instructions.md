@@ -137,7 +137,7 @@ structural fact about the channel, not a preference.
 | D2 | **MER is a data capture tool only — never diagnostic.** Public copy must not claim diagnosis, monitoring, prediction or treatment. Claim wording is load-bearing; route anything touching it to the adviser rather than deciding it. | standing | ✅ enforced in copy |
 | D3 | **Export-shape changes need no compatibility layer.** One user, manual amendment acceptable. No compatibility mode, no second export option, no version negotiation. Shape is tracked by a filename marker, not a column. | 26 Aug 2026 | ✅ marker `v4` |
 | D4 | **The seeded catalogue is EPILEPSY ONLY this release.** Migraine needs its own research pass; shipping one well beats two thinly. | 20 Aug 2026 | ✅ |
-| D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** | SQLite v1 | ✅ |
+| D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** ⚠️ **REASON CORRECTED 26 Sep 2026; the decision is unchanged.** *"It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into"* no longer describes the code, and nor does the *"drained into SQLite on the next foreground"* that follows it: that key holds ONLY the legacy event list. Its one writer is `writeEventPayload`, called only by the SharedPreferences store. The inbox is separate `mer_inbox_<uuid>` keys, and it is those that drain (Brief 185 C1). ⛔ **The instruction, never remove the key, stands.** Only the stated reason was corrected. **WHY the key must stay is OPEN**, pending the chat half's reading of Brief 186 A1. | SQLite v1 | ✅ |
 | D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. ⚠️ **Added later the same day.** The same census found **0 of 32 triggers** affected, so the harm is UNEVEN: a reader arguing from triggers alone would conclude a delete is harmless. And the list-and-history sentence just above is the chat half's SECONDARY ARGUMENT, offered before the count existed. It is not the measured reason, and the chat half has recorded that it replaced one wrong reason with another before the measurement settled it. | 27 Aug 2026 | ✅ "Your lists" |
 
 **Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
@@ -350,6 +350,21 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
      reads as optional.
    ⛔ **NO "only" OR "first" CLAIM GOES IN COPY.** The differentiator can be
      stated positively — what MER does — without a claim about every other app.
+   ⛔ **NO EXCLUSIVITY CLAIM ABOUT WHERE THE USER'S DATA IS** (added 26 September
+     2026). The rule above bans "only" and "first" about OTHER products; this
+     extends it to our own data. Do not write that the records are "on this
+     device only", "nowhere else", "only here", or that a file is "the only copy
+     that survives". State what MER does, not what nothing else does.
+     ⭐ **WHY:** of the on-screen sentences Brief 183 B4 found failing against a
+     platform backup default, all but two were claims of this shape, counting
+     *"no cloud copy"*, which denies that a copy exists anywhere else. (The two
+     others were statements about what an operating system's Delete or Reset
+     does, which have the same weakness: they describe a system MER does not
+     control.) The chat half's own proposed store-listing replacement was in the
+     failing class, and was not noticed until the CLI produced the list.
+     ⚠️ **SCOPE IS WHAT KEEPS AN "ONLY" TRUE, NOT ITS WORDING.** *"the only copy
+     you control"* survived the same check: it is scoped to the user's control,
+     which no platform default changes.
    ⭐ **WHY THIS IS ANNOTATED RATHER THAN DELETED, and it is the point:** this file
      is the SOURCE of the paste that seeds every chat session before any register
      is read. **Deleting the line would remove the evidence of how an unverified
@@ -430,6 +445,22 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
      SQLite on the next foreground"* — the inbox model, stated correctly, in the
      same file. **One document held both the corrected claim and the superseded
      one, and the superseded one is the half that reads like architecture.**
+   ⚠️ **ANNOTATED 26 September 2026 — THE CITATION ABOVE WAS ITSELF STALE.** The
+     passage this held up as *"the inbox model, stated correctly"* was not: D5's
+     reason describes a key the inbox no longer uses. `epilepsy_event_records_v1`
+     holds only the legacy event list; the inbox is separate `mer_inbox_<uuid>`
+     keys (Brief 185 C1, and D5 is now annotated). **The premise-4 correction
+     stands. Its supporting citation does not.** The sentence it corrected was
+     wrong, and the one it was measured against was wrong too, in a different way.
+   ⚠️ **TWO CLI CLAIMS ABOUT THIS KEY, CORRECTED, recorded here because this is
+     where briefs about it are written:**
+     • Brief 184 reported that *"nothing ever removes `kEventStorageKey`"*. False
+       as written: both stores' `clearAll()` run `prefs.clear()`, which is what
+       Reset calls. What holds is narrower: **nothing removes it after a
+       migration or a drain** (Brief 185 C2).
+     • `ARCHITECTURE.md`'s *"read once and deleted"* is about **`mer_records`**,
+       the pre-inbox App Group mirror, a DIFFERENT key. Brief 184 called it "the
+       iOS copy" of the legacy key, which conflated the two (Brief 185 C3).
    ⛔ **HOW IT SURVIVED, which is the part worth keeping:** the CLI's own
      `CLAUDE.md` corrected this on 29 August 2026 and **this file was not
      updated with it**, so the two halves of the project disagreed for four
