@@ -117,6 +117,28 @@ Full suite on Windows: **1016 passing, 0 failing, 0 skipped.** **The Mac has not
 Nothing in this change sits behind a platform check that is KNOWN of, but *"known of"* is not a
 check. ⛔ **A Mac suite run is OWED, not implied.**
 
+### THE CHANGE REGISTER — A POINTER ENTRY, A MEASUREMENT, AND A CORRECTED INSTRUCTION
+
+- **Pointer entry** appended to the Register: what it does NOT hold for 24 to 26 September 2026
+  and where each item lives, by file and section heading. Nothing copied. It states why the
+  Mac's 24 September evening work is absent: the Mac could not read the file (OneDrive
+  on-demand, "Operation timed out") and declined to write blind.
+- **Measured:** roughly 18% of the Register's content exists only there (8% to 33%), mostly
+  research reasoning. It stays a live record. In two cases the repo held newer reasoning than
+  the Register. Evidence, including pass 1's DISCARDED 88% and why it was discarded:
+  `docs/evidence/register-measurement-2026-09-26/`.
+- **The CURRENT DECISIONS block is annotated, in both copies:** the date rule now governs
+  reasoning as well as currency, and Register writes route through Windows.
+
+### STAMP, AND WHAT IS STILL OWED
+
+- **Stamp moved ONCE, at session end: `2026-09-26-42605b79`.** It covers the "by construction"
+  rule for briefs and the block annotation. **A re-paste of the `.txt` is owed**, and the chat
+  half quotes the stamp at the start of its next session.
+- **Owed, unchanged:** a Mac suite run; the adviser copy change, now TWO false data-survival
+  promises (*"A backup file holds everything"* and *"Saved for next time."*); the XFile
+  investigation; the iOS work.
+
 ---
 
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
