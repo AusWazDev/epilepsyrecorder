@@ -6530,6 +6530,36 @@ states that `value` **"is never touched, by anything, ever — that is what keep
 their entry."** ⭐ **So the obvious fix collides with a stated invariant, and belongs in the same
 enumerate-the-consumers queue as §13(bc)'s store-level sorts.**
 
+> ➕ **POINTER, 26 September 2026 — A MECHANISM OF THE SAME SHAPE, FOUND IN THE FILE-READING PATH.
+> A MATCH OF SHAPE, NOT A CAUSE. The cause above is still unestablished, and nothing here changes
+> that.**
+>
+> **The library and its behaviour, as observed.** `cross_file` **0.3.5+2**, `lib/src/types/io.dart`:
+> `XFile.readAsString({Encoding encoding = utf8})` returns `String.fromCharCodes(_bytes!)` whenever
+> the `XFile` was built with `XFile.fromData`. **The `encoding` argument is ignored**, so UTF-8
+> bytes are read one byte per character, which is a Latin-1 decode. A path-backed `XFile` takes the
+> other branch, `_file.readAsString(encoding: encoding)`, and decodes correctly.
+>
+> **The byte-level match.** Observed in a widget test that served a backup through
+> `XFile.fromData`: a restored `😵 Confused` (U+1F635) was stored as **U+00F0 U+009F U+0098 U+00B5**
+> followed by ` Confused`. Those are the four code points recorded above for `1c3acb1b`, `2cba7cd2`
+> and `6712EAD0` (their UTF-8 is `c3 b0 c2 9f c2 98 c2 b5`), and they are the Latin-1 readings of
+> `f0 9f 98 b5`. ⛔ **Identical in shape, and that is all.** Any path that reads UTF-8 bytes as
+> Latin-1 produces this exact result, and nothing links these three records to this library.
+>
+> ⚠️ **A LATENT FALSE PASS.** `test/restore_outcomes_test.dart`'s fake picker serves its backup
+> through `XFile.fromData`, so it carries the same flaw. It only ever serves ASCII, so it
+> **cannot fail on this**: a restore that corrupted every non-ASCII value would pass it.
+>
+> **Production is BELIEVED unaffected — a belief, not a measurement.** The real pickers are
+> believed to return path-backed files, which decode correctly. Not measured on any platform;
+> **web unverified**.
+>
+> ⭐ **Why it surfaced:** the Tier A test's fake was built to behave like the real picker, and the
+> non-ASCII fixture exposed the library defect. A fake built to make the test pass would have
+> hidden it, which is what `restore_outcomes_test`'s does. **Its own investigation, to be briefed
+> separately. Not part of Tier A.** Full record: `STATUS.md`, session of 26 September 2026.
+
 ---
 
 ### (bg) 🔴 CHANGING THE STORE LOAD ORDER DOES NOT REACH THE SCREENS — FIVE RE-SORTS SIT BETWEEN, TWO ON THE MANDATORY FOREGROUND PATH

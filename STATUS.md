@@ -5,6 +5,71 @@
 
 ---
 
+## Session: 26 September 2026 — Windows (Claude Code CLI)
+
+**Tier A of the restore fix: a restore now recreates the list entries its records use.** The
+failing test came first, through the real `onRestore`, and was committed skipped (`07df65e`).
+The fix's commit removes the skip.
+
+- **Stamp.** `instructions_stamp.py` confirmed the chat half's quoted `2026-09-24-8423ca56`
+  against the file, exit 0.
+- **A correction, recorded as the CHAT HALF'S OWN.** The brief said *"D6 holds by construction:
+  addUserEntry already refuses to revive an entry MER retired."* **That was false.**
+  `addUserEntry` returns an existing row, active or retired, without reviving it, and never
+  checks `isShippedHidden`; only `setActive` does. So D6 held by CIRCUMSTANCE: every retired
+  value happens to have a row, because a boot seed (wrapped in a `try/catch` that swallows
+  failure) seeds them, and the mangled-legacy list covers exactly one corruption. The chat half
+  notes this is the second time that week it asserted a safety property from a function's NAME
+  rather than its body. Tier A's loop now checks `isShippedHidden` itself (D-3).
+- **D-1's reason, corrected.** The brief said a value on the device with no list entry could
+  only come from this bug or from a delete. **There is a third source:** the guided wizard's
+  "add your own" row is not gated on `Vocabularies.canPersist`, while the log screen's is. On a
+  launch where SQLite failed to open, `Vocabularies.add` creates an entry that lives only in
+  memory while the record keeps the value. Deriving from `merged` repairs that case too, so the
+  decision stands.
+
+### ⚠️ FOR THE ADVISER — "Saved for next time." IS FALSE ON A FAILED-SQLITE LAUNCH
+
+The wizard's add field carries the helper text *"Saved for next time."* On a launch where
+SQLite failed to open, the entry is held in memory only and is gone at the next launch. **A
+false promise about data surviving, the same family as *"A backup file holds everything"*
+(24 September 2026, above), and it goes to the adviser with that one.** Nothing changed now.
+
+### 🔴 FINDING — `XFile.fromData(...).readAsString()` DECODES AS LATIN-1
+
+Found while building the Tier A test's fake file picker. **Its own investigation, to be briefed
+separately; not part of Tier A.**
+
+- **Library and behaviour, as observed.** `cross_file` **0.3.5+2**, `lib/src/types/io.dart`:
+  `readAsString({Encoding encoding = utf8})` returns `String.fromCharCodes(_bytes!)` for an
+  `XFile` built with `XFile.fromData`. **The `encoding` argument is ignored**: UTF-8 bytes are
+  read one byte per character, which is a Latin-1 decode. A path-backed `XFile` calls
+  `_file.readAsString(encoding: encoding)` and decodes correctly.
+- **Observed.** A backup served through `XFile.fromData` stored a restored `😵 Confused`
+  (U+1F635) as **U+00F0 U+009F U+0098 U+00B5** + ` Confused`.
+- **The byte-level match: a MATCH OF SHAPE, NOT A CAUSE.** `docs/design-audit/AUDIT.md` §13(bf)
+  records three shipped records on the Teclast, **`1c3acb1b`, `2cba7cd2`, `6712EAD0`**, whose
+  `feelings_json` holds exactly those four code points (UTF-8 `c3 b0 c2 9f c2 98 c2 b5`) where
+  the iPhone holds the clean value. **Same transformation, and that is all:** any path that
+  reads UTF-8 as Latin-1 produces it, and nothing links those records to this library. The
+  cause of that corruption remains unestablished. A pointer is under §13(bf).
+- **A LATENT FALSE PASS.** `test/restore_outcomes_test.dart`'s fake picker uses `XFile.fromData`
+  and only ever serves ASCII, so it **cannot fail on this**.
+- **Production is BELIEVED unaffected: a belief, not a measurement.** Real pickers are believed
+  to return path-backed files. Not measured on any platform; **web unverified**.
+- **Why it surfaced.** The Tier A fake was built to behave like the real picker and was given a
+  non-ASCII fixture. A fake built to make the test pass would have hidden it, which is what
+  `restore_outcomes_test`'s does.
+
+### ⚠️ HARNESS DEPENDENCY — HomeScreen's FIRST LOAD NEEDS REAL TIME
+
+Recorded as a standing rule in `CLAUDE.md` (Working Rules — verification), where a test author
+will meet it. In short: without a moment of real time after the first pump, `HomeScreen`'s
+initial load never completes and every persist is withheld. The clobber harness escapes it only
+by accident. **What in the load needs real time was NOT identified.**
+
+---
+
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
 
 **The variant U fixture (MER-176-U) is seeded and NOT frozen. A forced host logout interrupted

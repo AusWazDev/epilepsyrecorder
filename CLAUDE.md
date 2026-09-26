@@ -940,6 +940,62 @@ wrapper completes only if the INNER future does.** ⭐ **The queue has no timeou
 **Separate processes, separate statics** — which the one-prefs-test-per-process rule already
 forces, and is a second independent reason for it.
 
+### ⛔ `HomeScreen`'S FIRST LOAD NEVER COMPLETES WITHOUT A MOMENT OF REAL TIME — AND THEN IT REFUSES TO SAVE
+
+⚠️ **Recorded 26 September 2026, from the Tier A restore test. A landmine for every widget test
+that pumps `HomeScreen` against a store.**
+
+**THE SYMPTOM IS A SUCCESS MESSAGE.** Pump `HomeScreen` on the fake clock, `pumpAndSettle`, and
+drive a flow that saves. The flow completes and says so, and nothing reaches storage. Measured:
+a restore showed its *"Restored …"* snackbar with the failed-write banner up and the restored
+record absent from the database.
+
+**THE MECHANISM, as far as it was measured.** The initial load does not finish, so `_loadState`
+never reaches `LoadState.completed`, and `persistEvents` **withholds every write** by design
+(`from != LoadState.completed`). The store queue is blocked behind the unfinished load: a save
+started after `pumpAndSettle` stayed pending through ten 200 ms pumps. One real-clock yield,
+`tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)))` then
+`pumpAndSettle`, and the same save completed.
+
+⛔ **WHAT IN THE LOAD NEEDS REAL TIME WAS NOT IDENTIFIED.** The yield is a workaround whose
+mechanism is unknown, not an understood fix. `settleReal()` in
+`test/support/restore_vocabulary_contract.dart` lends the real clock; it does not explain why the
+load needs it.
+
+⚠️ **THE EXISTING HARNESS ESCAPES THIS ONLY BY ACCIDENT.** `history_clobber_contract.dart`'s first
+assertion after the pump happens to be a `tester.runAsync` storage read, and that is the yield.
+It is load-bearing there and says so nowhere. **Remove or move that read and every persist in
+that test is silently withheld.** Its assertions do not notice, because none of them needs a
+`HomeScreen` persist to land.
+
+**1. MUST: after pumping `HomeScreen`, lend the real clock once before driving anything that
+saves.**
+
+**2. MUST: assert the write LANDED, not only that the flow finished.** The failed-write banner
+(`_FailedWriteBanner`, private, matched by type name) must be absent, or read the row back. ⛔ **A
+success snackbar is not evidence of a save.**
+
+**3. MUST NOT: read a green `HomeScreen` test as covering a persist** unless it does one of the
+two above.
+
+### ⛔ A FAKE FILE PICKER MUST SERVE A REAL FILE — `XFile.fromData` DECODES AS LATIN-1
+
+⚠️ **Recorded 26 September 2026.** In `cross_file` 0.3.5+2, `XFile.fromData(...).readAsString()`
+**ignores its `encoding` argument** and returns `String.fromCharCodes(bytes)`: a Latin-1 decode
+of UTF-8. A fake picker built that way silently corrupts every non-ASCII value in the file it
+serves, and **a test whose fixtures are ASCII cannot see it**, which is the case for
+`restore_outcomes_test.dart`'s fake today.
+
+**1. MUST: serve a fake picker's file from disk** (`XFile(path)`, written in `setUp` on the real
+clock). Reading it is real I/O, so lend the real clock until the next screen is up.
+
+**2. MUST: include a non-ASCII value in any fixture that goes through a file read.** An
+ASCII-only fixture proves nothing about decoding.
+
+⭐ **A fake built to behave like the real thing exposed this. A fake built to make the test pass
+would have hidden it.** The finding itself, and its shape-match to the corrupted records in
+`AUDIT.md` §13(bf), is in `STATUS.md`, session of 26 September 2026.
+
 ### ⛔ EVERY REPRODUCTION CARRIES AN EXPLICIT `timeout`, SO A HANG ARRIVES AS A LOCATED FAILURE
 
 ⚠️ **Standing rule from 23 September 2026, and it earned that on its FIRST outing.**
