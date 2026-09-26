@@ -203,6 +203,28 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
   standard `UserDefaults` plist, which on iOS is where `flutter.epilepsy_event_records_v1` lives.
 - **Existing Google and iCloud backups are not removed by either change.**
 
+### BRIEFS 188 TO 190 — STRANDED FALLBACK RECORDS, AND THE BANNER THAT TOLD USERS TO REOPEN
+
+- **The defect (Brief 188, read only).** On an already-migrated device that cannot open SQLite
+  at boot, records logged during that session are written only to `kEventStorageKey`, and no
+  later launch imports them: the migration returns early once the state is `migrated`. Two
+  persistent triggers, a corrupt database file and an upgrade step that throws, make it a live
+  defect rather than a build-hygiene footnote. **Code reading; the developer's 7 September
+  experience would make it a measurement and has been asked for three times.**
+- **The banner cannot tell the two cases apart (Brief 189).** `migration_state` is inside the
+  database that failed to open, and nothing outside it records a committed migration.
+- **The banner's copy, `ae56920`.** *"Closing and reopening the app usually resolves it"* is
+  removed: false in the persistent cases, and reopening is what takes the session's records out
+  of view. The body now tells the user to save a backup before closing. Each clause is pinned in
+  `storage_fallback_banner_test.dart`, and so is the absence of the removed advice.
+- ⚠️ **Part B, a backup button on the banner, was STOPPED at its gate.** The existing backup
+  action is an inline closure inside `_openYourData`, so wiring it in would need extracting it
+  first. The banner still has nothing to tap, and that is now recorded as a gap.
+- ⚠️ **One narrow case where "Save a backup" may not work, from code reading:** on a fallback
+  where SQLite opened and a LATER read threw, `StorageBoot.database` is still set, so the backup
+  action's `loadMedicationNotes(db)` could throw before the backup sheet opens, inside a button
+  handler that does not report it to the user.
+
 ---
 
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
