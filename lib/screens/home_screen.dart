@@ -2385,6 +2385,31 @@ class _FailedWriteBanner extends StatelessWidget {
 /// covered the first case while telling a user with an EMPTY list that their
 /// history merely looked "shorter".
 ///
+/// ⛔ **CORRECTED 26 September 2026 (Brief 187): THE TABLE ABOVE MISLABELS THE
+/// iOS ROW, AND THE ANDROID ROW GIVES A MECHANISM NO CODE HAS EVER HAD.** Left
+/// as written; read these corrections with it.
+///
+///   * **The 42-of-58 case was AFTER the migration completed, not before.** The
+///     16 invisible records existed only in SQLite, so SQLite had taken over.
+///     The fallback read the legacy key, which still held the 42 it held at
+///     migration time.
+///   * **"The key was drained and cleared once SQLite took over" is not what the
+///     code does.** Nothing removes `epilepsy_event_records_v1` after a
+///     migration or a drain, in any commit; only Reset's `prefs.clear()` does.
+///     The Android empty list was real, but its cause is not explained by this
+///     sentence and is unestablished.
+///   * **So "pre-migration gives partial, post-migration gives zero" is not the
+///     rule.** What a post-migration fallback shows depends on what the legacy
+///     key happens to hold on that device.
+///
+/// ⛔ **WHY THIS MATTERS, AND IT IS THE REASON FOR THE CORRECTION:** a reader who
+/// believes the fallback only shows records before migration would conclude the
+/// legacy payload is dead afterwards, and that it is safe to clear. **That is
+/// exactly the false belief that would justify destroying it.** The payload is
+/// the fallback store's LIVE list after migration too, and the recovery branch
+/// re-runs an interrupted migration from it. It is never cleared except by
+/// Reset (D5, CURRENT DECISIONS).
+///
 /// ⚠️ **A PASSING TEST COULD NOT HAVE FOUND THIS.** The widget tests assert the
 /// banner renders and that its copy is present; they cannot know the sentence
 /// is untrue. It was found by triggering a genuine fallback on the device and

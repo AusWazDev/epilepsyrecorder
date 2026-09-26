@@ -110,6 +110,14 @@ void main() {
     // _StorageFallbackBanner: the old wording said the history "may look
     // shorter than it is", which is false on a post-migration fallback where
     // the list is empty and Total saved reads 0.
+    // ⚠️ CORRECTED 26 September 2026 (Brief 187), and the reason text below
+    // is left as it was: "partial before the migration completed, empty
+    // after it" is not the rule. The 42-of-58 partial case happened AFTER
+    // migration, and what a post-migration fallback shows depends on what the
+    // legacy key holds. Believing the key is dead after migration is the
+    // belief that would justify clearing it, which D5 forbids. The copy this
+    // asserts is unaffected: it deliberately covers both states without
+    // saying which.
     expect(
       find.textContaining('not showing, or is showing only partly'),
       findsOneWidget,

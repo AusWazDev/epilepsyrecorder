@@ -678,6 +678,16 @@ every frame measured 0.0.
 | **before** the migration completed | **PARTIAL** — the JSON is still in `epilepsy_event_records_v1`. iOS, 7 Sep 2026: **42 of 58** |
 | **after** the migration completed | ⛔ **NOTHING** — the key was drained and cleared when SQLite took over. Android, 7 Sep 2026: empty list, **`Total saved` 0** |
 
+> ⛔ **CORRECTED 26 September 2026 (Brief 187). The table above is left as written; it is
+> wrong in two places.** The **42-of-58 case was AFTER the migration completed**: the 16
+> invisible records existed only in SQLite, so SQLite had taken over, and the fallback read the
+> legacy key, which still held what it held at migration. And **"the key was drained and cleared
+> when SQLite took over" is a mechanism no code has ever had**: nothing removes that key after a
+> migration or a drain, in any commit (Brief 185 C2). The Android empty list was real; its cause
+> is unestablished. ⭐ **Why it matters:** believing the fallback only happens before migration
+> implies the payload is dead afterwards and safe to clear, which is the belief that would
+> justify destroying it. D5 now forbids clearing it.
+
 The body said the history *"may look shorter than it is."* **On this device it looks empty.**
 Revised, with the superseded sentence quoted in place in the widget's doc comment. Pushed as
 `2d5cab9`.
