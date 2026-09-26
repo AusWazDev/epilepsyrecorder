@@ -1439,6 +1439,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               }
             }
 
+            // ⛔ TIER A, 26 September 2026: THE LIST ENTRIES THE RECORDS USE.
+            // A backup carries no vocabulary, so a restore onto a device that
+            // never saw the user's own types, observations or triggers left
+            // them with NO ROW: not offered, and a type with no row could not
+            // take its condition assignment below.
+            //
+            // ⭐ THREE PLACEMENT DECISIONS, each load-bearing:
+            //   · AFTER `_persist()`, so an entry is only created for records
+            //     already written.
+            //   · BEFORE the conditions guard, so an event type created here IS
+            //     found by the assignment loop — the dropped assignment is fixed
+            //     by this ordering, not by a second change there.
+            //   · OUTSIDE the guard, because the guard is keyed on CONTENT: it
+            //     stays closed for every schema 1 and 2 backup, and for any
+            //     later one from someone who never named a condition.
+            //
+            // From `merged`, not only the additions: a value on a record ALREADY
+            // here with no entry is damage from an earlier restore, or from a
+            // wizard add on a launch where SQLite failed to open. Either way it
+            // is repaired. `addMissingEntries` says what it refuses to create.
+            //
+            // One `load` after, not one per entry: the pickers' cache and the
+            // usage counts are refreshed once. The guard reloads again below,
+            // for the conditions it adds.
+            if (db != null) {
+              final types = <String>[];
+              final observations = <String>[];
+              final triggers = <String>[];
+              for (final r in outcome.merged) {
+                final t = r.eventType;
+                if (t != null) types.add(t);
+                observations.addAll(r.feelings);
+                triggers.addAll(r.triggers);
+              }
+              await addMissingEntries(db, kEventTypeTable, types);
+              await addMissingEntries(db, kObservationTable, observations);
+              await addMissingEntries(db, kTriggerTable, triggers);
+              await Vocabularies.load(db);
+            }
+
             // ⛔ CONDITIONS FIRST, THEN THE ASSIGNMENTS THAT POINT AT THEM.
             // The backup carries no ids — `condition.id` is AUTOINCREMENT and
             // local — so each condition is created here and its NEW id is what
@@ -1476,6 +1516,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 // A type this device does not have cannot be assigned. Restore
                 // does not create vocabulary rows, and inventing one here would
                 // be a second writer of the vocabulary.
+                //
+                // ⚠️ SUPERSEDED 26 September 2026, and the concern above is
+                // ANSWERED, not dropped. Restore DOES now create vocabulary
+                // rows — Tier A, above the guard — and still through ONE
+                // writer: `addUserEntry`, reached via `addMissingEntries`. No
+                // row is invented HERE. What still lands on this `continue` is
+                // a type no record uses (the backup names it, no record carries
+                // it), and a type whose only row differs by case. Both are
+                // recorded limits of Tier A.
                 if (matches.isEmpty) continue;
                 await Vocabularies.setCondition(
                     kEventTypeTable, matches.first, id);

@@ -1041,6 +1041,91 @@ Future<VocabularyEntry?> addUserEntry(
   );
 }
 
+/// Recreates, ACTIVE, an entry for each stored [values] string that [table]
+/// has no row for. Returns how many rows it created.
+///
+/// ## WHY IT EXISTS — TIER A OF THE RESTORE FIX, 26 September 2026
+///
+/// A backup carries records but NO vocabulary. A restore onto a device that
+/// never saw a user's own event types, observations or triggers brought the
+/// records back with those values in them and **no row at all** for any of
+/// them: not offered in any picker, and an event type with no row could not
+/// take the condition assignment the backup carried. This is called from
+/// `onRestore` with every value the merged record list uses.
+///
+/// ⭐ **`addUserEntry` IS STILL THE ONLY WRITER.** This decides WHICH values
+/// get an entry; the row itself is written by the same function the pickers
+/// use, with the same sort order and the same one-row-per-word matching.
+///
+/// ## ⛔ NEVER CREATE AN ENTRY THE RECORD WILL NOT RESOLVE TO
+///
+/// Records resolve to entries by EXACT `value`. So:
+///
+///   * **An exact row already exists** — skipped. Existing always wins,
+///     including a row the user hid: it stays hidden.
+///   * **Surrounding whitespace** — skipped. `addUserEntry` trims, so the
+///     entry it made would never match the record, and the list and the
+///     history would disagree for good. A gap is better than a near-duplicate.
+///   * **MER retired the value** ([isShippedHidden]) — skipped, not even
+///     created hidden. It is not the user's to un-hide (D6), and with no row
+///     the record already displays its stored text. ⭐ **Checked HERE, so for
+///     every value [isShippedHidden] recognises, D6 holds by construction**
+///     rather than by the boot seed having succeeded: that seed sits in a
+///     `try/catch` that swallows failure. See the corruption limit below for
+///     the values it does not recognise.
+///
+/// ⚠️ **KNOWN LIMITS, 26 September 2026, recorded rather than overlooked:**
+///
+///   * **Case.** A record holding "Tired" on a device that has "tired" gets
+///     no new row: `addUserEntry` matches case-insensitively and returns
+///     "tired". The record keeps rendering its own text, and an event-type
+///     assignment keyed on "Tired" still drops. One row per word is intended.
+///   * **Corruption.** [isShippedHidden] knows only the retired values and
+///     their ONE derived mis-decoding. A retired value garbled any other way
+///     is not recognised, and would be created as an ordinary active entry.
+///     ⭐ **ACCEPTED, 26 September 2026 — a decision, not an oversight to tidy
+///     up.** Detecting garbled text generically was considered and REJECTED:
+///     a heuristic that wrongly took a value for mojibake would silently
+///     withhold a legitimate entry the user typed — an accented or non-Latin
+///     word, say. This residual's failure is one unwanted entry in a picker,
+///     which is VISIBLE and which the user can hide. Prefer the visible,
+///     reversible error over the silent one — the same asymmetry that made
+///     these entries ACTIVE rather than hidden.
+///
+/// ## ⛔ RESTORE-PATH POLICY, NOT A GENERAL UTILITY
+///
+/// Every rule above is a choice made FOR A RESTORE: entries recreated ACTIVE,
+/// retired values refused, padded values skipped, `merged` as the source. A
+/// caller elsewhere — an import, a migration, a sync — would be applying
+/// restore's choices to a different context without noticing. The migrations
+/// already made the opposite choices (`observationRowFor`, `triggerRowFor`:
+/// exact value, untrimmed, created HIDDEN). Decide the policy for the new
+/// context; do not borrow this one.
+Future<int> addMissingEntries(
+  DatabaseExecutor db,
+  String table,
+  Iterable<String> values,
+) async {
+  final have = <String>{
+    for (final e in await loadVocabulary(db, table)) e.value,
+  };
+  var created = 0;
+  // A Set keeps first-seen order, so entries are created in a stable order.
+  for (final value in values.toSet()) {
+    if (value.isEmpty || have.contains(value)) continue;
+    if (value.trim() != value) continue;
+    if (isShippedHidden(table, value)) continue;
+    final entry = await addUserEntry(db, table, value);
+    // A different value back means an existing row matched it case-
+    // insensitively. Nothing was written: that is the case limit above.
+    if (entry != null && entry.value == value) {
+      have.add(value);
+      created++;
+    }
+  }
+  return created;
+}
+
 /// Renames an entry's LABEL. The stored `value` is untouched, always.
 ///
 /// **This is the orphan guard, and it is structural rather than checked.** There

@@ -50,6 +50,19 @@ import 'package:medical_event_recorder/models/vocabulary.dart';
 /// assignments to event types the device ALREADY has. That the loop writes no
 /// vocabulary row rests on reading it, not on this test.
 ///
+/// ⚠️ **SUPERSEDED 26 September 2026 — annotated, not rewritten.** The text
+/// above, and the quote in the prediction (*"Restore does not create
+/// vocabulary rows"*), described `onRestore` BEFORE Tier A. **The restore loop
+/// now DOES create vocabulary rows:** `addMissingEntries`, after `_persist()`
+/// and before the conditions guard. The FINDING cases below still pass
+/// because they never reach `onRestore` — they drive the helpers, which have
+/// not changed. ⛔ **So this file reads as current and its passing tests
+/// cannot contradict it: the family the chat half named on 25 September
+/// 2026, a record that looks true because the tests beside it cannot fail on
+/// the thing it claims.** What a restore does NOW is pinned by
+/// `restore_vocabulary_guard_closed_test.dart` and
+/// `restore_vocabulary_guard_open_test.dart`, which drive the real `onRestore`.
+///
 /// ## ISOLATION
 ///
 /// Two temp-FILE databases, one per device. NOT `inMemoryDatabasePath`, which

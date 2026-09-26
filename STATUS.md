@@ -68,6 +68,55 @@ will meet it. In short: without a moment of real time after the first pump, `Hom
 initial load never completes and every persist is withheld. The clobber harness escapes it only
 by accident. **What in the load needs real time was NOT identified.**
 
+### ✅ THE FIX — TIER A LANDED, SKIPS REMOVED
+
+- **What.** `onRestore` now recreates, ACTIVE, an entry for each event type, observation and
+  trigger that the merged record list uses and the device lacks. The policy is
+  `addMissingEntries` in `vocabulary.dart`; the writer is still `addUserEntry` alone. Placed after
+  `_persist()` and before the conditions guard, outside it, so the dropped condition assignment is
+  fixed by ordering alone and schema 1 and 2 backups are reached. One `Vocabularies.load` after.
+  The superseded "second writer" comment at the assignment loop is annotated, not rewritten.
+- **The skips are removed in the fix's own commit.** Both tests that drive the real `onRestore`
+  now pass with 0 findings.
+- **`addMissingEntries` is RESTORE-PATH POLICY, not a general utility.** Its doc comment says so:
+  another caller would be borrowing restore's choices for a different context.
+- **Stale test header annotated.** `restore_vocabulary_state_test.dart` said the restore loop
+  "does not create vocabulary rows". Its tests still pass because they never reach `onRestore`:
+  a record that reads as current, beside passing tests that cannot contradict it.
+- **Expected, per D-7:** restored entries are now offered in the pickers, sorted by usage, so a
+  heavily used one moves near the top; the CSV `condition` column now resolves for restored
+  custom types, where it read `unknown`. **That CSV change is the fix working and belongs in the
+  release notes.** Also expected: if `_persist()` fails, the entries are still created, for
+  records held in memory behind the retry banner.
+
+### ⚠️ D-3 RESIDUAL — ACCEPTED, DATED, AND NOT AN OVERSIGHT
+
+`isShippedHidden` knows the retired values and their ONE derived mis-decoding. A retired value
+garbled any other way is created as an ordinary active entry. **Accepted, not closed.** Detecting
+garbled text generically was considered and rejected: a heuristic that wrongly took a value for
+mojibake would silently withhold a legitimate entry the user typed, such as an accented or
+non-Latin word. The residual's failure is one unwanted entry in a picker: **visible, and the user
+can hide it.** ⭐ **Prefer the visible, reversible error over the silent one**, the same
+asymmetry that made these entries ACTIVE rather than hidden.
+
+### ⛔ A SECOND CORRECTION, RECORDED AS THE CHAT HALF'S OWN — "BY CONSTRUCTION"
+
+The brief said the `isShippedHidden` guard "makes D6 hold BY CONSTRUCTION". **It does not.** It
+closes the swallowed-seed case and leaves the other-corruptions case open. On 24 September the
+chat half claimed D6 held by construction because of `addUserEntry`'s NAME; on 26 September it
+claimed it again because of a guard it had specified. **Both times the phrase was doing work the
+code had not done.**
+
+⭐ **RULE: do not write "by construction" unless the code REFUSES the alternative.** If the
+property depends on data being present, a seed having run, or a list being complete, it holds by
+CIRCUMSTANCE and must say so.
+
+### ⚠️ THE SUITE IS WINDOWS ONLY — A MAC RUN IS OWED
+
+Full suite on Windows: **1016 passing, 0 failing, 0 skipped.** **The Mac has not run it.**
+Nothing in this change sits behind a platform check that is KNOWN of, but *"known of"* is not a
+check. ⛔ **A Mac suite run is OWED, not implied.**
+
 ---
 
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)

@@ -40,11 +40,6 @@ import 'package:medical_event_recorder/models/vocabulary.dart';
 import 'package:medical_event_recorder/models/vocabulary_store.dart';
 import 'package:medical_event_recorder/screens/home_screen.dart';
 
-/// True while the Tier A fix is pending: the restore tests are red by design
-/// before it. `testWidgets` takes a bool skip, not a reason, so the reason
-/// lives here. ⛔ The fix's commit deletes this constant and its one use.
-const bool kTierAPending = true;
-
 const customType = 'Staring spell (my own word for it)';
 const customObservation = 'Metallic taste before it starts';
 const customTrigger = 'Strobe lights at the gym';
@@ -301,14 +296,7 @@ void registerRestoreVocabularyCase(RestoreCase c) {
       mark('5 DONE, ${problems.length} finding(s)');
       expect(problems, isEmpty,
           reason: '\n  ${problems.join('\n  ')}\n');
-    },
-        timeout: const Timeout(Duration(seconds: 45)),
-        // ⛔ SKIPPED UNTIL THE TIER A FIX LANDS, AND THE FIX'S COMMIT REMOVES
-        // THIS. Red by design before the fix: its red output is committed as
-        // evidence in docs/evidence/tierA-restore-vocabulary/. A skip is
-        // visible in the runner output; an expected-red is not, and a suite
-        // expected to be red cannot detect a new red.
-        skip: kTierAPending);
+    }, timeout: const Timeout(Duration(seconds: 45)));
   });
 }
 
