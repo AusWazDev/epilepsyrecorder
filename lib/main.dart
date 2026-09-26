@@ -60,7 +60,21 @@ void main() async {
       // 2026, every one `production` — so a Sentry query spanning the boundary
       // mixes the two schemes. Nothing separates them retroactively.
       options.environment = kReleaseMode ? 'production' : 'development';
-      options.tracesSampleRate = 0.1;
+      // ⛔ TRACING IS OFF BY LEAVING `tracesSampleRate` UNSET — 26 Sep 2026.
+      //
+      // It read `0.1`. Every span was a disclosure obligation for an app that
+      // keeps its records on the device, and nothing read the dashboard.
+      //
+      // ⛔ DO NOT "TIDY" THIS TO `tracesSampleRate = 0`. Read from sentry 9.19.0:
+      // `isTracingEnabled()` is `tracesSampleRate != null || tracesSampler !=
+      // null`, so at 0 tracing is still ENABLED — the app-start integrations
+      // build the `root /` transaction, `rand <= 0` is still true when the draw
+      // is exactly 0.0, and every unsampled transaction records a client report.
+      // At null the integrations skip themselves and `captureTransaction`
+      // returns early. Null refuses the alternative; 0 is a probability.
+      //
+      // ⭐ Error capture does not depend on this: `captureEvent` consults the
+      // flag only to decide whether to attach a trace context.
       options.sendDefaultPii = false;
     },
     appRunner: () async {
