@@ -186,6 +186,23 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
     you control"*, *"stored locally on your device"*.
   **Copy unchanged: the adviser's decision.**
 
+### BRIEF 185 — PLATFORM BACKUP OFF, ANDROID AND iOS
+
+- **Android, `cff758d`.** `allowBackup="false"` plus `dataExtractionRules` →
+  `res/xml/data_extraction_rules.xml`, whose `<cloud-backup>` and `<device-transfer>` sections each
+  exclude the whole `root`, `file`, `database`, `sharedpref` and `external` domains. The attribute
+  alone would not have been enough: AOSP's `BackupEligibilityRules` force-allows device transfer
+  for apps targeting Android 12+. **Contract #25**, `test/platform_backup_exclusion_test.dart`,
+  demonstrated red against the pre-change manifest and against an empty `<device-transfer>`
+  section. ⚠️ The merged manifest and resource compilation are NOT verified: they need a build.
+  Cost accepted: a user moving device sees the walkthrough again.
+- **iOS, `10c2f7c`.** `excludeAppDataFromBackup()`, first line of `didFinishLaunching`, sets
+  `isExcludedFromBackup` on Application Support and on the App Group container, every launch.
+  ⛔ **Written from Apple's documentation and not compiled here. THE MAC OWES A BUILD AND A DEVICE
+  CHECK before 1.1.0**, including the cold-start notification path's timing. Not covered: the
+  standard `UserDefaults` plist, which on iOS is where `flutter.epilepsy_event_records_v1` lives.
+- **Existing Google and iCloud backups are not removed by either change.**
+
 ---
 
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
