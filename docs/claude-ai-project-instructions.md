@@ -202,6 +202,13 @@ correction rounds. One feasibility read would have caught it.
   both directions and can be read for days without resolving anything.
   ⚠️ *[The two bullets above were RECOVERED 24 September 2026 from the claude.ai
   paste. This file never held them; the re-paste that morning removed them.]*
+- Do not write "by construction" unless the code REFUSES the alternative. A
+  property that depends on data being present, a seed having run, or a list
+  being complete holds by CIRCUMSTANCE. Say which. This half asserted it twice
+  in three days about the same decision (D6, 24 and 26 September 2026): once
+  from a function's name, once from a guard it had specified, neither from the
+  body. *[Added 26 September 2026. The CLI's copy of this rule is in its global
+  rules file and is worded for claims, not briefs.]*
 
 ## EXPECT PUSHBACK
 

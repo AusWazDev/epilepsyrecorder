@@ -57,9 +57,13 @@ import 'package:medical_event_recorder/models/vocabulary.dart';
 /// and before the conditions guard. The FINDING cases below still pass
 /// because they never reach `onRestore` — they drive the helpers, which have
 /// not changed. ⛔ **So this file reads as current and its passing tests
-/// cannot contradict it: the family the chat half named on 25 September
-/// 2026, a record that looks true because the tests beside it cannot fail on
-/// the thing it claims.** What a restore does NOW is pinned by
+/// cannot contradict it:** the family recorded on 24 September 2026 in the
+/// Mac CLI's MER-176-U provenance note (`docs/evidence/MER-176-U/
+/// PROVENANCE-176.md`, commit `69bbfcc`) as *"an incomplete record that READ
+/// AS COMPLETE"*. ⚠️ **CORRECTED the same day it was written, 26 September
+/// 2026:** this read *"the family the chat half named on 25 September 2026"*.
+/// Both the date and the attribution were wrong, and were settled from the
+/// commit rather than from anyone's memory of the date. What a restore does NOW is pinned by
 /// `restore_vocabulary_guard_closed_test.dart` and
 /// `restore_vocabulary_guard_open_test.dart`, which drive the real `onRestore`.
 ///
