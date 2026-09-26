@@ -139,6 +139,53 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
   promises (*"A backup file holds everything"* and *"Saved for next time."*); the XFile
   investigation; the iOS work.
 
+### BRIEF 182 AND 183 — SENTRY TRACING OFF, AND THE PLATFORM-BACKUP QUESTION (READ ONLY)
+
+- **Tracing off at null, `7849547`.** At 0 tracing stays enabled in `sentry` 9.19.0; at null the
+  app-start integrations skip themselves. Error capture unchanged. Details in the commit and the
+  Change Register.
+- **The Sentry user id is the native SDK's installation id**, a file named `INSTALLATION` under
+  the app's files directory, copied into Dart events by `LoadContextsIntegration`. MER's code
+  sets no user. Read from compiled class strings, not decompiled control flow.
+
+#### ⚠️ THE PLATFORM-BACKUP QUESTION — FINDINGS ONLY, NOTHING CHANGED
+
+- **Android: backup is ON.** No `allowBackup` in the source or merged release manifest, and the
+  platform's own `attrs_manifest.xml` (android-36.1) says the default is `true`. No backup rules
+  resource exists. The database is `<getFilesDir>/mer_events.db`, the same directory as Sentry's
+  `INSTALLATION` file. Which directories a default Auto Backup includes is Android's documented
+  behaviour, not read from source.
+- **iOS: nothing excludes the database from backup.** `getApplicationSupportDirectory()` is
+  `Library/Application Support`, and nothing in MER or `path_provider_foundation` sets the
+  excluded-from-backup attribute. That iCloud backup therefore includes it is Apple's documented
+  behaviour, not verified on a device.
+- **Windows: NOT SETTLED.** `getApplicationSupportDirectory()` is `RoamingAppData\au.com.bedlin\
+  epilepsyrecorder`. On this machine the packaged registration (1.1.6.0, from `build\msix_layout`)
+  has never written a database into its package data folder, and the only `mer_events.db` is in
+  the unpackaged Roaming path; which build wrote it cannot be told from the file. What MSIX Reset
+  and Repair do needs a run of the packaged build. The checklist item "3.3" the brief cited was not
+  found in the repo: the only 3.3 is the iOS checklist's Live Activity item.
+- **On-screen copy (B4), by claim shape.** Nothing tells the user a platform backup covers their
+  records: `e30125c` (23 September) removed that sentence on scope grounds. But several current
+  sentences are exclusive claims ("only", "nowhere else", "no cloud copy", "the only way to keep a
+  copy that does not depend on this device") that a platform backup would make untrue in effect,
+  and Help asserts what Windows Reset and Repair do, which B3 could not verify. The sites, by
+  phrase:
+  - *"Every event you record is stored on this device only. There is no account, no cloud copy,
+    and no server."* and *"It is on this device and nowhere else"* (`help_screen.dart`);
+    *"It is on this device, and only here"* and *"no cloud copy"* (`walkthrough_screen.dart`);
+    *"your events live only on this device"* (`disclaimer_screen.dart`); *"Your events are stored
+    on this device only"* (`your_data_screen.dart`).
+  - *"Exporting or backing up is the only way to keep your events independently of this device"*
+    (`help_screen.dart`); *"the only way to keep a copy that does not depend on this device"*
+    (`disclaimer_screen.dart`); *"A file you have saved somewhere else is the only copy that
+    survives losing this phone"* (`your_data_screen.dart`).
+  - *"It is Delete App that destroys it"* (iOS) and *"So does Reset … Repair leaves your events
+    alone"* (Windows), in `help_screen.dart`'s uninstall text.
+  - Judged TRUE whatever the platform does: *"Notiva never receives your events"*, *"the only copy
+    you control"*, *"stored locally on your device"*.
+  **Copy unchanged: the adviser's decision.**
+
 ---
 
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
