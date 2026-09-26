@@ -1,0 +1,47 @@
+corpus: 340 of 342 text files read, 537697 file shingles, 175562 commit-message shingles
+register: 81 entries; slice = entries 40..79 (The eleven, seeded — and the shipped gap they exposed — 30 August 2026 .. The claude.ai paste was ahead of its source, and a re-paste overwrote it — 24)
+CONTROL apparatus: a STATUS.md sentence scores 1.00 (must be 1.00); nonsense scores 0.00 (must be 0.00)
+
+SENTENCES: 1223 in slice; in repo files 116; only in commit messages 30; in NEITHER 1077
+ENTRIES: {'REGISTER-ONLY': 35, 'MIXED': 5} of 40
+
+REGISTER-ONLY   4+  2 of  45 in repo  The eleven, seeded — and the shipped gap they exposed — 30 August 2026
+REGISTER-ONLY   1+  0 of  63 in repo  The six remaining conditions — research, and the cold-start finding — 30 August 2026
+MIXED           4+  3 of  34 in repo  Condition relevance — built, and the test that cannot run — 30 August 2026
+REGISTER-ONLY   1+  6 of  42 in repo  Silent matching dropped, bulk hide built — 30 August 2026
+REGISTER-ONLY   1+  2 of  38 in repo  Step 2 — the sixteen seeded, minus two — 30 August 2026
+REGISTER-ONLY   4+  0 of  44 in repo  The design audit begins: handover, capture set, and artefacts 11 and 12 — 30 August 2026
+REGISTER-ONLY   4+  0 of  33 in repo  Correction: the preservation path, and two new findings — 31 August 2026
+REGISTER-ONLY   1+  0 of  31 in repo  Two verification findings — 7 September 2026
+REGISTER-ONLY   8+  0 of  56 in repo  🔴 Condition relevance measured on the device, and RETIRED — 7 September 2026
+MIXED          31+  0 of 105 in repo  🔴 First real-iOS capture set, and one stale-cache cause behind two false leads — 7 September 20
+REGISTER-ONLY   3+  1 of  46 in repo  🔴 The fallback banner rendered, and the render corrected the copy — 7 September 2026 (late, Win
+REGISTER-ONLY   4+  1 of  30 in repo  🔴 The design audit's decisions, and five sessions this register did not receive — 8 September 2
+REGISTER-ONLY   3+  2 of  63 in repo  🔴 Six decisions, seven corrections, and a fix that was withdrawn after shipping — 9 September 2
+MIXED          19+  1 of  66 in repo  🔴 One event record was lost, and the storage model cannot say how — 9 September 2026 (evening, 
+REGISTER-ONLY   4+  3 of  41 in repo  🔴 The same id holds different content, and the lost record is narrowed to the 17 — 9 September 
+REGISTER-ONLY   1+  1 of  54 in repo  🔴 The investigation closes, the enumeration reverses its own premise, and §13(r) becomes action
+REGISTER-ONLY   0+  1 of  17 in repo  🔴 A count check was proposed, scoped, and disproved in one pass — 9 September 2026 (late, Windo
+REGISTER-ONLY   0+  0 of  12 in repo  The working agreement, §10's real count, and a branch nothing tests — 10 September 2026 (Window
+REGISTER-ONLY   0+  0 of  13 in repo  The export read by its recipient, and a window nothing can measure — 10 September 2026 (late, W
+REGISTER-ONLY   0+  0 of  10 in repo  The date column reversed, the rename held, and the document swept for its own defects — 10 Sept
+REGISTER-ONLY   0+  0 of  18 in repo  The preamble lead closes as a decision, a reader's default is named, and the citation rule land
+REGISTER-ONLY   0+  1 of  18 in repo  The intent signal disproved, the per-record delete costed, and the vocabulary starts with Histo
+REGISTER-ONLY   0+  0 of  14 in repo  The stale iOS guard, the recovery axis, and the §13(be) thread closes on four candidates — 11 S
+REGISTER-ONLY   0+  1 of  12 in repo  The desktop column measured, §13(y) shrinks to two nodes, and the app-wide target floor is name
+REGISTER-ONLY   0+  0 of  17 in repo  The text-scale pass closes §13(u) as measured, and the accessibility dimensions are complete — 
+REGISTER-ONLY   0+  0 of  18 in repo  The History read, the delete path, and a decision that never left the source — 11 September 202
+REGISTER-ONLY   1+  0 of  24 in repo  The no-blank rule ships, four assertions are anchored, and the zone is unstated — 11 September 
+REGISTER-ONLY   1+  0 of  17 in repo  The delete path: three shapes examined, none fixes it, and the precedent nobody applied — 11 Se
+REGISTER-ONLY   2+  0 of  22 in repo  The removal model is decided: hide into a recycle bin — and the scoping found what it does not 
+REGISTER-ONLY   0+  0 of  19 in repo  Five accessibility fixes ship in one pass — the first batched implementation of the audit — 11 
+REGISTER-ONLY   0+  0 of  11 in repo  The colour system closes: 33 tokens, five role categories, and rule 2 becomes a test — 13–14 Se
+REGISTER-ONLY   1+  0 of  10 in repo  The removal model ships: hidden is a STATE, and the confirmation that had become false — 17 Sep
+MIXED           3+  0 of   9 in repo  The type scale: six steps, and `MERType` becomes the SOURCE the theme is built from — 17 Septem
+MIXED           3+  1 of  13 in repo  `updatedAt` at schema v11, on the user-action rule — 17 September 2026 (Windows)
+REGISTER-ONLY   1+  0 of  15 in repo  The component vocabulary closes: one selection idiom, one casing register, and a checker that d
+REGISTER-ONLY   3+  3 of  40 in repo  §10's six fixes, decision 1 ANSWERED, and the bound that could not be raised — 17 September 202
+REGISTER-ONLY   0+  0 of   8 in repo  Backlog item 24 CLOSED — the walkthrough was built three weeks before this was noticed — 17 Sep
+REGISTER-ONLY   1+  0 of  24 in repo  The duration caveat lands on Help, not on the record — and the mark is satisfied in substance o
+REGISTER-ONLY   6+  1 of  48 in repo  Eleven findings resolved by content; one live stale guard; three instrument failures — 18 Septe
+REGISTER-ONLY   1+  0 of  23 in repo  The claude.ai paste was ahead of its source, and a re-paste overwrote it — 24 September 2026 (W

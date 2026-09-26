@@ -1,0 +1,91 @@
+pool 1077
+[1] <🔴 First real-iOS capture set, and one stale-cache cause behi>
+    The checks that mean something: heading counts by level, table row counts, numbered-row ID sets, list-item counts, code-fence counts.
+
+[2] <🔴 The fallback banner rendered, and the render corrected the>
+    `wm size` INHERITS THE ROTATION IN FORCE WHEN THE OVERRIDE IS APPLIED **This corrects two earlier claims in this register, and the second of them is mine.
+
+[3] <Five accessibility fixes ship in one pass — the first batche>
+    `textMuted` `#4A7FA5` → `#447598` (4.31 → 4.95:1 on white, 4.05 → 4.64:1 on the page background); `border` `#B5D4F4` → `#798EA3` (1.53 → 3.38:1, 1.44 → 3.17:1).
+
+[4] <Condition relevance — built, and the test that cannot run — >
+    `_countUsage` counts them faithfully; `offerable` filters them out as inactive; **every currently-offerable observation therefore scores zero.
+
+[5] <Correction: the preservation path, and two new findings — 31>
+    Values are permanent and entries are retired rather than deleted — **so any future relabelling does this again**, to whichever entries it touches, and it will present identically.
+
+[6] <§10's six fixes, decision 1 ANSWERED, and the bound that cou>
+    `bounded_chip_wrap_test` took `find.byType(BoundedWrap).first` and MEANT *"the observation picker"* — true only because observations happened to be the form's first bounded wrap.
+
+[7] <The six remaining conditions — research, and the cold-start >
+    So `Dizzy or spinning` had **zero records referencing it**, which made its label free to change.
+
+[8] <Eleven findings resolved by content; one live stale guard; t>
+    - ⛔ **THE SPLIT, AND IT IS THE POINT: the JUSTIFICATION is corrected now — documentation accuracy on a provable fact, annotated in place, dated, quoting the original wording and naming what falsified it.
+
+[9] <🔴 First real-iOS capture set, and one stale-cache cause behi>
+    Same chassis, same 375×667, same 20 pt status bar, no bottom inset, so the substitution is sound.
+
+[10] <The removal model is decided: hide into a recycle bin — and >
+    ⛔ **Fourth permission-asking of the day against the working agreement's own tiers.
+
+[11] <🔴 Six decisions, seven corrections, and a fix that was withd>
+    ⛔ **THE MINIMUM ITSELF IS NOT DECIDED, AND ITS MEASURED INPUT WAS WITHDRAWN THE SAME DAY.
+
+[12] <The no-blank rule ships, four assertions are anchored, and t>
+    ⚠️ A defect, not a decision, and the first account this week that described a REAL PAST STATE attached to the wrong cause and date.
+
+[13] <🔴 First real-iOS capture set, and one stale-cache cause behi>
+    #### What ClickUp normalises on EVERY write — expect all of these Bold spans **split around inline code**; multi-line bold **closed and reopened per line**; emphasis **stripped inside table cells**; table delimiter rows rewritten (`|---|` → `| ---|`); underscores escaped in prose (`shared_preferences` → `shared\_preferences`); `
+
+[14] <The six remaining conditions — research, and the cold-start >
+    **The thirteen are a post-ictal set.**"* | 🔴 **EXPIRING** | **At 21 entries today and ~37 across six sourced conditions, leg 3 is no longer true** — and it is being dismantled by the research passes themselves, one condition at a time.
+
+[15] <🔴 The fallback banner rendered, and the render corrected the>
+    The backup reminder sits in the **same exclusive chain**, so a capture showing the storage banner above it demonstrates the identical property — that `home_screen.dart:996`'s stacking rule holds — **at zero data risk.
+
+[16] <Two verification findings — 7 September 2026>
+    **One under-described a failure mode as louder than it was; the other measured two things and reported one.
+
+[17] <Correction: the preservation path, and two new findings — 31>
+    **The bound and the ranking were designed as a pair, and one half is inert on the list with the most entries.
+
+[18] <🔴 The fallback banner rendered, and the render corrected the>
+    It was found by triggering a genuine fallback on the device and reading `Total saved: 0` off the screen beside the banner — the same class as the 4 px row change the `history__default` recapture found earlier the same day, and the reason "device over test, image over dump" keeps being worth the two builds it costs.
+
+[19] <Backlog item 24 CLOSED — the walkthrough was built three wee>
+    ⭐ **The same shape as the stale-status class already recorded here** — a written-down claim rots silently because it reads as authoritative precisely because someone once wrote it down deliberately.
+
+[20] <The text-scale pass closes §13(u) as measured, and the acces>
+    - ⚠️ **THE LIMIT, recorded as part of the finding:** `TextScaler` is linear, iOS Dynamic Type is non-linear per style, Android's is OEM-capped, and the harness font is not a device font.
+
+[21] <The intent signal disproved, the per-record delete costed, a>
+    ⛔ **Second proposed fix disproved on scoping, and disproved by the first's reasoning.
+
+[22] <🔴 Six decisions, seven corrections, and a fix that was withd>
+    ⭐ **So D2 stands as a direction with no number**, and a number picked now would be a guess dressed as a constant.
+
+[23] <The six remaining conditions — research, and the cold-start >
+    Panic's ten somatic entries mostly serve **syncope as a PRODROME** — presyncope is sweating, palpitations, feeling hot, visual changes, nausea, weakness — so most of the ten would need to exist in the beforehand vocabulary as well.
+
+[24] <The six remaining conditions — research, and the cold-start >
+    ### ⛔ THE SPANNING DUPLICATION IS STRUCTURAL, NOT INCIDENTAL The migraine pass duplicated five entries across both vocabularies because ICHD-3 names them in the prodromal and postdromal lists both.
+
+[25] <🔴 The same id holds different content, and the lost record i>
+    ⚠️ **A repair is not obviously safe either — the corrupt string is the stored `value` binding those records to their vocabulary row, and `vocabulary.dart:648` states `value` "is never touched, by anything, ever".
+
+[26] <Correction: the preservation path, and two new findings — 31>
+    **This is not a data gap — it is a question about what the export REPRESENTS** to the specialist reading it: whether a file that silently merges "when it happened" and "when it was typed" is making a claim it should not.
+
+[27] <Eleven findings resolved by content; one live stale guard; t>
+    - ⭐ **THE RULE THEY SHARE, now in the project `CLAUDE.md`: an instrument that can only under-report is NOT safe by default.
+
+[28] <The six remaining conditions — research, and the cold-start >
+    `renameEntry` still has **no caller in `lib/`**; this is the rename path for a seeded entry.
+
+[29] <The eleven, seeded — and the shipped gap they exposed — 30 A>
+    ### ⭐ PALLOR — a source finding, deliberately NOT added ICHD-3 names **pallor** in the prodrome and the pass did not carry it.
+
+[30] <§10's six fixes, decision 1 ANSWERED, and the bound that cou>
+    - ⭐ **DECISION 1'S OPEN HALF IS ANSWERED ON MEASUREMENT: COMPLETENESS IS THE RIGHT AXIS.
+

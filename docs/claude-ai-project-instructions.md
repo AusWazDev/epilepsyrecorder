@@ -112,6 +112,23 @@ $4.99 over the truth.** A register is authoritative because it is maintained,
 not because of where it sits. **The tell is a date, not a location.** Where
 neither claim is dated, neither governs: say the question is open.
 
+⚠️ **CORRECTED 26 September 2026, BY MEASUREMENT.** *"The Register governs on
+REASONING AND HISTORY"* is a location rule, and the warning just above applies
+to reasoning too. Measured that day on a 40-entry sample: roughly 18% of its
+content exists ONLY in the Register, mostly research reasoning, so the Register
+is not redundant and stays. But two cases were found where the REPO held the
+NEWER reasoning and the Register the superseded version — pallor, and the label
+move for "dizzy or spinning". **So the date rule governs REASONING as well as
+currency. The Register governs a question when its dated statement is the most
+recent one on that question, not because it is the Register.** Where neither is
+dated, neither governs: say the question is open. *(Measurement:
+`epilepsyrecorder/docs/evidence/register-measurement-2026-09-26/`.)*
+
+⚠️ **REGISTER WRITES ROUTE THROUGH WINDOWS (26 September 2026).** The Mac
+cannot reliably read the file (OneDrive on-demand, *"Operation timed out"*), and
+a machine that cannot read a record cannot safely append to it. That is a
+structural fact about the channel, not a preference.
+
 ### The decisions
 
 | # | Decision | Since | Built? |
