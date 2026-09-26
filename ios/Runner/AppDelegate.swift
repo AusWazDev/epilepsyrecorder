@@ -136,10 +136,63 @@ import awesome_notifications
   private let kNotificationEventIdKey = "mer_event_id"
   private var navChannel: FlutterMethodChannel?
 
+  /// ⛔ MER'S DATA IS EXCLUDED FROM iCLOUD AND DEVICE BACKUP — 26 September 2026.
+  ///
+  /// Two directories, at EVERY launch:
+  ///   · Application Support — where Dart's `getApplicationSupportDirectory()`
+  ///     puts the SQLite database, its -wal/-shm files, and the pre-migration
+  ///     plaintext backup;
+  ///   · the App Group container — the capture inbox the widget extension and
+  ///     this process share.
+  ///
+  /// ⚠️ DOCUMENTATION-SOURCED AND UNVERIFIED. Written on Windows from Apple's
+  /// documentation of `URLResourceValues.isExcludedFromBackup`: set on a
+  /// directory, it excludes that directory's contents from LATER backups. It
+  /// does not remove anything from a backup already taken. ⛔ THE MAC OWES A
+  /// BUILD AND A DEVICE CHECK before 1.1.0; until then this is a claim.
+  ///
+  /// ⚠️ NOT COVERED: the standard `UserDefaults` plist in Library/Preferences,
+  /// which the system manages. Only these two directories are.
+  ///
+  /// Every launch rather than once, because a restore, a migration or a
+  /// reinstall can re-create a directory without its attribute, and the call
+  /// is cheap and idempotent. It never throws: this runs on the cold-start path
+  /// that serves notification actions, and a backup attribute is not worth a
+  /// failed launch.
+  private func excludeAppDataFromBackup() {
+    let fm = FileManager.default
+    var targets: [URL] = []
+    if let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+      // path_provider creates this lazily. Create it now so the attribute has
+      // something to land on before the database is opened inside it.
+      try? fm.createDirectory(at: support, withIntermediateDirectories: true)
+      targets.append(support)
+    }
+    // Nil when the App Group entitlement is missing, which shipped once: 1.0.2's
+    // Release configuration signed without it.
+    if let group = fm.containerURL(forSecurityApplicationGroupIdentifier: kAppGroupId) {
+      targets.append(group)
+    }
+    for var url in targets {
+      var values = URLResourceValues()
+      values.isExcludedFromBackup = true
+      do {
+        try url.setResourceValues(values)
+      } catch {
+        NSLog("MER: could not exclude \(url.lastPathComponent) from backup: \(error)")
+      }
+    }
+  }
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // FIRST, before any plugin registers and before the engine boots: Dart
+    // opens the database only after this returns, so the attribute is on the
+    // directory before anything is written into it on this launch.
+    excludeAppDataFromBackup()
+
     GeneratedPluginRegistrant.register(with: self)
 
     // SharedPreferencesPlugin is deliberately NOT registered on the background
