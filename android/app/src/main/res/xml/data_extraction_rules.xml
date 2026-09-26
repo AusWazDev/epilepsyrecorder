@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⛔ NOTHING OF MER'S LEAVES THE DEVICE THROUGH A PLATFORM BACKUP OR TRANSFER.
+  26 September 2026. Contract #25, test/platform_backup_exclusion_test.dart.
+
+  Every domain is excluded, with no path, in BOTH sections. A missing path
+  covers the whole domain (FullBackup.extractCanonicalFile). That takes in the
+  SQLite database, Sentry's INSTALLATION file and the pre-migration backup (all
+  under `file`), and SharedPreferences.
+
+  ⚠️ `sharedpref` IS EXCLUDED ON PURPOSE, WITH ITS COST ACCEPTED: the disclaimer
+  and walkthrough flags no longer restore, so a user moving to a new device sees
+  the walkthrough again. That is the intended trade, not an oversight.
+
+  ⛔ <device-transfer> IS THE ONE THAT MATTERS ON ANDROID 12+. allowBackup="false"
+  does not govern transfer for apps targeting S or later, and a rules file that
+  lacks this section copies everything.
+
+  cross-platform-transfer is deliberately left out: the eligibility rules refuse
+  that destination already, and how older platforms parse an unknown section
+  was not verified.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

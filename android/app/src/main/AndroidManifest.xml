@@ -3,10 +3,18 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- ⛔ PLATFORM BACKUP IS OFF, BOTH ATTRIBUTES ARE LOAD-BEARING (26 Sep 2026).
+         allowBackup="false" stops cloud backup. It does NOT stop device-to-device
+         transfer on Android 12+: BackupEligibilityRules force-allows transfer for
+         apps targeting S or later (IGNORE_ALLOW_BACKUP_IN_D2D). Only the
+         <device-transfer> section of dataExtractionRules governs that path, and a
+         rules file WITHOUT that section copies everything. Contract #25. -->
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

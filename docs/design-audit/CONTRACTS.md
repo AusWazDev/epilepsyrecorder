@@ -26,7 +26,9 @@ rule's reasoning, it points at it.
 
 ⚠️ **TWO ROWS ADDED 21 September 2026 (Brief 74). The heading moved from "twenty-two" to "twenty-four" with them.** ⛔ **`#23` and `#24` are deliberately SEPARATE, and only `#24` is enforceable — see note L. A single row claiming both would dress a convention as a test.**
 
-## The twenty-four
+⚠️ **ONE ROW ADDED 26 September 2026 (Brief 185). The heading moved from "twenty-four" to "twenty-five" with it.** ⛔ **`#25` checks TWO things because one is not enough:** `allowBackup="false"` stops cloud backup but not device-to-device transfer on Android 12+, which only a `<device-transfer>` section governs. A rules file that exists and excludes nothing reads as protection, so the test checks each section's content.
+
+## The twenty-five
 
 | # | structure | invariant — what must remain TRUE | outcome | checked by |
 |---|---|---|---|---|
@@ -54,6 +56,7 @@ rule's reasoning, it points at it.
 | **22** | nav channel failures | A failure on `au.com.notiva.mer/navigation` is READ by platform, never silenced by one: iOS reports everything; off iOS only `MissingPluginException` is swallowed. No bare `catch (_)` on a channel call | **TESTED — behaviour + source scan** | `nav_channel_failure_policy_test` ⭐ **both platform rows are behavioural — see note K** |
 | **23** | record time · record recency | Every surface that DISPLAYS a record's time, or decides WHICH record is most recent, reads `whenHappened` — never `timestamp`. ⛔ **Named exceptions, each with its reason in note L: `eventsSinceLastBackup` (its subject IS the write clock) and the CSV's log-time omission (a decided v6 trade, pinned to the v8 marker)** | **CONVENTION**, 21 Sep 2026 | note L — ⚠️ **no cheap scan can decide this; four behavioural tests cover the two surfaces that exist today, which is instance coverage, not enforcement** |
 | **24** | home's `_records` | It is assigned in exactly ONE place, and that place sorts by `whenHappened` DESCENDING. The getter returns `List.unmodifiable`, so no caller can mutate an order into existence afterwards | **TESTED — source scan** | `records_single_assignment_test` ⭐ **the scan either returns zero or NAMES the violation by line** |
+| **25** | platform backup (Android) | Nothing of MER's leaves the device through a platform backup or transfer: the manifest sets `allowBackup="false"` and names `@xml/data_extraction_rules`, whose `<cloud-backup>` and `<device-transfer>` sections each exclude the whole `root`, `file`, `database`, `sharedpref` and `external` domains. ⚠️ **iOS is NOT covered here**: its exclusion is set at runtime and is unverified on Windows | **TESTED — source scan** | `platform_backup_exclusion_test` |
 
 ---
 
