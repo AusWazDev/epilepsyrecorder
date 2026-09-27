@@ -69,6 +69,23 @@ const String kEventStorageKey = 'epilepsy_event_records_v1';
 // this string — it would orphan the rollback copy already on a user's device.
 const String kEventRollbackKey = 'epilepsy_event_records_v1_rollback';
 
+// Records that the legacy payload under [kEventStorageKey] was migrated into
+// SQLite, with a fingerprint of that payload. Added 28 September 2026, Brief
+// 205. Written by the migration, in the same step as `migration_state =
+// 'migrated'`; see `migrateJsonToSqlite`.
+//
+// ⭐ IT LIVES IN SHARED PREFERENCES DELIBERATELY, NOT IN THE DATABASE. On iOS
+// that is UserDefaults.standard, the one store a backup restore or device
+// transfer carries when the database does not. `migration_state` sits inside
+// the database, so a device that has lost its database has lost the only
+// record that a migration ever happened. This key is what survives that.
+//
+// ⛔ NOTHING READS IT YET. It is laid down so a later build can tell a frozen,
+// already-migrated legacy list from a live one. Adding a reader is a
+// separate decision. Reset clears it with the legacy list, through the same
+// `prefs.clear()`, so the two stay consistent.
+const String kLegacyMigrationMarkerKey = 'mer_legacy_payload_migrated';
+
 // Schema version of the JSON backup envelope. Increment ONLY when the envelope
 // shape changes. A backup declaring a higher number than this build knows is
 // refused rather than partially understood.

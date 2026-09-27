@@ -194,6 +194,9 @@ class StorageBoot {
         db: db,
         rawJson: rawJson,
         backupPath: backupPath,
+        // Brief 205. Written in the verified branch only, before 'migrated'.
+        // Nothing reads it yet — see [kLegacyMigrationMarkerKey].
+        writeMarker: (m) => prefs.setString(kLegacyMigrationMarkerKey, m),
       );
 
       // The fallback. Verification failed or the conversion threw, so this

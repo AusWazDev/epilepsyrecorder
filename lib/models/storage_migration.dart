@@ -192,11 +192,30 @@ Map<String, Object?>? rawMapToRow(
 ///
 /// [dropForNegativeControl] exists so a test can prove verification FAILS when
 /// a record is lost. Without it, a passing verification is unfalsifiable.
+///
+/// [writeMarker], when given, is called with [migrationMarkerJson] in the
+/// verified branch, immediately BEFORE `migration_state` is set to
+/// `migrated` — Brief 205. The caller owns where it goes, which is
+/// [kLegacyMigrationMarkerKey] in shared_preferences, so this function still
+/// touches no preferences itself.
+///
+/// ⚠️ THE TWO WRITES CANNOT BE ATOMIC: one is SQLite, the other is the
+/// preferences store. The order is chosen so the marker's claim is never
+/// false. It is written only once the rows are verified, so "this payload was
+/// migrated" is already true. A crash after it and before `migrated` leaves
+/// `migration_in_progress` set, so the next boot clears the partial rows,
+/// migrates the same untouched payload again, and writes the same marker.
+/// The reverse order would let a crash leave a migrated database with no
+/// marker, which is permanent: that device never migrates again.
+///
+/// A failing marker write is swallowed. It must not change which store this
+/// launch runs on; the marker is a record for a later decision, not a gate.
 Future<MigrationOutcome> migrateJsonToSqlite({
   required Database db,
   required String? rawJson,
   String? backupPath,
   int dropForNegativeControl = 0,
+  Future<void> Function(String marker)? writeMarker,
 }) async {
   final absentCounts = <String, int>{};
 
@@ -267,6 +286,13 @@ Future<MigrationOutcome> migrateJsonToSqlite({
     if (backupPath != null) await putMeta(db, kMetaBackupPath, backupPath);
 
     if (verified) {
+      if (writeMarker != null) {
+        try {
+          await writeMarker(migrationMarkerJson(rawJson, DateTime.now()));
+        } catch (_) {
+          // See [writeMarker]: never allowed to change this launch's outcome.
+        }
+      }
       await putMeta(db, kMetaMigrationState, 'migrated');
       await putMeta(db, kMetaMigratedAt, DateTime.now().toIso8601String());
       // The ONLY place this is cleared. Deliberately not on the else branch
@@ -311,4 +337,44 @@ Future<String?> writeMigrationBackup(Directory dir, String? rawJson) async {
   final file = File('${dir.path}/mer_pre_sqlite_backup_$stamp.json');
   await file.writeAsString(rawJson, flush: true);
   return file.path;
+}
+
+/// The fingerprint of the legacy payload, over its exact UTF-8 bytes: the
+/// byte length and a 32-bit FNV-1a hash. Brief 205.
+///
+/// ⭐ WHAT IT IS FOR, AND WHY THIS HASH IS ENOUGH. It answers one question:
+/// is the list under [kEventStorageKey] the one that was migrated, or has it
+/// changed since? An APPEND, which is what a fallback launch does to that
+/// list, always changes the byte length, so the length alone catches it. The
+/// hash is for the rarer same-length rewrite, where 32 bits leaves a
+/// one-in-four-billion chance of a false "unchanged". ⛔ This is not a
+/// security boundary. Nothing adversarial writes this list; a cryptographic
+/// hash would buy nothing here and would add a dependency.
+///
+/// A null or empty payload fingerprints as 0 bytes: a device that started on
+/// SQLite migrated nothing, and the marker says exactly that.
+({int bytes, String fnv1a32}) legacyPayloadFingerprint(String? raw) {
+  final data = utf8.encode(raw ?? '');
+  // FNV-1a, 32-bit. The prime 0x01000193 is split as (1 << 24) + 0x193 so no
+  // intermediate exceeds ~2^42: a plain `hash * 0x01000193` reaches 2^56,
+  // which is exact on the Dart VM and NOT on JavaScript's 53-bit integers.
+  var hash = 0x811c9dc5;
+  for (final b in data) {
+    hash ^= b;
+    hash = ((hash * 0x193) + ((hash << 24) & 0xffffffff)) & 0xffffffff;
+  }
+  return (bytes: data.length, fnv1a32: hash.toRadixString(16).padLeft(8, '0'));
+}
+
+/// The value written under [kLegacyMigrationMarkerKey]. A JSON object:
+/// `v` (the marker's own format version), `payloadBytes` and `fnv1a32` from
+/// [legacyPayloadFingerprint], and `migratedAt`.
+String migrationMarkerJson(String? rawJson, DateTime at) {
+  final fp = legacyPayloadFingerprint(rawJson);
+  return jsonEncode(<String, Object>{
+    'v': 1,
+    'payloadBytes': fp.bytes,
+    'fnv1a32': fp.fnv1a32,
+    'migratedAt': at.toIso8601String(),
+  });
 }
