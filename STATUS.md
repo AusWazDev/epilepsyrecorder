@@ -225,6 +225,29 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
   action's `loadMedicationNotes(db)` could throw before the backup sheet opens, inside a button
   handler that does not report it to the user.
 
+### 🔴 BRIEFS 191 AND 192 — BACKUPS FROM THE HOME REMINDER WERE INCOMPLETE (RELEASE BLOCKER, FIXED)
+
+- **Found (Brief 191, read only).** Home's backup reminder called `showBackupOptions(context,
+  _records)` with no medication notes, conditions or type assignments, and all three defaulted
+  to empty. **Every backup taken from the reminder omitted them, on every device, from 28 August
+  2026.** Each time the backup grew, the Your data call site was updated and the reminder's was
+  not. Confirmed from the code that the RECORDS in a backup always come from HomeScreen's
+  in-memory list, never from a store, so the fallback banner's backup advice holds.
+- **Fixed, `0ca66d0`.** `backUpFromDevice` is the one place a backup's contents are assembled;
+  both entry points call it; the three parameters are required through `showBackupOptions`,
+  `backupShare` and `backupSaveAs`. **Contract #26**, a scan (entry points found by walking
+  `buildBackupJson`'s callers) and a behaviour test (the real sheet, a real file, read back),
+  each shown failing against the pre-fix code or a fault.
+- ⚠️ **Anyone holding a backup taken from the reminder since 28 August** holds one missing
+  medication notes and conditions. A fresh backup after this build is complete. (Asked of the
+  developer.)
+- ⚠️ **Not fixed, and next:** when the database handle is set but broken, the backup's reads can
+  throw and the tap then does nothing on screen. This also affects Your data → Export. It moved
+  into `backUpFromDevice` unchanged.
+- **Harness, recorded for the next widget test that opens this sheet:** it overflows at phone
+  size in the test font and fits once real Roboto is loaded; and a file written by the app must
+  be read after the save's own completion signal, not when it first exists.
+
 ---
 
 ## Session: 24 September 2026 (evening) — Mac (Claude Code CLI)
