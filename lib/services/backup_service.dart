@@ -13,6 +13,9 @@ import '../models/backup.dart';
 import '../models/condition.dart';
 import '../models/medication_note.dart';
 import '../models/event_record.dart';
+import '../models/storage_boot.dart';
+import '../models/vocabulary.dart';
+import '../models/vocabulary_store.dart';
 import '../theme/mer_type.dart';
 
 /// Backup and restore, driven entirely by the system file picker.
@@ -108,9 +111,9 @@ Future<int> eventsSinceLastBackup(List<EventRecord> records) async {
 Future<void> backupShare(
   BuildContext context,
   List<EventRecord> records, {
-  List<MedicationNote> notes = const <MedicationNote>[],
-  List<Condition> conditions = const <Condition>[],
-  Map<String, String> eventTypeConditions = const <String, String>{},
+  required List<MedicationNote> notes,
+  required List<Condition> conditions,
+  required Map<String, String> eventTypeConditions,
 }) async {
   // Resolved before any await so no BuildContext crosses an async gap.
   final messenger = ScaffoldMessenger.of(context);
@@ -158,9 +161,9 @@ Future<void> backupShare(
 Future<void> backupSaveAs(
   BuildContext context,
   List<EventRecord> records, {
-  List<MedicationNote> notes = const <MedicationNote>[],
-  List<Condition> conditions = const <Condition>[],
-  Map<String, String> eventTypeConditions = const <String, String>{},
+  required List<MedicationNote> notes,
+  required List<Condition> conditions,
+  required Map<String, String> eventTypeConditions,
 }) async {
   final json     = buildBackupJson(records,
       notes: notes,
@@ -235,12 +238,61 @@ Future<void> backupSaveAs(
 
 /// "Back up now" entry point. Offers the same two destinations as the CSV
 /// export so the two flows behave alike.
+/// ⛔ THE ONE PLACE A BACKUP'S CONTENTS ARE ASSEMBLED — Brief 192, 26 September
+/// 2026. Every entry point that takes a backup calls this.
+///
+/// **Why it exists.** Home's backup reminder called `showBackupOptions(context,
+/// _records)` directly, with no medication notes, conditions or type
+/// assignments, and all three defaulted to empty. So every backup taken from
+/// the reminder omitted them, on every device, from 28 August 2026 (when notes
+/// entered the envelope; conditions followed on the 29th). Each time the
+/// backup grew, the Your data call site was updated and the reminder's was not:
+/// the argument list lived at the call sites, so a new field could reach one
+/// and miss the other. It lives here now, once. The three parameters below are
+/// also REQUIRED, so a future call site that forgets one does not compile.
+///
+/// ⚠️ **BEHAVIOUR MOVED, NOT CHANGED.** This is Your data's existing assembly,
+/// moved unaltered: the same two reads, BEFORE the sheet opens, and empty lists
+/// when there is no database. ⛔ The known weakness moved with it: on a
+/// fallback where the database opened and a later read threw, these reads can
+/// throw, and the tap then does nothing on screen (Brief 191 A1/A3). That is
+/// deliberately NOT fixed here; it is the next brief. Contract #26.
+///
+/// **Why each read is here, carried over from the call site it left:**
+///   * **Notes** once reached the CSV and nothing else, so a restore onto a new
+///     device silently lost every one, in the one feature whose purpose is
+///     that this file is the copy that survives losing the phone.
+///   * **The attribution is derived** from the type-to-condition mapping and
+///     nothing on a record carries it, so without it a restore onto a fresh
+///     device reads `unknown` for every record, with no way to know a mapping
+///     was lost.
+///   * **Loaded BEFORE the context is used,** not as an inline argument: an
+///     await inside the argument list puts the context across an async gap.
+Future<void> backUpFromDevice(
+  BuildContext context,
+  List<EventRecord> records,
+) async {
+  final db = StorageBoot.database;
+  final notes = db == null
+      ? const <MedicationNote>[]
+      : await loadMedicationNotes(db);
+  final conditions =
+      db == null ? const <Condition>[] : await loadConditions(db);
+  final typeMap = eventTypeConditionMap(
+      Vocabularies.allIn(kEventTypeTable), conditions);
+  if (!context.mounted) return;
+  await showBackupOptions(context, records,
+      notes: notes,
+      conditions: conditions,
+      eventTypeConditions: typeMap);
+}
+
 Future<void> showBackupOptions(
   BuildContext context,
   List<EventRecord> records, {
-  List<MedicationNote> notes = const <MedicationNote>[],
-  List<Condition> conditions = const <Condition>[],
-  Map<String, String> eventTypeConditions = const <String, String>{},
+  required List<MedicationNote> notes,
+  required List<Condition> conditions,
+  required Map<String, String> eventTypeConditions,
 }) async {
   if (records.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(

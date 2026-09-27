@@ -2,7 +2,9 @@ import 'package:file_selector/file_selector.dart';
 import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:medical_event_recorder/models/condition.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
+import 'package:medical_event_recorder/models/medication_note.dart';
 import 'package:medical_event_recorder/services/backup_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -62,6 +64,10 @@ class _FailingPathProvider extends PathProviderPlatform {
       throw StateError('forced temp directory failure');
 }
 
+// ⛔ Brief 192: the backup parameters are REQUIRED now, so a call site that
+// forgets one does not compile. These tests exercise FAILURE paths and do
+// not care what the file holds, so they pass empty content explicitly,
+// which says so on purpose instead of inheriting a default.
 void main() {
   final records = <EventRecord>[
     EventRecord(
@@ -148,7 +154,10 @@ void main() {
       PathProviderPlatform.instance = _FailingPathProvider();
       final escaped = await runAction(
         tester,
-        (context) => backupShare(context, records),
+        (context) => backupShare(context, records,
+            notes: const <MedicationNote>[],
+            conditions: const <Condition>[],
+            eventTypeConditions: const <String, String>{}),
       );
       expect(escaped, isNull);
       expect(
@@ -173,7 +182,10 @@ void main() {
       FileSelectorPlatform.instance = _FakeFileSelector(throwOnCall: true);
       final escaped = await runAction(
         tester,
-        (context) => backupSaveAs(context, records),
+        (context) => backupSaveAs(context, records,
+            notes: const <MedicationNote>[],
+            conditions: const <Condition>[],
+            eventTypeConditions: const <String, String>{}),
       );
       expect(escaped, isNull);
       expect(find.textContaining('Could not open the save dialog'),
@@ -221,7 +233,10 @@ void main() {
       FileSelectorPlatform.instance = _FakeFileSelector();
       final escaped = await runAction(
         tester,
-        (context) => backupSaveAs(context, records),
+        (context) => backupSaveAs(context, records,
+            notes: const <MedicationNote>[],
+            conditions: const <Condition>[],
+            eventTypeConditions: const <String, String>{}),
       );
       expect(escaped, isNull);
       expect(find.byType(SnackBar), findsNothing);

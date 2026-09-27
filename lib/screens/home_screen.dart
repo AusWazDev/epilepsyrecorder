@@ -1376,31 +1376,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ? const <MedicationNote>[]
                 : await loadMedicationNotes(StorageBoot.database!),
           ),
+          // Through `backUpFromDevice`, the one place a backup's contents are
+          // assembled (Brief 192), so this button and the reminder's cannot
+          // differ. The reasons the notes and the attribution must travel in
+          // the backup, which were stated here, are unchanged; the assembly
+          // they justified moved into that function.
           onBackUp: (ctx) async {
-            // ⛔ THE NOTES MUST BE LOADED HERE TOO. They reached the CSV via
-            // onExport above and NOTHING ELSE, so a restore onto a new device
-            // silently lost every one — in the one feature whose whole purpose
-            // is that this file is the only copy surviving the loss of a phone.
-            //
-            // Loaded BEFORE the context is used, not inline as an argument:
-            // an await inside the argument list puts `ctx` across an async gap,
-            // which is the rule the rest of this file states explicitly.
-            final db = StorageBoot.database;
-            final notes = db == null
-                ? const <MedicationNote>[]
-                : await loadMedicationNotes(db);
-            // ⛔ THE ATTRIBUTION IS DERIVED, so nothing on a record carries it
-            // and a restore onto a fresh device would produce 72 rows reading
-            // `unknown` with no way to know a mapping had been lost.
-            final conditions =
-                db == null ? const <Condition>[] : await loadConditions(db);
-            final typeMap = eventTypeConditionMap(
-                Vocabularies.allIn(kEventTypeTable), conditions);
-            if (!ctx.mounted) return;
-            await showBackupOptions(ctx, _records,
-                notes: notes,
-                conditions: conditions,
-                eventTypeConditions: typeMap);
+            await backUpFromDevice(ctx, _records);
             await _refreshBackupCount();
           },
           onRestore: (ctx) async {
@@ -1948,8 +1930,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         if (_showBackupReminder) ...[
                           _BackupReminderBanner(
                             count: _eventsSinceBackup,
+                            // ⛔ THIS CALLED `showBackupOptions(context,
+                            // _records)` UNTIL 26 September 2026, with no
+                            // notes, conditions or type assignments: every
+                            // backup from the reminder omitted them. Now the
+                            // same assembly as Your data (Brief 192).
                             onBackUp: () async {
-                              await showBackupOptions(context, _records);
+                              await backUpFromDevice(context, _records);
                               await _refreshBackupCount();
                             },
                             onDismiss: () =>

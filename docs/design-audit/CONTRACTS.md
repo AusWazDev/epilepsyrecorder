@@ -28,7 +28,9 @@ rule's reasoning, it points at it.
 
 ⚠️ **ONE ROW ADDED 26 September 2026 (Brief 185). The heading moved from "twenty-four" to "twenty-five" with it.** ⛔ **`#25` checks TWO things because one is not enough:** `allowBackup="false"` stops cloud backup but not device-to-device transfer on Android 12+, which only a `<device-transfer>` section governs. A rules file that exists and excludes nothing reads as protection, so the test checks each section's content.
 
-## The twenty-five
+⚠️ **ONE ROW ADDED 26 September 2026 (Brief 192). The heading moved from "twenty-five" to "twenty-six" with it.** ⛔ **`#26` is two tests on purpose:** a scan proves every backup entry point reaches `backUpFromDevice`, found by walking `buildBackupJson`'s callers rather than from a list; a behaviour test proves what that produces, read back from a real file.
+
+## The twenty-six
 
 | # | structure | invariant — what must remain TRUE | outcome | checked by |
 |---|---|---|---|---|
@@ -57,6 +59,7 @@ rule's reasoning, it points at it.
 | **23** | record time · record recency | Every surface that DISPLAYS a record's time, or decides WHICH record is most recent, reads `whenHappened` — never `timestamp`. ⛔ **Named exceptions, each with its reason in note L: `eventsSinceLastBackup` (its subject IS the write clock) and the CSV's log-time omission (a decided v6 trade, pinned to the v8 marker)** | **CONVENTION**, 21 Sep 2026 | note L — ⚠️ **no cheap scan can decide this; four behavioural tests cover the two surfaces that exist today, which is instance coverage, not enforcement** |
 | **24** | home's `_records` | It is assigned in exactly ONE place, and that place sorts by `whenHappened` DESCENDING. The getter returns `List.unmodifiable`, so no caller can mutate an order into existence afterwards | **TESTED — source scan** | `records_single_assignment_test` ⭐ **the scan either returns zero or NAMES the violation by line** |
 | **25** | platform backup (Android) | Nothing of MER's leaves the device through a platform backup or transfer: the manifest sets `allowBackup="false"` and names `@xml/data_extraction_rules`, whose `<cloud-backup>` and `<device-transfer>` sections each exclude the whole `root`, `file`, `database`, `sharedpref` and `external` domains. ⚠️ **iOS is NOT covered here**: its exclusion is set at runtime and is unverified on Windows | **TESTED — source scan** | `platform_backup_exclusion_test` |
+| **26** | backup contents | Every way of taking a backup produces the same contents: the records, medication notes, conditions and type assignments. They are assembled in ONE place, `backUpFromDevice`, and the three parameters are required through `showBackupOptions`, `backupShare` and `backupSaveAs` | **TESTED — behaviour + source scan** | `backup_contents_contract_test` · `backup_entry_points_contract_test` |
 
 ---
 
