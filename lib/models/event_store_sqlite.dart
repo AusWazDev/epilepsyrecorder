@@ -810,6 +810,15 @@ class SqliteEventStore implements EventStore {
   /// Recorded 23 September 2026. Measured consequence: when the queue is
   /// stranded, THIS Reset is blocked and the prefs one still works, which makes
   /// the unserialised one the last recovery path in the app.
+  ///
+  /// ⚠️ **CORRECTED 28 September 2026 (Brief 204); the note above is left as
+  /// written.** *"THIS ONE IS SERIALISED"* is only half true. The
+  /// `db.delete('event')` goes through [EventStore.serialise]; the
+  /// `prefs.clear()` after it does not. The blocking consequence recorded above
+  /// still holds, because the delete comes first and blocks everything after it.
+  /// Nothing refuses a prefs write interleaving with the clear, but the queue
+  /// would not prevent one either: of the 36 prefs write sites in `lib/`, only
+  /// the four in the fallback store's save path run inside it.
   Future<SharedPreferences> clearAll() async {
     await EventStore.serialise(() => db.delete('event'));
     final prefs = await SharedPreferences.getInstance();

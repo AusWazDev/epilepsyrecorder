@@ -660,6 +660,12 @@ would be interpretation.
 **SQLite is the system of record.** `shared_preferences` and the App Group are a
 **drained inbox**, not legacy storage awaiting removal.
 
+> ⚠️ **QUALIFIED 28 September 2026 (Brief 204); the sentence above is left as
+> written.** Both stores do hold the inbox (`mer_inbox_<uuid>` keys). But
+> shared_preferences also still holds legacy storage: `epilepsy_event_records_v1`,
+> the fallback store's live event list and the migration's source. That list is
+> not awaiting removal either (D5), but it is not an inbox.
+
 **The property is single-writer, and it is not iOS-specific.** Dart's main
 isolate becomes the only writer of the record list; every other capture path
 posts a fact. The inbox is the mechanism, not the property — a cross-platform
@@ -707,6 +713,10 @@ Reads one shape: the JSON array under `epilepsy_event_records_v1`.
 
 - **Leave `epilepsy_event_records_v1` in place permanently this release.** Note
   this is no longer only a safety net: it is the inbox, and it stays for good.
+  ⚠️ **CORRECTED 28 September 2026 (Brief 204); left as written above.** *"it is
+  the inbox"* is false of this key. It is the legacy record list: the fallback
+  store's live event list and the migration's source. The inbox is separate
+  `mer_inbox_<uuid>` keys. *"it stays for good"* stands (D5).
 - **Write a backup file before migrating.**
 - **Verify the row count before marking migration complete**, and fall back to
   the old store if it does not match.

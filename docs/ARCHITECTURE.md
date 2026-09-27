@@ -317,7 +317,7 @@ are designed and **not built as at 31 Aug 2026** — see `docs/DATA-MODEL.md`.
 
 | Key | Purpose |
 |---|---|
-| `epilepsy_event_records_v1` | ⛔ **THE DRAINED INBOX, AND IT STAYS.** No longer the event store — it is what the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it** |
+| `epilepsy_event_records_v1` | ⛔ **THE DRAINED INBOX, AND IT STAYS.** No longer the event store — it is what the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it** ⚠️ **CORRECTED 28 September 2026 (Brief 204); left as written above.** *"THE DRAINED INBOX"* and *"what the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground"* do not describe the code. This key is the **legacy record list**: the SharedPreferences fallback store's live event list, written only by `writeEventPayload`, and the migration's source. **The inbox is separate `mer_inbox_<uuid>` keys**, in shared_preferences on Android and in the App Group on iOS, and it is those that drain. D5 carried the same sentence and was corrected on 26 September 2026 (`08975a0`); this row was not. *"Never remove it"* stands. |
 | `epilepsy_event_records_v1_rollback` | Copy of the previous payload. **Never written on iOS** — the native path bypasses it, so a stale copy would be a data-loss mechanism |
 | `mer_active_event` | In-progress event `{id, startIso}` |
 | `mer_open_latest_event` | Navigation signal from the Android background isolate |
