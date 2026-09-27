@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-27-9ffcc7fe
+INSTRUCTIONS STAMP: 2026-09-27-2d9acaf9
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -169,8 +169,27 @@ that could not be read:
   sweeping the file for the concept rather than by trusting a list of known
   occurrences.**
 - A brief stated a version that had already moved.
+- *[Added 27 September 2026.]* The chat half read a CSV timestamp as a local
+  time wearing a false Z, and argued it from plausibility — *"a 1 AM test
+  session is implausible"* *[report: the chat half's account; not observable
+  from the CLI]*. The CLI established from the code that a Z could only have
+  come from the native iOS writer, which records a true UTC instant, and that
+  the artefact was consistent with a correct instant displayed at its UTC wall
+  clock. It named the checks that would discriminate and left the question
+  open. The discriminating artefacts were in the same folder as the CSV,
+  unopened; three backup files settled it once anyone looked *[report]*.
+  ⚠️ **This is NOT an unreadable fact asserted as read. It is a READABLE FACT
+  LEFT UNREAD while an argument was offered in its place** — and the brief
+  written from it demanded controls of the CLI that its own premise lacked.
+  ⚠️ *CLI note, 27 September 2026:* the Change Register already recorded, on
+  11 September 2026, *"§13(cf): THE CSV HAS NEVER BEEN UTC"*. The premise that
+  the export "converts to UTC" contradicted an entry sixteen days older.
 
 None were reasoning failures. All were unreadable facts asserted as read.
+⚠️ **ANNOTATED 27 September 2026 — the sentence above is kept as written.** It
+was true of the list when written. It no longer covers every entry: the
+27 September entry is a readable fact left unread, not an unreadable one
+asserted as read. The closing claim now describes all entries but that one.
 
 "Confirm X, then do Y" produces correct work. "Since X, do Y" produces the
 errors above.
@@ -208,6 +227,13 @@ correction rounds. One feasibility read would have caught it.
   last demonstrably run" beats "does a sync script exist" — the second returns
   findings shaped like the question.
 - State explicitly what must NOT change.
+  *[Clarified 27 September 2026.]* A brief's MUST NOT CHANGE section covers
+  production code, stored data and user-facing copy — code comments included,
+  since a comment is production code. It does not cover test files: a test is
+  the deliverable of a verification, not a change needing separate permission.
+  Where a test is to be held out of the repo, say so explicitly. Why: Brief 195
+  said "No code changes at all" and then asked for a test. The CLI raised it on
+  Briefs 195, 196 and 197, because the convention had never been written down.
 - Mark which claims depend on the data model so they get checked against it
   rather than against marketing.
 - One step at a time; confirm completion before moving on.
@@ -219,6 +245,40 @@ correction rounds. One feasibility read would have caught it.
   both directions and can be read for days without resolving anything.
   ⚠️ *[The two bullets above were RECOVERED 24 September 2026 from the claude.ai
   paste. This file never held them; the re-paste that morning removed them.]*
+- *[Added 27 September 2026. The next three bullets sharpen "capable of failing".
+  They sit here, not directly beneath it, so the annotation above still names
+  the right two bullets.]*
+- A verification whose denominator is derived from the same predicate as its
+  numerator cannot fail. Ask what defines the population, not only what defines
+  the pass. A control demonstrated on the numerator proves nothing if the same
+  condition that causes the loss also removes the lost item from the count.
+  Earned 27 September 2026: the migration's survival check counts a record as
+  "should have survived" only if its timestamp parsed, and migrates it only if
+  its timestamp parsed.
+- Where a property can be pinned by a test, a test is how an absence claim stops
+  expiring. "Absence claims carry an expiry date" names the disease and stops
+  there. A one-time reading — these two parsers agree, no record has this
+  shape — is true on the day and fails silently afterwards. A committed test
+  re-checks it on every run. When a finding is downgraded BECAUSE some property
+  holds, pin that property, or the downgrade rests on something that can rot
+  unobserved. Earned twice, 27 September 2026: the migration survival-check
+  finding was classified not-a-release-blocker because the migration and the
+  app hide the same records, resting on a comment and one reading. Brief 197
+  Part A turned that into a committed test
+  (`test/timestamp_parse_agreement_test.dart`, `7397108`); its fault control
+  was demonstrated in a scratch copy and is not itself committed.
+- When specifying a control, name the BEHAVIOUR to violate, not the line to
+  edit. Naming a line asserts an unreadable fact about what that line does. If
+  the specified edit does not violate the property, the control cannot fire —
+  and the absence of a failure then reads as a blind test when it is really a
+  bad control. Earned 27 September 2026, Brief 196 Part B: the control was
+  specified as "remove shape 2's toLocal() in the migration", assuming that line
+  preserved the instant. It does not. Without it the Z survives into
+  `logged_at` and the reader's parse-then-`toLocal()` rebuilds the same instant,
+  so the property holds and the test correctly stays silent. The CLI ran the
+  specified control first — it stayed silent — then a supplementary control
+  that does violate the property (drop the Z, read the wall clock as local),
+  and the test failed, naming the record and the wrong instant.
 - Do not write "by construction" unless the code REFUSES the alternative. A
   property that depends on data being present, a seed having run, or a list
   being complete holds by CIRCUMSTANCE. Say which. This half asserted it twice
@@ -413,6 +473,39 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
      stores `timestamp` and `occurredAt` as two separate keys, which is why the
      log time survives there. **The edit screen's change list does not:** it
      shows the stated value, and "not recorded" when there is none.
+   ⚠️ **ANNOTATED 27 September 2026 — TIME ZONES, which this premise never
+   covered. Each bullet checked against the code that day.** The gap is not
+   hypothetical: the chat half briefed wrongly from it on 27 September 2026,
+   twice, in writing.
+   • **There has never been a conversion to UTC.** `git log -S 'toUtc()' --
+     lib` returns no commit across the whole history, and there is no Z
+     literal in `lib/`. The Change Register already said so on 11 September
+     2026: §13(cf), *"THE CSV HAS NEVER BEEN UTC"*.
+   • **Two writers produced two shapes.** Dart writes naive local (no suffix,
+     microseconds). Native Swift wrote a TRUE UTC INSTANT — Z, whole seconds —
+     via `ISO8601DateFormatter`, whose default zone is GMT; no Swift writer ever
+     set a `timeZone`. Native record writing ran from `285bb74` (3 May 2026) to
+     `4ba63e1` (24 August 2026), after which Dart is the only writer.
+   • **`e48d91b` (22 August 2026) normalises stored timestamps to local on
+     read.** It is a DISPLAY FIX for UTC-stored records, not a UTC conversion,
+     and it drops the Z as a side effect.
+   • **Three shapes exist in stored data:**
+       `…T18:18:35.180820`   Dart           local wall clock
+       `…T06:45:09.000Z`     Swift pre-fix  TRUE UTC INSTANT
+       `…T03:07:06.000`      normalised     local wall clock
+   • **After migration all three are naive local TEXT** and the Z shape 2
+     carried is gone. Verified 27 September 2026 (`7397108`,
+     `test/migration_instant_test.dart`): all three land on the correct instant,
+     through the real migration and the real store.
+   • **The migration's `toLocal()` is NOT what preserves the instant.** The
+     reader parses and normalises too; see the comment on that line in
+     `storage_migration.dart`.
+   • **Naive local is ambiguous for one hour a year**, in the hour that repeats
+     when daylight saving ends. Victoria observes DST. ⚠️ **Which instant Dart
+     resolves that hour to is NOT pinned by any test** — Brief 196 B4 is unrun.
+   ⚠️ *Deliberately NOT landed:* the claim that Excel will not localise a Z
+   timestamp for the reader. It is reasoning about Excel's data model, not a
+   tested result.
 4. **iOS notifications are native Swift, not the Flutter plugin**, and iOS
    creates records natively without passing through the Dart write path.
    Anything added to the Dart storage path is absent on iOS quick-log.

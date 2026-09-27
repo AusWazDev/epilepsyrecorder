@@ -102,6 +102,14 @@ Map<String, Object?>? rawMapToRow(
   Map<String, int> absentCounts,
 ) {
   // Identical to EventRecord._parseTimestamp, deliberately.
+  //
+  // ⚠️ VERIFIED 27 Sep 2026: the toLocal() below normalises the STORED FORM
+  // to naive local. It is NOT what preserves the instant — the SQLite reader
+  // (eventFromRow) parses and calls toLocal() too, so a Z-suffixed timestamp
+  // keeps its instant without this call. Removing it would keep the Z for
+  // UTC-stored rows and leave logged_at holding two formats. Measured with
+  // test/migration_instant_test.dart: with this call removed the instants
+  // were unchanged and logged_at held "...06:45:09.000Z".
   final rawTs = map['timestamp'];
   final ts = (rawTs is String) ? DateTime.tryParse(rawTs)?.toLocal() : null;
   if (ts == null) return null;
