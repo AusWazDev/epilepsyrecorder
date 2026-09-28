@@ -32,6 +32,19 @@ void main() {
     expect(StorageBoot.isSqlite, isFalse,
         reason: 'OBSERVED: a corrupt file falls back to the prefs store');
     expect(outcome.succeeded, isFalse, reason: 'OBSERVED: so the banner shows');
+    // ⛔ WHICH fallback (Brief 222, 28 September 2026). The two lines above hold
+    // for ANY fallback, including a missing sqflite plugin on a macOS host. A
+    // corrupt file does NOT fail the open: SQLite opens it lazily and fails on
+    // the first read, with SQLITE_NOTADB (26), which is what this pins. Observed
+    // on macOS; Windows FFI is expected to report the same code, and not yet seen.
+    // See the rule at `StorageBoot.debugDatabaseFactory`.
+    expect(
+        outcome.error,
+        isA<DatabaseException>()
+            .having((e) => e.getResultCode(), 'getResultCode()', 26),
+        reason: 'CONTROL: the fallback must come from the corrupt file '
+            '(SQLITE_NOTADB), not from any other failure, such as a missing '
+            'sqflite plugin.');
     expect(ids, <String>['alpha', 'bravo', 'charlie', 'pair'],
         reason: 'OBSERVED: and the history shown is the frozen list');
   }, timeout: const Timeout(Duration(seconds: 90)));

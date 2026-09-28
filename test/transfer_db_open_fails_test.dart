@@ -31,6 +31,16 @@ void main() {
     expect(StorageBoot.isSqlite, isFalse,
         reason: 'OBSERVED: a failed open falls back to the prefs store');
     expect(outcome.succeeded, isFalse, reason: 'OBSERVED: so the banner shows');
+    // ⛔ WHICH fallback (Brief 222, 28 September 2026). The two lines above hold
+    // for ANY fallback, including a missing sqflite plugin on a macOS host. Only
+    // the error says the directory standing in for the database caused this one.
+    // See the rule at `StorageBoot.debugDatabaseFactory`.
+    expect(
+        outcome.error,
+        isA<DatabaseException>().having(
+            (e) => e.isOpenFailedError(), 'isOpenFailedError()', isTrue),
+        reason: 'CONTROL: the fallback must come from the failed OPEN, not '
+            'from any other failure, such as a missing sqflite plugin.');
     expect(ids, <String>['alpha', 'bravo', 'charlie', 'pair'],
         reason: 'OBSERVED: and the history shown is the frozen list');
   }, timeout: const Timeout(Duration(seconds: 90)));

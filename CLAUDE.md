@@ -646,6 +646,33 @@ strings are laid out free in Roboto — clear by 110.8.
 because the finding is where it was learnt and this is where the next person writing a widget test
 will be looking.** Full history: `AUDIT.md` §13(bx)'s annotation of 13 September 2026.
 
+### ⛔ A TEST THAT EXPECTS A FALLBACK MUST ASSERT WHICH FALLBACK
+
+⚠️ **Recorded 28 September 2026. Three instances across two batches** (Brief 211:
+`migration_marker_fallback_test`; Brief 222: `transfer_db_open_fails_test`,
+`transfer_db_corrupt_test`). The count is the argument.
+
+`StorageBoot.init()` never throws. **Every** failure lands in one outer `catch` and produces one
+visible result: `isSqlite` false, `succeeded` false, the banner, the legacy list. ⛔ **So a test
+that asserts only those passes for ANY cause.** On a macOS host that includes the sqflite plugin
+being absent from the test process, which happens whenever `StorageBoot.debugDatabaseFactory` is not
+set. Measured: with the seam dropped for the boot under test, the pre-fix versions of both
+`transfer_db_*` tests PASSED with `error=MissingPluginException`.
+
+**1. MUST: assert `outcome.error` as the category the test set up.** Use
+`isA<DatabaseException>()` with `isOpenFailedError()` for a failed open, and `getResultCode()` 26
+(SQLITE_NOTADB) for a corrupt file.
+
+**2. MUST: run the control once.** Drop the seam for the boot under test only, and quote the new
+assertion failing on `MissingPluginException`.
+
+**3. MUST NOT: count a guard in a setup helper as the attribution.** `firstLife()`'s
+`StateError` covers the FIRST boot, not the one under test.
+
+⭐ Windows cannot see this failure: its production gate hands it FFI anyway, so the wrong fallback
+never happens there. That is the Windows-green rule again, in the storage layer. The rule is also
+written at the seam, on `StorageBoot.debugDatabaseFactory`.
+
 ### ⛔ A CONTROL PROVES AN APPARATUS IS LIVE ONLY IF THE FAILURE IT PRODUCES IS ATTRIBUTABLE
 
 ⚠️ **A control that reports "it failed" without showing WHICH assertion fired is not much better

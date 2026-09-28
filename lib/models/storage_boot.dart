@@ -78,6 +78,19 @@ class StorageBoot {
   /// NOT cleared by [debugSet], deliberately: tests call `debugSet()` between
   /// two `init()` calls to simulate a relaunch, and the second boot must open
   /// the same factory as the first. Clear it in tearDown.
+  ///
+  /// ⛔ THE RULE FOR ANY TEST THAT EXPECTS A FALLBACK (Brief 222, 28 September
+  /// 2026; third instance in two batches). `init()` never throws: EVERY failure
+  /// lands in the same outer `catch` and produces the same visible result —
+  /// `isSqlite` false, `succeeded` false, the banner, the legacy list. So a
+  /// test that asserts only those passes for ANY cause, including this seam
+  /// being absent on a macOS host. **Assert `outcome.error` too**, as the
+  /// category the test set up: `isA<DatabaseException>()` with
+  /// `isOpenFailedError()` for a failed open, `getResultCode()` 26 for a
+  /// corrupt file. And run the control once: drop the seam for the boot under
+  /// test only, and see the new assertion fail on `MissingPluginException`.
+  /// A guard in a setup helper (such as `firstLife()`'s) covers the boot it
+  /// guards, not the one under test.
   @visibleForTesting
   static sqflite_common.DatabaseFactory? debugDatabaseFactory;
 
