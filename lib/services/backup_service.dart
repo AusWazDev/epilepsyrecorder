@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
@@ -480,7 +481,17 @@ Future<RestoreOutcome?> restoreFromBackup(
 
   String raw;
   try {
-    raw = await file.readAsString();
+    // ⛔ BYTES, DECODED AS UTF-8 HERE — NEVER `file.readAsString()`. Brief 236,
+    // 28 September 2026. Android's picker returns `XFile.fromData(bytes)`, and
+    // `cross_file` 0.3.5+2's `readAsString` on such a file ignores its encoding
+    // and decodes Latin-1. Measured on the Teclast (Brief 234): every non-ASCII
+    // character in a restored backup came back double-encoded, and the restore
+    // created a list entry from the mangled text. iOS, Windows and macOS return
+    // a path-backed XFile, which decoded correctly by accident of that.
+    // `readAsBytes` returns the file's own bytes on both kinds, so the decode
+    // no longer depends on which kind the platform hands back. A file that is
+    // not valid UTF-8 throws here and is refused below, as before.
+    raw = utf8.decode(await file.readAsBytes());
   } catch (_) {
     if (!context.mounted) return null;
     await _refuse(context, 'That file could not be opened.');
