@@ -431,6 +431,16 @@ RebuildVerdict rebuildVerdictFor(String? markerJson, String? rawJson) {
 /// `schema_meta`, and the verdict stays true after a Reset: it describes the
 /// database's origin, not its current rows.
 ///
+/// ⛔ **ANNOTATED 28 September 2026 (Brief 229): ONE REASON ABOVE IS NOW FALSE,
+/// AND THE PLACEMENT STANDS ON THE OTHER.** *"Prefs travel in an iOS backup and
+/// the database does not (`10c2f7c`)"* stopped being true when `10c2f7c` was
+/// reverted, before it shipped. An iOS backup now carries the database too.
+/// **The placement is still correct, on better grounds:** the verdict is a
+/// property of the DATABASE, not of the device, so it belongs in the database
+/// and travels with the thing it describes. A restored database that carries
+/// "ordinary" is still a database that migrated ordinarily. The code does not
+/// move.
+///
 /// Best-effort: a failed read or write leaves no verdict, which reads as today.
 /// Nothing reads it yet.
 Future<void> captureRebuildVerdict(

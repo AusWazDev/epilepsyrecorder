@@ -12,6 +12,33 @@
 //
 // ⚠️ `10c2f7c` is written from Apple's documentation and is UNCOMPILED and
 // UNVERIFIED on a device. This fixture models what it is meant to do.
+//
+// ⛔ CORRECTED 28 September 2026 (Brief 229). The paragraphs above are left as
+// written. The trigger they name is gone: `10c2f7c` was REVERTED (ea24393)
+// before it ever shipped, so iOS excludes nothing from backup, and an iOS
+// restore now brings Application Support back with the prefs. That is this
+// fixture's `keepDatabase: true` CONTROL, not its main case. Superseded wording:
+//
+//     "[transfer] then does what an iOS restore does to this app under
+//     `10c2f7c`"
+//
+// ⭐ THE HONEST TRIGGER IS "THE DATABASE IS ABSENT, BY ANY ROUTE", with the
+// prefs present. [transfer] deletes Application Support and nothing else, so
+// no test here depends on HOW the database went missing. On 28 September 2026
+// no iOS route is known that produces this state in 1.1.1.
+//
+// ⭐ WHY THE DATABASE-ABSENT TESTS ARE KEPT ANYWAY (Decision 4). They are the
+// regression guard for the comment at the top of `didFinishLaunchingWithOptions`
+// in `ios/Runner/AppDelegate.swift`, which records that iOS backup exclusion was
+// removed deliberately. If an exclusion is ever re-added, a restored device
+// loses its database while its prefs arrive, and these tests describe real
+// behaviour again immediately. The central one, transfer_restored_state, is a
+// frozen pre-SQLite history rebuilt and shown as complete (4 records where
+// there were 6, no banner). The six that call [transfer] without
+// `keepDatabase` are transfer_restored_state, transfer_then_restore_backup,
+// transfer_verdict_rebuild, transfer_marker_diverged, transfer_verdict_diverged
+// and transfer_db_open_fails. The last one's own trigger is a database that
+// cannot be opened, which does not depend on backup at all.
 
 import 'dart:convert';
 import 'dart:io';
@@ -116,6 +143,12 @@ Future<List<EventRecord>> firstLife() async {
 
 /// What the transfer does: prefs travel, Application Support does not.
 /// [keepDatabase] is the CONTROL: a device whose database survived.
+///
+/// ⛔ CORRECTED 28 September 2026 (Brief 229): the line above describes what
+/// THIS FUNCTION does, and that is still exactly true. It is no longer what an
+/// iOS restore does. Since `10c2f7c` was reverted, an iOS restore is the
+/// [keepDatabase] case. The default here models "the database is absent, by
+/// any route" (see the header).
 Future<void> transfer(Directory root, {bool keepDatabase = false}) async {
   await StorageBoot.database?.close();
   StorageBoot.debugSet();

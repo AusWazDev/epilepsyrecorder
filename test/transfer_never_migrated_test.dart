@@ -31,9 +31,16 @@ void main() {
     final outcome = await StorageBoot.init();
     final ids = (await StorageBoot.store.load()).map((r) => r.id).toList()..sort();
     print('[b215n] outcome=${outcome.state} ids=$ids');
+    // Reason strings CORRECTED 28 Sep 2026 (Brief 229). "The restored device"
+    // meant transfer_restored_state's device, whose trigger (an iOS restore
+    // under 10c2f7c) was reverted. They read: "the same four records the
+    // restored device ends up with" and "SIGNAL: the same outcome the restored
+    // device reports".
     expect(ids, <String>['alpha', 'bravo', 'charlie', 'pair'],
-        reason: 'the same four records the restored device ends up with');
+        reason: 'the same four records the database-absent device '
+            '(transfer_restored_state) ends up with');
     expect(outcome.state, MigrationState.migrated,
-        reason: 'SIGNAL: the same outcome the restored device reports');
+        reason: 'SIGNAL: the same outcome the database-absent device '
+            '(transfer_restored_state) reports');
   }, timeout: const Timeout(Duration(seconds: 90)));
 }

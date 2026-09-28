@@ -1,6 +1,15 @@
 // Brief 215 §1 and §2.1: a device restored from an iOS backup rebuilds its
 // history from the frozen legacy list, silently.
 //
+// ⛔ CORRECTED 28 September 2026 (Brief 229): the trigger above no longer
+// exists. `10c2f7c` was reverted before it shipped, so an iOS restore brings
+// the database back with the prefs. Superseded wording: "a device restored
+// from an iOS backup". Read it as: A DEVICE WHOSE DATABASE IS ABSENT, BY ANY
+// ROUTE, WITH ITS PREFS PRESENT. The behaviour pinned below is unchanged, and
+// this file is kept as the regression guard described in
+// `support/transfer_fixture.dart`. The test's NAME still says "restored
+// device"; it is left as it is so runs stay comparable by name across machines.
+//
 // ⚠️ ONE prefs-dependent test per file. The CONTROL for this file is run by
 // setting `kKeepDatabase` to true: "the database survived the transfer".
 

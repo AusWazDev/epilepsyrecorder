@@ -2,6 +2,14 @@
 // just before the transfer. Applied the way Home's onRestore applies it:
 // `planRestore`, then the merged list saved through the store, then the notes
 // inserted.
+//
+// ⛔ CORRECTED 28 September 2026 (Brief 229): "a restored device" named the
+// iOS-restore trigger of `10c2f7c`, which was reverted before it shipped.
+// Superseded wording: "the user on a restored device". Read it as: the user on
+// a device whose DATABASE IS ABSENT, by any route, with its prefs present.
+// The JSON-backup restore it applies is unaffected. Kept as the regression
+// guard described in `support/transfer_fixture.dart`. The test's NAME still
+// says "restored device"; it is left as it is so runs stay comparable by name.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
