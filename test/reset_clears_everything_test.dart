@@ -92,6 +92,9 @@ void main() {
     chosen = await Directory('${root.path}/chosen').create();
     PathProviderPlatform.instance =
         _Dirs(support.path, documents.path, temp.path, downloads.path);
+    // Brief 211: FFI on every host. On macOS the production gate picks the
+    // plugin, which a test process does not have, and every init() fell back.
+    StorageBoot.debugDatabaseFactory = databaseFactoryFfi;
     SharedPreferences.setMockInitialValues(<String, Object>{
       kEventStorageKey: jsonEncode([rec('alpha', 1).toMap(), rec('beta', 2).toMap()]),
     });
@@ -100,6 +103,7 @@ void main() {
   tearDown(() async {
     await StorageBoot.database?.close();
     StorageBoot.debugSet();
+    StorageBoot.debugDatabaseFactory = null;
     Vocabularies.debugReset();
     try {
       if (await root.exists()) await root.delete(recursive: true);
