@@ -136,63 +136,26 @@ import awesome_notifications
   private let kNotificationEventIdKey = "mer_event_id"
   private var navChannel: FlutterMethodChannel?
 
-  /// ⛔ MER'S DATA IS EXCLUDED FROM iCLOUD AND DEVICE BACKUP — 26 September 2026.
-  ///
-  /// Two directories, at EVERY launch:
-  ///   · Application Support — where Dart's `getApplicationSupportDirectory()`
-  ///     puts the SQLite database, its -wal/-shm files, and the pre-migration
-  ///     plaintext backup;
-  ///   · the App Group container — the capture inbox the widget extension and
-  ///     this process share.
-  ///
-  /// ⚠️ DOCUMENTATION-SOURCED AND UNVERIFIED. Written on Windows from Apple's
-  /// documentation of `URLResourceValues.isExcludedFromBackup`: set on a
-  /// directory, it excludes that directory's contents from LATER backups. It
-  /// does not remove anything from a backup already taken. ⛔ THE MAC OWES A
-  /// BUILD AND A DEVICE CHECK before 1.1.0; until then this is a claim.
-  ///
-  /// ⚠️ NOT COVERED: the standard `UserDefaults` plist in Library/Preferences,
-  /// which the system manages. Only these two directories are.
-  ///
-  /// Every launch rather than once, because a restore, a migration or a
-  /// reinstall can re-create a directory without its attribute, and the call
-  /// is cheap and idempotent. It never throws: this runs on the cold-start path
-  /// that serves notification actions, and a backup attribute is not worth a
-  /// failed launch.
-  private func excludeAppDataFromBackup() {
-    let fm = FileManager.default
-    var targets: [URL] = []
-    if let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-      // path_provider creates this lazily. Create it now so the attribute has
-      // something to land on before the database is opened inside it.
-      try? fm.createDirectory(at: support, withIntermediateDirectories: true)
-      targets.append(support)
-    }
-    // Nil when the App Group entitlement is missing, which shipped once: 1.0.2's
-    // Release configuration signed without it.
-    if let group = fm.containerURL(forSecurityApplicationGroupIdentifier: kAppGroupId) {
-      targets.append(group)
-    }
-    for var url in targets {
-      var values = URLResourceValues()
-      values.isExcludedFromBackup = true
-      do {
-        try url.setResourceValues(values)
-      } catch {
-        NSLog("MER: could not exclude \(url.lastPathComponent) from backup: \(error)")
-      }
-    }
-  }
-
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // FIRST, before any plugin registers and before the engine boots: Dart
-    // opens the database only after this returns, so the attribute is on the
-    // directory before anything is written into it on this launch.
-    excludeAppDataFromBackup()
-
+    // ⛔ NO iOS BACKUP EXCLUSION, DELIBERATELY. Do not add one back without
+    // reading this. Removed 28 September 2026 (Brief 229, reverting 10c2f7c,
+    // which was never compiled or shipped).
+    //
+    // 10c2f7c set `isExcludedFromBackup` on Application Support and the App
+    // Group container here. It could not deliver the privacy it was for: the
+    // standard UserDefaults plist (Library/Preferences) is outside any exclusion
+    // an app can set, and it carries the legacy record list, so records reached
+    // iCloud either way. What it DID do was drop the database from a restore
+    // while the prefs arrived, and boot then rebuilt a frozen pre-SQLite history
+    // and presented it as complete: measured at 4 records where there were 6,
+    // with edits and hides undone, and no banner.
+    //
+    // The transfer_* tests (test/support/transfer_fixture.dart) describe
+    // exactly that state. They are kept as the guard: if an exclusion is ever
+    // re-added, they describe real behaviour again at once.
     GeneratedPluginRegistrant.register(with: self)
 
     // SharedPreferencesPlugin is deliberately NOT registered on the background
