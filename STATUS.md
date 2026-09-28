@@ -201,7 +201,18 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
   ⛔ **Written from Apple's documentation and not compiled here. THE MAC OWES A BUILD AND A DEVICE
   CHECK before 1.1.0**, including the cold-start notification path's timing. Not covered: the
   standard `UserDefaults` plist, which on iOS is where `flutter.epilepsy_event_records_v1` lives.
+  ⛔ **REVERTED 28 September 2026, before it was ever compiled or shipped (`ea24393`, Brief 229).
+  iOS now sets no backup exclusion, deliberately.** The bullet above is left as written; its
+  superseded claim is *"`excludeAppDataFromBackup()`, first line of `didFinishLaunching`, sets
+  `isExcludedFromBackup` on Application Support and on the App Group container, every launch."*
+  Its own last sentence is why it went: the `UserDefaults` plist it could not cover carries the
+  legacy record list, so records reached iCloud anyway. Meanwhile excluding the database made a
+  restored device rebuild a frozen history and present it as complete. The "MAC OWES A BUILD"
+  obligation is void with it. The reasoning is recorded at the top of `didFinishLaunchingWithOptions`
+  in `ios/Runner/AppDelegate.swift`.
 - **Existing Google and iCloud backups are not removed by either change.**
+  ⚠️ **Annotated 28 September 2026:** there is now only ONE change, Android's `cff758d`. On iOS
+  nothing is excluded, so iCloud backups include MER's data exactly as they did before Brief 185.
 
 ### BRIEFS 188 TO 190 — STRANDED FALLBACK RECORDS, AND THE BANNER THAT TOLD USERS TO REOPEN
 
