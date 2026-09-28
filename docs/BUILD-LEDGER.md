@@ -72,7 +72,8 @@ safe behaviour is to take a code above the highest ever recorded anywhere.
 | 60 | 1.1.0 | the tree that became `d8e0a1d` | 20 Sep 2026 | release APK | Teclast P30 | ✅ **by 62 on the device, 21 Sep 2026** |
 | 61 | 1.1.1 | `f00a54d` ✅ **exact, tree clean** | 20 Sep 2026 | release APK, 73,718,998 B, md5 `9cba274a030d8ace6c09489e5a8addd7` | ⛔ **nowhere** — on disk only, not installed | — |
 | **62** | 1.1.1 | `616c16d` ✅ **exact, tree clean, READ FROM GIT AT BUILD TIME** | 21 Sep 2026 | release APK, 73,702,682 B, md5 `d46aa4f22ff97a9d8ba933267286947e` | Teclast P30 — **current**, installed 21 Sep 2026, read back from the device as `versionCode=62 versionName=1.1.1` (was 60 / 1.1.0) | — |
-| 63 | 1.1.1 | ⚠️ **allocated against parent `6f3e7cd`**, 28 Sep 2026 (Brief 220); corrected from the build-time git read afterwards | 28 Sep 2026 | ⏳ **allocated, not yet built** | — | — |
+| 62 | 1.1.1 | ⛔ **NOT RECORDED — found on disk 28 Sep 2026 (Brief 220), source commit unknown** | 24 Sep 2026 (file date) | release APK, 73,718,814 B, md5 `1b26f38be62d5f98670fb2d9823cc32b`, read back as `versionCode=62`, BedLin key | ⛔ **unknown** | ⛔ **a SECOND code-62 artefact**, the row-53 class; it differs from the row above in size |
+| 63 | 1.1.1 | `ffa3a19` ✅ **exact, tree clean, READ FROM GIT AT BUILD TIME** (allocated against parent `6f3e7cd`) | 28 Sep 2026 | release **AAB**, 58,415,269 B, md5 `7626d085285ff3c0811af07a3c59c952`, BedLin upload key, `versionCode=63 versionName=1.1.1`, minSdk 24, targetSdk 36 | ⛔ **nowhere** — on disk only; not uploaded (Brief 220) | — |
 
 ### ⭐ Row 59 is the reason this file exists
 
