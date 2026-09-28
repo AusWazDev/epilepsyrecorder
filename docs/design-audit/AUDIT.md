@@ -1652,6 +1652,20 @@ platform. **It does not.**
 | **Android** | ⛔ **NOT RELIABLY.** `android:allowBackup` is **absent from the manifest**, and its documented default is **true**, so Google Auto Backup may capture the app data directory and restore it on reinstall | **READ:** `allowBackup` 0 hits (control `android:label` 2 hits); no `dataExtractionRules` or `fullBackupContent` XML anywhere in `android/` (0 files). ⚠️ **INFERRED:** what Android then does with it |
 | **iOS** | ⛔ **NOT RELIABLY.** The database lives in `getApplicationSupportDirectory()`, which is included in iCloud and Finder device backups, and **nothing excludes it** | **READ:** `isExcludedFromBackup` 0 hits across `ios/` and `lib/` (control: 4 files reference the App Group). ⚠️ **INFERRED:** iOS backup inclusion rules |
 
+> ⚠️ **ANNOTATED 28 September 2026 (Brief 232): the ANDROID row above is dated, and it is left as
+> written.** It read *"`android:allowBackup` is **absent from the manifest**, and its documented
+> default is **true**, so Google Auto Backup may capture the app data directory"*. That described
+> the manifest before 26 September 2026. From that date (`cff758d`, contract #25) platform backup
+> is turned off, supported at two levels by two machines:
+> **SOURCE, read on the Mac on 28 September 2026:** `android:allowBackup="false"` and
+> `android:dataExtractionRules="@xml/data_extraction_rules"`, whose `<cloud-backup>` and
+> `<device-transfer>` sections each exclude all five domains (`root`, `file`, `database`,
+> `sharedpref`, `external`) with no path.
+> **ARTEFACT, read on Windows and reported in Brief 225:** the merged manifest inside the code-63
+> release AAB declares the same. ⛔ The Mac has not seen that artefact.
+> What Android does with it on a device was not observed. ⭐ **The iOS row stands as written:**
+> `10c2f7c`'s exclusion was reverted (`ea24393`) before it shipped, so nothing excludes the database.
+
 ⭐ **SO THE FINDING SURVIVES AND ITS ARGUMENT CHANGES.** The banner is still wrong — but not because
 it understates a total-loss risk. **It is wrong because it names DEVICE TRANSFER, which is the least
 important thing the file does, when the real point is that a backup is the only copy under the
@@ -1752,6 +1766,17 @@ this document's convention.
 | that a backup is the only way to KEEP events | ⛔ **false**, for the same reason |
 | that it contains everything | ⛔ **false** — §13(ba): no vocabulary, no hide/retire state |
 | that backing up clears this banner | ⛔ **not true on Windows via Share** — §13(bb) |
+
+> ⚠️ **ANNOTATED 28 September 2026 (Brief 232), scoped to the ANDROID HALF of the first row only.**
+> The row is left as written. Its Android reason, *"`android:allowBackup` absent so Android
+> defaults to allowing Auto Backup, no `dataExtractionRules` or `fullBackupContent`"*, describes the
+> manifest before 26 September 2026. From that date (`cff758d`) the manifest sets
+> `allowBackup="false"` with a `dataExtractionRules` file excluding all five domains from cloud
+> backup and device transfer. The SOURCE was read on the Mac on 28 September 2026. The MERGED
+> manifest in the code-63 artefact was read on Windows (Brief 225), and the Mac has not seen it.
+> See the annotation under the platform table above. ⭐ **The iOS half of the row stands as
+> written,** and on iOS the row's conclusion ("not reliably true") still holds: `10c2f7c` was
+> reverted (`ea24393`), and the database is included in device backups.
 
 ⚠️ **"device", not "phone", and it is not a style preference.** This app ships on the Microsoft
 Store, so *"phone"* addresses a Windows user as someone they are not — and *"device"* is already the

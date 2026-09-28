@@ -155,6 +155,20 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
   resource exists. The database is `<getFilesDir>/mer_events.db`, the same directory as Sentry's
   `INSTALLATION` file. Which directories a default Auto Backup includes is Android's documented
   behaviour, not read from source.
+  ⚠️ **Annotated 28 September 2026 (Brief 232): this finding described the manifest BEFORE
+  26 September 2026, and it is left as written.** Its superseded claim is *"Android: backup is
+  ON. No `allowBackup` in the source or merged release manifest"*. From 26 September 2026
+  (`cff758d`, Brief 185) the manifest turns platform backup off, and that is supported at two
+  levels, by two machines:
+  · **SOURCE, read on the Mac on 28 September 2026:** `AndroidManifest.xml` sets
+    `android:allowBackup="false"` and `android:dataExtractionRules="@xml/data_extraction_rules"`,
+    and `res/xml/data_extraction_rules.xml` excludes all five domains (`root`, `file`, `database`,
+    `sharedpref`, `external`), with no path, in both `<cloud-backup>` and `<device-transfer>`.
+  · **ARTEFACT, read on Windows and reported in Brief 225:** the MERGED manifest inside the code-63
+    release AAB (`BUILD-LEDGER.md` row 63, md5 `7626d085…`) declares the same. ⛔ The Mac has not
+    seen that artefact. Source is not artefact.
+  What Android then does with those declarations on a device is still platform behaviour. It was
+  not observed.
 - **iOS: nothing excludes the database from backup.** `getApplicationSupportDirectory()` is
   `Library/Application Support`, and nothing in MER or `path_provider_foundation` sets the
   excluded-from-backup attribute. That iCloud backup therefore includes it is Apple's documented
@@ -919,6 +933,19 @@ database sits in `getApplicationSupportDirectory()`, which device backups includ
 what each OS then does with that. ⛔ **The sentence holds on Windows (MSIX) and is unreliable on
 Android and iOS.** ⭐ **The restore claim itself is unaffected — a restore does rebuild the streams
 it carries; what is qualified is the assumption that nothing else would have.**
+
+⚠️ **Annotated 28 September 2026 (Brief 232), and scoped to the ANDROID HALF ONLY.** The paragraph
+above is left as written. Its Android claim, *"`android:allowBackup` is absent from the manifest
+and there are no `dataExtractionRules` or `fullBackupContent` files, so Android defaults to
+allowing Auto Backup"*, described the manifest before 26 September 2026. From that date
+(`cff758d`) the manifest sets `allowBackup="false"` and a `dataExtractionRules` file excluding all
+five domains from both cloud backup and device transfer. The SOURCE was read on the Mac on
+28 September 2026. The MERGED manifest in the code-63 artefact was read on Windows (Brief 225),
+and the Mac has not seen that artefact. See the annotation on the Brief 182 finding above for both
+readings. ⭐ **The iOS half stands as written:** `isExcludedFromBackup` returns 0 again, because
+`10c2f7c` was reverted (`ea24393`) before it shipped, and the database is included in device
+backups. The paragraph's closing "unreliable on Android" is now dated to before 26 September 2026
+for Android. For iOS it holds today.
 
 **Export is the sharing path.** CSV, 17 columns, and the screen says so —
 *"This is a copy to share or work with. **It cannot be read back** into the app."*
