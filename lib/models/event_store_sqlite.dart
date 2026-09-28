@@ -7,6 +7,8 @@ import 'event_record.dart';
 import 'condition.dart';
 import 'medication_note.dart';
 import 'vocabulary.dart';
+import 'vocabulary_store.dart';
+import 'reset_files.dart';
 
 /// The SQLite backing for [EventStore].
 ///
@@ -819,10 +821,87 @@ class SqliteEventStore implements EventStore {
   /// Nothing refuses a prefs write interleaving with the clear, but the queue
   /// would not prevent one either: of the 36 prefs write sites in `lib/`, only
   /// the four in the fallback store's save path run inside it.
+  ///
+  /// ⛔ **WIDENED 28 September 2026 (Brief 208 Part B): Reset now clears what it
+  /// claims.** Until then it emptied `event` alone and left nine tables, the
+  /// plaintext pre-migration backup and every share intermediate behind (Brief
+  /// 206 §1.1). In order:
+  ///
+  /// 1. [clearResetTables], one transaction: every record-bearing table, then
+  ///    the vocabularies rebuilt to their fresh-install state.
+  /// 2. `VACUUM`, through the same queue, so deleted AND previously-edited
+  ///    content stops sitting in the file's free pages. ⚠️ Best-effort: VACUUM
+  ///    needs free space up to the file's size, and a Reset that failed on a
+  ///    full disk would be worse than one that left residue.
+  /// 3. The vocabulary cache reloaded, or the pickers keep showing the user's
+  ///    entries until the next launch.
+  /// 4. [deleteResetFiles]: the pre-migration backup and share intermediates.
+  ///    Never a user-saved export.
+  /// 5. prefs, as before.
+  ///
+  /// ⛔ **KEPT: `schema_meta`.** Bookkeeping only, no record content. Clearing it
+  /// while the legacy key survived would re-migrate that key on the next boot.
+  ///
+  /// ⚠️ **THIS IS THE SQLITE STORE ONLY.** A fallback launch runs
+  /// [EventStore.clearAll], which is unchanged and still clears prefs alone.
+  /// That is deliberate (Brief 208 B5).
   Future<SharedPreferences> clearAll() async {
-    await EventStore.serialise(() => db.delete('event'));
+    await EventStore.serialise(
+        () => db.transaction((txn) => clearResetTables(txn)));
+    try {
+      await EventStore.serialise(() => db.execute('VACUUM'));
+    } catch (_) {
+      // See step 2 above: residue is recoverable, a stuck Reset is not.
+    }
+    try {
+      await Vocabularies.load(db);
+    } catch (_) {
+      // The cache keeps whatever it held. The next launch reloads it.
+    }
+    final recorded = await getMeta(db, kMetaBackupPath);
+    await deleteResetFiles(recordedBackupPath: recorded);
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     return prefs;
   }
+}
+
+/// Every table Reset empties. ⛔ **`schema_meta` is the ONLY table not here**,
+/// and `reset_clears_everything_test` fails on any table in the file that is in
+/// neither this list nor the kept set. So a new table has to be classified
+/// before it can ship.
+const List<String> kResetClearedTables = <String>[
+  'event',
+  kMedicationNoteTable,
+  kConditionTable,
+  kConditionObservationTable,
+  kEventObservationTable,
+  kEventTriggerTable,
+  kEventTypeTable,
+  kObservationTable,
+  kTriggerTable,
+];
+
+/// Empties [kResetClearedTables], then re-seeds the vocabularies.
+///
+/// ⛔ **THE RESEED REPLAYS `createSchema`'S ORDER, NOT `StorageBoot`'S.**
+/// `ensureSeeded` inserts `medication` ACTIVE, and only `createSchema` (and the
+/// v5 upgrade) retires it afterwards. Boot's `ensureSeeded` never un-retires it,
+/// because the row already exists. After a delete, it would: a picker would
+/// offer an entry MER itself retired. `reset_clears_everything_test` compares
+/// the result with a freshly created database, so a retirement added to
+/// `createSchema` and not here fails that test.
+///
+/// ⭐ D6 (*hidden, never deleted*) does not govern this. Its measured harm is
+/// EXISTING records reading differently through an entry's label, and after
+/// this there are no existing records. A backup restored afterwards reads
+/// exactly as it would on a new phone, because a backup carries no
+/// vocabulary state.
+Future<void> clearResetTables(DatabaseExecutor txn) async {
+  for (final t in kResetClearedTables) {
+    await txn.delete(t);
+  }
+  await ensureSeeded(txn);
+  await retireMedicationEventType(txn);
+  await ensureTriggersSeeded(txn);
 }
