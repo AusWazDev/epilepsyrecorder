@@ -144,6 +144,11 @@ class StorageBoot {
       String? backupPath;
       final alreadyDone = await getMeta(db, kMetaMigrationState) == 'migrated';
       if (!alreadyDone) {
+        // Brief 217. BEFORE `migrateJsonToSqlite`, which rewrites the marker,
+        // and before the backup write, whose failure returns early. Once per
+        // database; see [captureRebuildVerdict]. Nothing reads it yet.
+        await captureRebuildVerdict(
+            db, prefs.getString(kLegacyMigrationMarkerKey), rawJson);
         try {
           // ⛔ SUPPORT, NOT DOCUMENTS — 24 September 2026, and this is a
           // WINDOWS fix. It was `getApplicationDocumentsDirectory()`.

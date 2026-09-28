@@ -378,3 +378,68 @@ String migrationMarkerJson(String? rawJson, DateTime at) {
     'migratedAt': at.toIso8601String(),
   });
 }
+
+/// What this database was built FROM. Brief 217, 28 September 2026.
+enum RebuildVerdict {
+  /// A marker was present and matched the payload: this database was rebuilt
+  /// from a snapshot frozen at an earlier migration (a transfer, or local loss).
+  rebuild,
+
+  /// A marker was present and did NOT match: the payload changed after an
+  /// earlier migration (fallback writes landed), then this database was built.
+  diverged,
+
+  /// No marker: the first migration this payload has ever had.
+  ordinary,
+}
+
+/// Where the verdict is kept: `schema_meta` of the database it describes.
+const String kMetaRebuildVerdict = 'legacy_rebuild_verdict';
+
+/// The verdict for a marker read from prefs and the payload about to migrate.
+///
+/// ⚠️ A marker that is present but unreadable counts as DIVERGED: it says a
+/// migration happened somewhere, and it cannot say the payload is unchanged.
+RebuildVerdict rebuildVerdictFor(String? markerJson, String? rawJson) {
+  if (markerJson == null) return RebuildVerdict.ordinary;
+  try {
+    final m = jsonDecode(markerJson) as Map<String, Object?>;
+    final fp = legacyPayloadFingerprint(rawJson);
+    return (m['payloadBytes'] == fp.bytes && m['fnv1a32'] == fp.fnv1a32)
+        ? RebuildVerdict.rebuild
+        : RebuildVerdict.diverged;
+  } catch (_) {
+    return RebuildVerdict.diverged;
+  }
+}
+
+/// Records the verdict ONCE per database, before its first migration attempt.
+///
+/// ⛔ **WHY BEFORE, AND WHY ONCE.** The migration writes a fresh marker with the
+/// same fingerprint (Brief 215 §2.1), so a verdict taken afterwards always reads
+/// REBUILD. And an interrupted first attempt can leave THIS database's own marker
+/// behind (the marker is written before `migrated`, Brief 205), so a verdict
+/// recomputed on the re-run would read this device's own write as a travelled
+/// one. The first attempt runs before this database has written anything, so its
+/// reading is the only one that describes where the payload came from.
+///
+/// ⭐ **WHY `schema_meta` AND NOT PREFS.** The verdict is a fact about how THIS
+/// database came to exist. Prefs travel in an iOS backup and the database does
+/// not (`10c2f7c`), so a verdict in prefs would arrive on the next device
+/// describing the last one. In `schema_meta` it is lost exactly when the
+/// database is, which is exactly when a new one must be taken. Reset keeps
+/// `schema_meta`, and the verdict stays true after a Reset: it describes the
+/// database's origin, not its current rows.
+///
+/// Best-effort: a failed read or write leaves no verdict, which reads as today.
+/// Nothing reads it yet.
+Future<void> captureRebuildVerdict(
+    DatabaseExecutor db, String? markerJson, String? rawJson) async {
+  try {
+    if (await getMeta(db, kMetaRebuildVerdict) != null) return;
+    await putMeta(db, kMetaRebuildVerdict, jsonEncode(<String, Object>{
+      'verdict': rebuildVerdictFor(markerJson, rawJson).name,
+      'at': DateTime.now().toIso8601String(),
+    }));
+  } catch (_) {}
+}
