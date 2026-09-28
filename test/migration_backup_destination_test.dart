@@ -79,6 +79,9 @@ void main() {
     final temp = await Directory('${root.path}/tmp').create();
     PathProviderPlatform.instance =
         _TwoDirProvider(support.path, documents.path, temp.path);
+    // Brief 211: FFI on every host. On macOS the production gate picks the
+    // plugin, which a test process does not have, and every init() fell back.
+    StorageBoot.debugDatabaseFactory = databaseFactoryFfi;
 
     // A pre-migration device: records under the legacy key, no database yet.
     SharedPreferences.setMockInitialValues(<String, Object>{
@@ -92,6 +95,7 @@ void main() {
     // cleanup, not part of the subject.
     await StorageBoot.database?.close();
     StorageBoot.debugSet();
+    StorageBoot.debugDatabaseFactory = null;
     try {
       if (await root.exists()) await root.delete(recursive: true);
     } catch (_) {

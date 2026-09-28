@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:medical_event_recorder/constants.dart';
 import 'package:medical_event_recorder/models/event_record.dart';
@@ -67,13 +68,26 @@ Future<Directory> markerRoot({bool supportIsFile = false}) async {
     await Directory(supportPath).create();
   }
   PathProviderPlatform.instance = MarkerDirProvider(supportPath, temp.path);
+  useFfiForBoot();
   return root;
+}
+
+/// Makes `StorageBoot.init()` open SQLite through FFI on EVERY host.
+///
+/// ⛔ Brief 211, 28 September 2026. Without it, `init()` on a macOS host takes
+/// the plugin branch, throws `MissingPluginException` and falls back, so any
+/// test here measures the fallback whatever it set up. Windows never showed
+/// it, because the production gate hands Windows FFI already.
+void useFfiForBoot() {
+  sqfliteFfiInit();
+  StorageBoot.debugDatabaseFactory = databaseFactoryFfi;
 }
 
 Future<void> markerTearDown(Directory root) async {
   // Windows will not delete a directory holding an open database file.
   await StorageBoot.database?.close();
   StorageBoot.debugSet();
+  StorageBoot.debugDatabaseFactory = null;
   try {
     if (await root.exists()) await root.delete(recursive: true);
   } catch (_) {

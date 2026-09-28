@@ -43,6 +43,19 @@ void main() {
     expect(StorageBoot.isSqlite, isFalse,
         reason: 'CONTROL: this launch must have FALLEN BACK, or it tests '
             'the migrated path instead.');
+    // ⛔ WHICH fallback, not merely that one happened. Added 28 September 2026
+    // (Brief 211). Until then this test passed on a macOS host for the WRONG
+    // reason: `init()` fell back from a MissingPluginException before the
+    // support path was ever opened, so the file below was never the cause.
+    // Both fallbacks leave `isSqlite` false and no marker, so only the error
+    // tells them apart: the file path fails the OPEN, as a DatabaseException.
+    expect(
+        StorageBoot.outcome?.error,
+        isA<DatabaseException>().having(
+            (e) => e.isOpenFailedError(), 'isOpenFailedError()', isTrue),
+        reason: 'CONTROL: the fallback must come from opening the database '
+            'beneath a support path that is a FILE, not from any other '
+            'failure, such as a missing sqflite plugin.');
     expect(await readMarker(), isNull,
         reason: 'a launch that did not migrate must not claim it did.');
     expect(await readLegacy(), raw);

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common/sqflite.dart' as sqflite_common;
@@ -62,7 +63,30 @@ class StorageBoot {
     outcome = result;
   }
 
+  /// Test seam: the database factory [configureDatabaseFactory] installs
+  /// instead of choosing by host. Null in production, always.
+  ///
+  /// ⛔ WHY IT EXISTS (Brief 211, 28 September 2026). The host gate below is
+  /// correct for a real build, and a real macOS or iOS build has the sqflite
+  /// plugin. A `flutter test` process on a macOS host does NOT: every
+  /// `init()` there threw `MissingPluginException` inside the outer `try` and
+  /// fell back, so eight migration tests went red, and one fallback test went
+  /// green for the wrong reason. The harness was wrong, not the gate. So the
+  /// fix is here, and the gate is left alone. Do not widen it to macOS to make
+  /// a test pass.
+  ///
+  /// NOT cleared by [debugSet], deliberately: tests call `debugSet()` between
+  /// two `init()` calls to simulate a relaunch, and the second boot must open
+  /// the same factory as the first. Clear it in tearDown.
+  @visibleForTesting
+  static sqflite_common.DatabaseFactory? debugDatabaseFactory;
+
   static void configureDatabaseFactory() {
+    final override = debugDatabaseFactory;
+    if (override != null) {
+      sqflite_common.databaseFactory = override;
+      return;
+    }
     if (Platform.isWindows || Platform.isLinux) {
       ffi.sqfliteFfiInit();
       sqflite_common.databaseFactory = ffi.databaseFactoryFfi;
