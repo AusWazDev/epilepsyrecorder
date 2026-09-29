@@ -73,6 +73,9 @@ It must print `OK — all assertions passed.` and exit 0.
 - [ ] `tool/verify_release_signing.sh` exits 0 against the build about to be tested
 - [ ] Before archiving for App Store Connect, read §12: on Xcode 26 the Sentry dSYM phase can
   fail the archive
+  ⭐ *Updated 29 Sep 2026 (Brief 244): the phase has been removed, so the archive no longer
+  contacts Sentry. The upload is now a separate step, `tool/upload_dsyms.sh`, required at
+  Sign-off.*
 
 ### Why this is step 0
 
@@ -652,6 +655,15 @@ depends on Sentry being reachable and the token being valid.
 repo):** *"the Sentry dSYM phase fails softly (`|| echo "warning…"`), so it can't block a build."*
 **False on Xcode 26.** The `|| echo` controls the exit code, and Xcode reads the log.
 
+⭐ **IMPLEMENTED 29 September 2026 (Brief 244): OPTION 3.** The "Upload dSYMs to Sentry" build
+phase is removed from the Runner target, so **no build step contacts Sentry**, and an archive
+cannot fail for a Sentry reason by construction. The upload is `tool/upload_dsyms.sh`, run after
+the archive exists and before distribution. First it checks locally that every binary in the
+archive has a dSYM with a matching UUID; then it uploads, and **it fails loudly** (non-zero, "UPLOAD
+FAILED") where the old phase was meant to fail softly. `--check` runs the local checks only. The
+step is a required box at Sign-off. The text below is left as it was written; its "NOT
+implemented" is superseded for option 3 only.
+
 **Options for making the phase unable to block a release. NOT implemented: each is a production
 project change and belongs in its own brief.**
 1. **Keep `error:` out of the phase's output.** Capture `sentry-cli`'s stderr and re-emit it
@@ -694,6 +706,13 @@ Tier: 16.2–16.x / 17.0+ Result: Pass / Fail
 
 Record the outcome in `STATUS.md` and the Change Register, **including the iOS version and
 the tier**.
+
+**Symbols (added 29 September 2026, Brief 244). The build no longer uploads them itself, so
+skipping this step ships a build whose crash reports cannot be read.**
+
+- [ ] `tool/upload_dsyms.sh --archive <the archive being distributed>` exited 0 and printed
+  `dSYMs uploaded for <version> (<build>)`, **for the same archive that is uploaded to App Store
+  Connect**. dSYMs from any other build will not match.
 
 Before submitting — confirm:
 > "I have completed every item on this checklist on a physical device, on a release or
