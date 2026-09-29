@@ -714,6 +714,17 @@ skipping this step ships a build whose crash reports cannot be read.**
   `dSYMs uploaded for <version> (<build>)`, **for the same archive that is uploaded to App Store
   Connect**. dSYMs from any other build will not match.
 
+  ⚠️ **UNTESTED UNTIL THIS BOX IS DONE, recorded 29 September 2026 (Brief 244).** The script's
+  local half is tested: `--check` passed 4/4 on a real archive, and a control with a swapped dSYM
+  failed. **Its network half has never run:** whether `sentry-cli` authenticates with the token
+  in `~/.sentryclirc` and the upload is accepted. That was withheld on purpose, so a non-release
+  build would not create a phantom Sentry release. **The first real upload is this box, on the
+  shipping archive.** If it fails, it fails here, loudly, before the build goes out. The archive
+  can no longer be blocked by it. The only successful upload recorded in this repo is the old
+  build phase's first run, 6 May 2026 (1.0.2). That phase ran on every Release build, so the
+  Release builds of 7 and 23 September 2026 would have run it too, but whether they uploaded is
+  not recorded. **Treat the token as unverified.**
+
 Before submitting — confirm:
 > "I have completed every item on this checklist on a physical device, on a release or
 > ad-hoc build, and recorded the iOS version and the tier. I have read §10 and I am not
