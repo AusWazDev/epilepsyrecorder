@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-29-c1f9641f
+INSTRUCTIONS STAMP: 2026-09-29-29fe2f16
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -119,6 +119,7 @@ structural fact about the channel, not a preference.
 | D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** ⚠️ **REASON CORRECTED 26 Sep 2026; the decision is unchanged.** *"It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into"* no longer describes the code, and nor does the *"drained into SQLite on the next foreground"* that follows it: that key holds ONLY the legacy event list. Its one writer is `writeEventPayload`, called only by the SharedPreferences store. The inbox is separate `mer_inbox_<uuid>` keys, and it is those that drain (Brief 185 C1). ⛔ **The instruction, never remove the key, stands.** Only the stated reason was corrected. **WHY the key must stay is OPEN**, pending the chat half's reading of Brief 186 A1. ⚠️ **THE "WHY" IS CLOSED, 26 Sep 2026 (Brief 187).** The key must stay because it is **the SharedPreferences fallback store's LIVE event list, and the migration recovery branch's only readable source.** The fallback is still reachable after migration: `StorageBoot.init` falls back on any throw while opening SQLite at boot, and `EventStore._load` then reads this key as the whole record list. **Measured 7 Sep 2026:** a poisoned iOS build fell back on a migrated device and showed 42 of 58 records, the 16 invisible ones existing only in SQLite. ⛔ **STANDING RULE: the payload is NEVER cleared, not by a migration, not by a drain, not as a privacy measure. Only Reset clears it, and Reset is the user's own action.** Clearing it would be destruction, not concealment: an interrupted migration re-runs FROM this payload, and the only other copy is a backup file the app never reads back by itself (Brief 186 A2). | SQLite v1 | ✅ |
 | D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. ⚠️ **Added later the same day.** The same census found **0 of 32 triggers** affected, so the harm is UNEVEN: a reader arguing from triggers alone would conclude a delete is harmless. And the list-and-history sentence just above is the chat half's SECONDARY ARGUMENT, offered before the count existed. It is not the measured reason, and the chat half has recorded that it replaced one wrong reason with another before the measurement settled it. ⚠️ **SCOPE CORRECTED 29 Sep 2026 (Brief 253); the wording above is unchanged.** *"Entries are hidden, never deleted"* is too strong as an absolute. **Measured from the code:** the ONLY delete of vocabulary rows in `lib/` is `clearResetTables` (`event_store_sqlite.dart`), reached only from Home's Reset through `SqliteEventStore.clearAll`. Since `4b699b4` it deletes EVERY `event_type`, `observation` and `trigger_option` row — the user's own entries, their renames, their hides and the type-to-condition map — and rebuilds the shipped set in `createSchema`'s order, in the same transaction that empties `event`. A fallback-launch Reset (`EventStore.clearAll`) touches no vocabulary. **Everywhere else the rule holds:** "Your lists" hides by flag (`setActive`), a rename changes only a user entry's label (`renameEntry`), and adding and restore (`addUserEntry`, `addMissingEntries`) only insert. ⭐ **So the measured harm cannot occur AT Reset:** no records survive it to read differently. ⚠️ **It can reappear AFTER Reset, through a restore:** a backup carries no vocabulary state, so restored records come back under the shipped labels, with any user entry recreated from its stored value, and without the user's renames or hides, exactly as on a new phone. ⚠️ **The 0-of-32 trigger qualifier above still stands:** it measures the label harm of deleting ONE entry, which this decision forbids. Reset deletes every entry at once, with no records left for that harm to reach. | 27 Aug 2026 | ✅ "Your lists" |
 | D8 | **Commit `10c2f7c` does not ship.** It excluded Application Support and the App Group from iOS backup, but NOT the standard UserDefaults plist, which carries the legacy record list — so records reach iCloud regardless. Excluding the database instead produces a silent transfer rebuild (measured: 4 records where there were 6). No cheap containment exists. ⚠️ **Provenance of "measured", added by the CLI 29 Sep 2026:** 6 → 4 was measured in a Windows TEST FIXTURE that modelled `10c2f7c`'s intended effect (`test/transfer_restored_state_test.dart`, Brief 215), not on a device; `10c2f7c` was never compiled or shipped. | 28 Sep 2026 | ✅ reverted as `ea24393` |
+| D9 | **Ship 1.1.1 forward; do NOT remove 1.0.2 from sale.** Developer's decision, 29 Sep 2026: "We need to get the upgrade to the store before anyone else downloads, not take off market." **Cancels the remove-1.0.2-from-sale task pending since 27 Sep** — cancelled, not deferred. Every new 1.0.2 download creates another migration case; shipping fixes both new and existing installs, withdrawal only prevents new ones and costs availability. | 29 Sep 2026 | ⬜ pending the Play and App Store uploads |
 
 **Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
 Claude\Medical Event Recorder — Change Register.md`). This table says WHAT is
@@ -164,6 +165,32 @@ that could not be read:
   ⚠️ *CLI note, 27 September 2026:* the Change Register already recorded, on
   11 September 2026, *"§13(cf): THE CSV HAS NEVER BEEN UTC"*. The premise that
   the export "converts to UTC" contradicted an entry sixteen days older.
+- *[Added 29 September 2026.]* The chat half decided on 28 September
+  that the Mac's archive pre-flight must stop quitting Claude
+  desktop, and made that correction **in chat only** (Brief 233 C).
+  The checklist kept the old unconditional wording, and the desktop
+  was quit three more times under it — twice with the memory
+  pre-flight PASSING, 52% free — before the file was amended on
+  29 September (Brief 258 C, `65a9dcf`). The developer raised it each
+  time. ⚠️ **A correction that exists only in the chat channel is
+  invisible to every repo sweep and to every CLI session.** It is the
+  same failure as the paste-versus-file drift, in a third channel.
+  ⚠️ *CLI note, 29 September 2026, from the repo's own record of this
+  sequence (`1e13e19`, `65a9dcf`, `docs/iOS Device Test Checklist.md`
+  section 13): the lesson stands; two details read differently there.*
+  (1) The checklist held **no** pre-flight or quit wording before
+  29 September 19:43. Section 13 did not exist until `1e13e19`, which
+  added it already CONDITIONAL. The unconditional wording the first
+  three quits followed is quoted there as *"Superseded wording (Brief
+  233 C, 28 September 2026, chat only)"*: the instruction that caused
+  them also lived in chat only. A later chat-side decision to stop is
+  not visible in the repo, which is this bullet's point. (2) There
+  were **four** quits by the session, not three. The fourth, 29 Sep
+  21:05:39 (Brief 252 C4), came after the file carried the conditional
+  rule, at 42% free. So a rule in the file did not stop a quit either;
+  `65a9dcf` replaced it with "never". Like the 27 September entry,
+  this is not an unreadable fact asserted as read, so the closing
+  sentence below does not cover it.
 
 None were reasoning failures. All were unreadable facts asserted as read.
 ⚠️ **ANNOTATED 27 September 2026 — the sentence above is kept as written.** It
@@ -266,6 +293,16 @@ correction rounds. One feasibility read would have caught it.
   from a function's name, once from a guard it had specified, neither from the
   body. *[Added 26 September 2026. The CLI's copy of this rule is in its global
   rules file and is worded for claims, not briefs.]*
+- A ⛔ in a brief is a REQUEST, not a barrier. On 29 September 2026 a
+  Bash call whose first step was `xcrun simctl boot` returned "The
+  user doesn't want to proceed with this tool use" 108 seconds after
+  it was sent, and the boot had already executed. A rejection or an
+  interrupt can arrive after a command's effects. So a ⛔ protects
+  something only if the command that could violate it is never
+  issued, and after any rejection or interrupt the state must be
+  verified rather than assumed unchanged. *[Added 29 September 2026,
+  earned in Brief 258 Part A. report: the Mac's account; not observable
+  from Windows.]*
 
 ## EXPECT PUSHBACK
 
