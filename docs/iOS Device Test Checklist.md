@@ -722,6 +722,27 @@ swap pressure. An AOT Release archive is the heaviest thing it does. Measured on
    and its VM held about 1.76 GB resident on 29 September. ⚠️ **An archive run WITH it running
    has not been measured.** If the thresholds pass with it running, run the archive and record
    the figures, which settles it.
+
+   ⛔ **SUPERSEDED 29 September 2026 (Brief 258): the whole of step 2 above, including its
+   CONDITIONAL rule for Claude desktop.** It is left as written. The rule that replaces it:
+
+   > **Claude desktop is NEVER quit, by any session, for any reason.** It is the developer's
+   > control channel, and quitting it to finish a step removes the developer's ability to direct
+   > the work. **Under memory pressure a session may quit ONLY:** simulators and emulators
+   > (shut down, and quit Simulator.app), Xcode, build daemons (Gradle, Kotlin and Dart or Flutter
+   > daemons, `xcodebuild`), and processes the session itself started. **If the thresholds in
+   > step 5 still fail after those, the session STOPS and REPORTS** the figures and what is using
+   > the memory. It quits nothing else: not Claude desktop, not sync clients, not browsers, not
+   > any other app. Those are the developer's to quit, or a restart is.
+
+   **Why:** the conditional rule still allowed a quit, and the developer had raised each one.
+   Claude desktop's own log records four quits by this session, each a clean `willQuit`:
+   **28 Sep 23:59:31** (Brief 238 A1), **29 Sep 18:41:32** (Brief 238 A6), **19:31:28** (Brief 244
+   B1), all under the older unconditional wording, and **21:05:39** (Brief 252 C4), under the
+   conditional rule above, triggered at 42% free, 2,033 MB swap and a 5 minute load of 141.8. The
+   fifth `willQuit` that day, 05:43:31, was an auto-update and not this session. The rule is also
+   recorded in the Mac's global `~/.claude/CLAUDE.md`, so it reaches sessions that never read this
+   file.
 3. **Stop:** no Spotlight indexing burst (`mds_stores` near idle) and no Time Machine backup
    running (`tmutil status`).
 4. **Devices:** no device that could be REGISTERED. A connected device that is already registered
