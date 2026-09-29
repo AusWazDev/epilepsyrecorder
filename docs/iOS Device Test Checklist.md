@@ -71,6 +71,8 @@ flutter build ios --release && tool/verify_release_signing.sh
 It must print `OK — all assertions passed.` and exit 0.
 
 - [ ] `tool/verify_release_signing.sh` exits 0 against the build about to be tested
+- [ ] Before archiving for App Store Connect, read §12: on Xcode 26 the Sentry dSYM phase can
+  fail the archive
 
 ### Why this is step 0
 
@@ -620,6 +622,58 @@ equally natural.
 If confirmed, this belongs in the Change Register as a data-correctness defect, not a
 surface one, and it interacts with §10 item 4 — both are the same underlying gap, that the
 schema has no way to say "duration unknown".
+
+---
+
+## 12. The Sentry dSYM phase CAN fail an archive — Xcode 26
+
+⛔ **Recorded 29 September 2026 (Briefs 238 and 242), measured on Xcode 26.3 (17C529).** Read
+this before any Release archive for App Store Connect.
+
+The Runner target's **"Upload dSYMs to Sentry"** phase (`sentry-cli debug-files upload`, Release
+only) ends in `|| echo "warning: Sentry dSYM upload failed …"`, so its exit code is always 0.
+**Xcode 26 fails the archive anyway** when a script phase *prints* `error:`, whatever it
+returns. `sentry-cli` prints `error: API request failed` on any failed upload. Observed:
+
+```
+error: API request failed
+    1: [7] Couldn't connect to server (Failed to connect to 127.0.0.1 port 9 …)
+warning: Sentry dSYM upload failed - check auth token in ~/.sentryclirc
+Command PhaseScriptExecution emitted errors but did not return a nonzero exit code to indicate failure
+** ARCHIVE FAILED **
+```
+
+That run redirected Sentry to a dead local port on purpose (to avoid uploading for a build that
+would not ship). **The same failure follows from anything that makes the upload fail:** no
+network, an expired or revoked token, or a Sentry incident. So a TestFlight archive currently
+depends on Sentry being reachable and the token being valid.
+
+⚠️ **SUPERSEDED, quoted from the Brief 226 Part C report (chat, 28 September 2026; never in this
+repo):** *"the Sentry dSYM phase fails softly (`|| echo "warning…"`), so it can't block a build."*
+**False on Xcode 26.** The `|| echo` controls the exit code, and Xcode reads the log.
+
+**Options for making the phase unable to block a release. NOT implemented: each is a production
+project change and belongs in its own brief.**
+1. **Keep `error:` out of the phase's output.** Capture `sentry-cli`'s stderr and re-emit it
+   reworded (for example, prefix it `warning:` or `sentry-cli said:`), keeping the soft exit.
+   This is the smallest change. Its risk is that a real upload failure becomes easier to miss.
+2. **Gate the upload behind an explicit opt-in**, for example a variable the release run sets
+   deliberately, off by default. Test and provisioning archives then never touch Sentry. Its
+   risk is that a release forgets to set it and ships without symbols.
+3. **Move the upload out of the build entirely:** archive first, then run
+   `sentry-cli debug-files upload` against the archive's `dSYMs/` as a separate, visible release
+   step. That decouples the archive from Sentry completely. Its cost is one more step in the
+   release procedure.
+
+**Two related facts from the same export (Brief 242), for whoever does the next upload:**
+- The App Store profile for `au.com.notiva.medicaleventrecorder` was regenerated **by
+  `xcodebuild -exportArchive -allowProvisioningUpdates`**, not by opening Signing &
+  Capabilities (that pane shows development signing only). New profile:
+  `c05df5d0-3e4a-463d-98dc-4017e8f5e739`, created 29 Sep 2026, carrying the App Group. The
+  old `46ab2a99…` (28 Apr 2026, no App Group) was removed by Xcode.
+- The same export logged *"Your session has expired. Please log in."* from an App Store
+  Connect account check, while provisioning still succeeded. **An upload from Xcode will need
+  the account signed in again first.**
 
 ---
 

@@ -1919,6 +1919,11 @@ the list byte-identical to the session-start baseline (not merely the same count
 - MEDICAL-EVENT-RECORDER-2, -3, -4 — confirmed test artifacts (adhoc builds, Danny's iPad, 3–5 May). Archived in Sentry dashboard.
 - Notiva privacy policy — Sentry disclosure already live at notiva.com.au/medical-event-recorder/privacy/. No changes needed.
 - dSYM upload build phase added to `ios/Runner.xcodeproj/project.pbxproj` (UUID 49199A0DF28845FAB5747A7B). sentry-cli 3.4.1 at /usr/local/bin. Auth token (org:ci) in ~/.sentryclirc. 4 dSYMs confirmed uploaded on first build.
+  ⚠️ **Annotated 29 September 2026 (Briefs 238 and 242): on Xcode 26 this phase CAN FAIL AN
+  ARCHIVE.** A failed upload makes `sentry-cli` print `error:`, and Xcode 26 fails the archive on
+  that line, even though the phase's `|| echo` returns 0 (*"Command PhaseScriptExecution emitted
+  errors but did not return a nonzero exit code"*). The measurement and three options, none
+  implemented, are in `docs/iOS Device Test Checklist.md` §12.
 
 **MER v1.0.2 built and submitted to Apple App Store** ✅
 - v1.0.1 confirmed live (released 5 May 2026)
