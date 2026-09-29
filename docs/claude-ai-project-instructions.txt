@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-29-29fe2f16
+INSTRUCTIONS STAMP: 2026-09-29-ed5db976
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -175,6 +175,26 @@ that could not be read:
   time. ⚠️ **A correction that exists only in the chat channel is
   invisible to every repo sweep and to every CLI session.** It is the
   same failure as the paste-versus-file drift, in a third channel.
+  ⚠️ **ANNOTATED IN PLACE 29 September 2026 (Brief 262); every word
+  above is kept as written. Two of its claims are false.**
+  (1) *"The checklist kept the old unconditional wording"* is false.
+  The checklist held **no** pre-flight or quit wording at all before
+  29 September 19:43. `1e13e19` added section 13 already CONDITIONAL,
+  quoting the unconditional wording as *"Superseded wording (Brief 233
+  C, 28 September 2026, chat only)"*. ⭐ **So the instruction that
+  produced the quits was itself chat-only, as was the later
+  correction. BOTH ends of the loop existed outside any file**, which
+  is a stronger form of the lesson than the bullet states.
+  (2) *"quit three more times"* is false. There were **four**. The
+  fourth, 29 September 21:05:39 (Brief 252 C4), came AFTER the file
+  carried the conditional rule, at 42% free and 2,033 MB swap. Both
+  fail step 5's thresholds (free memory ≥ 45%, swap ≤ 1,000 MB), so
+  the condition was met and **the rule PERMITTED it**. ⭐ **A
+  conditional rule did not prevent the harm; only `65a9dcf`'s "never"
+  did.** *(The load recorded then, 141.8, is a 5-minute figure; the
+  threshold is on the 1-minute load. That the session was not run
+  from Claude desktop at 21:05 is not separately recorded; `1e13e19`
+  records Terminal for 29 September.)*
   ⚠️ *CLI note, 29 September 2026, from the repo's own record of this
   sequence (`1e13e19`, `65a9dcf`, `docs/iOS Device Test Checklist.md`
   section 13): the lesson stands; two details read differently there.*
@@ -191,6 +211,10 @@ that could not be read:
   `65a9dcf` replaced it with "never". Like the 27 September entry,
   this is not an unreadable fact asserted as read, so the closing
   sentence below does not cover it.
+  ⚠️ *Annotated 29 September 2026 (Brief 262): points (1) and (2) of
+  the CLI note above are now carried by the in-place annotation on the
+  bullet, and are kept here as the original record. Its last sentence
+  is not duplicated there and still stands.*
 
 None were reasoning failures. All were unreadable facts asserted as read.
 ⚠️ **ANNOTATED 27 September 2026 — the sentence above is kept as written.** It
