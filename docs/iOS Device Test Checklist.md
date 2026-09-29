@@ -76,6 +76,7 @@ It must print `OK — all assertions passed.` and exit 0.
   ⭐ *Updated 29 Sep 2026 (Brief 244): the phase has been removed, so the archive no longer
   contacts Sentry. The upload is now a separate step, `tool/upload_dsyms.sh`, required at
   Sign-off.*
+- [ ] Before archiving on the Mac, run the host pre-flight in §13, and meet its go/no-go figures
 
 ### Why this is step 0
 
