@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-27-2d9acaf9
+INSTRUCTIONS STAMP: 2026-09-29-869fb68d
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -103,6 +103,7 @@ structural fact about the channel, not a preference.
 | D4 | **The seeded catalogue is EPILEPSY ONLY this release.** Migraine needs its own research pass; shipping one well beats two thinly. | 20 Aug 2026 | ✅ |
 | D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** ⚠️ **REASON CORRECTED 26 Sep 2026; the decision is unchanged.** *"It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into"* no longer describes the code, and nor does the *"drained into SQLite on the next foreground"* that follows it: that key holds ONLY the legacy event list. Its one writer is `writeEventPayload`, called only by the SharedPreferences store. The inbox is separate `mer_inbox_<uuid>` keys, and it is those that drain (Brief 185 C1). ⛔ **The instruction, never remove the key, stands.** Only the stated reason was corrected. **WHY the key must stay is OPEN**, pending the chat half's reading of Brief 186 A1. ⚠️ **THE "WHY" IS CLOSED, 26 Sep 2026 (Brief 187).** The key must stay because it is **the SharedPreferences fallback store's LIVE event list, and the migration recovery branch's only readable source.** The fallback is still reachable after migration: `StorageBoot.init` falls back on any throw while opening SQLite at boot, and `EventStore._load` then reads this key as the whole record list. **Measured 7 Sep 2026:** a poisoned iOS build fell back on a migrated device and showed 42 of 58 records, the 16 invisible ones existing only in SQLite. ⛔ **STANDING RULE: the payload is NEVER cleared, not by a migration, not by a drain, not as a privacy measure. Only Reset clears it, and Reset is the user's own action.** Clearing it would be destruction, not concealment: an interrupted migration re-runs FROM this payload, and the only other copy is a backup file the app never reads back by itself (Brief 186 A2). | SQLite v1 | ✅ |
 | D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. ⚠️ **Added later the same day.** The same census found **0 of 32 triggers** affected, so the harm is UNEVEN: a reader arguing from triggers alone would conclude a delete is harmless. And the list-and-history sentence just above is the chat half's SECONDARY ARGUMENT, offered before the count existed. It is not the measured reason, and the chat half has recorded that it replaced one wrong reason with another before the measurement settled it. | 27 Aug 2026 | ✅ "Your lists" |
+| D8 | **Commit `10c2f7c` does not ship.** It excluded Application Support and the App Group from iOS backup, but NOT the standard UserDefaults plist, which carries the legacy record list — so records reach iCloud regardless. Excluding the database instead produces a silent transfer rebuild (measured: 4 records where there were 6). No cheap containment exists. ⚠️ **Provenance of "measured", added by the CLI 29 Sep 2026:** 6 → 4 was measured in a Windows TEST FIXTURE that modelled `10c2f7c`'s intended effect (`test/transfer_restored_state_test.dart`, Brief 215), not on a device; `10c2f7c` was never compiled or shipped. | 28 Sep 2026 | ✅ reverted as `ea24393` |
 
 **Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
 Claude\Medical Event Recorder — Change Register.md`). This table says WHAT is
@@ -355,6 +356,21 @@ rebrand, do not rename. Flutter/Dart. Bundle id
 `au.com.notiva.medicaleventrecorder` (Apple + Google; the Android namespace
 `au.com.notiva.medical_event_recorder` is the R class only and is NOT the Play
 registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
+
+**1.0.3 is the same build as 1.0.2**, uploaded to TestFlight so one
+person (Terry Rose) could evaluate the app without purchasing. TestFlight
+has never been used by an end user. Any reasoning that treats 1.0.3 as a
+code change is wrong.
+⚠️ **Checked against the history by the CLI, 29 Sep 2026 — the claim holds
+in BEHAVIOUR, and is precise only with this qualifier.** 1.0.3 (`4c18dd7`,
+`1.0.3+4`) differs from `2d171ca`, the most probable Android 1.0.2 tree, in
+the pubspec version line ONLY. From `192ae40`, the iOS App Store 1.0.2, it
+also carries CR-43 (`4d1514a`, `0468e6f`): every behavioural part of that is
+Android-gated (`Platform.isAndroid`, the notification service's iOS early
+return, and a Help row in the Android branch), apart from `_loadRecords()`
+now being awaited before the other resume calls; plus a Sentry dSYM upload
+build phase, which is tooling. That TestFlight has never reached an end user
+is the developer's statement, not something the repo can show.
 
 **Architecture that only changes if the app is re-architected:**
 
