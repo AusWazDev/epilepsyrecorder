@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-29-869fb68d
+INSTRUCTIONS STAMP: 2026-09-29-c1f9641f
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -85,6 +85,21 @@ It therefore lives, byte-identical, in exactly two places:
 |---|---|
 | `C:\dev\CLAUDE.md` | the CLI, auto-loaded every session |
 | `epilepsyrecorder/docs/claude-ai-project-instructions.md` (+ the `.txt` extract) | claude.ai, **once pasted** |
+
+⚠️ **CORRECTED 29 September 2026 (Brief 253); the sentence and table above are left as
+written.** *"in exactly two places"* is false, and so are this block's BEGIN marker (*"in
+BOTH files"*) and the note below (*"the two copies"*). **Measured 29 Sep 2026 (Brief 228
+A1):** the block lives in **THREE files that `session-end.ps1` compares** —
+`C:\dev\CLAUDE.md`, `epilepsyrecorder/docs/claude-ai-project-instructions.md`, and its
+`.txt` extract, which is GENERATED from the `.md` by `tool/instructions_stamp.py --write`
+and is never hand-edited — **plus a FOURTH, backup-only copy**, `Dev Workspace CLAUDE.md`
+in `{global config}/setup` (`claude-config`). `session-end.ps1` copies the live file into
+it, so it **LAGS** the live file until the next session-end run, and it is never compared
+and never a source.
+⚠️ **And `C:\dev\CLAUDE.md` carries NO instructions stamp.** The stamp lives only in the
+`.md` and the `.txt`, so a stamp quoted by the chat half proves the PASTE matches the paste
+SOURCE. It never proves the paste matches the CLI's copy; that link rests on the
+session-end block check alone.
 
 ⚠️ **The `.md` is only the SOURCE of the paste. Editing it changes nothing on the
 chat side until the paste is updated.** `session-end.ps1` warns when the two
@@ -138,7 +153,7 @@ structural fact about the channel, not a preference.
 | D3 | **Export-shape changes need no compatibility layer.** One user, manual amendment acceptable. No compatibility mode, no second export option, no version negotiation. Shape is tracked by a filename marker, not a column. | 26 Aug 2026 | ✅ marker `v4` |
 | D4 | **The seeded catalogue is EPILEPSY ONLY this release.** Migraine needs its own research pass; shipping one well beats two thinly. | 20 Aug 2026 | ✅ |
 | D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** ⚠️ **REASON CORRECTED 26 Sep 2026; the decision is unchanged.** *"It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into"* no longer describes the code, and nor does the *"drained into SQLite on the next foreground"* that follows it: that key holds ONLY the legacy event list. Its one writer is `writeEventPayload`, called only by the SharedPreferences store. The inbox is separate `mer_inbox_<uuid>` keys, and it is those that drain (Brief 185 C1). ⛔ **The instruction, never remove the key, stands.** Only the stated reason was corrected. **WHY the key must stay is OPEN**, pending the chat half's reading of Brief 186 A1. ⚠️ **THE "WHY" IS CLOSED, 26 Sep 2026 (Brief 187).** The key must stay because it is **the SharedPreferences fallback store's LIVE event list, and the migration recovery branch's only readable source.** The fallback is still reachable after migration: `StorageBoot.init` falls back on any throw while opening SQLite at boot, and `EventStore._load` then reads this key as the whole record list. **Measured 7 Sep 2026:** a poisoned iOS build fell back on a migrated device and showed 42 of 58 records, the 16 invisible ones existing only in SQLite. ⛔ **STANDING RULE: the payload is NEVER cleared, not by a migration, not by a drain, not as a privacy measure. Only Reset clears it, and Reset is the user's own action.** Clearing it would be destruction, not concealment: an interrupted migration re-runs FROM this payload, and the only other copy is a backup file the app never reads back by itself (Brief 186 A2). | SQLite v1 | ✅ |
-| D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. ⚠️ **Added later the same day.** The same census found **0 of 32 triggers** affected, so the harm is UNEVEN: a reader arguing from triggers alone would conclude a delete is harmless. And the list-and-history sentence just above is the chat half's SECONDARY ARGUMENT, offered before the count existed. It is not the measured reason, and the chat half has recorded that it replaced one wrong reason with another before the measurement settled it. | 27 Aug 2026 | ✅ "Your lists" |
+| D6 | **Vocabularies are append-only. Entries are hidden, never deleted.** A delete orphans every record referencing the entry; `is_active` covers every reason to want one. Entries MER itself retired are not the user's to un-hide. ⚠️ **REASON CORRECTED 24 Sep 2026; the decision is unchanged.** *"A delete orphans every record referencing the entry"* is inaccurate: a record stores the entry's TEXT, not its id, and as at 24 Sep 2026 nothing reads the id join tables at runtime. **The real cost, measured that day:** screens show a record's value through its entry's LABEL, and 4 of 4 seeded event types and 23 of 56 observations have a label that differs from the value. So a delete would make existing records read differently (`seizure` instead of *Seizure / fit*) and would undo any rename. It would also leave the list and the history disagreeing permanently. ⚠️ **Added later the same day.** The same census found **0 of 32 triggers** affected, so the harm is UNEVEN: a reader arguing from triggers alone would conclude a delete is harmless. And the list-and-history sentence just above is the chat half's SECONDARY ARGUMENT, offered before the count existed. It is not the measured reason, and the chat half has recorded that it replaced one wrong reason with another before the measurement settled it. ⚠️ **SCOPE CORRECTED 29 Sep 2026 (Brief 253); the wording above is unchanged.** *"Entries are hidden, never deleted"* is too strong as an absolute. **Measured from the code:** the ONLY delete of vocabulary rows in `lib/` is `clearResetTables` (`event_store_sqlite.dart`), reached only from Home's Reset through `SqliteEventStore.clearAll`. Since `4b699b4` it deletes EVERY `event_type`, `observation` and `trigger_option` row — the user's own entries, their renames, their hides and the type-to-condition map — and rebuilds the shipped set in `createSchema`'s order, in the same transaction that empties `event`. A fallback-launch Reset (`EventStore.clearAll`) touches no vocabulary. **Everywhere else the rule holds:** "Your lists" hides by flag (`setActive`), a rename changes only a user entry's label (`renameEntry`), and adding and restore (`addUserEntry`, `addMissingEntries`) only insert. ⭐ **So the measured harm cannot occur AT Reset:** no records survive it to read differently. ⚠️ **It can reappear AFTER Reset, through a restore:** a backup carries no vocabulary state, so restored records come back under the shipped labels, with any user entry recreated from its stored value, and without the user's renames or hides, exactly as on a new phone. ⚠️ **The 0-of-32 trigger qualifier above still stands:** it measures the label harm of deleting ONE entry, which this decision forbids. Reset deletes every entry at once, with no records left for that harm to reach. | 27 Aug 2026 | ✅ "Your lists" |
 | D8 | **Commit `10c2f7c` does not ship.** It excluded Application Support and the App Group from iOS backup, but NOT the standard UserDefaults plist, which carries the legacy record list — so records reach iCloud regardless. Excluding the database instead produces a silent transfer rebuild (measured: 4 records where there were 6). No cheap containment exists. ⚠️ **Provenance of "measured", added by the CLI 29 Sep 2026:** 6 → 4 was measured in a Windows TEST FIXTURE that modelled `10c2f7c`'s intended effect (`test/transfer_restored_state_test.dart`, Brief 215), not on a device; `10c2f7c` was never compiled or shipped. | 28 Sep 2026 | ✅ reverted as `ea24393` |
 
 **Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
@@ -397,6 +412,10 @@ registration). Apple App ID 6764339880, Team B7LWF6Z674, MS Store 9PMJ09CDSL6K.
 person (Terry Rose) could evaluate the app without purchasing. TestFlight
 has never been used by an end user. Any reasoning that treats 1.0.3 as a
 code change is wrong.
+⚠️ **Annotated 29 Sep 2026 (Brief 253): the last sentence above is too strong as a
+statement about CODE, and is left as written.** 1.0.3 matches Android 1.0.2 (`2d171ca`)
+in everything but the version line. It differs from iOS 1.0.2 (`192ae40`) by CR-43, and
+of CR-43, `_loadRecords()` being awaited on resume is **NOT** Android-gated.
 ⚠️ **Checked against the history by the CLI, 29 Sep 2026 — the claim holds
 in BEHAVIOUR, and is precise only with this qualifier.** 1.0.3 (`4c18dd7`,
 `1.0.3+4`) differs from `2d171ca`, the most probable Android 1.0.2 tree, in
