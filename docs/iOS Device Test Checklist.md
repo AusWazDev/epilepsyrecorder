@@ -690,6 +690,58 @@ project change and belongs in its own brief.**
 
 ---
 
+## 13. Archive host pre-flight — the Mac (8 GB Intel)
+
+⚠️ **First written into this repo 29 September 2026 (Brief 246).** It was drafted in Brief 233
+Part C (28 September 2026) and existed only in a chat report until then. It is corrected here
+before its first appearance in the file (see step 2).
+
+**Why this exists:** this host had two WindowServer watchdog logouts on 24 September 2026 under
+swap pressure. An AOT Release archive is the heaviest thing it does. Measured on 29 September
+2026, the archive takes about 4 minutes (3 min 47 s, Brief 244) with peak swap 330–530 MB.
+
+1. **Simulators:** `xcrun simctl list devices booted` must print nothing. Shut down anything
+   booted and say what was found. Quit Simulator.app, which reopens at login.
+2. **Quit what the thresholds require, not a fixed list.** Dropbox and OneDrive can be quit
+   (OneDrive is installed twice, as `/Applications/OneDrive.app` and
+   `/Applications/OneDrive.localized/OneDrive.app`, so quit both), along with browsers and
+   anything else not needed.
+   ⛔ **Claude desktop is CONDITIONAL.** Quit it only if **both** of these hold:
+   (a) the session is **not** being run from it (check the session's parent processes; on
+   29 September 2026 the CLI ran from Terminal), **and** (b) the memory thresholds in step 5
+   **fail with it running**.
+   **Superseded wording** (Brief 233 C, 28 September 2026, chat only): *"**Quit:** Dropbox and
+   OneDrive (their idle helpers can stay), Claude **desktop** (its VM held about 1.1 GB on
+   24 Sep), browsers, Messages, and anything else not needed."*
+   **Why it changed, measured:** quitting it unconditionally is what the developer saw as
+   "Claude desktop keeps closing". Its own log shows clean quits at exactly this session's quit
+   commands (28 Sep 23:59:31; 29 Sep 18:41:32 and 19:31:28), and no crash, jetsam kill or Crashpad
+   dump since 24 September (Brief 246). **And the quit was not needed:** both passing pre-flights
+   on 29 September were measured WITH it running (52% free / 216 MB swap; 52% free / 384 MB swap).
+   With it quit, the archive ran at lowest 51–53% free and peak swap 328–530 MB. Claude desktop
+   and its VM held about 1.76 GB resident on 29 September. ⚠️ **An archive run WITH it running
+   has not been measured.** If the thresholds pass with it running, run the archive and record
+   the figures, which settles it.
+3. **Stop:** no Spotlight indexing burst (`mds_stores` near idle) and no Time Machine backup
+   running (`tmutil status`).
+4. **Devices:** no device that could be REGISTERED. A connected device that is already registered
+   is fine (check the development profile's `ProvisionedDevices`), but Xcode may still try to
+   prepare it for development, so keep it locked or away if you want no device interaction.
+5. **Go/no-go**, all four measured after steps 1–3:
+
+   | Check | Command | GO if | Why |
+   |---|---|---|---|
+   | Free disk | `df -h ~` | ≥ 10 GB | About 5 GB needed (about 1 GB of output plus up to 4 GB of swap), × 2 margin |
+   | Free memory | `memory_pressure` → free percentage | ≥ 45% | The healthy host read 52–59% on 29 Sep |
+   | Swap in use | `sysctl vm.swapusage` | ≤ 1,000 MB | The 24 Sep failures came at 2.4–3.3 GB |
+   | 1-minute load | `uptime` | ≤ 4 | Healthy readings were 1.3–3.3 |
+
+   If swap is over 1,000 MB after quitting, **restart the Mac and re-measure.** Do not start on a
+   degraded host.
+6. **Keep the Mac awake:** run the archive under `caffeinate -dimsu`.
+
+---
+
 ## Sign-off
 
 Not passed until every core step passes on the target device. **A failure at step 3.5 is
