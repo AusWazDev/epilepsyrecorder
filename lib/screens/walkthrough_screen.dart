@@ -126,13 +126,20 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
         ),
         const _Step(
           icon: Icons.phone_android,
-          title: 'It is on this device, and only here',
+          title: 'Your events stay in the app',
           paragraphs: <String>[
-            // Quoted from help_screen and your_data_screen rather than
-            // redrafted. Those texts are correct and have been corrected nine
-            // times; a fresh draft would be a fourth thing to keep in step.
-            'There is no account and no cloud copy. Notiva never receives your '
-                'events and cannot recover them.',
+            // ⛔ CORRECTED 30 September 2026 (Brief 298). This read: "Quoted from
+            // help_screen and your_data_screen rather than redrafted. Those texts
+            // are correct and have been corrected nine times; a fresh draft would
+            // be a fourth thing to keep in step."
+            // ⭐ NO LONGER TRUE, and not by drift: Brief 296 replaced the help and
+            // your_data passages it quoted, because "no cloud copy" and "only on
+            // this device" were false on iOS. This paragraph is now its own wording
+            // (Brief 296 B10), in step with Help's "Your events stay in the app"
+            // row rather than a quote of it. Keep the two in step by hand.
+            'There is no account and no server of ours. Notiva never receives your '
+                'events and cannot recover them. '
+                "Your device's own backup may include them.",
             // "the only copy YOU control" is precise and must stay precise.
             //
             // ⛔ CORRECTED 23 September 2026. The second half read:
@@ -148,9 +155,23 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
             // because it is a claim about Apple's and Google's backup systems,
             // which this app cannot make and cannot keep true.
             //
+            // ⚠️ CORRECTED 30 September 2026 (Brief 298); the paragraph above is
+            // left as written. "device backups do include the database on Android
+            // and iOS" has been FALSE for ANDROID since `cff758d` (26 September
+            // 2026), which turned platform backup and device transfer off; the
+            // code-64 artefact excludes every domain from both (Brief 239). It is
+            // still true on iOS, where nothing excludes the app's data (D8). And
+            // the scope reasoning was overtaken on 30 September: Brief 296 now says,
+            // in this step and in Help, that the device's own backup may include
+            // the events.
+            //
             // ⭐ SO THE PRECISION STILL MATTERS, FOR A DIFFERENT REASON. It is
             // no longer guarding against a neighbouring MER claim; it is the
             // only place the distinction is drawn at all.
+            // ⚠️ Overtaken 30 September 2026 (Brief 298): the distinction is now
+            // also drawn in this step's first paragraph and in Help's "Your events
+            // stay in the app" row, so this is no longer the only place. The
+            // precision of "the only copy YOU control" still matters.
             'A backup file is the only copy you control. Take one, and keep it '
                 'somewhere else.',
           ],

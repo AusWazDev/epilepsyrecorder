@@ -28,11 +28,11 @@ void main() {
         storageClearingInstruction(
           isIOS: ios, isAndroid: android, isWindows: windows);
 
-    test('iOS names Offload and Delete App, and says which one destroys', () {
+    test('iOS names Offload and Delete App, and says which one removes the data', () {
       final t = forPlatform(ios: true);
       expect(t, contains('Offload App'));
       expect(t, contains('keeps your data'));
-      expect(t, contains('It is Delete App that destroys it.'));
+      expect(t, contains('It is Delete App that removes the data, not Offload.'));
       expect(t, isNot(contains('Android')));
       expect(t, isNot(contains('Windows')));
     });

@@ -262,7 +262,9 @@ class _SplashLoadingScreen extends StatelessWidget {
 /// ⛔ **THE RULE, AND IT IS THE ONE THE DISCLOSURE IS WRITTEN AGAINST:
 /// categorical and boolean facts about the OPERATION may be sent; values
 /// derived from the USER'S RECORDS may not.** `disclaimer_screen.dart` tells
-/// the user these reports "contain no event data".
+/// the user these reports "are designed not to include anything you have
+/// recorded". ⚠️ Updated 30 September 2026 (Brief 298): until Brief 296 it
+/// read "contain no event data".
 ///
 /// ⭐ **KEYED ON THE OBJECT, NEVER ON THE TYPE STRING.** `SentryEvent.throwable`
 /// carries the original throwable, so this is a real `is` test.

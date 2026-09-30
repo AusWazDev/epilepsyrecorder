@@ -121,7 +121,7 @@ void main() {
         'Record an event the moment it happens',
         kNotificationStepTitle,
         'Your history, and what to bring to an appointment',
-        'It is on this device, and only here',
+        'Your events stay in the app',
         'Finishing a record',
       ];
 

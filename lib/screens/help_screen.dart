@@ -33,10 +33,13 @@ String storageClearingInstruction({
   required bool isWindows,
 }) {
   if (isIOS) {
-    return 'Deleting Medical Event Recorder removes every event stored on this device. '
+    return "Deleting Medical Event Recorder removes the app's events from this device. "
            'Offloading is different: Settings → General → iPhone Storage → Offload App '
            'frees up space but keeps your data, and reinstalling brings it back. '
-           'It is Delete App that destroys it.';
+           'It is Delete App that removes the data, not Offload. '
+           'A copy already included in an iCloud Backup or a device transfer is not '
+           "removed by deleting the app, and is managed in your device's backup "
+           'settings.';
   }
   if (isAndroid) {
     return 'Uninstalling Medical Event Recorder removes every event stored on this device. '
@@ -375,10 +378,12 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
               children: [
                 const _HelpRow(
                   icon:  Icons.phone_iphone,
-                  title: 'It is on this device and nowhere else',
-                  body:  'Every event you record is stored on this device only. '
-                         'There is no account, no cloud copy, and no server. '
-                         'Notiva never receives your events and cannot recover them for you.',
+                  title: 'Your events stay in the app',
+                  body:  'Medical Event Recorder has no account and no server, and Notiva never '
+                         "receives your events. Your device's own backup may include them — on "
+                         'iPhone and iPad, iCloud Backup and device transfer do when they are '
+                         'switched on. On Android the app is excluded from Google backup and '
+                         'transfer.',
                 ),
                 _HelpRow(
                   icon:      Icons.delete_forever_outlined,
@@ -407,8 +412,8 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   icon:      Icons.save_alt,
                   iconColor: MERColours.infoAccent,
                   title:     'A backup file is the only copy you control',
-                  body:      'Exporting or backing up is the only way to keep your events '
-                             'independently of this device. Save the file somewhere else — a '
+                  body:      'Exporting or backing up gives you a copy that does not depend on '
+                             'this device. Save the file somewhere else — a '
                              'computer, cloud storage, an email to yourself — and it will still '
                              'be there whatever happens to the phone. Anyone who opens the file '
                              'can read everything in it, so keep it where you would keep '
@@ -589,9 +594,9 @@ class _HelpScreenState extends State<HelpScreen> with WidgetsBindingObserver {
                   icon:  Icons.mail_outline,
                   title: 'Contact support',
                   body:  'Email $kSupportEmail with what happened and what you '
-                         'expected. Your events are never included — they stay on '
-                         'this device, so anything you want us to see has to be '
-                         'described or attached by you.',
+                         'expected. Your events are never included in a support message, '
+                         'so anything you want us to see has to be described or attached '
+                         'by you.',
                 ),
                 _HelpRow(
                   icon:   Icons.info_outline,

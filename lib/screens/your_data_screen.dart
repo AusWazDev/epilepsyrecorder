@@ -63,7 +63,7 @@ class YourDataScreen extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.fromLTRB(4, 0, 4, 16),
                     child: Text(
-                      'Your events are stored on this device only. These are '
+                      "Your events are kept in the app's own storage on this device. These are "
                       'the two ways to get a copy off it — they do different '
                       'jobs.',
                       style: MERType.bodyOnSurfaceMuted.copyWith(height: 1.45),
@@ -129,7 +129,8 @@ class YourDataScreen extends StatelessWidget {
                     child: Text(
                       'Notiva never receives your events and cannot recover '
                       'them for you. A file you have saved somewhere else is '
-                      'the only copy that survives losing this phone.',
+                      'the copy you control, and it is not affected by what '
+                      'happens to this phone.',
                       style: MERType.bodyOnSurfaceMuted.copyWith(height: 1.45),
                     ),
                   ),
