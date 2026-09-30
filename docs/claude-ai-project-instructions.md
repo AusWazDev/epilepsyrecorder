@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-29-ed5db976
+INSTRUCTIONS STAMP: 2026-09-30-ebce276d
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -160,6 +160,23 @@ structural fact about the channel, not a preference.
 **Reasoning for each lives in the Change Register** (`OneDrive\Projects\App Dev\
 Claude\Medical Event Recorder — Change Register.md`). This table says WHAT is
 current; the Register says WHY.
+
+### SoundFind decisions
+
+A separate table, so the MER D-numbers above are not renumbered. Decided by the
+developer on 30 Sep 2026 in chat, briefs SF-5 to SF-8
+(`C:\dev\SoundFind-CLI-briefs-01-2026-09-30.md`).
+
+| # | Decision | Since | Built? |
+|---|---|---|---|
+| S1 | **Every player is treated as a possible child.** All ad requests are child-directed and non-personalised. No age question, no ATT prompt. The kids, literacy and phonics marketing stays. | 30 Sep 2026 | ✅ code: CR-60 and its amendment (g) (`fe14a53`, `69908af`). `initialize` carries TFCD and rating G, TFUA goes on the UMP consent request only, and every request has `npa: true`. Reaches players only with a new native build |
+| S2 | **Mode names: the long set, everywhere.** Standard, Audio Challenge, Anagram Hunt, Word Association, Mystery Word. | 30 Sep 2026 | ✅ CR-66 |
+| S3 | **The Leaderboard tab is removed.** The bottom nav is Home, Stats, Settings. A Daily tab is revisited only after a seeded shared daily puzzle exists (audit U9). | 30 Sep 2026 | ✅ CR-66 |
+| S4 | **The interstitial stays at 6 completed games**, the value live on iOS 1.1.0. CR-32's 3 was reverted by DEF-35's commit without a Register entry. | 30 Sep 2026 | ✅ no code change; recorded in the SoundFind Register (CR-32 note) |
+| S5 | **The App Store "Tracking" answer is NO.** Yes would oblige an ATT prompt, contradicting S1. Child-directed treatment prevents IDFA transmission, ads are non-personalised, and ATT is never requested. Residual risk: GMA 12.14.0's privacy manifest declares DeviceID with Tracking true, and Google's disclosure page is silent on tracking. Still declare as collected: the GMA manifest types and RevenueCat's Purchase History. | 30 Sep 2026 | ⬜ a console answer, entered by the developer in App Store Connect |
+
+**Reasoning for each lives in the SoundFind Change Register**
+(`WordFind-Adventure/docs/Change Register.md`) and in the briefs file above.
 <!-- CURRENT-DECISIONS:END -->
 
 ## THE RULE THAT MATTERS MOST
@@ -745,6 +762,16 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
 1. **No backend.** localStorage only, no accounts.
 2. **Five game modes**, and the internal ids differ from the player-facing
    labels. Store copy must use the labels — see ARCHITECTURE.md for the mapping.
+   ⚠️ **ANNOTATED 30 September 2026 (SoundFind CR-65, brief SF-4); the premise
+   above is kept as written.** It rests on a wrong ARCHITECTURE.md §3, whose
+   "Label" column (Word Find / Audio / Anagram / Clue Hunt / Mystery Word) is
+   the set used ONLY by the Daily Challenge card. **Census of every mode-label
+   site in `src/`, 30 Sep 2026:** the mode picker, the in-game header and How to
+   Play all use **Standard / Audio Challenge / Anagram Hunt / Word Association /
+   Mystery Word**; the loading screen uses the same set except "Standard Mode"
+   and no Mystery Word entry; `DailyChallengeCard.MODE_LABELS` alone uses the
+   short set. **Store copy must use the long set** (decision S2, 30 Sep 2026).
+   ARCHITECTURE.md §3 now carries the census as an annotation.
 3. **No mode requires a connection.** Only the audio mode degrades offline.
    Never describe the game as needing to be online.
 4. **HashRouter, not BrowserRouter.** Reading or writing `window.location`
