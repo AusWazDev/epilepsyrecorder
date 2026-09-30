@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-30-0473ba14
+INSTRUCTIONS STAMP: 2026-09-30-a830d13e
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -138,7 +138,12 @@ developer on 30 Sep 2026 in chat, briefs SF-5 to SF-8
 | S3 | **The Leaderboard tab is removed.** The bottom nav is Home, Stats, Settings. A Daily tab is revisited only after a seeded shared daily puzzle exists (audit U9). | 30 Sep 2026 | ✅ CR-66 |
 | S4 | **The interstitial stays at 6 completed games**, the value live on iOS 1.1.0. CR-32's 3 was reverted by DEF-35's commit without a Register entry. | 30 Sep 2026 | ✅ no code change; recorded in the SoundFind Register (CR-32 note) |
 | S5 | **The App Store "Tracking" answer is NO.** Yes would oblige an ATT prompt, contradicting S1. Child-directed treatment prevents IDFA transmission, ads are non-personalised, and ATT is never requested. Residual risk: GMA 12.14.0's privacy manifest declares DeviceID with Tracking true, and Google's disclosure page is silent on tracking. Still declare as collected: the GMA manifest types and RevenueCat's Purchase History. | 30 Sep 2026 | ⬜ a console answer, entered by the developer in App Store Connect |
+| S6 | **The hint and ad model: 12 starting hints; when out, watch an ad for 1 hint or buy a pack; an ad after every 6 completed games.** The developer's words: *"A player starts with 12 hints, if they run out, they can either watch an ad to receive a hint, or buy a bundle/pack to get more. Ads should also auto play after 6 games."* On Windows and the web the placeholders ("Watch an Ad", "Buy Hint Pack" and the between-game ad) stand until real services are connected. SF-3's 3-free-hints refill was decided by the chat half, never put to the developer, and is reversed. ⛔ **Standing rule: any change to what players get free, what they pay for, or when ads show is the developer's decision. The chat half proposes; it never decides.** | 30 Sep 2026 | ✅ CR-67 (`e054119`), which reverses the model part of CR-64 |
 | S7 | **Leave the Microsoft Store; publish the web version on our own site and on itch.io.** The Windows (Electron) Store listing is withdrawn by the developer in Partner Center, timed **after** the web version is live; existing Windows installs keep working and get no further updates. The web (Vercel) build becomes a product in its own right, on our own domain (for example `play.uniquegames.com.au`) and on itch.io, with the S6 hint and ad model: real services once proven, placeholders until then. Supersedes SF-10's Microsoft Store add-ons part. The Electron shell hardening stays in the repo; whether to keep the Electron target at all is a later decision. | 30 Sep 2026 | ⬜ not built; SF-10 (revised) is the feasibility read |
+| S8 | **itch.io is skipped for now.** Launch on our own site only, and revisit once it's live. This narrows S7's "and on itch.io"; S7 is left as written. | 30 Sep 2026 | ✅ nothing to build |
+| S9 | **Web purchases use Stripe, with a small server** (Vercel serverless functions in the SoundFind repo). This is SoundFind's first backend, the developer's choice. | 30 Sep 2026 | ⬜ SF-11, test mode only |
+| S10 | **Remove Ads is sold on the web, with a restore by email.** The player enters the email they paid with; the server checks Stripe and emails a one-time code. No passwords or accounts. ⚠️ **Flag for the adviser, not decided:** Stripe Checkout collects the payer's email, and the restore flow stores and emails it, in a product where every player is treated as a possible child (S1). Whether that satisfies COPPA and the Australian Privacy Principles needs an adviser read **before go-live**; building and testing in Stripe test mode may proceed. | 30 Sep 2026 | ⬜ SF-11, test mode only; adviser read before go-live |
+| S11 | **Web ads: keep looking.** H5 Games Ads is not chosen yet. The placeholders stay until the developer picks a network (SF-12). | 30 Sep 2026 | ⬜ SF-12 is the search; placeholders stay |
 
 **Reasoning for each lives in the SoundFind Change Register**
 (`WordFind-Adventure/docs/Change Register.md`) and in the briefs file above.
@@ -755,6 +760,15 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
    `sf_free_hint_refill_at`. AdMob and RevenueCat remain live on iOS and Android
    only, where every ad request is child-directed and non-personalised (CR-60,
    decision S1).
+   ⚠️ **ANNOTATED AGAIN 30 September 2026 (SoundFind CR-67, `e054119`, brief
+   SF-3R, decision S6); the annotation above is kept as written.** It no longer
+   describes the app either. CR-67 restored the S6 model on web and Windows: the
+   placeholder ad after every 6 completed games, and, out of hints, "Watch an Ad"
+   (a placeholder that grants 1 hint) and "Buy Hint Pack" ("Coming soon"). The
+   placeholder ad's Remove Ads button also shows "Coming soon"; Settings shows no
+   Remove Ads off native. The free refill is gone, and nothing reads or writes
+   `sf_free_hint_refill_at`. So premise 6's own sentence, a "coming soon" message
+   on web as the expected fallback, describes the app again.
 7. **The app makes third-party image requests at runtime.** Everything else is
    local — worth remembering whenever privacy claims are drafted.
    ⚠️ **ANNOTATED 30 September 2026 (SoundFind CR-64, `578967d`, brief SF-3);
