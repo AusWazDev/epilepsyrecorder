@@ -759,6 +759,15 @@ swap pressure. An AOT Release archive is the heaviest thing it does. Measured on
 
    If swap is over 1,000 MB after quitting, **restart the Mac and re-measure.** Do not start on a
    degraded host.
+
+   ⚠️ **OBSERVED 30 September 2026 (Brief 313). An observation with that day's numbers, NOT a
+   threshold change.**
+   - **Swap went from 33 MB to 1,158 MB during the TEST RUN, after the archive had finished.** On
+     this host the test suite, not the archive, is what consumes the machine. This section guards
+     the archive only.
+   - **The swap threshold is reachable:** swap read 0.0 MB immediately after a restart. So the
+     1,077 MB plateau seen earlier that day was stickiness, not a mis-specified limit.
+   - *Source: the Mac's readings, relayed in Brief 313 Part E.*
 6. **Keep the Mac awake:** run the archive under `caffeinate -dimsu`.
 
 ---

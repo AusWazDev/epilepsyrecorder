@@ -104,7 +104,7 @@ text exists)".*
 - **Re-examine it at every copy review, and expect it to pass.** A failure there would mean the
   wording or the scope has changed.
 
-### 6. The corrected data-location copy exists only in iOS 65; Android 64 was never uploaded ✅
+### 6. The corrected data-location copy exists only in iOS 65; Android 64 was never uploaded ✅ ⛔ SUPERSEDED BY MEASUREMENT, 30 Sep 2026: see the last bullet
 *Heading before Brief 311: "The corrected data-location copy is iOS-only this release ◐ / ⛔ in
 one word".*
 - ✅ **What is true (Brief 311, 30 Sep 2026), replacing "shipped with the old copy":** Android
@@ -118,6 +118,17 @@ one word".*
   `bf5a2ae` (30 Sep 2026) is **not** its ancestor (`git merge-base --is-ancestor`). The corrected
   wording exists only in iOS 65. The ledger records no Android 65.
 - **Found:** 30 Sep 2026.
+- ⛔ **SUPERSEDED BY MEASUREMENT, 30 September 2026 (Brief 313); this item's text is left as
+  written.** A Play Console read by the chat half at about 19:30 AEST shows *"Release 64 (1.1.1)
+  in review · 172 countries / regions"*. **Android 1.1.1 (64) WAS uploaded,** to the production
+  track, and is in review. It carries the pre-`bf5a2ae` copy, which Brief 295 found true on
+  Android except the disclaimer's crash-report sentence.
+  ⭐ **Why this item was wrong: it inherited a stale row rather than making its own reading.**
+  Ledger row 64's *"Not uploaded"* was written on 28 September and never updated, because the
+  upload was the developer's own action in the Play Console and left no trace in the repo. This
+  item, dated 30 September, restated that row, so by date alone it outranked its own source. The
+  failure is the method, not the fact: **before ranking a dated statement, ask what it was read
+  from.** Row 64 is annotated in place the same day.
 
 ### 7. Hidden events are not marked in the Your-data export ✅
 - **What:** "Export all events" on Your data writes every record, including hidden ones, and the
@@ -274,6 +285,25 @@ Moved up and priority raised, Brief 311, 30 Sep 2026: its red state is a saturat
 - ⚠️ **The tile** ("N more events waiting for details") [unverified — chat half's recollection,
   30 Sep 2026]. It exists only as a discussion, and no such wording is in `lib/`.
 
+### 21. Play: DEX code optimisation below threshold, Obfuscation 1%, fix by February 2027 ⚠️
+*Mark: a Play Console read by the chat half, 30 Sep 2026, relayed. It is not in the repo and
+cannot be verified from it.*
+- **As read:** *"DEX code optimization is below our threshold — Obfuscation (1%). Play states
+  percentages under 25% may impact visibility and publishing capabilities. Fix by Feb 2027."*
+- **Play's tags on it:** *Memory usage · Bad behavior · Release name: 64 (1.1.1)*. These are how
+  Play classifies the IMPACT; a reader deciding whether the item is cosmetic needs them.
+- ✅ **From the repo:** the release build has `isMinifyEnabled = false` and
+  `isShrinkResources = false` (`android/app/build.gradle.kts`, unchanged since the first commit).
+  That is consistent with 1%.
+- ⛔ **A SEPARATE item from the "no deobfuscation file" review warning, which is closed.** That
+  warning was closed on 30 September as nothing to deobfuscate: with no R8 step, no mapping file
+  is possible. This one is **open, with a deadline.** Do not merge them.
+  - ⚠️ **They are linked in one direction:** turning R8 on to address this item would, for the
+    first time, produce a mapping file, and the deobfuscation-file warning would then matter.
+- **The same screen's release stability showed "–" for both crash metrics.** That is consistent
+  with 64 being in review with no users yet: an absence of data, not a measurement of stability.
+- **Found:** 30 Sep 2026. **Deadline:** February 2027, per Play.
+
 ---
 
 **Count at creation, 30 Sep 2026:** 19 items.
@@ -293,3 +323,9 @@ withdrawn record. The count at creation, above, is left as written.
 - ⛔ **Withdrawn, not counted:** 18.
 - ⬆ **Priority raised:** 20, 13, 14 (they lead TOOLING).
 - **Decided:** 4 (KEEP, with a dependency) and 5 (CONFIRMED KEEP).
+
+**Count after Brief 313, 30 Sep 2026:** 20 items on the list, plus item 18 kept as a withdrawn
+record. The counts above are left as written.
+- **Item 6 is superseded by measurement:** its heading's claim, "Android 64 was never uploaded",
+  is false as at 30 Sep 2026.
+- **Item 21 is new** and ⚠️ unverified from the repo: a Play Console read.

@@ -5,6 +5,38 @@
 
 ---
 
+## Session: 30 September 2026 — Windows (Claude Code CLI)
+
+**Store state at session end, 30 September 2026.** Each line is true as at that date and names
+its source. The Change Register holds the reasoning (*"BACKLOG ENTRIES FOR BRIEFS 279 TO 313"*
+and what follows it).
+
+- **iOS 1.1.1 (65): Waiting for Review.** Automatic release, phased over 7 days, rating kept.
+  *Source: the chat half, relayed in Brief 313's hold release; not read from Windows.*
+  - Build 65 was uploaded 30 Sep 2026 17:34:53 AEST by Transporter, run by the developer, with
+    Delivery UUID `40456417-5d33-41e7-84dd-b6d09531f779` (ledger row `65 (iOS)`).
+  - ⚠️ Earlier the same day, **as at 30 Sep 2026** before submission, it was not attached to a
+    version, and **no 1.1.1 version record existed in App Store Connect** (relayed, Brief 313
+    D.1).
+- **Android 1.1.1 (64): in review,** production track, 172 countries or regions. *Source: a Play
+  Console read by the chat half, 30 Sep 2026, about 19:30 AEST, relayed.*
+  - It carries the pre-`bf5a2ae` in-app copy, which is true on Android except the disclaimer's
+    crash-report sentence.
+  - ⚠️ Ledger row 64 said *"Not uploaded"* (28 Sep) until annotated this session: **as at
+    30 Sep 2026 the repo held no record of the Play upload**, because it was done in the console.
+- **The corrected in-app copy (`bf5a2ae`) is in iOS 65 only.** As at 30 Sep 2026 no Android build
+  carries it: the ledger records no Android 65.
+- **Play flagged DEX obfuscation at 1%**, below its 25% threshold, fix by February 2027: a new,
+  open item 21 in `docs/RELEASE-1.1.2.md`.
+- **Two sessions in one working tree.** A second Windows session (SoundFind) committed to this
+  repo during Brief 313. This session's edits were held until it was idle and pushed, and the tree
+  was checked clean before commit.
+- **The claude.ai instructions gained five chat-half errors and three rules** under THE RULE THAT
+  MATTERS MOST. The date rule gained "ask what a dated statement was read from". A re-paste is
+  owed once, at session end.
+
+---
+
 ## Session: 26 September 2026 — Windows (Claude Code CLI)
 
 **Tier A of the restore fix: a restore now recreates the list entries its records use.** The
