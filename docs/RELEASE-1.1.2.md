@@ -58,6 +58,12 @@ at `c43ca57`, before each item was written down:
 - ⭐ **This one is inside a file Brief 298 covered**: the same "Data storage & privacy" section,
   ten lines above `bf5a2ae`'s first hunk (+243). So Brief 298's gap was **both** its file set
   (`about_screen.dart` was not in it) **and** its method within a covered file.
+- ⛔ **Correction, Brief 311, 30 Sep 2026.** On 30 Sep 2026 the chat half described Brief 298's
+  gap as a **file-set** gap. That was too generous. Line 233 is in the same section Brief 298
+  edited, ten lines above its first change (re-checked: `bf5a2ae`'s first changed line is +243,
+  and line 233 holds the same string at `bf5a2ae` and at `ec4c99d`). A file-set gap would mean
+  the brief never looked at this file. It did look, and it edited this section. **The gap was the
+  METHOD WITHIN A FILE IT COVERED, not only its file set.**
 - **Found:** 30 Sep 2026, Brief 308.
 
 **How items 1–3 were found (Brief 308):**
@@ -71,19 +77,40 @@ at `c43ca57`, before each item was written down:
   joined, finds native strings, and misses a nonsense string.
 - **Not swept:** store listing and metadata text, which the repo does not hold.
 
-### 4. For judgement: "Your events stay in the app" ✅ (the text exists; whether it is a claim is the judgement)
+### 4. Decided KEEP, with a dependency: "Your events stay in the app" ✅
+*Heading before Brief 311: "For judgement: "Your events stay in the app" ✅ (the text exists;
+whether it is a claim is the judgement)".*
 - **What:** the new title from `bf5a2ae`. Read alone it is the "stays in" shape. Its own body,
   directly beneath it, says *"Your device's own backup may include them."*
 - **Evidence:** `lib/screens/help_screen.dart:381` and `lib/screens/walkthrough_screen.dart:129`.
 - **Found:** 30 Sep 2026, Brief 308.
+- ✅ **Decision, Brief 311, 30 Sep 2026: KEEP, with a recorded dependency.** The heading is true
+  **only alongside the sentence beneath it** (*"Your device's own backup may include them."*).
+  Its truth is borrowed from that body text, not its own.
+- ⛔ **If that body text is shortened, moved, or the heading is reused anywhere without it, the
+  heading becomes a bare containment claim and must be rewritten.** That applies to both sites
+  above. Any edit to either body is an edit to this heading's truth.
 
-### 5. For judgement: "A backup file is the only copy you control" ✅ (the text exists)
+### 5. Decided KEEP: "A backup file is the only copy you control" ✅
+*Heading before Brief 311: "For judgement: "A backup file is the only copy you control" ✅ (the
+text exists)".*
 - **What:** an exclusivity word about control, not location. On iOS the device's own backup is
   arguably also a copy the user controls.
 - **Evidence:** `lib/screens/help_screen.dart:414` and `lib/screens/walkthrough_screen.dart:175`.
 - **Found:** 30 Sep 2026, Brief 308.
+- ✅ **Decision, Brief 311, 30 Sep 2026: CONFIRMED KEEP.** It passes because it is **scoped to
+  the user's control**, per the standing rule: it says which copy the user controls, not where
+  the data is.
+- **Re-examine it at every copy review, and expect it to pass.** A failure there would mean the
+  wording or the scope has changed.
 
-### 6. The corrected data-location copy is iOS-only this release ◐ / ⛔ in one word
+### 6. The corrected data-location copy exists only in iOS 65; Android 64 was never uploaded ✅
+*Heading before Brief 311: "The corrected data-location copy is iOS-only this release ◐ / ⛔ in
+one word".*
+- ✅ **What is true (Brief 311, 30 Sep 2026), replacing "shipped with the old copy":** Android
+  1.1.1 (64) **was not uploaded**. It was only installed on the Teclast P30. Its source,
+  `4da1751`, predates `bf5a2ae`, so **the corrected wording exists only in iOS 65.** The superseded
+  wording is quoted in the next bullet.
 - **As recollected:** "Android 1.1.1 (64) **shipped** with the pre-`bf5a2ae` copy."
 - ⛔ **"Shipped" is contradicted.** Ledger row 64 (Android) says *"Not uploaded"*; it went to
   the Teclast P30 only.
@@ -113,6 +140,8 @@ at `c43ca57`, before each item was written down:
 ### 9. Privacy policy §6 describes session tracking ⚠️ / ◐
 - ⚠️ **§6's content** [unverified — chat half's recollection, 30 Sep 2026]. The policy is not in
   this repo, and the Notiva site repo is not on this Mac.
+- **Routing, Brief 311, 30 Sep 2026: a WINDOWS job.** It stays unverified and marked until it is
+  read on Windows, where the `notiva-site` repo is.
 - ✅ **The dependency is real:** `enableAutoSessionTracking` is set nowhere in `lib/`, so the
   Sentry SDK's default applies. `bf5a2ae`'s own new copy says the diagnostic reports record
   *"when the app is opened as a count of sessions"*. If item 12 turns session tracking off, both
@@ -121,6 +150,61 @@ at `c43ca57`, before each item was written down:
 ---
 
 ## TOOLING: build, test, release
+
+⬆ **Priority raised, Brief 311, 30 Sep 2026: items 20, 13 and 14 lead this section.** They were
+moved here from their numbered places; the numbers are unchanged so that references still hold.
+**Why:** a permanently red test is not inert noise. It is a place where new defects land unseen,
+and 30 September 2026 is the demonstration (item 20).
+
+### 20. A test that is already failing absorbs new failures unseen: its signal is saturated ✅
+- **Recorded 30 Sep 2026 (Brief 311).**
+- **What happened:**
+  - `checklist_citations_test`'s unresolvable citations rose from **14** (Brief 301's run) to
+    **16**. The failing TEST count stayed at **2**, so nothing reported the change.
+  - Two of the new citations were added by **chat-half briefs on 30 Sep 2026**: `.p8` (Sign-off,
+    checklist line 851, from `1adf6b3`) and a second `~/.sentryclirc` (Sign-off, checklist line
+    805, from `c43ca57`).
+  - Re-run at `ec4c99d` for this entry: 10 unresolved symbols plus 6 unresolved paths (16), in 2
+    failing tests out of 6 in the file, with `.p8` at line 851 and `~/.sentryclirc` at lines 794
+    and 805. Both lines were attributed with `git log -L`.
+- ⭐ **The general form: a test that is already failing absorbs further failures without any
+  change in its output. Its signal is saturated.**
+- **The same property holds for `a11y_batch_render_comparison_test` on the Mac** (item 13),
+  which has never passed there. A new rendering regression on any of its four screens would be
+  one more red case in a test that is already red.
+- ⚠️ **Open question, not a decision:** should either test report a **COUNT** rather than a
+  pass/fail, so that "worse" shows while it stays red? **Not implemented. Nothing in `test/` is
+  changed by this entry.**
+
+### 13. `a11y_batch_render_comparison_test` baselines have never passed on the Mac ✅
+*Moved up and priority raised, Brief 311, 30 Sep 2026: its red state is a saturated signal on
+the Mac (item 20).*
+- **What:** all four screens × three widths fail on the Mac with the paragraph count matching
+  and only the hash differing.
+- **Evidence:**
+  - The test's own comment says home's baseline *"was captured on Windows"*.
+  - `018c4c6` (23 Sep 2026) records the same four failing on the Mac.
+  - Brief 302 (30 Sep 2026): identical output at `65a9dcf`, `bf5a2ae` and `1b4e723`, with full
+    paragraph dumps identical across commits, so it is unrelated to the copy change.
+- **Direction:** per-host baselines, not deletion.
+
+### 14. `checklist_citations_test`: citations of host artefacts the test cannot resolve in the repo ✅
+*Heading before Brief 311: "`checklist_citations_test`: two failures ◐ / ⛔ in the description".
+Moved up and priority raised, Brief 311, 30 Sep 2026: its red state is a saturated signal (item
+20).*
+- ✅ **Description, Brief 311, 30 Sep 2026, replacing "two Mac-only path failures":** citations
+  of host artefacts that the test cannot resolve in the repo, written into §12, §13 and Sign-off
+  from 29 Sep 2026 onward. The superseded wording is quoted in the next bullet.
+- **As recollected:** "two Mac-only **path** failures."
+- ⛔ **The description is contradicted.** Both tests fail ("every cited symbol appears…" and
+  "every cited path resolves"), but they list **checklist citations of host-side things the test
+  cannot find in the repo**: profile UUIDs, `xcodebuild`, `mds_stores`, `willQuit`,
+  `/Applications/OneDrive.app`, `~/.sentryclirc`, and others. These are all in §12, §13 and
+  Sign-off, written from 29 Sep 2026. Whether they also fail on Windows is not established here.
+- ✅ **And it grew on 30 Sep 2026, by this project's own hand:** 14 unresolvable citations at
+  Brief 301's run, 16 at `c43ca57`. The two new ones are `.p8` (Sign-off, from `1adf6b3`) and a
+  second `~/.sentryclirc` (Sign-off, from `c43ca57`). The failing-test count stayed at 2, which
+  is why nothing announced it. Recorded as a finding in its own right as item 20.
 
 ### 10. MERWidget hardcodes its version; Apple warns 90473 on every upload ✅
 - **Evidence:**
@@ -145,28 +229,6 @@ at `c43ca57`, before each item was written down:
 - **Evidence:** not set anywhere in `lib/` as at 30 Sep 2026, so the SDK default applies. See
   item 9 for the copy and the policy text that depend on it.
 
-### 13. `a11y_batch_render_comparison_test` baselines have never passed on the Mac ✅
-- **What:** all four screens × three widths fail on the Mac with the paragraph count matching
-  and only the hash differing.
-- **Evidence:**
-  - The test's own comment says home's baseline *"was captured on Windows"*.
-  - `018c4c6` (23 Sep 2026) records the same four failing on the Mac.
-  - Brief 302 (30 Sep 2026): identical output at `65a9dcf`, `bf5a2ae` and `1b4e723`, with full
-    paragraph dumps identical across commits, so it is unrelated to the copy change.
-- **Direction:** per-host baselines, not deletion.
-
-### 14. `checklist_citations_test`: two failures ◐ / ⛔ in the description
-- **As recollected:** "two Mac-only **path** failures."
-- ⛔ **The description is contradicted.** Both tests fail ("every cited symbol appears…" and
-  "every cited path resolves"), but they list **checklist citations of host-side things the test
-  cannot find in the repo**: profile UUIDs, `xcodebuild`, `mds_stores`, `willQuit`,
-  `/Applications/OneDrive.app`, `~/.sentryclirc`, and others. These are all in §12, §13 and
-  Sign-off, written from 29 Sep 2026. Whether they also fail on Windows is not established here.
-- ✅ **And it grew on 30 Sep 2026, by this project's own hand:** 14 unresolvable citations at
-  Brief 301's run, 16 at `c43ca57`. The two new ones are `.p8` (Sign-off, from `1adf6b3`) and a
-  second `~/.sentryclirc` (Sign-off, from `c43ca57`). The failing-test count stayed at 2, which
-  is why nothing announced it.
-
 ### 15. Xcode's App Store Connect session expires; sign in before an Organizer upload ✅
 - **Evidence:** `docs/iOS Device Test Checklist.md` §12 (Brief 242, 29 Sep 2026) and the Sign-off
   App Store Connect upload step (Brief 305). Brief 301's export log (30 Sep 2026) contains
@@ -181,9 +243,21 @@ at `c43ca57`, before each item was written down:
   recorded in the repo. A "pre-inbox record mirror" does exist in code (`AppDelegate.swift`,
   `lib/services/ios_capture_bridge.dart`, `home_screen.dart`), which may be what it refers to.
   That link is not established.
+- **Routing, Brief 311, 30 Sep 2026: stays unverified and marked.** Nothing by that name exists
+  in the repo. A pre-inbox record mirror does exist. **The chat half cannot substantiate the
+  connection between the two.** The item may be a garbled recollection.
 
-### 18. `details_completed` is set on wizard PRESENTATION, not completion ⛔
-- **As recollected:** as the title says.
+### 18. WITHDRAWN, not a defect: the chat half asserted a behaviour the code refuses ⛔
+*Heading before Brief 311: "`details_completed` is set on wizard PRESENTATION, not completion
+⛔".*
+- ⛔ **Removed from the defect list, Brief 311, 30 Sep 2026.** It is not counted as an item and
+  nothing is owed on it. **Recorded in its place: on 30 Sep 2026 the chat half asserted a
+  behaviour of `details_completed` that the code refuses.** `detailsCompleted: true` is set only
+  in the wizard's `_finish()` and the single-page form's save (below).
+- **Why it is kept and not deleted:** a wrong item that vanishes teaches nothing. The original
+  entry stands below as written.
+- **As recollected:** as the title says. (Since Brief 311 that means the heading before
+  Brief 311, quoted above.)
 - ⛔ **Contradicted by the code.** `detailsCompleted: true` is written in exactly two places:
   - the wizard's `_finish()` (`Navigator.pop(context, _build(completed: true))`, completion);
   - the single-page form's save (`log_event_screen.dart:487`).
@@ -208,3 +282,14 @@ at `c43ca57`, before each item was written down:
   description.
 - ⚠️ **2 unverified:** 9, 17.
 - ⛔ **1 contradicted outright:** 18.
+
+**Count after Brief 311, 30 Sep 2026:** 19 items on the list, plus item 18 kept as a
+withdrawn record. The count at creation, above, is left as written.
+- ✅ **14 verified:** 1, 2, 3, 4, 5, 6, 7, 10, 12, 13, 14, 15, 16, 20. Items 6 and 14 moved from
+  ◐ when their wrong wording was replaced with what the repo shows. The superseded wording is
+  quoted in each. Item 20 is new.
+- ◐ **3 partly verified:** 8, 11, 19.
+- ⚠️ **2 unverified:** 9 (a Windows job), 17.
+- ⛔ **Withdrawn, not counted:** 18.
+- ⬆ **Priority raised:** 20, 13, 14 (they lead TOOLING).
+- **Decided:** 4 (KEEP, with a dependency) and 5 (CONFIRMED KEEP).
