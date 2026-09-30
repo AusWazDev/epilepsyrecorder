@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-30-5a3a1c32
+INSTRUCTIONS STAMP: 2026-09-30-0473ba14
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -174,6 +174,7 @@ developer on 30 Sep 2026 in chat, briefs SF-5 to SF-8
 | S3 | **The Leaderboard tab is removed.** The bottom nav is Home, Stats, Settings. A Daily tab is revisited only after a seeded shared daily puzzle exists (audit U9). | 30 Sep 2026 | ✅ CR-66 |
 | S4 | **The interstitial stays at 6 completed games**, the value live on iOS 1.1.0. CR-32's 3 was reverted by DEF-35's commit without a Register entry. | 30 Sep 2026 | ✅ no code change; recorded in the SoundFind Register (CR-32 note) |
 | S5 | **The App Store "Tracking" answer is NO.** Yes would oblige an ATT prompt, contradicting S1. Child-directed treatment prevents IDFA transmission, ads are non-personalised, and ATT is never requested. Residual risk: GMA 12.14.0's privacy manifest declares DeviceID with Tracking true, and Google's disclosure page is silent on tracking. Still declare as collected: the GMA manifest types and RevenueCat's Purchase History. | 30 Sep 2026 | ⬜ a console answer, entered by the developer in App Store Connect |
+| S7 | **Leave the Microsoft Store; publish the web version on our own site and on itch.io.** The Windows (Electron) Store listing is withdrawn by the developer in Partner Center, timed **after** the web version is live; existing Windows installs keep working and get no further updates. The web (Vercel) build becomes a product in its own right, on our own domain (for example `play.uniquegames.com.au`) and on itch.io, with the S6 hint and ad model: real services once proven, placeholders until then. Supersedes SF-10's Microsoft Store add-ons part. The Electron shell hardening stays in the repo; whether to keep the Electron target at all is a later decision. | 30 Sep 2026 | ⬜ not built; SF-10 (revised) is the feasibility read |
 
 **Reasoning for each lives in the SoundFind Change Register**
 (`WordFind-Adventure/docs/Change Register.md`) and in the briefs file above.
