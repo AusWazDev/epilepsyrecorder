@@ -799,6 +799,29 @@ skipping this step ships a build whose crash reports cannot be read.**
   Release builds of 7 and 23 September 2026 would have run it too, but whether they uploaded is
   not recorded. **Treat the token as unverified.**
 
+  ⭐ **ANNOTATION, 30 September 2026 (Brief 306): THE NETWORK HALF HAS NOW RUN, ONCE**, against
+  1.1.1 (65), with `tool/upload_dsyms.sh --archive build/ios/archive/Runner.xcarchive`. The
+  paragraph above is left as written. What it did: `sentry-cli` authenticated from
+  `~/.sentryclirc` with no prompt, and its pre-upload query reported **3 of 4 missing**. The
+  **3 were sent** (Runner, App, MERWidget), and the **1 was already held** (Flutter, whose engine
+  UUID the 1.0.3 (5) rig's dSYMs had carried to Sentry on 29 September). The script exited 0 and
+  printed `dSYMs uploaded for 1.1.1 (65)`.
+
+  ⛔ **AND WHAT THE CLI CANNOT DO, as at 30 September 2026: no read-only server-side check is
+  available to it without a credential.** `debug-files upload --no-upload` never contacts the
+  server (it prints `skipping upload.` and makes no missing-files query). `debug-files find`
+  and `debug-files check` are local only. The Sentry API needs the token, which a session must
+  not read. The Sentry MCP needs an OAuth sign-in. **So the script's exit 0 is the uploader's
+  own report, and verifying ARRIVAL is a MANUAL step:**
+
+  - [ ] On Sentry's Debug Files page for bedlin-pty-ltd / medical-event-recorder, each UUID the
+    archive carries is listed. The listing must show them as recent against older entries, so a
+    present file can be told from an absent one. For 1.1.1 (65) this read was made on
+    30 September 2026, and the result is in `docs/BUILD-LEDGER.md` row 65.
+
+  ⚠️ dSYMs are matched to crashes by UUID, not scoped to a release. "Uploaded for a build" means
+  the UUIDs that build carries.
+
 **App Store Connect upload (added 30 September 2026, Brief 305). This step did not exist
 before: until this date the Sign-off section had no App Store Connect upload step at all, and
 its only "upload" box was the dSYMs above.**
