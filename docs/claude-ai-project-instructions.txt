@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-30-ebce276d
+INSTRUCTIONS STAMP: 2026-09-30-5a3a1c32
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -745,8 +745,26 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
 6. **Monetisation is live** — AdMob plus RevenueCat IAP. Purchase paths are
    gated behind a native-platform check, so a "coming soon" message on web is
    the expected fallback, not a missing feature.
+   ⚠️ **ANNOTATED 30 September 2026 (SoundFind CR-64, `578967d`, brief SF-3);
+   the premise above is kept as written.** *"a 'coming soon' message on web is
+   the expected fallback"* no longer describes the app. On web and Windows
+   (`!isNative()`) there are **no ads and no purchase offer at all**: no ad before
+   a game, no "Watch an Ad", no hint packs, no Remove Ads. Out of hints, those
+   builds offer **3 free hints once every 24 hours**, stored under the key
+   `sf_free_hint_refill_at`. AdMob and RevenueCat remain live on iOS and Android
+   only, where every ad request is child-directed and non-personalised (CR-60,
+   decision S1).
 7. **The app makes third-party image requests at runtime.** Everything else is
    local — worth remembering whenever privacy claims are drafted.
+   ⚠️ **ANNOTATED 30 September 2026 (SoundFind CR-64, `578967d`, brief SF-3);
+   the premise above is kept as written.** Both sentences are now wrong.
+   *"The app makes third-party image requests at runtime"*: the four
+   `images.unsplash.com` URLs were removed, and `src` holds **0 Unsplash URLs**
+   (4 at `35328a2`) and no remote image source. *"Everything else is local"* was
+   never true: the outbound traffic is **AdMob, UMP and RevenueCat on native**,
+   plus **Sentry**, which since CR-59 sends scrubbed error events only (no
+   tracing, no route query, no User-Agent or Referer, no session envelopes).
+   Draft privacy claims from that list.
 
 ## STANDING CONSTRAINTS
 
