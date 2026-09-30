@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-30-264828e9
+INSTRUCTIONS STAMP: 2026-09-30-efe6e5b2
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -829,6 +829,15 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
    plus **Sentry**, which since CR-59 sends scrubbed error events only (no
    tracing, no route query, no User-Agent or Referer, no session envelopes).
    Draft privacy claims from that list.
+   ⚠️ **ANNOTATED AGAIN 30 September 2026: the note above is SUPERSEDED by
+   SoundFind CR-67 (`e054119`, brief SF-3R, decision S6); it is kept as
+   written.** *"the four `images.unsplash.com` URLs were removed, and `src`
+   holds **0 Unsplash URLs**"* is no longer true. CR-67 restored the placeholder
+   ads unchanged, and with them 4 Unsplash URLs: 3 in the placeholder
+   interstitial (`AdModal.jsx`) and 1 in the placeholder rewarded ad
+   (`HintModal.jsx`). **So web and Windows once again make third-party image
+   requests**, whenever a placeholder ad is shown. Both placeholders render only
+   off native. The rest of the note stands.
 
 ## STANDING CONSTRAINTS
 
