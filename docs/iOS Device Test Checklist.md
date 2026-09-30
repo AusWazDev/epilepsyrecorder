@@ -799,6 +799,60 @@ skipping this step ships a build whose crash reports cannot be read.**
   Release builds of 7 and 23 September 2026 would have run it too, but whether they uploaded is
   not recorded. **Treat the token as unverified.**
 
+**App Store Connect upload (added 30 September 2026, Brief 305). This step did not exist
+before: until this date the Sign-off section had no App Store Connect upload step at all, and
+its only "upload" box was the dSYMs above.**
+
+- [ ] The IPA reached App Store Connect, and the delivery UUID and route are recorded in the
+  build's row in `docs/BUILD-LEDGER.md`.
+
+  **Routes actually used, builds 1–65** (from `STATUS.md` and the ledger, read 30 September 2026):
+
+  | Build | Route recorded |
+  |---|---|
+  | 1.0.0 (1), 1.0.1 (2), 1.0.2 (3) | Xcode Organizer |
+  | 1.0.3 (4) | `xcrun altool`; how it authenticated is not recorded |
+  | 1.0.3 (5), 1.1.1 (64) | altool with the API key (Brief 268) |
+  | 1.1.1 (65) | see ledger row 65 |
+
+  ⛔ **As at 30 September 2026, no upload route is recorded that works without a credential at
+  run time. Both recorded routes need one: altool needs the API key, Organizer needs a live
+  signed-in Apple ID session.** So the CLI cannot upload unattended. That is a standing fact
+  about this project, written here so it is not rediscovered each release.
+
+  **Where the API key's identifiers live, by location only:** the ASC Key ID and Issuer ID are
+  in `OneDrive/Projects/App Dev/Claude/Dev Environment Reference.md` (as `STATUS.md` records).
+  As at 30 September 2026 they appear nowhere in this repository, and no key material is
+  tracked. Do not copy them into it: the repository is public.
+
+  ⚠️ **SINGLE POINT OF FAILURE: the `.p8` key is Mac-only and single-copy by design** (as
+  recorded in `STATUS.md`). If this Mac's copy is lost, the altool route is gone until a new
+  key is issued in App Store Connect.
+
+  ⛔ **THE XCODE SESSION EXPIRES, AND NOTHING SAYS SO UNTIL THE UPLOAD.** Two sightings, both
+  of *"Your session has expired. Please log in."* in an export log: §12 (Brief 242,
+  29 September 2026) and Brief 301's export of 1.1.1 (65) (30 September 2026). ⭐ **PROVISIONING
+  SUCCEEDS WHILE THE UPLOAD WOULD FAIL.** `xcodebuild -exportArchive
+  -allowProvisioningUpdates` still produced a signed IPA both times, so the build completes,
+  the export succeeds, and nothing announces the problem until an Organizer upload is tried.
+  **Remedy: sign in to Xcode (Settings → Accounts) before any Organizer upload.** As at
+  30 September 2026 this is recorded as a recurring condition here and nowhere else.
+
+  ⛔ **DIAGNOSTIC: A LAPSED DEVELOPER PROGRAM LICENSE AGREEMENT BLOCKS BOTH ROUTES, AND NEITHER
+  SAYS WHY.** Recorded here as a diagnostic, not as current state.
+  - **The condition:** a lapsed Developer Program License Agreement blocks the App Store Connect
+    API **and** the Xcode Organizer route, and neither announces the reason.
+  - **The symptom to look for:** both upload routes failing, with no explanatory message. That
+    is the tell.
+  - **First check when that symptom appears:** the agreement, in App Store Connect, before
+    debugging signing or profiles.
+  - **Occurrence on record:** blocking as at 20 August 2026 (`STATUS.md`: the lapsed agreement
+    *"was blocking the entire App Store Connect API — including the Xcode Organizer route,
+    which fails for the same reason and does not announce why."*).
+  - ⭐ **Reported resolved by the developer, 30 September 2026 [report — developer; not
+    observable from the repo]. The agreement renews, so this is a recurring condition, not a
+    closed one.**
+
 Before submitting — confirm:
 > "I have completed every item on this checklist on a physical device, on a release or
 > ad-hoc build, and recorded the iOS version and the tier. I have read §10 and I am not
