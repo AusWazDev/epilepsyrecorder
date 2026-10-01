@@ -1216,13 +1216,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (result == null) return;
 
-    setState(() {
-      final index = _records.indexWhere((e) => e.id == result.id);
-      if (index != -1) _records[index] = result;
-      // Sorted on the same value the rows display and group by. A list that
-      // sorts on one time and prints another is the defect the CSV had.
-      _records.sort((a, b) => b.whenHappened.compareTo(a.whenHappened));
-    });
+    // Brief 321: assign always, repaint only if mounted, save EITHER WAY.
+    final index = _records.indexWhere((e) => e.id == result.id);
+    if (index != -1) _records[index] = result;
+    // Sorted on the same value the rows display and group by. A list that
+    // sorts on one time and prints another is the defect the CSV had.
+    _records.sort((a, b) => b.whenHappened.compareTo(a.whenHappened));
+    if (mounted) setState(() {});
 
     await widget.onRecordsChanged(_records);
   }

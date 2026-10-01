@@ -14,9 +14,11 @@
 // fail. This one pumps the real `HomeScreen`, opens History through Home's own
 // "All history" control, and so drives the real callback.
 //
-// ⭐ BOTH HALVES ARE ASSERTED, for the reason the sibling test gives: a test
-// asserting only "does not throw" would pass against a fix that returns early
-// when unmounted, which skips the write just as completely.
+// ⭐ THE STORAGE STATE IS WHAT IS ASSERTED, for the reason the sibling test
+// gives: a test asserting only "does not throw" would pass against a fix that
+// returns early when unmounted, which skips the write just as completely. The
+// throw itself fails the test through the framework's async-error report;
+// a `takeException()` check for it was removed as dead (Brief 321 C.1).
 //
 // ⚠️ ONE PREFS-DEPENDENT TEST PER PROCESS, and `HomeScreen` reads prefs, so
 // this file holds one test. Store setup is in `setUp` on the real clock; every
@@ -184,14 +186,15 @@ void main() {
     // assertion below names the defect rather than the harness.
     final afterUndo = await settleStore((s) => !s.values.any((h) => h));
 
-    mark('6b checking for a throw');
-    expect(tester.takeException(), isNull,
-        reason: '⛔ THE CRASH. Home\'s `onRecordsChanged` called `setState` '
-            'with no mounted check, which throws once HomeScreen is '
-            'disposed.');
-
+    // ⛔ NO `takeException()` ASSERTION, removed by Brief 321. Against the
+    // unfixed code it returned null: the setState-after-dispose throw happens
+    // in an un-awaited future, so the framework reports it as an async error
+    // and fails the test itself, and nothing is left for takeException to
+    // return. It could not fail, so it was coverage that only looked live. The
+    // throw is still caught, by the framework; the storage check below is
+    // what this test asserts.
     expect(afterUndo, {'alpha': false, 'beta': false},
-        reason: '⛔ AND THE MISSED UNDO. `$hiddenId` is still hidden in '
+        reason: '⛔ THE MISSED UNDO. `$hiddenId` is still hidden in '
             'STORAGE. The throw in Home\'s callback came before '
             '`await _persist()`, so the unhide never reached the store.');
     mark('7 DONE');

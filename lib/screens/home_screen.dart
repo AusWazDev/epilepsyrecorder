@@ -1284,19 +1284,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
 
     if (result == null) return;
-    if (!mounted) return;
 
-    setState(() {
-      final next = [..._records];
-      final i = next.indexWhere((r) => r.id == result.id);
-      if (i >= 0) {
-        next[i] = result;
-      } else {
-        next.insert(0, result);
-      }
-      // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
-      _records = next;
-    });
+    // Brief 321: assign always, repaint only if mounted, save EITHER WAY. An
+    // early `if (!mounted) return;` here skipped the save (0373ed6's rule).
+    final next = [..._records];
+    final i = next.indexWhere((r) => r.id == result.id);
+    if (i >= 0) {
+      next[i] = result;
+    } else {
+      next.insert(0, result);
+    }
+    // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
+    _records = next;
+    if (mounted) setState(() {});
     await persistEvents(_store, _records, from: _loadState);
   }
 
@@ -1316,17 +1316,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (result == null) return;
 
-    setState(() {
-      final next = [..._records];
-      if (existing == null) {
-        next.insert(0, result);
-      } else {
-        final index = next.indexWhere((r) => r.id == result.id);
-        if (index != -1) next[index] = result;
-      }
-      // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
-      _records = next;
-    });
+    // Brief 321: assign always, repaint only if mounted, save EITHER WAY.
+    final next = [..._records];
+    if (existing == null) {
+      next.insert(0, result);
+    } else {
+      final index = next.indexWhere((r) => r.id == result.id);
+      if (index != -1) next[index] = result;
+    }
+    // No sort here: the setter owns it. This read `..sort(b.timestamp)`.
+    _records = next;
+    if (mounted) setState(() {});
 
     await _persist();
     // Reschedule the persistent notification. ⚠️ ON iOS ONLY, AND SAYING SO IS
@@ -1406,7 +1406,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             // messaging belongs to the function that knows WHICH outcome it was.
             if (outcome == null) return;
             final added = outcome.merged.length - _records.length;
-            setState(() => _records = outcome.merged);
+            // Brief 321: assign always, repaint only if mounted, save EITHER WAY.
+            _records = outcome.merged;
+            if (mounted) setState(() {});
             await _persist();
 
             // Written AFTER the events, and only ever inserted — the plan
