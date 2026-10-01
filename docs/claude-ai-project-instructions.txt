@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-09-30-6f398c05
+INSTRUCTIONS STAMP: 2026-10-01-17e7e10f
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -166,6 +166,7 @@ developer on 30 Sep 2026 in chat, briefs SF-5 to SF-8
 | S19 | **Restore codes are sent by the domain's own cPanel mail.** Before go-live, SPF and DMARC records are needed. No DPA was found for WebCentral mail; that goes to the adviser. | 30 Sep 2026 | ⬜ not built; SPF and DMARC not added |
 | Placement | **The web version lives on the subdomain `play.uniquegames.com.au`.** ⚠️ **This is the chat half's technical call; the developer may override it.** Serving at a subdomain's root keeps the build's root-absolute asset and audio paths working (SF-13). | 30 Sep 2026 | ⬜ subdomain not created |
 | S20 | **Mobile first. iOS and Android testing and release come next.** Web commissioning (S9 to S19) and the Microsoft Store withdrawal are parked, and their research is kept. The Microsoft Store listing stays up until a web version replaces it (S7's order is unchanged). The Vercel build stays as it is. | 30 Sep 2026 | ⬜ mobile release not yet done; web items parked |
+| S21 | **Android: the advertising-ID permission (`com.google.android.gms.permission.AD_ID`) is removed from the merged manifest** (K8). Because S1 treats every player as a possible child, the Play target audience includes children. Google Play's Families policy: *"Apps solely targeted to children should not request AD_ID permission when targeting Android API 33 or higher"*; mixed-audience apps *"must not transmit AAID … from children or users of unknown age"*. AdMob: *"You can also choose to disable the advertising ID for your entire app by preventing the advertising ID permission from being merged into your app."* Applied by the CLI under the 1 Oct 2026 prompt, which made it conditional on the policy supporting removal; the developer may override. Without the permission, on API 33+ the ID reads as zeros, including for RevenueCat. The three Privacy Sandbox `ACCESS_ADSERVICES_*` permissions are not removed; that is open. | 1 Oct 2026 | ✅ CR-71 (`5d2a33d`); merged manifest and debug APK show no AD_ID |
 
 **Reasoning for each lives in the SoundFind Change Register**
 (`WordFind-Adventure/docs/Change Register.md`) and in the briefs file above.
