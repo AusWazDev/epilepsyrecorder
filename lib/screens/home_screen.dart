@@ -1547,7 +1547,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             // construction. ⛔ Worth a line because an accidentally-correct
             // site is precisely the kind a later refactor breaks in silence —
             // nothing here ever said the order mattered.
-            setState(() => _records = updated);
+            //
+            // ⛔ Brief 318: History's Undo can call this after Home is gone.
+            // Assign always, repaint only if mounted, persist EITHER WAY,
+            // the same contract as History's `_unhide`.
+            _records = updated;
+            if (mounted) setState(() {});
             await _persist();
           },
           onEdit: (existing, {required confirmOnSave}) =>
