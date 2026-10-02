@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-10-02-486c5333
+INSTRUCTIONS STAMP: 2026-10-02-a5b23232
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -320,6 +320,14 @@ that could not be read:
   report caught it (*"It's a fourth instance, not the model to copy"*). ⭐ **So both halves read the name and position, not the body,** and
   it was caught only when the CLI read the body for another reason. Fixed in
   `479c093` (Brief 321), under a committed test that drives the state.
+  ⚠️ *Annotated 2 October 2026 (Brief 331); the entry and the CLI note above
+  are kept as written.* The lead sentence's *"Brief 318 C"* is an instance of
+  the naming collision recorded in HOW TO WRITE BRIEFS (a brief and its report
+  share a number and a section letter). The sentence it quotes, *"_openWizard
+  beside the first one does check"*, is **Brief 319 Part C's**, first said in
+  the **318 report** C as *"`_openWizard` beside it does check"*. Brief 318 as
+  pasted (session transcript, 1 Oct 2026) has a two-line Part C that mentions
+  neither `_openWizard` nor `onRestore`.
 - *[Added 1 October 2026.]* **The `onRestore` severity was OVERSTATED by the
   chat half and the CLI said so.** Brief 318 C.1 reported it as reachable and
   worse than the bug just fixed. Brief 319 established every await in
@@ -511,6 +519,19 @@ correction rounds. One feasibility read would have caught it.
   shape as the paste-versus-file drift and as `session-end.ps1` reporting
   green through it: a single claim asserted over a set whose members can
   differ.
+- ⚠️ *[Added 2 October 2026 (Brief 331).]* **A brief and the report on it
+  share a number AND a section letter.** "Brief 318 C" names the brief's
+  Part C and the report's section C, and the citation cannot distinguish
+  them. Cite the channel, not just the number: "Brief 318 C" for the brief as
+  pasted, "318 report C" for the CLI's reply. Earned 2 October 2026 (Briefs
+  329 to 331). The C.5 entry attributes to "Brief 318 C" a sentence that is in
+  the 318 REPORT and in Brief 319's Part C, and in neither case in Brief 318,
+  whose Part C is two lines and mentions neither `_openWizard` nor
+  `onRestore`. Settled by reading the pasted brief text from the session
+  transcript, with a positive control showing the search was live.
+  ⭐ The collision is why the misattribution was invisible: both halves read
+  the citation as naming their own document, and both were reading it
+  correctly.
 
 ## EXPECT PUSHBACK
 
