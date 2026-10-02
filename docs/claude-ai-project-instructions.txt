@@ -2,7 +2,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-10-01-642eeb0b
+INSTRUCTIONS STAMP: 2026-10-02-486c5333
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -291,6 +291,10 @@ that could not be read:
   false nulls in two reports (Brief 300 A3, Brief 308 C.1). Both were
   caught only because the operator noticed an output that was empty when
   it should not have been.
+  ⚠️ *Annotated 1 October 2026 (Brief 329); the sentence above is kept as
+  written.* The zsh-only rule is SUPERSEDED by HOW TO WRITE BRIEFS **A2**,
+  which generalises it: a surprising result in either direction, a null or a
+  flood, is presumed to be the tool on any shell, not only zsh on the Mac.
 - *[Added 30 September 2026. A brief-writing rule, recorded here because
   this file has no CONCURRENCY note.]* **Concurrency is per WORKING TREE,
   not per machine.** Brief concurrency sections have assumed one session
@@ -298,6 +302,44 @@ that could not be read:
   same working tree, and Brief 313's concurrency section did not
   contemplate it. Name every session that can write the tree, and check
   the tree itself before committing: idle does not mean clean.
+- *[Added 1 October 2026.]* ⛔ **The chat half cited a BROKEN pattern as the
+  model to copy.** Brief 318 C said *"_openWizard beside the first one does
+  check"*, offering it as the correct comparison: read from its name and
+  position, not its body. It uses `if (!mounted) return;`, the early-return
+  form Brief 132 and `0373ed6` both rejected, because it skips the save that
+  follows. It was a FIFTH instance of the defect and the worst: the other four
+  crash, this one drops the write with no error. Had it been copied, the fix
+  would have shipped under the name of its own cure. ⭐ Same shape as the
+  premise-4 story: the broken version is the one that reads like correctness.
+  A mounted check that returns early looks like careful code.
+  ⚠️ *CLI note, 1 October 2026, from this session's own reports: the lesson
+  stands; the provenance reads differently.* The sentence originated in the
+  CLI's Brief 318 report, which said *"`_openWizard` beside it does check"*
+  having seen the guard but not what it guards. Brief 319's text repeated it as
+  *"_openWizard beside the first one does check"*, and the CLI's Brief 319
+  report caught it (*"It's a fourth instance, not the model to copy"*). ⭐ **So both halves read the name and position, not the body,** and
+  it was caught only when the CLI read the body for another reason. Fixed in
+  `479c093` (Brief 321), under a committed test that drives the state.
+- *[Added 1 October 2026.]* **The `onRestore` severity was OVERSTATED by the
+  chat half and the CLI said so.** Brief 318 C.1 reported it as reachable and
+  worse than the bug just fixed. Brief 319 established every await in
+  `onRestore` is `ctx.mounted`-checked, there is no await between the confirm
+  dialog and the `setState`, and no route in `lib/` produces the required
+  state. Probe 1 showed the restore simply never completes. ⚠️ Recorded because
+  the overstatement came ONE EXCHANGE after the chat half wrote A3. See A3's
+  second half (HOW TO WRITE BRIEFS).
+  ⚠️ *CLI note, 1 October 2026, from this session's own reports: the
+  overstatement STARTED in the CLI's report.* The CLI's Brief 318 C.1 called it
+  *"the same shape as the bug just fixed, so a restore that finishes after Home
+  is torn down would throw before `_persist()` and lose the write"*, without
+  checking that any teardown could reach that line. Brief 319's context then
+  amplified it (*"with a worse consequence: the whole merged restore is
+  lost"*), and the CLI's Brief 319 report retracted it (*"my 318 C.1 finding was
+  overstated"*). ⭐ **A3's second half applies to both halves:** the size was
+  argued from a mechanism nobody had read.
+  ⚠️ *Neither 1 October entry is an unreadable fact asserted as read.* Both
+  facts were readable and were read only in part, like the 27 September entry,
+  so the closing sentence below does not cover them either.
 
 None were reasoning failures. All were unreadable facts asserted as read.
 ⚠️ **ANNOTATED 27 September 2026 — the sentence above is kept as written.** It
@@ -410,6 +452,65 @@ correction rounds. One feasibility read would have caught it.
   verified rather than assumed unchanged. *[Added 29 September 2026,
   earned in Brief 258 Part A. report: the Mac's account; not observable
   from Windows.]*
+- *[Added 1 October 2026 (Brief 329). Nine method rules, A1 to A9, written
+  from the chat half's batch of that day. They are METHOD rules, not claims
+  about the code: there is nothing in the repo to verify them against.]*
+- **A1.** Derive the scope from the question, not from the system under
+  discussion. Before reporting a null, state what population was searched and
+  why that population is the right one. A null over a scope chosen by
+  conversational momentum is not a finding. Earned 1 October 2026, three times
+  in one day by the chat half.
+- **A2.** A result of surprising size in EITHER direction is presumed to be the
+  tool until shown otherwise. A silent null and a silent flood are the same
+  defect: the filter never applied. Sample a hit, or demonstrate the query
+  could have returned the other answer. Supersedes the narrower zsh-only rule
+  (THE RULE THAT MATTERS MOST, 30 September entry). Earned across three tools,
+  three silent filter failures, two days: zsh word-splitting (false null,
+  Briefs 300 A3 / 308 C.1); PowerShell `-LiteralPath -Include` silently
+  ignoring the filter and returning 66,956 files (Brief 314 A.4); `git -G`
+  with `\b` returning 225 hits because POSIX regex has no word boundary
+  (Brief 317 A.2).
+- **A3.** Size a finding before presenting it, AND verify the mechanism the
+  size rests on. State the affected population and the observed frequency
+  alongside the defect. A carefully verified finding reads as an important one
+  unless it says otherwise. ⚠️ *The second half was added the same day, after
+  the rule failed on its first use:* a size argued from "a file picker sits in
+  the middle of that await chain" when Brief 319 established there is no await
+  there. An unverified mechanism produces a confident wrong size, and a table
+  reads as measurement. Earned 1 October 2026.
+- **A4.** A test that stubs a collaborator cannot observe a defect that lives
+  in the collaborator. When a fix is made at a boundary, the test must cross
+  it. Pin the behaviour, not the line that changed. Earned Brief 315 A.4 /
+  `0373ed6`. ⚠️ *Corollary:* a dead assertion that appears to cover a case is
+  worse than none. Either demonstrate an assertion can fail, or remove it.
+  Earned 1 October 2026.
+- **A5.** A decision taken to preserve a state stops describing the world once
+  the state changes, including when it changes BECAUSE the decision was carried
+  out. Read a decision's status, not only its wording. Earned 1 October 2026
+  on D9.
+- **A6.** Concurrency is per working tree AND per chat session. Two Cowork
+  sessions in one claude.ai Project can drive CLIs into the same tree. Listing
+  the tree twice cannot protect against this. The control is to record the
+  file hash and HEAD when the brief is written, and refuse if either moved.
+  Earned 1 October 2026.
+- **A7.** The Project doc is a third channel, and the only one that reaches a
+  RUNNING chat session. Three readers, not two: `C:\dev\CLAUDE.md` (the CLI,
+  every session), the `.md`/`.txt` (one chat session, at its next re-paste), a
+  Project doc (both chat sessions, now). ⚠️ `session-end.ps1` reported [OK]
+  identical three times while the MER paste drifted sixteen decision rows
+  behind. A check that cannot observe the thing that drifted reports green
+  through it. Earned 1 October 2026.
+- **A8.** Every targeted fix carries a sweep for the same shape. Brief 318 C
+  turned a one-line fix into a class; Brief 321 D found a fifth instance.
+  Earned 1 October 2026.
+- **A9.** ⭐ A freshness claim must not span items that can differ in
+  freshness. If a header, label or summary covers rows that may be live,
+  stored or failed, it cannot state one time for all of them. The claim
+  belongs on the row. Earned 1 October 2026 in ops-dashboard, the same defect
+  in six places. ⚠️ The generalisation is NOT about dashboards. It is the same
+  shape as the paste-versus-file drift and as `session-end.ps1` reporting
+  green through it: a single claim asserted over a set whose members can
+  differ.
 
 ## EXPECT PUSHBACK
 
@@ -534,6 +635,38 @@ return, and a Help row in the Android branch), apart from `_loadRecords()`
 now being awaited before the other resume calls; plus a Sentry dSYM upload
 build phase, which is tooling. That TestFlight has never reached an end user
 is the developer's statement, not something the repo can show.
+⚠️ **Annotated 1 October 2026 (Brief 329); every sentence above is kept as
+written.** *[console: App Store Connect, the chat half's read, 1 October 2026.
+NOT repo-established and not checkable from the repo.]*
+- *"uploaded to TestFlight so one person (Terry Rose) could evaluate the app
+  without purchasing"*: **THE EVALUATION NEVER HAPPENED.** TestFlight 1.0.3
+  build 4: 1 invite, 0 installs, Expired.
+- *"TestFlight has never been used by an end user"* survives literally,
+  because internal testers are not end users, but the impression it creates is
+  wrong. Build 5: NOTIVA Internal, 3 invites, 1 install, 21 sessions,
+  6 crashes, 1 feedback. Build 64: 3 invites, 3 installs, 34 sessions,
+  0 crashes. Two tester groups exist: NOTIVA Internal, and MER External
+  Limited Time Access.
+- *[console + Sentry, the same source.]* ⭐ Apple counts 6 crashes on build 5;
+  Sentry counts 6 events in 30 days: two independent systems, the same number.
+  The unread TestFlight feedback on build 5, verbatim, 30 Sep 2:09 PM:
+  *"Started notification event from notification appearing above dashboard.
+  Then crashes"*. ⭐ This names the one call route Brief 315 B.2 could not
+  establish from the repo: `didReceive` → `case kBtnStart:` →
+  `handleQuickLogStart` → `scheduleActiveNotification`, whose queue *"Apple
+  decides, and it is not established from the repo"*. Sentry's event is
+  2:13 PM AEST, four minutes later, same device and build.
+- *[repo: established by the CLI, Windows, 1 October 2026.]* **Fixed in the
+  live release.** `66717c9` (*"Hand the notification-response completion back
+  on the main queue"*, 23 Sep 2026) is an ancestor of `1b4e723`, which
+  allocates build 65 (`1.1.1+65`); `git diff 1b4e723 HEAD -- ios` is empty. The
+  bare call `UNUserNotificationCenter.current().add(request) { _ in
+  completion?() }` has 0 hits at `1b4e723` and at HEAD. CONTROL: shipped 1.0.2
+  (`192ae40`) carries it TWICE, at `AppDelegate.swift` lines 373 and 401.
+  ⚠️ **SCOPE: this function's completion call ONLY.** `AppDelegate.swift` at
+  HEAD has 8 completion-invocation lines outside comments (`completion()`,
+  `completion?()`, `completionHandler(...)`). Only the one `66717c9` changed
+  was checked; none of the others was swept for the queue it runs on.
 
 **Architecture that only changes if the app is re-architected:**
 
