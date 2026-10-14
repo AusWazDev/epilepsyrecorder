@@ -147,6 +147,13 @@ scopes the audit.
 | **Diagnosis, prognosis, monitoring, treatment** — anything asserting clinical meaning | **Routes to the adviser** (§9). MER is a data capture tool only, and claim wording is load-bearing |
 | **Store metadata** — pricing, category, keywords, description | **Console state**, not app design. Verified in the platform console, never from a note |
 
+⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the table above is left as written. Its
+first row read: "Routes to the adviser (§9)."]* **The adviser step for claim wording is
+DROPPED** (developer's ruling, 14 Oct 2026; see D2's annotation in the CURRENT DECISIONS block).
+Diagnosis, prognosis, monitoring and treatment wording is still out of scope for app design, and
+is now decided by the chat half. Outside advice is sought only if MER adds features that
+interpret data (patterns, alerts, predictions).
+
 ---
 
 ## ⛔ HOW TO READ THIS: THE EVIDENCE IS NOT ALL THE SAME QUALITY
@@ -616,6 +623,13 @@ impression, **and independent of every open decision in this document.**
 ---
 
 ## 9. Routed to the adviser, unresolved
+
+⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the heading and items are left as
+written.]* **The adviser step for claim wording is DROPPED** (developer's ruling, 14 Oct 2026;
+see D2's annotation in the CURRENT DECISIONS block). Both items below are claim-wording
+questions about what the app records and how the export reads, and neither interprets data. So
+they stay UNRESOLVED, but they are now **the chat half's to decide**, not the adviser's. Every
+later line in this file that points at "§9's adviser" routing reads the same way.
 
 - ⛔ **The CSV cannot distinguish a backdated record from a live-logged one.** Seventeen columns,
   all three time columns are `whenHappened`, **no logged-at column**, nothing marking the
@@ -8739,6 +8753,10 @@ comment, the marker docstring and the v6 note: quoted from source at d0a9b95. Te
 > say `Not Captured` or `Not Applicable` and one says `No`. **The `No` is more conspicuous, not less.**
 > The adviser question stands, reframed: *the model cannot represent Not Captured for this field —
 > what should it say?*
+>
+> ⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); left as written. It read: "The adviser
+> question stands".]* The adviser step for claim wording is DROPPED (developer's ruling, 14 Oct
+> 2026; see D2's annotation). The question stands, but it is now the chat half's to answer.
 >
 > **TWO CALLS MADE IN THE IMPLEMENTATION, BOTH ACCEPTED BY THE DEVELOPER 11 September 2026:**
 > 1. ⛔ **A CORRECTION TO CHAT'S BRIEF, not a deviation from it.** The brief said Not Applicable when

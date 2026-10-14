@@ -138,6 +138,16 @@ defect.**
      **is consistent with this position and is not revisited.** It moved the copy AWAY from a
      clinical scale toward a self-relative comparison, which is the direction this position points.
 
+  ⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the position above is left as written.
+  It read: "Anything touching diagnosis, prognosis, monitoring or treatment ROUTES TO THE
+  ADVISER rather than being decided in a brief", and consequence 2: "Any claim touching
+  diagnosis, prognosis, monitoring or treatment routes out."]* **The adviser step for claim
+  wording is DROPPED** (developer's ruling, 14 Oct 2026; see D2's annotation in the CURRENT
+  DECISIONS block). Claim wording is now decided by the chat half. Outside advice is sought only
+  if MER adds features that interpret data (patterns, alerts, predictions). The capture-tool
+  position and the wording rule stand. ⚠️ **Consequence 1 is NOT affected:** the terms' liability
+  cap is a legal question, not claim wording.
+
 
 **Process**
 
@@ -3367,6 +3377,11 @@ is a meaning, not a capture. **The corrections are the evidence, and they cost t
 
 > ⛔ ***Regulatory or claim wording.** Routes to the adviser, not to chat or the CLI. MER is a data
 > capture tool and never diagnostic; wording that touches that line is not ours to settle.*
+
+⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the quotation above is left as written.]*
+The instruction it quotes no longer stands: **the adviser step for claim wording is DROPPED**
+(developer's ruling, 14 Oct 2026; see D2's annotation in the CURRENT DECISIONS block, and the
+annotation now on `WORKING-AGREEMENT.md`'s bullet). Claim wording is decided by the chat half.
 
 ⛔ **THAT ROUTE WAS NOT TAKEN FOR EITHER SENTENCE.** Recorded as a fact about what happened, not as
 a criticism and not as a precedent.

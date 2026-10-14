@@ -895,7 +895,7 @@ its only "upload" box was the dSYMs above.**
   replacement is DRAFT or absent, STOP and report. Do not delete a required field with nothing
   to put in it. REMOVE means replace, not blank. A field marked CHECK FIRST is applied
   only if its named check has been reported. Never write or reword listing copy here (D2: copy
-  goes to the adviser, not decided here). Report which fields changed.
+  is decided by the chat half and lives in the pack, not here). Report which fields changed.
 
 Before submitting — confirm:
 > "I have completed every item on this checklist on a physical device, on a release or

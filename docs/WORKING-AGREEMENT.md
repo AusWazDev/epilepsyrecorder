@@ -299,6 +299,12 @@ label.**
   unrecoverable, and the storage model cannot say how.
 - ⛔ **Regulatory or claim wording.** Routes to the adviser, not to chat or the CLI. MER is a data
   capture tool and never diagnostic; wording that touches that line is not ours to settle.
+  ⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the bullet above is left as written.
+  It read: "Routes to the adviser, not to chat or the CLI."]* **The adviser step is DROPPED**
+  (developer's ruling, 14 Oct 2026; see D2's annotation in the CURRENT DECISIONS block). Claim
+  wording is now decided by the chat half. Outside advice is sought only if MER adds features
+  that interpret data (patterns, alerts, predictions). The wording rule stands: MER records and
+  logs, and never diagnoses, monitors, predicts or treats.
 - ⛔ **Anything costing the developer's time, money or hardware.**
 - ⛔ **Anything only the developer knows.**
 - ⛔ **Any decision the evidence does not actually decide.**

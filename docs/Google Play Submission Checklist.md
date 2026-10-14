@@ -50,7 +50,7 @@ confirm", and is NOT a step until the developer confirms it.
   replacement is DRAFT or absent, STOP and report. Do not delete a required field with nothing
   to put in it. REMOVE means replace, not blank. A field marked CHECK FIRST is applied
   only if its named check has been reported. Never write or reword listing copy here (D2: copy
-  goes to the adviser, not decided here). Report which fields changed.
+  is decided by the chat half and lives in the pack, not here). Report which fields changed.
   *Source: CR-45 (Brief LP-MER, `3f08baf`), the same text as the Windows and iOS checklists.*
 
 ## 4. Submission

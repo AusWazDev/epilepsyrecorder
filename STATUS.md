@@ -125,6 +125,9 @@ The wizard's add field carries the helper text *"Saved for next time."* On a lau
 SQLite failed to open, the entry is held in memory only and is gone at the next launch. **A
 false promise about data surviving, the same family as *"A backup file holds everything"*
 (24 September 2026, above), and it goes to the adviser with that one.** Nothing changed now.
+⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); left as written. It read: "it goes to the
+adviser with that one".]* The adviser step for claim wording is DROPPED (developer's ruling,
+14 Oct 2026; see D2's annotation). This copy change is the chat half's to decide.
 
 ### 🔴 FINDING — `XFile.fromData(...).readAsString()` DECODES AS LATIN-1
 
@@ -226,6 +229,9 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
 - **Stamp moved ONCE, at session end: `2026-09-26-42605b79`.** It covers the "by construction"
   rule for briefs and the block annotation. **A re-paste of the `.txt` is owed**, and the chat
   half quotes the stamp at the start of its next session.
+- ⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the bullet below is left as written.
+  "the adviser copy change" is now the chat half's copy change: the adviser step for claim
+  wording is DROPPED (developer's ruling, 14 Oct 2026; see D2's annotation).]*
 - **Owed, unchanged:** a Mac suite run; the adviser copy change, now TWO false data-survival
   promises (*"A backup file holds everything"* and *"Saved for next time."*); the XFile
   investigation; the iOS work.
@@ -290,6 +296,9 @@ check. ⛔ **A Mac suite run is OWED, not implied.**
   - Judged TRUE whatever the platform does: *"Notiva never receives your events"*, *"the only copy
     you control"*, *"stored locally on your device"*.
   **Copy unchanged: the adviser's decision.**
+  ⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); left as written. It read: "the
+  adviser's decision".]* Now the chat half's decision: the adviser step for claim wording is
+  DROPPED (developer's ruling, 14 Oct 2026; see D2's annotation).
 
 ### BRIEF 185 — PLATFORM BACKUP OFF, ANDROID AND iOS
 
@@ -1064,6 +1073,9 @@ the distinction.
 about **what the export represents** to the specialist who reads it, which is a
 claim-wording matter. **Routed to the adviser. Unresolved. Not decided here in
 either direction.**
+⚠️ *[ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); left as written. It read: "Routed to the
+adviser."]* The adviser step for claim wording is DROPPED (developer's ruling, 14 Oct 2026; see
+D2's annotation). Still unresolved, and now the chat half's to decide.
 
 ### 🔴 The legacy-value discontinuity — a standing property, not a one-off
 
