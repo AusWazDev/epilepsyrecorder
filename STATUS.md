@@ -48,6 +48,17 @@ separate findings are in the Change Register, under the 14 October 2026 entries.
   `C:\Users\wjl25\MER-devdata-backup-20261014` exists, holding 2 files. ⚠️ The `-AllUsers`
   removal of 1.1.65.0 from the test account could not be checked: that query needs
   administrator rights and was refused.
+- **Brief 347, same day.**
+  - **Stage 0 recovered:** `stage0.txt` was in the misdirected `C:\Users\Public\B341`, with
+    count `0`. It was moved, hash-verified, into the evidence folder. `stage0-baseline.txt`
+    was not found, so it stays chat-only.
+  - **Brief 342 recorded late** in the Register. A null legacy payload leaves exactly the
+    artefacts of a fresh install, so total silent loss cannot be detected afterwards.
+  - **Skipped records: OPEN, report only.** A skipped record can never fail verification,
+    because `loadableCount` is filtered the same way as what gets inserted. The pre-skip
+    `migration_source_count` is already stored on every device, but nothing reads it.
+  - **The backup path the database records** is the app's internal view. It works for the
+    app (Reset) but not for a human outside the package. Agreed it is not a 1.1.1 blocker.
 - **Still OPEN:** `msix_version` for the real Store submission. `pubspec.yaml` reads 1.1.6.0, and
   the test build was overridden to 1.1.65.0. Nothing was committed for the test build.
 
