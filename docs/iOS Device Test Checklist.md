@@ -3,6 +3,8 @@
 Complete every item on a physical device before uploading a build to App Store Connect.
 Do not submit until all boxes are checked. No exceptions.
 
+**[host] after a citation** (added 14 October 2026, Brief CIT-1) marks a real thing on the build host or in Apple’s systems, not in this repository. test/checklist_citations_test.dart does not look for it in the repo; it requires every marked citation to be in a named list in that test, with a reason. An unmarked citation must still exist in the repo.
+
 **Verified against the code on 24 August 2026 (AEST)** — `ios/Runner/AppDelegate.swift`,
 `ios/MERWidget/`, `lib/services/notification_service.dart`, `lib/screens/home_screen.dart`,
 `lib/screens/your_data_screen.dart`, `lib/services/backup_service.dart`,
@@ -674,7 +676,7 @@ project change and belongs in its own brief.**
    deliberately, off by default. Test and provisioning archives then never touch Sentry. Its
    risk is that a release forgets to set it and ships without symbols.
 3. **Move the upload out of the build entirely:** archive first, then run
-   `sentry-cli debug-files upload` against the archive's `dSYMs/` as a separate, visible release
+   `sentry-cli debug-files upload` against the archive's `dSYMs/`[host] as a separate, visible release
    step. That decouples the archive from Sentry completely. Its cost is one more step in the
    release procedure.
 
@@ -682,8 +684,8 @@ project change and belongs in its own brief.**
 - The App Store profile for `au.com.notiva.medicaleventrecorder` was regenerated **by
   `xcodebuild -exportArchive -allowProvisioningUpdates`**, not by opening Signing &
   Capabilities (that pane shows development signing only). New profile:
-  `c05df5d0-3e4a-463d-98dc-4017e8f5e739`, created 29 Sep 2026, carrying the App Group. The
-  old `46ab2a99…` (28 Apr 2026, no App Group) was removed by Xcode.
+  `c05df5d0-3e4a-463d-98dc-4017e8f5e739`[host], created 29 Sep 2026, carrying the App Group. The
+  old `46ab2a99…`[host] (28 Apr 2026, no App Group) was removed by Xcode.
 - The same export logged *"Your session has expired. Please log in."* from an App Store
   Connect account check, while provisioning still succeeded. **An upload from Xcode will need
   the account signed in again first.**
@@ -703,8 +705,8 @@ swap pressure. An AOT Release archive is the heaviest thing it does. Measured on
 1. **Simulators:** `xcrun simctl list devices booted` must print nothing. Shut down anything
    booted and say what was found. Quit Simulator.app, which reopens at login.
 2. **Quit what the thresholds require, not a fixed list.** Dropbox and OneDrive can be quit
-   (OneDrive is installed twice, as `/Applications/OneDrive.app` and
-   `/Applications/OneDrive.localized/OneDrive.app`, so quit both), along with browsers and
+   (OneDrive is installed twice, as `/Applications/OneDrive.app`[host] and
+   `/Applications/OneDrive.localized/OneDrive.app`[host], so quit both), along with browsers and
    anything else not needed.
    ⛔ **Claude desktop is CONDITIONAL.** Quit it only if **both** of these hold:
    (a) the session is **not** being run from it (check the session's parent processes; on
@@ -730,32 +732,32 @@ swap pressure. An AOT Release archive is the heaviest thing it does. Measured on
    > control channel, and quitting it to finish a step removes the developer's ability to direct
    > the work. **Under memory pressure a session may quit ONLY:** simulators and emulators
    > (shut down, and quit Simulator.app), Xcode, build daemons (Gradle, Kotlin and Dart or Flutter
-   > daemons, `xcodebuild`), and processes the session itself started. **If the thresholds in
+   > daemons, `xcodebuild`[host]), and processes the session itself started. **If the thresholds in
    > step 5 still fail after those, the session STOPS and REPORTS** the figures and what is using
    > the memory. It quits nothing else: not Claude desktop, not sync clients, not browsers, not
    > any other app. Those are the developer's to quit, or a restart is.
 
    **Why:** the conditional rule still allowed a quit, and the developer had raised each one.
-   Claude desktop's own log records four quits by this session, each a clean `willQuit`:
+   Claude desktop's own log records four quits by this session, each a clean `willQuit`[host]:
    **28 Sep 23:59:31** (Brief 238 A1), **29 Sep 18:41:32** (Brief 238 A6), **19:31:28** (Brief 244
    B1), all under the older unconditional wording, and **21:05:39** (Brief 252 C4), under the
    conditional rule above, triggered at 42% free, 2,033 MB swap and a 5 minute load of 141.8. The
-   fifth `willQuit` that day, 05:43:31, was an auto-update and not this session. The rule is also
-   recorded in the Mac's global `~/.claude/CLAUDE.md`, so it reaches sessions that never read this
+   fifth `willQuit`[host] that day, 05:43:31, was an auto-update and not this session. The rule is also
+   recorded in the Mac's global `~/.claude/CLAUDE.md`[host], so it reaches sessions that never read this
    file.
-3. **Stop:** no Spotlight indexing burst (`mds_stores` near idle) and no Time Machine backup
+3. **Stop:** no Spotlight indexing burst (`mds_stores`[host] near idle) and no Time Machine backup
    running (`tmutil status`).
 4. **Devices:** no device that could be REGISTERED. A connected device that is already registered
-   is fine (check the development profile's `ProvisionedDevices`), but Xcode may still try to
+   is fine (check the development profile's `ProvisionedDevices`[host]), but Xcode may still try to
    prepare it for development, so keep it locked or away if you want no device interaction.
 5. **Go/no-go**, all four measured after steps 1–3:
 
    | Check | Command | GO if | Why |
    |---|---|---|---|
    | Free disk | `df -h ~` | ≥ 10 GB | About 5 GB needed (about 1 GB of output plus up to 4 GB of swap), × 2 margin |
-   | Free memory | `memory_pressure` → free percentage | ≥ 45% | The healthy host read 52–59% on 29 Sep |
+   | Free memory | `memory_pressure`[host] → free percentage | ≥ 45% | The healthy host read 52–59% on 29 Sep |
    | Swap in use | `sysctl vm.swapusage` | ≤ 1,000 MB | The 24 Sep failures came at 2.4–3.3 GB |
-   | 1-minute load | `uptime` | ≤ 4 | Healthy readings were 1.3–3.3 |
+   | 1-minute load | `uptime`[host] | ≤ 4 | Healthy readings were 1.3–3.3 |
 
    If swap is over 1,000 MB after quitting, **restart the Mac and re-measure.** Do not start on a
    degraded host.
@@ -800,7 +802,7 @@ skipping this step ships a build whose crash reports cannot be read.**
   ⚠️ **UNTESTED UNTIL THIS BOX IS DONE, recorded 29 September 2026 (Brief 244).** The script's
   local half is tested: `--check` passed 4/4 on a real archive, and a control with a swapped dSYM
   failed. **Its network half has never run:** whether `sentry-cli` authenticates with the token
-  in `~/.sentryclirc` and the upload is accepted. That was withheld on purpose, so a non-release
+  in `~/.sentryclirc`[host] and the upload is accepted. That was withheld on purpose, so a non-release
   build would not create a phantom Sentry release. **The first real upload is this box, on the
   shipping archive.** If it fails, it fails here, loudly, before the build goes out. The archive
   can no longer be blocked by it. The only successful upload recorded in this repo is the old
@@ -811,7 +813,7 @@ skipping this step ships a build whose crash reports cannot be read.**
   ⭐ **ANNOTATION, 30 September 2026 (Brief 306): THE NETWORK HALF HAS NOW RUN, ONCE**, against
   1.1.1 (65), with `tool/upload_dsyms.sh --archive build/ios/archive/Runner.xcarchive`. The
   paragraph above is left as written. What it did: `sentry-cli` authenticated from
-  `~/.sentryclirc` with no prompt, and its pre-upload query reported **3 of 4 missing**. The
+  `~/.sentryclirc`[host] with no prompt, and its pre-upload query reported **3 of 4 missing**. The
   **3 were sent** (Runner, App, MERWidget), and the **1 was already held** (Flutter, whose engine
   UUID the 1.0.3 (5) rig's dSYMs had carried to Sentry on 29 September). The script exited 0 and
   printed `dSYMs uploaded for 1.1.1 (65)`.
@@ -857,7 +859,7 @@ its only "upload" box was the dSYMs above.**
   As at 30 September 2026 they appear nowhere in this repository, and no key material is
   tracked. Do not copy them into it: the repository is public.
 
-  ⚠️ **SINGLE POINT OF FAILURE: the `.p8` key is Mac-only and single-copy by design** (as
+  ⚠️ **SINGLE POINT OF FAILURE: the `.p8`[host] key is Mac-only and single-copy by design** (as
   recorded in `STATUS.md`). If this Mac's copy is lost, the altool route is gone until a new
   key is issued in App Store Connect.
 

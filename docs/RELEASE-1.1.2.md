@@ -216,6 +216,19 @@ Moved up and priority raised, Brief 311, 30 Sep 2026: its red state is a saturat
   Brief 301's run, 16 at `c43ca57`. The two new ones are `.p8` (Sign-off, from `1adf6b3`) and a
   second `~/.sentryclirc` (Sign-off, from `c43ca57`). The failing-test count stayed at 2, which
   is why nothing announced it. Recorded as a finding in its own right as item 20.
+- ✅ **CLOSED 14 Oct 2026 (Brief CIT-1, CR-46); the bullets above are left as written.**
+  - **Windows, answered (LP-MER, 14 Oct 2026):** the same 16 fail on Windows, identically.
+  - **The fix:** the 16 occurrences carry a `[host]` marker in the checklist, and each marked
+    token must be in a closed list in the test, `_hostCitations`, with a reason. The citations
+    themselves were correct; the rule "resolves in this repo" was wrong for them.
+  - **It can still fail:**
+    - a marked token that is not on the list fails;
+    - a listed token cited unmarked elsewhere fails;
+    - a marked token that the repo actually has fails;
+    - a list entry that nothing marks fails.
+    - Controls D1 to D5 are in the Change Register, CR-46.
+  - **Item 20's saturation ends for this test,** because it is green. Item 20's general point
+    and item 13 are unchanged.
 
 ### 10. MERWidget hardcodes its version; Apple warns 90473 on every upload ✅
 - **Evidence:**

@@ -99,6 +99,37 @@ const Map<String, String> _notOurPaths = {
   'linux/': 'cited as absent — this repo has no linux target',
 };
 
+/// The marker that declares ONE occurrence of a citation to be a real thing on
+/// the build host, not in this repository. It goes immediately after the
+/// closing backtick, with no space.
+const String _hostMarker = '[host]';
+
+/// The closed list of citations that may carry [_hostMarker] (Brief CIT-1,
+/// 14 Oct 2026). **Every entry needs a reason.**
+///
+/// ⛔ Two locks, and the second is the point. The marker excuses only the
+/// occurrence it sits on, so the same token cited UNMARKED anywhere else must
+/// still resolve. And a marked token that is NOT in this map fails, so a new
+/// unresolvable citation can pass only if a person marks it AND names it here.
+/// A skip keyed on "does not resolve" would define the population by the pass
+/// condition, and could never fail; this is keyed on a deliberate act instead.
+const Map<String, String> _hostCitations = {
+  'dSYMs/': 'a directory inside an Xcode archive, which is build output',
+  'c05df5d0-3e4a-463d-98dc-4017e8f5e739': 'a provisioning profile UUID on the Mac',
+  '46ab2a99…': 'a removed provisioning profile, quoted truncated',
+  '/Applications/OneDrive.app': 'a macOS application path',
+  '/Applications/OneDrive.localized/OneDrive.app': 'a macOS application path',
+  'xcodebuild': 'Apple command-line tool',
+  'willQuit': 'an event name in Claude desktop\'s log on the Mac',
+  '~/.claude/CLAUDE.md': 'the Mac\'s global Claude Code rules file',
+  'mds_stores': 'the macOS Spotlight indexing process',
+  'ProvisionedDevices': 'a key inside a provisioning profile',
+  'memory_pressure': 'macOS command-line tool',
+  'uptime': 'Unix command-line tool',
+  '~/.sentryclirc': 'sentry-cli credentials file on the Mac, never in the repo',
+  '.p8': 'App Store Connect API key file type, Mac-only by design',
+};
+
 /// A commit hash, a version number, or a section reference — never a symbol.
 final RegExp _notASymbolShape = RegExp(
   r'^('
@@ -165,12 +196,29 @@ bool _presentAsIdentifier(String corpus, String token) {
 }
 
 class _Citation {
-  _Citation(this.token, this.section, this.line);
+  _Citation(this.token, this.section, this.line, {this.host = false});
   final String token;
   final String section;
   final int line;
+
+  /// True when this occurrence carries [_hostMarker].
+  final bool host;
   @override
-  String toString() => '`$token`  (§$section, checklist line $line)';
+  String toString() =>
+      '`$token`${host ? _hostMarker : ''}  (§$section, checklist line $line)';
+}
+
+/// The unmarked symbol rule: present as an identifier in the corpus, or a bare
+/// filename at the repository root.
+bool _symbolResolves(String root, String corpus, String token) =>
+    _presentAsIdentifier(corpus, token) ||
+    File('$root/$token').existsSync() ||
+    Directory('$root/$token').existsSync();
+
+/// The unmarked path rule: a file or directory under the repository root.
+bool _pathResolves(String root, String token) {
+  final p = token.endsWith('/') ? token.substring(0, token.length - 1) : token;
+  return File('$root/$p').existsSync() || Directory('$root/$p').existsSync();
 }
 
 /// Extracts backticked spans, remembering which section each came from, and
@@ -202,7 +250,8 @@ class _Citation {
       t = t.replaceAll(RegExp(r'\(\)$'), '');
       t = t.replaceAll(RegExp(r'[.,;:]+$'), '');
       if (t.isEmpty) continue;
-      final c = _Citation(t, section, i + 1);
+      final host = line.startsWith(_hostMarker, m.end);
+      final c = _Citation(t, section, i + 1, host: host);
       if (t.contains('/')) {
         paths.add(c);
       } else {
@@ -224,16 +273,15 @@ void main() {
       final missing = <_Citation>[];
       var checked = 0;
       for (final c in extracted.symbols) {
+        // A marked occurrence is held to the closed list instead, in the
+        // 'host citations' group below. Unmarked ones of the same token are not.
+        if (c.host) continue;
         if (_notOurSymbols.containsKey(c.token)) continue;
         if (_notASymbolShape.hasMatch(c.token)) continue;
         checked++;
-        if (_presentAsIdentifier(corpus, c.token)) continue;
         // A bare filename is a path citation without a slash — STATUS.md, and
         // anything else at the repository root.
-        if (File('$root/${c.token}').existsSync() ||
-            Directory('$root/${c.token}').existsSync()) {
-          continue;
-        }
+        if (_symbolResolves(root, corpus, c.token)) continue;
         missing.add(c);
       }
 
@@ -255,15 +303,11 @@ void main() {
       final missing = <_Citation>[];
       var checked = 0;
       for (final c in extracted.paths) {
+        if (c.host) continue; // see the symbol test
         if (_notOurPaths.containsKey(c.token)) continue;
         if (c.token.startsWith('http')) continue;
         checked++;
-        final p = c.token.endsWith('/')
-            ? c.token.substring(0, c.token.length - 1)
-            : c.token;
-        final exists = File('$root/$p').existsSync() ||
-            Directory('$root/$p').existsSync();
-        if (!exists) missing.add(c);
+        if (!_pathResolves(root, c.token)) missing.add(c);
       }
 
       expect(checked, greaterThanOrEqualTo(10),
@@ -273,6 +317,61 @@ void main() {
       expect(missing, isEmpty,
           reason: 'the checklist cites paths that do not resolve:\n'
               '${missing.map((m) => '  $m').join('\n')}');
+    });
+  });
+
+  group('host citations', () {
+    final marked = [...extracted.symbols, ...extracted.paths]
+        .where((c) => c.host)
+        .toList();
+
+    test('every [host] citation is in the closed list', () {
+      final unlisted =
+          marked.where((c) => !_hostCitations.containsKey(c.token)).toList();
+      expect(unlisted, isEmpty,
+          reason: 'these are marked $_hostMarker but are not in _hostCitations. '
+              'The marker alone excuses nothing: name each one, with a reason, '
+              'or cite something in the repository:\n'
+              '${unlisted.map((m) => '  $m').join('\n')}');
+    });
+
+    test('a [host] citation does not resolve in the repository', () {
+      // A marker on something the repo HAS would hide a later rename of it.
+      final wronglyMarked = marked.where((c) => c.token.contains('/')
+          ? _pathResolves(root, c.token)
+          : _symbolResolves(root, corpus, c.token)).toList();
+      expect(wronglyMarked, isEmpty,
+          reason: 'marked $_hostMarker but present in the repository; remove '
+              'the marker so the citation is checked:\n'
+              '${wronglyMarked.map((m) => '  $m').join('\n')}');
+    });
+
+    test('every closed-list entry is still marked somewhere', () {
+      final used = marked.map((c) => c.token).toSet();
+      final stale = _hostCitations.keys.where((k) => !used.contains(k)).toList();
+      expect(stale, isEmpty,
+          reason: 'in _hostCitations but no longer cited with $_hostMarker; '
+              'remove the entry so the list stays closed: $stale');
+    });
+
+    test('the closed list is small, and every entry has a reason', () {
+      expect(_hostCitations.length, lessThan(25),
+          reason: 'the host list has grown into a place to hide failures');
+      for (final entry in _hostCitations.entries) {
+        expect(entry.value.trim(), isNotEmpty,
+            reason: '${entry.key} is listed without a stated reason');
+      }
+    });
+
+    test('the marker is read per occurrence — control', () {
+      final x = _extract('## s\n`a/b`$_hostMarker and `a/b` and `c` $_hostMarker\n');
+      expect(x.paths.map((c) => c.host).toList(), [true, false],
+          reason: 'the same token must be marked at one occurrence only');
+      expect(x.symbols.single.host, isFalse,
+          reason: 'a marker after a space is not attached to the span');
+      expect(marked, isNotEmpty,
+          reason: 'no $_hostMarker citations found: the marker reader is broken '
+              'or the checklist lost its markings');
     });
   });
 
