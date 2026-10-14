@@ -12,6 +12,8 @@
 > **Pre-release test and submission checklists live in `docs/`:**
 > `docs/iOS Device Test Checklist.md` — run on a physical device before every App Store
 > Connect upload, and `docs/Store Submission Checklist.md` for Windows/Partner Center.
+> `docs/Google Play Submission Checklist.md` for Google Play (added 14 Oct 2026, CR-47); every
+> step names its source, and unsourced items are listed separately for the developer.
 > The iOS one is verified against the code and cites file:line; treat those citations as
 > stale once the files it names change.
 > For current status, blockers, and next steps → fetch the ClickUp handoff document:
