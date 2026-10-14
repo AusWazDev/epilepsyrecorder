@@ -33,6 +33,12 @@ separate findings are in the Change Register, under the 14 October 2026 entries.
   records, and no 1.0.0 install can have either key, because the walkthrough dates from `2d5f588`
   (27 Aug 2026), after `v1.0.0`. **Nothing changed. Whether this is right is a product
   decision.**
+  - ✅ **DECIDED LATER THE SAME DAY (Brief 346 Part E): INTENDED, and recorded as D10.** 1.1.1
+    adds the wizard and changes the menus, so a returning user is a first-time user of this
+    interface. ⛔ **Do NOT gate the walkthrough on the presence of records**; that was
+    rejected. A "what's new" screen was not rejected on merit; it is unscoped. D10 is in the
+    CURRENT DECISIONS block in `C:\dev\CLAUDE.md` and the claude.ai instructions (stamp
+    `2026-10-14-b7433b8e`, re-paste owed), with the reasoning in the Change Register.
 - **Apparatus.** On one machine, the development build and a packed MER install block each other
   across user accounts (0x80073CFB). The check sheet's step 13 copy can fail and the run carries
   on regardless, which happened on this run. Proposed fixes for steps 13 and 17 are in the
