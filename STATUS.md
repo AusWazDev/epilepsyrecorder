@@ -5,6 +5,48 @@
 
 ---
 
+## Session: 14 October 2026 — Windows (Claude Code CLI)
+
+**Brief 346: the Brief 341 Windows device test is recorded. It PASSED.** A 1.0.0 Store install
+updated to 1.1.1 kept both seeded records, field for field. Evidence:
+`C:\Users\Public\MER341\B341`, outside the repo and left untouched. The reasoning and the
+separate findings are in the Change Register, under the 14 October 2026 entries.
+
+- **The route.** The test ran in a new standard local account, `Application Testing`, on the
+  development machine W11LAPTOP2. It went Store 1.0.0.0 (SignatureKind Store), then a sideload of
+  the test package 1.1.65.0 (SignatureKind Developer). Package family
+  `Notiva.MedicalEventRecorder_5v0y4nerrn178`, publisher
+  `CN=520D1E31-3542-4059-8124-5366ECCA4994`. All read from the transcripts.
+- **The checker, re-run on Windows** (Python 3.13.13). Self-test: `SELFTEST OK`, five cases (one
+  faithful control and four breaks, each turned to FAIL). Real run: `OVERALL: PASS (26 passed,
+  0 failed)`, exit 0. **It agrees with the folder's `check.txt`, which came from Python 3.10 in a
+  Linux VM.** The two are identical except for line endings (LF there, CRLF here).
+- **The update did not touch the data, before launch.** The prefs SHA-256 `E899F87D…BEE50` was
+  the same at Stage 2 and at Stage 4 before first launch. **That is a separate claim from the
+  migration working**, and this run measured them separately.
+- **After launch:** `mer_events.db` held 2 event rows with `migration_state` = `migrated`. The
+  pre-SQLite backup was written: 500 bytes, byte-identical to the legacy payload. The legacy list
+  was still in prefs (D5). The marker's FNV-1a hash recomputes to `4deb1ef4` over the payload's
+  500 UTF-8 bytes. Vocabulary: 4 event types, 56 observations, 32 triggers.
+- **NEW and OPEN: the first-run walkthrough appeared on an UPGRADED install.** The condition in
+  `shouldShowWalkthrough()` is "no `walkthroughSeenVersion` and no legacy bool". It never looks at
+  records, and no 1.0.0 install can have either key, because the walkthrough dates from `2d5f588`
+  (27 Aug 2026), after `v1.0.0`. **Nothing changed. Whether this is right is a product
+  decision.**
+- **Apparatus.** On one machine, the development build and a packed MER install block each other
+  across user accounts (0x80073CFB). The check sheet's step 13 copy can fail and the run carries
+  on regardless, which happened on this run. Proposed fixes for steps 13 and 17 are in the
+  Register. **The sheet is not edited.**
+- **The dev build is back, checked from `wjl25`.** 1.1.6.0, SignatureKind None, Status Ok,
+  development mode, installed from `build\msix_layout`. The data backup folder
+  `C:\Users\wjl25\MER-devdata-backup-20261014` exists, holding 2 files. ⚠️ The `-AllUsers`
+  removal of 1.1.65.0 from the test account could not be checked: that query needs
+  administrator rights and was refused.
+- **Still OPEN:** `msix_version` for the real Store submission. `pubspec.yaml` reads 1.1.6.0, and
+  the test build was overridden to 1.1.65.0. Nothing was committed for the test build.
+
+---
+
 ## Session: 30 September 2026 — Windows (Claude Code CLI)
 
 **Store state at session end, 30 September 2026.** Each line is true as at that date and names
