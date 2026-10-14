@@ -885,6 +885,16 @@ its only "upload" box was the dSYMs above.**
     observable from the repo]. The agreement renews, so this is a recurring condition, not a
     closed one.**
 
+**Store listing copy (added 14 October 2026, Brief LP-MER).**
+
+- [ ] Store listing copy. Before submitting to any store, ask the developer for the current MER
+  store listing pack (claude.ai project doc claude/MER-store-listing-pack.md). Apply every field
+  marked APPROVED or REMOVE for that store, and only those. If a field is marked REMOVE and its
+  replacement is DRAFT or absent, STOP and report. Do not delete a required field with nothing
+  to put in it. REMOVE means replace, not blank. A field marked CHECK FIRST is applied
+  only if its named check has been reported. Never write or reword listing copy here (D2: copy
+  goes to the adviser, not decided here). Report which fields changed.
+
 Before submitting — confirm:
 > "I have completed every item on this checklist on a physical device, on a release or
 > ad-hoc build, and recorded the iOS version and the tier. I have read §10 and I am not

@@ -46,6 +46,7 @@ Do not submit until all boxes are checked. No exceptions.
 - [ ] Terms of Service URL loads: notiva.com.au/medical-event-recorder/terms/
 - [ ] Submission options complete (runFullTrust declared and approved)
 - [ ] Chapter 3 tax status confirmed in Partner Center payout settings
+- [ ] **Store listing copy** (added 14 Oct 2026, Brief LP-MER). Before submitting to any store, ask the developer for the current MER store listing pack (claude.ai project doc claude/MER-store-listing-pack.md). Apply every field marked APPROVED or REMOVE for that store, and only those. If a field is marked REMOVE and its replacement is DRAFT or absent, STOP and report. Do not delete a required field with nothing to put in it. REMOVE means replace, not blank. A field marked CHECK FIRST is applied only if its named check has been reported. Never write or reword listing copy here (D2: copy goes to the adviser, not decided here). Report which fields changed.
 
 ## 6. Partner Center Upload
 
