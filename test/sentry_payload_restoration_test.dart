@@ -78,7 +78,7 @@ void main() {
               'is still diagnosable.');
     });
 
-    test('a FormatException keeps message and offset, drops source', () {
+    test('a FormatException keeps only its offset, drops message and source', () {
       // The 1.0.2 path: a corrupt legacy payload decoded without a guard.
       final payload = '[{"id":"a","notes":"$kUserNotes"} NOT JSON';
       Object? caught;
@@ -106,8 +106,11 @@ void main() {
           reason: '⛔ THE SOURCE MUST BE GONE.');
       expect(value, contains('offset:'),
           reason: 'offset is kept — it locates the fault without quoting it.');
-      expect(value, contains('message:'),
-          reason: 'and the parser message is kept.');
+      // ⛔ REVERSED 14 October 2026 (Brief MER-F5): this asserted
+      // `contains('message:')`, "and the parser message is kept". Default-deny
+      // keeps the type and the offset only.
+      expect(value, isNot(contains('message:')),
+          reason: 'the parser message is dropped too, since MER-F5.');
     });
 
     test('a FileSystemException carrying a user-chosen filename keeps only '
@@ -176,15 +179,24 @@ void main() {
           reason: 'only the error identifier set by the channel survives.');
     });
 
-    test('⭐ an UNRECOGNISED type is left alone — this is a whitelist', () {
+    // ⛔ REVERSED 14 October 2026 (developer's decision, Brief MER-F5). This
+    // test was named '⭐ an UNRECOGNISED type is left alone — this is a
+    // whitelist' and asserted the value still contained its text, with the
+    // reason "A rule that rewrote everything would be a scrubber, not a
+    // whitelist, and could not know what it was removing." The sanitiser is now
+    // default-deny: it does not need to know what it removes, because it sends
+    // the TYPE instead of any text. Full suite: sentry_default_deny_test.dart.
+    test('⛔ an UNRECOGNISED type is reduced to its type name (default-deny)',
+        () {
       final other = StateError('some internal invariant');
       final event = sanitiseEventValues(SentryEvent(
         throwable: other,
-        exceptions: [SentryException(type: 'x', value: other.toString())],
+        exceptions: [SentryException(type: 'StateError', value: other.toString())],
       ));
-      expect(event.exceptions!.single.value, contains('some internal invariant'),
-          reason: '⛔ A rule that rewrote everything would be a scrubber, not '
-              'a whitelist, and could not know what it was removing.');
+      expect(event.exceptions!.single.value, isNot(contains('some internal invariant')),
+          reason: '⛔ an unrecognised type\'s text passed through.');
+      expect(event.exceptions!.single.value, 'StateError',
+          reason: 'the type name is what remains.');
     });
 
     test('sanitisedErrorText applies the same rule to a stringified error', () {

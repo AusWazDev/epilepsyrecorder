@@ -42,6 +42,7 @@ import '../screens/walkthrough_screen.dart';
 import '../theme/mer_theme.dart';
 import '../widgets/mer_icon_widget.dart';
 import '../theme/mer_type.dart';
+import '../services/sentry_messages.dart';
 
 /// Serialises whole composite loads, so `_loadRecords` cannot run concurrently
 /// with itself.
@@ -846,7 +847,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       base = fold.records;
       if (fold.addedIds.isNotEmpty || fold.durationsRecovered.isNotEmpty) {
         await Sentry.captureMessage(
-          'iOS handoff: legacy shared records folded in',
+          kMsgHandoffFolded,
           level: SentryLevel.info,
           // ⛔ COUNTS BECOME BOOLEANS. Whether anything was folded, and
           // whether the write landed, are facts about the operation; HOW MANY
@@ -879,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // record invented here would need a start time, and a wrong timestamp in
       // a medical record is worse than an absent duration.
       await Sentry.captureMessage(
-        'Capture inbox: end instruction with no matching record',
+        kMsgInboxOrphanEnd,
         level: SentryLevel.warning,
       );
     }
@@ -889,7 +890,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (drain.deferReasons.isNotEmpty && !_inboxDeferralReported) {
       _inboxDeferralReported = true;
       await Sentry.captureMessage(
-        'Capture inbox: entries left in place, not applied',
+        kMsgInboxDeferred,
         level: SentryLevel.warning,
         // ⛔ `count` REMOVED — a count of the user's pending entries.
         // `reasons` is categorical and is why the entries were deferred.

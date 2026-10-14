@@ -16,6 +16,7 @@ import 'medication_note.dart';
 import '../theme/mer_theme.dart';
 import 'vocabulary.dart';
 import 'vocabulary_store.dart';
+import '../services/sentry_messages.dart';
 import '../theme/mer_type.dart';
 
 /* ===========================
@@ -1320,7 +1321,7 @@ Future<void> _reportPersistStrand(
   Duration threshold,
 ) async {
   await Sentry.captureMessage(
-    'Persist strand: save has not completed',
+    kMsgPersistStrand,
     level: SentryLevel.error,
     withScope: (scope) => scope.setContexts('persist_strand', {
       // WHICH STORE. The queue is shared, so either backend can be the one
@@ -1358,7 +1359,7 @@ Future<bool> persistEvents(
     // working. It is reported at `warning` so the frequency is visible without
     // it reading as a crash.
     await Sentry.captureMessage(
-      'Persist withheld: the record list is not known to be complete',
+      kMsgPersistWithheld,
       level: SentryLevel.warning,
       // ⛔ `records` REMOVED — a count of the user's records. `from` is the
       // whole point of this report: it separates `failed` from `notAttempted`.

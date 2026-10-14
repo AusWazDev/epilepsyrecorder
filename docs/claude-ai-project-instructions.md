@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-10-14-de01c55f
+INSTRUCTIONS STAMP: 2026-10-14-45f01fe4
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -161,7 +161,7 @@ structural fact about the channel, not a preference.
 | # | Decision | Since | Built? |
 |---|---|---|---|
 | D1 | **MER is FREE with an optional donation.** No feature gating, no export gate, no subscription, no trial. Supersedes the June freemium plan and the USD $4.99 one-time price. | 20 Aug 2026 | 🔴 **NO.** No donation mechanism exists. The Terms still promise a paid app in two places (`terms:38` §3, and the unnumbered callout at `terms:18`) and must be revised BEFORE any store price change |
-| D2 | **MER is a data capture tool only — never diagnostic.** Public copy must not claim diagnosis, monitoring, prediction or treatment. Claim wording is load-bearing; route anything touching it to the adviser rather than deciding it. | standing | ✅ enforced in copy |
+| D2 | **MER is a data capture tool only — never diagnostic.** Public copy must not claim diagnosis, monitoring, prediction or treatment. Claim wording is load-bearing; route anything touching it to the adviser rather than deciding it. ⚠️ ANNOTATED 14 Oct 2026 (developer's rulings; the decision is unchanged). The ADVISER STEP IS DROPPED: claim wording is decided by the chat half, and outside advice is sought only if MER adds features that interpret data (patterns, alerts, predictions). The WORDING RULE STANDS: public copy says MER records and logs, never that it diagnoses, monitors, predicts or treats, and the store description states that it does not diagnose or treat any condition ("As long as it says we don't, that's fine"). | standing | ✅ enforced in copy |
 | D3 | **Export-shape changes need no compatibility layer.** One user, manual amendment acceptable. No compatibility mode, no second export option, no version negotiation. Shape is tracked by a filename marker, not a column. | 26 Aug 2026 | ✅ marker `v4` ⚠️ **CORRECTED 12 Oct 2026 (DB-1 A4):** *"marker `v4`"*: the code writes `v8` (`kCsvShapeVersion`). The decision is unchanged. |
 | D4 | **The seeded catalogue is EPILEPSY ONLY this release.** Migraine needs its own research pass; shipping one well beats two thinly. | 20 Aug 2026 | ✅ |
 | D5 | **`epilepsy_event_records_v1` stays permanently.** It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into, drained into SQLite on the next foreground. **Never remove it.** ⚠️ **REASON CORRECTED 26 Sep 2026; the decision is unchanged.** *"It is no longer the event store — it is the inbox the iOS native path and the Android background isolate write into"* no longer describes the code, and nor does the *"drained into SQLite on the next foreground"* that follows it: that key holds ONLY the legacy event list. Its one writer is `writeEventPayload`, called only by the SharedPreferences store. The inbox is separate `mer_inbox_<uuid>` keys, and it is those that drain (Brief 185 C1). ⛔ **The instruction, never remove the key, stands.** Only the stated reason was corrected. **WHY the key must stay is OPEN**, pending the chat half's reading of Brief 186 A1. ⚠️ **THE "WHY" IS CLOSED, 26 Sep 2026 (Brief 187).** The key must stay because it is **the SharedPreferences fallback store's LIVE event list, and the migration recovery branch's only readable source.** The fallback is still reachable after migration: `StorageBoot.init` falls back on any throw while opening SQLite at boot, and `EventStore._load` then reads this key as the whole record list. **Measured 7 Sep 2026:** a poisoned iOS build fell back on a migrated device and showed 42 of 58 records, the 16 invisible ones existing only in SQLite. ⛔ **STANDING RULE: the payload is NEVER cleared, not by a migration, not by a drain, not as a privacy measure. Only Reset clears it, and Reset is the user's own action.** Clearing it would be destruction, not concealment: an interrupted migration re-runs FROM this payload, and the only other copy is a backup file the app never reads back by itself (Brief 186 A2). | SQLite v1 | ✅ |
@@ -984,6 +984,13 @@ NOT repo-established and not checkable from the repo.]*
 **Regulatory:** positioned as a data capture tool only, never diagnostic. Claim
 wording is load-bearing. Route anything touching diagnosis, prognosis,
 monitoring or treatment to the adviser rather than deciding it.
+⚠️ *[ANNOTATED 14 October 2026 (developer's rulings; the paragraph above is left
+as written).]* The ADVISER STEP IS DROPPED: claim wording is decided by the chat
+half, and outside advice is sought only if MER adds features that interpret
+data (patterns, alerts, predictions). The WORDING RULE STANDS: public copy says
+MER records and logs, never that it diagnoses, monitors, predicts or treats, and
+the store description states that it does not diagnose or treat any condition
+("As long as it says we don't, that's fine"). See D2.
 
 **Monetisation:** free with an optional donation, no feature gating (decided
 20 Aug 2026, superseding the June freemium plan). Older records describing a
