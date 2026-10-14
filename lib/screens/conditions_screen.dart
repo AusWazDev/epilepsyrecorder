@@ -180,9 +180,12 @@ class _ConditionsScreenState extends State<ConditionsScreen> {
                     textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
                       // Defers to the user's own word, the way the whole
-                      // vocabulary does — renameEntry is is_seeded = 1 only,
-                      // because a user's entry is theirs and MER does not
-                      // relabel it. Deliberately NOT "whatever you call your
+                      // vocabulary does. (Corrected 14 Oct 2026, Brief
+                      // MER-F4: this read "renameEntry is is_seeded = 1
+                      // only", the wrong way round. `renameEntry` REFUSES
+                      // seeded entries, so only a user's own entry can be
+                      // relabelled, and no screen calls it yet.)
+                      // Deliberately NOT "whatever you call your
                       // episodes": this field takes a CONDITION, and that
                       // wording invites the event type instead, producing a
                       // condition named "Seizures" holding a type "Seizure".

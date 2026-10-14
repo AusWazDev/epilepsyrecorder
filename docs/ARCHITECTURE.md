@@ -172,6 +172,16 @@ numbers in this table and three were wrong within days.
 | 8 | `medication_screen.dart` → `MedicationStore.add` | Record a deviation | Main isolate | `insertMedicationNote` — **a different table and record kind** |
 | 9 | `home_screen.dart` restore handler | Restore from a backup | Main isolate | `insertMedicationNote` per note in `RestoreOutcome.notesToAdd` |
 
+⚠️ **CORRECTED 14 October 2026 (Brief MER-F4); rows 4 and 5 are left as written.** Row 4's
+Writes cell reads *"`writeEventPayload`; sets `mer_active_event`"* and row 5's reads *"rebuilds
+the record to set `duration` from elapsed time"*. Neither describes the code. **`_handleStart`
+posts a START fact with `writeStartInstruction`** (one `mer_inbox_<uuid>` key in
+shared_preferences) and sets `mer_active_event`. **`_handleEnd` posts an END fact with
+`writeEndInstruction`**, carrying seconds. Neither reads or writes the record list; the record is
+created by the main isolate when it drains the inbox (`drainInbox`, `capture_inbox.dart`), the
+same as sites 6 and 7. So the sentence below, *"Sites 6 and 7 do not pass through
+`writeEventPayload`"*, is true of sites 4 and 5 as well.
+
 Sites 6 and 7 **do not pass through `writeEventPayload`** and know nothing about
 any Dart-side storage convention. Anything added to the Dart write path must be
 assumed absent on iOS quick-log until proven otherwise.
@@ -335,6 +345,9 @@ cadence.
 They are not layered. The exclusion is deliberate: `awesome_notifications`
 reassigns `UNUserNotificationCenter.delegate` to itself, which would break the
 native iOS handler. Hence `notification_service.dart:60`:
+⚠️ *[CORRECTED 14 October 2026 (Brief MER-F4); `:60` is left as written and is wrong. The line
+below is the first statement of `NotificationService.init()`. Cite it by that symbol: it has
+moved at least twice, and this brief's own edit to the file moved it again.]*
 
 ```dart
 if (Platform.isWindows || Platform.isIOS) return;
@@ -378,6 +391,9 @@ if (Platform.isWindows || Platform.isIOS) return;
 > matters to a carer.**
 
 `onActionReceived` returns immediately on iOS (`notification_service.dart:111`).
+⚠️ *[CORRECTED 14 October 2026 (Brief MER-F4); `:111` is left as written and is wrong. The
+guard is the `if (Platform.isIOS) return;` at the top of `NotificationService.onActionReceived`.
+Cite it by that symbol.]*
 The plugin is registered on Windows but `init()` returns before using it, so
 nothing is ever posted.
 

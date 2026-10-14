@@ -15,6 +15,7 @@ import 'screens/home_screen.dart';
 import 'models/event_store_sqlite.dart';
 import 'models/storage_boot.dart';
 import 'models/storage_migration.dart';
+import 'services/content_free_report.dart';
 import 'services/notification_service.dart';
 import 'widgets/mer_icon_widget.dart';
 import 'theme/mer_type.dart';
@@ -340,6 +341,9 @@ String? _categoricalValueFor(Object? throwable) {
   // `sqlite_single_writer_test`, which caught this file importing it directly.
   final db = categoricalDatabaseErrorText(throwable);
   if (db != null) return db;
+  // ⭐ Brief MER-F4 (14 October 2026): a report built content-free is rendered
+  // from its categorical fields, never from anything else it might carry.
+  if (throwable is ContentFreeReport) return throwable.categorical;
   if (throwable is FormatException) {
     // ⭐ `message` and `offset` are public and carry no user text; `source`
     // does. Dart's own `FormatException.toString()` renders up to ~78

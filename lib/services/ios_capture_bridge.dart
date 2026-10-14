@@ -30,6 +30,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/capture_inbox.dart';
 import '../models/capture_instruction.dart';
 import '../models/event_record.dart';
+import 'content_free_report.dart';
 
 /// Set once, when the pre-inbox App Group record mirror has been folded into
 /// the store and retired. Lives in Dart's own namespace because Dart owns the
@@ -257,12 +258,22 @@ Future<SharedRecordsReconcileOutcome> reconcileLegacySharedRecords({
   // ⛔ REPORTED AS SOON AS IT IS KNOWN, not at the retirement sites. The counts
   // are what make it actionable: "3 of 11 elements produced no record" can be
   // investigated; "something failed" cannot.
+  //
+  // ⛔ CONTENT-FREE BY CONSTRUCTION (Brief MER-F4, 14 October 2026). This was a
+  // `StateError` with `parse.failure` interpolated, and on a decode failure
+  // that held `$e`: a `FormatException` quoting up to ~78 characters of the
+  // payload, which is the user's records. `beforeSend` could not clean it,
+  // because by then it was a `StateError`'s text. The report still fires, still
+  // names the read, and still carries the counts and the exception TYPE.
   if (!parse.complete && !_incompleteReported) {
     _incompleteReported = true;
     onError?.call(
-      StateError('Legacy mirror read INCOMPLETE — ${parse.failure}. '
-          'kept ${parse.records.length} of ${parse.elements}. '
-          'The mirror is NOT being retired; this will retry next foreground.'),
+      LegacyMirrorReadIncomplete(
+        reason:    parse.reason!,
+        kept:      parse.records.length,
+        elements:  parse.elements,
+        errorType: parse.errorType,
+      ),
       StackTrace.current,
     );
   }
@@ -422,7 +433,8 @@ class MirrorParse {
     required this.records,
     required this.elements,
     required this.complete,
-    this.failure,
+    this.reason,
+    this.errorType,
   });
 
   /// The records that could be built. Survivors only, as before.
@@ -438,7 +450,14 @@ class MirrorParse {
   final bool complete;
 
   /// Why it was incomplete, for the report. Null when complete.
-  final String? failure;
+  ///
+  /// ⛔ An enum, not a string, since Brief MER-F4: the string form carried the
+  /// caught exception's text, and with it part of the payload.
+  final MirrorFailure? reason;
+
+  /// For [MirrorFailure.decodeThrew] only: the exception's TYPE, from
+  /// `describeThrowableType`. Never its text.
+  final String? errorType;
 
   /// Elements that decoded but produced no record.
   int get dropped => elements - records.length;
@@ -454,7 +473,7 @@ MirrorParse _parseMirroredRecords(String raw) {
     if (decoded is! List) {
       return const MirrorParse(
         records: <EventRecord>[], elements: 0,
-        complete: false, failure: 'payload did not decode as a List',
+        complete: false, reason: MirrorFailure.notAList,
       );
     }
     final records = decoded
@@ -467,17 +486,53 @@ MirrorParse _parseMirroredRecords(String raw) {
       records: records,
       elements: decoded.length,
       complete: complete,
-      failure: complete
-          ? null
-          : '${decoded.length - records.length} of ${decoded.length} '
-              'elements produced no record',
+      reason: complete ? null : MirrorFailure.elementsDropped,
     );
   } catch (e) {
+    // ⛔ NEVER `$e` (Brief MER-F4). A `FormatException`'s text quotes the
+    // payload. The TYPE is kept; the text is not.
     return MirrorParse(
       records: const <EventRecord>[], elements: 0,
-      complete: false, failure: 'decode threw: $e',
+      complete: false, reason: MirrorFailure.decodeThrew,
+      errorType: describeThrowableType(e),
     );
   }
+}
+
+/// Why a mirror read was incomplete. Categorical, so a report can carry it.
+enum MirrorFailure { notAList, elementsDropped, decodeThrew }
+
+/// The report sent when the legacy mirror could not be read completely.
+///
+/// ⛔ CONTENT-FREE BY CONSTRUCTION: an enum, two counts and a type name. The
+/// text still begins "Legacy mirror read INCOMPLETE", as the `StateError` it
+/// replaces did, so a search for the old reports still finds the new ones.
+class LegacyMirrorReadIncomplete extends ContentFreeReport {
+  const LegacyMirrorReadIncomplete({
+    required this.reason,
+    required this.kept,
+    required this.elements,
+    this.errorType,
+  });
+
+  final MirrorFailure reason;
+  final int kept;
+  final int elements;
+
+  /// From `describeThrowableType` only.
+  final String? errorType;
+
+  String get _why => switch (reason) {
+        MirrorFailure.notAList        => 'payload did not decode as a List',
+        MirrorFailure.elementsDropped =>
+          '${elements - kept} of $elements elements produced no record',
+        MirrorFailure.decodeThrew     => 'decode threw ${errorType ?? 'unknown'}',
+      };
+
+  @override
+  String get categorical => 'Legacy mirror read INCOMPLETE — $_why. '
+      'kept $kept of $elements. '
+      'The mirror is NOT being retired; this will retry next foreground.';
 }
 
 /// ⚠️ ONE REPORT PER PROCESS, and the reason is that an incomplete read now
@@ -495,8 +550,30 @@ bool _incompleteReported = false;
 void debugResetIncompleteReport() => _incompleteReported = false;
 
 /// Reports a channel failure without letting it reach the caller.
+///
+/// ⛔ DEFAULT-DENY (Brief MER-F4, 14 October 2026). This is the funnel for the
+/// capture path, which handles raw record payloads: the legacy mirror, the
+/// inbox, the active-event marker and the navigation channel. Only reports that
+/// are content-free by construction ([ContentFreeReport]) and the channel's own
+/// error types pass as they are. Anything else is reduced to its TYPE.
+/// `PlatformException` passes because `beforeSend` already reduces it to its
+/// `code`. The app-wide sanitiser in `main.dart` stays a blocklist; this is
+/// deliberately scoped to the one path that handles payloads.
 void reportCaptureChannelError(Object error, StackTrace stack) {
-  unawaited(Sentry.captureException(error, stackTrace: stack));
+  unawaited(Sentry.captureException(captureReportable(error),
+      stackTrace: stack));
+}
+
+/// What [reportCaptureChannelError] actually sends for [error].
+@visibleForTesting
+Object captureReportable(Object error) {
+  if (error is ContentFreeReport ||
+      error is PlatformException ||
+      error is MissingPluginException ||
+      error is TimeoutException) {
+    return error;
+  }
+  return UncategorisedCaptureError(error);
 }
 
 /// Whether a failure on `au.com.notiva.mer/navigation` is worth reporting.

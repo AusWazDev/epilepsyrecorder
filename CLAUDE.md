@@ -148,6 +148,8 @@ lib/
                             repository.** Date is when the claim was CHECKED, not when the screen landed.
     duration_format.dart  — duration labels and the seconds/bucket split
     backup.dart           — JSON backup envelope (schema 2), parsing/validation, id-merge restore plan
+                            ⚠️ **CORRECTED 14 Oct 2026 (Brief MER-F4); left as written.** *"(schema 2)"* is stale: `kBackupSchemaVersion`
+                            in `constants.dart` is 4. Read the constant, not this line.
   screens/
     home_screen.dart      — event list, Last Event card, overflow menu, splash redirect
     log_event_screen.dart — the single-page form (edit path for a COMPLETE record)
@@ -256,6 +258,7 @@ channel is created. Capture on Windows is in-app only.
 - `awesome_notifications` v0.11.0 — **Android only**, uses `SilentAction` (fires without opening the app)
 - Channel key `mer_active_v2` — v2 forced recreation after `defaultColor` + `NotificationImportance.Default` changes
 - `locked: false` — notification is in the standard (non-system) section so it shows expanded by default; can be swiped away but restores on next app open via `_restoreNotification()`
+  ⚠️ **CORRECTED 14 Oct 2026 (Brief MER-F4); the line above is left as written.** *"`locked: false`"* is wrong: the standing "Log Event Now" notification sets `locked: true` in `notification_service.dart` (`_showNormal`). Its own comment says that only pins it on API 33 and below, because Android 14+ lets users dismiss ongoing notifications anyway. The active "Event Ended" notification sets no `locked`. Read 14 Oct 2026 (FR-MER1).
 - `@pragma('vm:entry-point')` required on BOTH the class AND the static callback
 - Notification permission denied → app still loads (try-catch in `init()`); Help screen shows orange status + link to Android notification settings via `showNotificationConfigPage()`
 - Large icon: `drawable/ic_notification_large.png` (flat PNG from mipmap-xxhdpi, not adaptive icon)
@@ -300,6 +303,7 @@ Omitting any one of these produces either no icon, a black circle, or incorrect 
 ### CSV export
 - `history_screen.dart` uses `share_plus` — works cross-platform including Windows
 - No file path dependencies — uses system share sheet
+- ⚠️ **CORRECTED 14 Oct 2026 (Brief MER-F4); the two lines above are left as written.** *"No file path dependencies — uses system share sheet"* predates the save paths. `showExportOptions` (`event_record.dart`) offers Share everywhere, and a Save option on every platform but iOS. On Android, `exportCsvSaveAs` writes straight to the hard-coded `/storage/emulated/0/Download` with no chooser. On Windows it opens a `getSaveLocation` dialog. The backup sheet (`backup_service.dart`) has the same split. Read 14 Oct 2026 (FR-MER1).
 
 ---
 

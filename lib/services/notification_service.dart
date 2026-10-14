@@ -23,6 +23,7 @@ import '../theme/mer_theme.dart';
 import '../constants.dart';
 import '../models/capture_instruction.dart';
 import '../models/duration_format.dart';
+import 'content_free_report.dart';
 import 'ios_capture_bridge.dart' show reportCaptureChannelError;
 
 // ── IDs & storage keys ────────────────────────────────────────────────────────
@@ -105,6 +106,22 @@ void debugResetUnreadableReport() => _unreadableReported = false;
 
 const _timeoutMins    = 30;
 
+/// The report sent when the active-event marker cannot be read.
+///
+/// Content-free by construction: fixed words and the occurrence count. The
+/// marker's own value (a start time) is never part of it.
+class ActiveMarkerUnreadable extends ContentFreeReport {
+  const ActiveMarkerUnreadable({required this.occurrence});
+  final int occurrence;
+
+  @override
+  String get categorical =>
+      'Active event marker could not be read. PRESERVED, not '
+      'removed — the start time is the only copy and deleting it would '
+      "make the running event's duration unrecoverable. occurrence "
+      '#$occurrence.';
+}
+
 /// What the active marker turned out to be.
 enum MarkerState {
   /// Parsed. Safe to act on and safe to remove.
@@ -178,13 +195,12 @@ Future<MarkerState> resolveActiveMarker(
   // at one per launch, so a later reader still sees how often it recurred.
   if (!_unreadableReported) {
     _unreadableReported = true;
-    onReport?.call(
-      StateError('Active event marker could not be read. PRESERVED, not '
-          'removed — the start time is the only copy and deleting it would '
-          "make the running event's duration unrecoverable. occurrence "
-          '#$count.'),
-      StackTrace.current,
-    );
+    // ⭐ A ContentFreeReport since Brief MER-F4 (14 October 2026), because it
+    // goes through `reportCaptureChannelError`, which is now default-deny and
+    // would otherwise reduce it to a type name. The text is unchanged: fixed
+    // words plus the occurrence count, never the marker's value.
+    onReport?.call(ActiveMarkerUnreadable(occurrence: count),
+        StackTrace.current);
   }
   return MarkerState.unreadable;
 }
