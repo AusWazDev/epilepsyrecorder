@@ -168,6 +168,28 @@ was written and is left as written; these decisions settle it.*
 4. ⛔ **From now on, iOS build numbers are allocated from this ledger the way Android's are:** read
    the highest iOS code here, add one, write the row, push it, and only then build.
 
+### Windows rows
+
+*Added 17 October 2026 (AEDT), Brief MER-W2, CR-51.* **Until this date the ledger had no Windows
+rows** (Brief MER-W1 A4). The MSIX version is NOT read from `version:` by the msix tool; it is
+`msix_config` `msix_version` in `pubspec.yaml`, folded as `major.minor.<build>.0` (the mapping is
+written beside that line). The code column below is the `<build>` part.
+
+⚠️ **The first three rows are HISTORY, NOT LEDGER RECORDS.** Each was found outside this file by
+Brief MER-W1 and is marked with where it was read from. None names a commit, because none was
+recorded.
+
+| code | name | built from | date (AEST) | artefact | went where | superseded |
+|---|---|---|---|---|---|---|
+| — (**Windows**) | 1.0.0 | ⛔ **NOT RECORDED.** Read from `STATUS.md` (session of 26 April 2026: *"MER MSIX v1.0.0.0 built and submitted to MS Store for certification"*), not from this ledger | 26 Apr 2026 (submitted) | MSIX `1.0.0.0`, x64, signed `CN=520D1E31-3542-4059-8124-5366ECCA4994` | **Microsoft Store, LIVE** (product `9PMJ09CDSL6K`; Brief 341 stage 1 read `SignatureKind Store`, family `Notiva.MedicalEventRecorder_5v0y4nerrn178`) | — |
+| 6 (**Windows**) | 1.1.0 | ⛔ **NOT RECORDED.** Read from `STATUS.md` (session of 14 October 2026, *"1.1.6.0, SignatureKind None, Status Ok, development mode, installed from `build\msix_layout`"*, and session of 26 September 2026, *"the packaged registration (1.1.6.0, from `build\msix_layout`)"*), not from this ledger | not recorded (the `build\msix_layout` manifest on this machine is dated 25 Aug 2026) | MSIX layout `1.1.6.0`, unsigned, development registration | this machine only, development mode. Never uploaded | — |
+| 65 (**Windows**) | 1.1.1 | ⛔ **NOTHING COMMITTED** for it. Read from `STATUS.md` (session of 14 October 2026, *"the test build was overridden to 1.1.65.0. Nothing was committed for the test build"*) and the Change Register (Brief 346), not from this ledger | 14 Oct 2026 | `MER-1.1.1-msix-1.1.65.0-newuser-test.msix`, SHA-256 `39e5e39f…ad749a3`, **SignatureKind Developer**, signed with the local TEST certificate `1F47F898D58528C072D4B19AFD81814117FFBF6A` | Brief 341 device test, account `Application Testing` on W11LAPTOP2. Never uploaded. ⚠️ Its `-AllUsers` removal could not be checked (needs administrator) | ⛔ **SPENT.** The number is used and must not be reused |
+| **66** (**Windows**) | 1.1.1 | ⬜ **ALLOCATED, NOT YET BUILT.** Allocated against parent `6717569`; the commit the build comes from is written here from the build-time git read, per the procedure above | 17 Oct 2026 (allocated) | ⬜ **not yet produced.** To be MSIX `msix_version 1.1.66.0`, `version: 1.1.1+66`, x64, unsigned (`sign_msix: false`; the Store signs on submission) | ⬜ intended: Microsoft Store submission | — |
+
+⚠️ **Code 66 is unused on every platform at allocation.** Per decision 2 above, any later Android or
+iOS build that takes 66 must come from the same `lib/`, `pubspec.yaml` and `pubspec.lock` as this
+Windows build.
+
 ---
 
 ## The rule, and where it now reads its answer
