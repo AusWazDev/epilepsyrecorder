@@ -472,12 +472,11 @@ output.** Ask what the harness is standing in for, not only whether it is workin
 
 | Item | Value |
 |------|-------|
-| Certificate file | `C:/Users/wjl25/Documents/MedicalEventRecorder.pfx` |
+| Store upload signing | **None locally.** Signed by the Store on submission (Microsoft Learn, "Sign an MSIX package", signing options table: "Microsoft Store distribution \| Signed by the Store on submission \| Free"). `sign_msix: false` in `pubspec.yaml` for that reason |
+| Test certificate | Thumbprint `1F47F898D58528C072D4B19AFD81814117FFBF6A`: a LOCAL TEST certificate, used for the Developer-signed Brief 341 sideload (1.1.65.0). **Never signs a Store upload** |
 | Publisher identity | `CN=520D1E31-3542-4059-8124-5366ECCA4994` |
 | Identity name | `Notiva.MedicalEventRecorder` |
 | MSIX output | `build/windows/x64/runner/Release/medical_event_recorder.msix` |
-
-> Certificate password stored separately — do not commit to repo.
 
 ---
 

@@ -7,7 +7,7 @@ publish_to: 'none'
 # building. This file records codes that were COMMITTED; the ledger records
 # codes that were BUILT, and they are not the same set — code 59 was built and
 # installed on 20 September 2026 and appears nowhere below.
-version: 1.1.1+65
+version: 1.1.1+66
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -100,9 +100,15 @@ msix_config:
   # packages happily. Verify against the built AppxManifest.xml, not against
   # a successful build.
   #
-  # `publisher` is also the certificate SUBJECT. Signing requires a cert whose
-  # subject matches it character for character; the real one is on this
-  # machine in CurrentUser\My, thumbprint 1F47F898D58528C072D4B19AFD81814117FFBF6A.
+  # SIGNING: a Store upload is NOT signed locally. It is signed by the Store
+  # on submission. Microsoft Learn, "Sign an MSIX package", signing options
+  # table: "Microsoft Store distribution | Signed by the Store on submission |
+  # Free". That is why sign_msix is false below: no local certificate is used
+  # for a Store upload.
+  #
+  # Thumbprint 1F47F898D58528C072D4B19AFD81814117FFBF6A is a LOCAL TEST
+  # certificate. It signed the Developer-signed Brief 341 sideload package
+  # (1.1.65.0). It must NEVER sign a Store upload.
   display_name: Medical Event Recorder
   publisher_display_name: Notiva
   identity_name: Notiva.MedicalEventRecorder
@@ -126,7 +132,7 @@ msix_config:
   # Live Store package is 1.0.0.0 (Submission 2, x64), so this is an upgrade.
   # A version below the published one is rejected, and the Store treats the
   # fourth part as its own.
-  msix_version: 1.1.6.0
+  msix_version: 1.1.66.0
   logo_path: windows/runner/resources/app_icon.ico
   create_assets: false
   sign_msix: false

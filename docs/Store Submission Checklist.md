@@ -9,6 +9,7 @@ Do not submit until all boxes are checked. No exceptions.
 
 - [ ] `AppxManifest.xml` extracted and read — identity name (`Notiva.MedicalEventRecorder`), publisher CN (`520D1E31-3542-4059-8124-5366ECCA4994`), version, display name all correct
 - [ ] Package version incremented from last submission
+- [ ] **Package version source** (added 17 Oct 2026, Brief MER-W2). The MSIX version comes from `msix_config` `msix_version` in `pubspec.yaml`, not from `version:`. Allocate the Windows row in `docs/BUILD-LEDGER.md` and push it BEFORE setting the number. The number must be above the version of the last SUBMITTED package (Partner Center), not the last built one.
 - [ ] Architecture matches declaration (x64; Arm64 added in v1.0.1)
 - [ ] Build completed cleanly — `flutter build windows --release` then `dart run msix:create` then manual signtool signing
 
