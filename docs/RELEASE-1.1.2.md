@@ -158,6 +158,17 @@ one word".*
   *"when the app is opened as a count of sessions"*. If item 12 turns session tracking off, both
   that copy and §6 would need to change with it.
 
+### 22. About shows "1.1.1" with no build number ✅
+- **What:** About gives the version name only. On Windows there is no other way for a user to
+  tell us which build they have, so a report from the field cannot be tied to a ledger row.
+- **Evidence:**
+  - Observed in MER-W4 on 17 Oct 2026, on the 1.1.66.0 test install: About read "1.1.1".
+  - From the code: `about_screen.dart` renders `AppInfo.version` in its title line
+    (`'Version ${AppInfo.version}'`) and in its "Version" row. `AppInfo.buildNumber` is not shown
+    on either.
+  - Cited by symbol, not line.
+- **Found:** 17 Oct 2026, Brief MER-W4 (ledger, "Row 66 device test").
+
 ---
 
 ## TOOLING: build, test, release
@@ -317,6 +328,36 @@ cannot be verified from it.*
   with 64 being in review with no users yet: an absence of data, not a measurement of stability.
 - **Found:** 30 Sep 2026. **Deadline:** February 2027, per Play.
 
+### 23. Guard the v2 to v9 `ADD COLUMN` steps with `hasColumn`, as v10 and v11 already are ✅
+- **What:** in `upgradeSchema` (`event_store_sqlite.dart`), the v2 to v9 steps run
+  `ALTER TABLE … ADD COLUMN` on a version bound alone. Only the v10 (`hidden`) and v11
+  (`updated_at`) steps first ask the table whether the column exists.
+- **Why it matters:** sqflite starts the upgrade from `PRAGMA user_version`. A database whose
+  `user_version` is behind its actual columns re-runs an unguarded step, fails on
+  `duplicateColumn`, and the launch falls back to shared_preferences.
+- **Evidence:** reproduced on 17 Oct 2026, on a dev database with `schema_version` 9 and
+  `user_version` 1. The `FALLBACK-REPRO` set and its readings are in `docs/BUILD-LEDGER.md`, in
+  the "Row 66 device test" section.
+- ⚠️ **Not sized.** It is a small change with a real safety argument. How a real device could
+  reach that state is not established; the reproduction came from a dev-only downgrade.
+- **Found:** 17 Oct 2026, Brief MER-W4.
+
+### 24. Give the storage fallback its own Sentry fingerprint ✅
+- **What:** the error-level "Storage migration did not complete; running on shared_preferences"
+  message groups with the info-level "Storage migrated to SQLite" message in one issue. That
+  issue then reads as error-level, and its user count belongs to the info events.
+- **Evidence:** MEDICAL-EVENT-RECORDER-9, read 18 Oct 2026, grouped by title and level. Every
+  event before 17 Oct 2026 is info-level; the only error-level events are MER-W4's own two.
+- **Found:** 18 Oct 2026, Brief MER-W4.
+
+### 25. Mark non-store builds in Sentry ◐
+- ✅ **The gap:** the only environment signal is `kReleaseMode ? 'production' : 'development'`
+  (`main.dart`). A release build run locally, such as a sideload test, is tagged `production`
+  exactly as a store install is.
+- ⛔ **Not specified.** It needs a CLI read of the release tooling and the Sentry init path first.
+  No design is given here.
+- **Found:** 18 Oct 2026, Brief MER-W4.
+
 ---
 
 **Count at creation, 30 Sep 2026:** 19 items.
@@ -342,3 +383,11 @@ record. The counts above are left as written.
 - **Item 6 is superseded by measurement:** its heading's claim, "Android 64 was never uploaded",
   is false as at 30 Sep 2026.
 - **Item 21 is new** and ⚠️ unverified from the repo: a Play Console read.
+
+**Count after Brief MER-W4, 18 Oct 2026:** 24 items on the list, plus item 18 kept as a withdrawn
+record. The counts above are left as written.
+- **Items 22 to 25 are new**, from the Windows 1.1.66.0 device test. They are rows, not work;
+  none is fixed here.
+- ✅ **3 verified:** 22, 23, 24.
+- ◐ **1 partly verified:** 25. The gap is verified; the specification is deliberately not
+  written.
