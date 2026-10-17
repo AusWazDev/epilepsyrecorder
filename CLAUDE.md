@@ -472,7 +472,7 @@ output.** Ask what the harness is standing in for, not only whether it is workin
 
 | Item | Value |
 |------|-------|
-| Store upload signing | **None locally.** Signed by the Store on submission (Microsoft Learn, "Sign an MSIX package", signing options table: "Microsoft Store distribution \| Signed by the Store on submission \| Free"). `sign_msix: false` in `pubspec.yaml` for that reason |
+| Store upload signing | Microsoft Learn, "App package requirements for MSIX app", "Code signing for Microsoft Store submissions": *"Your MSIX and AppX packages don't have to be signed with a certificate rooted in a trusted certificate authority when submitting to the Microsoft Store. The Microsoft Store will automatically re-sign your MSIX/AppX packages with a Microsoft certificate during the publishing process after your app passes certification."* **ESTABLISHED:** no CA-trusted certificate, no purchased certificate, no `.pfx` or `.cer` from an authority, no USB token or HSM. **OPEN, 17 Oct 2026:** whether Partner Center accepts an UNSIGNED MSIX at upload is not established; `STATUS.md` records the 26 Apr 2026 submission as signed manually with signtool. To be settled by the first upload of 1.1.66.0. `sign_msix: false` in `pubspec.yaml`, so the msix tool signs nothing |
 | Test certificate | Thumbprint `1F47F898D58528C072D4B19AFD81814117FFBF6A`: a LOCAL TEST certificate, used for the Developer-signed Brief 341 sideload (1.1.65.0). **Never signs a Store upload** |
 | Publisher identity | `CN=520D1E31-3542-4059-8124-5366ECCA4994` |
 | Identity name | `Notiva.MedicalEventRecorder` |
