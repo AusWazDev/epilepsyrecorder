@@ -38,7 +38,7 @@ You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
 
-INSTRUCTIONS STAMP: 2026-10-14-45f01fe4
+INSTRUCTIONS STAMP: 2026-10-18-13106665
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -403,6 +403,54 @@ that could not be read:
   ⚠️ *Neither 1 October entry is an unreadable fact asserted as read.* Both
   facts were readable and were read only in part, like the 27 September entry,
   so the closing sentence below does not cover them either.
+- *[Added 17 Oct 2026. A THIRD CLASS.]* ⛔ **A QUOTED FACT STRETCHED ONE
+  STEP PAST WHAT IT SAYS.** The chat half quoted Microsoft Learn
+  correctly, then wrote "No local certificate is needed for the upload"
+  into a pubspec comment (CR-51). The quote settles whether a
+  certificate is needed. It does not settle whether an UNSIGNED MSIX is
+  accepted at upload, which is a different question, answered later by
+  the upload itself. ⭐ Not class 1 or 2: the citation is real and was
+  read correctly, and that is exactly what makes the stretch invisible.
+  Narrowed in CR-52.
+- *[Added 18 Oct 2026. A FOURTH CLASS, and the costliest of the run.]*
+  ⛔ **A COUNT ESCALATED WITHOUT THE COLUMNS THAT CLASSIFY IT.** The chat
+  half read MEDICAL-EVENT-RECORDER-9 grouped by RELEASE, saw production
+  builds, and escalated "production storage fallbacks" to the top of the
+  MER list, writing "up to five real people" into a Project doc and into
+  advice to the developer. Re-read the next day with LEVEL and MESSAGE
+  columns: every production event is the info marker; the only error
+  events were our own Windows test events, 0 users. ⭐ The number was
+  real. The column that says pass or fail was never in the query.
+  ⚠️ A2 and A3 both cover this, and the chat half had INVOKED A2 BY NAME
+  in the same document, about the same mismatched totals, one section
+  earlier. Naming a rule is not applying it. ⚠️ Two signals sat in the
+  CLI's own report and were absorbed into the finding instead of
+  doubting it: the storage-error field came back empty (because those
+  were not error events), and the rows did not sum to the issue total.
+  ⭐ **SHARPENED 18 Oct, then CORRECTED the same day.** A direct Sentry
+  read showed every event of ours carrying the release prefix
+  `epilepsyrecorder@` and every real install carrying
+  `au.com.notiva.medicaleventrecorder@`, and the 17 Oct read had grouped
+  by release and read the build number past the package name. ⛔ **But
+  that prefix is NOT a test-versus-user discriminator.** The CLI
+  established it comes from the Windows exe's version resource
+  (`windows/runner/Runner.rc` InternalName, the flutter create default),
+  via PackageInfo, so it separates WINDOWS FROM MOBILE and nothing else.
+  It appeared to separate our events only because no real Windows user
+  is on 1.1.1 yet. ⭐ **A discriminator that holds by CIRCUMSTANCE, not
+  by construction** — the same distinction the "by construction" rule
+  already draws about code, here about a diagnostic signal. ⚠️ And the
+  circumstance ends when Windows 1.1.1 ships.
+- *[Added 18 Oct 2026. A FIFTH, same day, and it caught BOTH halves.]*
+  ⛔ **A LOG MESSAGE'S TEXT IS NOT ITS EMIT CONDITION.** "Storage
+  migrated to SQLite" was read by both halves as meaning a migration
+  succeeded. The CLI then established from the code that
+  migrateJsonToSqlite treats an empty or missing source as an empty
+  list, verifies 0 = 0 and returns migrated, so the message fires on a
+  fresh install with NOTHING to migrate. The chat half had written
+  "success marker" into an amended ledger sentence and withdrew it; the
+  CLI stopped before writing it. ⭐ Locate the predicate that logs, not
+  the string that is logged.
 
 None were reasoning failures. All were unreadable facts asserted as read.
 ⚠️ **ANNOTATED 27 September 2026 — the sentence above is kept as written.** It
@@ -587,6 +635,43 @@ correction rounds. One feasibility read would have caught it.
   ⭐ The collision is why the misattribution was invisible: both halves read
   the citation as naming their own document, and both were reading it
   correctly.
+- **A10.** ⭐ **A control that cannot observe what it protects fails
+  silently, and its EXISTENCE is what stops anyone looking.** Earned
+  17 Oct 2026: a dev-data backup folder named for app data had never
+  held it, and vanished unnoticed. Of every recorded control, ask what
+  it can OBSERVE, not what it is named for. ⚠️ A sweep of recorded
+  controls on that question is owed and unrun.
+- **A11.** ⭐ **Before escalating a count, name the column that
+  distinguishes a pass from a fail, and quote it.** If that column was
+  not in the query, the count has a size but no severity. ⭐ And when a
+  column IS queried, read the whole value, not the part you came for.
+  Companion to A2 and A3. Earned 18 Oct 2026.
+- **A12.** **A store console submission is a shared working tree.** A6
+  covers repo trees and chat sessions; a console draft is the same. One
+  party in the form at a time, and record what was typed INTO it at the
+  time of typing. A saved-but-unsubmitted state is the one most easily
+  lost. Earned 17 Oct 2026.
+- **A13.** **A browser profile's display name is not a stable identity;
+  only its deviceId is.** Select by deviceId. Earned 17 Oct 2026, after
+  the chat half repeatedly reached the wrong Chrome profile and read
+  console state from the wrong account.
+- **A14.** ⛔ **A BRIEF THAT IS REFERENCED RATHER THAN INCLUDED DOES NOT
+  TRAVEL.** Every dispatch block must be self-contained. "Paste the
+  block I gave earlier" is not a delivery: the chat half wrote exactly
+  that on 18 Oct 2026, the block never reached the CLI, and the session
+  blocked on it. ⭐ Complement to A7: A7 says which channel reaches a
+  running chat session; A14 says a chat block reaches the CLI only if it
+  is pasted, so the author must assume nothing else is in scrollback.
+  Earned 18 Oct 2026, in the act of writing this very list.
+- **A15.** ⛔ **A fact recorded under one question is invisible to every
+  other question.** STATUS.md recorded on 25 Aug 2026 that
+  PackageInfo.packageName returns the project name on Windows. It was
+  filed as a cross-platform GROUPING problem. The same fact answered a
+  test-versus-user question that nobody put to it for eight weeks, and
+  both halves then rediscovered it from Sentry. ⭐ Not an absence claim
+  and not an unread fact: a READ, RECORDED fact filed under the wrong
+  consequence. When recording a fact, name what it would change if it
+  were false, not only what prompted it. Earned 18 Oct 2026.
 
 ## EXPECT PUSHBACK
 
