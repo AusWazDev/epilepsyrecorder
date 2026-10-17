@@ -11,13 +11,13 @@ Do not submit until all boxes are checked. No exceptions.
 - [ ] Package version incremented from last submission
 - [ ] **Package version source** (added 17 Oct 2026, Brief MER-W2). The MSIX version comes from `msix_config` `msix_version` in `pubspec.yaml`, not from `version:`. Allocate the Windows row in `docs/BUILD-LEDGER.md` and push it BEFORE setting the number. The number must be above the version of the last SUBMITTED package (Partner Center), not the last built one.
 - [ ] Architecture matches declaration (x64; Arm64 added in v1.0.1)
-- [ ] Build completed cleanly — `flutter build windows --release` then `dart run msix:create` then manual signtool signing
+- [ ] Build completed cleanly — `flutter build windows --release` then `dart run msix:create`. No signing step for a Store upload (see §2)
 
 ## 2. Signing Verification
 
-- [ ] MSIX signed with real store certificate (not `CN=Msix Testing`)
-- [ ] Verify: `signtool verify /pa /v build\windows\x64\runner\Release\medical_event_recorder.msix` — shows Notiva CN
-- [ ] `sign_msix: false` confirmed in `pubspec.yaml` (signing is manual via PowerShell)
+- [ ] **A Store upload needs no signing by us** (established 18 Oct 2026, ledger row 66). 1.1.66.0 was uploaded unsigned and was accepted, certified and published. Upload the package `dart run msix:create` produces, as built. ⚠️ A default, not a finding: nothing establishes that a signed upload would be rejected. ⛔ This says nothing about the package the Store DELIVERS: Microsoft re-signs Store packages, so never record a delivered package as unsigned.
+- [ ] ⛔ Never upload a package signed with the local test certificate (thumbprint `1F47F898D58528C072D4B19AFD81814117FFBF6A`). A sideload test copy is a separate file under a separate name; `signtool` belongs to that copy, never to the Store upload.
+- [ ] `sign_msix: false` confirmed in `pubspec.yaml` (no local signing step for a Store upload)
 
 ## 3. Visual Assets — open every file and eyeball it
 
