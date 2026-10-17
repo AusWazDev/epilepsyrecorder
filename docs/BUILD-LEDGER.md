@@ -184,11 +184,140 @@ recorded.
 | — (**Windows**) | 1.0.0 | ⛔ **NOT RECORDED.** Read from `STATUS.md` (session of 26 April 2026: *"MER MSIX v1.0.0.0 built and submitted to MS Store for certification"*), not from this ledger | 26 Apr 2026 (submitted) | MSIX `1.0.0.0`, x64, signed `CN=520D1E31-3542-4059-8124-5366ECCA4994` | **Microsoft Store, LIVE** (product `9PMJ09CDSL6K`; Brief 341 stage 1 read `SignatureKind Store`, family `Notiva.MedicalEventRecorder_5v0y4nerrn178`) | — |
 | 6 (**Windows**) | 1.1.0 | ⛔ **NOT RECORDED.** Read from `STATUS.md` (session of 14 October 2026, *"1.1.6.0, SignatureKind None, Status Ok, development mode, installed from `build\msix_layout`"*, and session of 26 September 2026, *"the packaged registration (1.1.6.0, from `build\msix_layout`)"*), not from this ledger | not recorded (the `build\msix_layout` manifest on this machine is dated 25 Aug 2026) | MSIX layout `1.1.6.0`, unsigned, development registration | this machine only, development mode. Never uploaded | — |
 | 65 (**Windows**) | 1.1.1 | ⛔ **NOTHING COMMITTED** for it. Read from `STATUS.md` (session of 14 October 2026, *"the test build was overridden to 1.1.65.0. Nothing was committed for the test build"*) and the Change Register (Brief 346), not from this ledger | 14 Oct 2026 | `MER-1.1.1-msix-1.1.65.0-newuser-test.msix`, SHA-256 `39e5e39f…ad749a3`, **SignatureKind Developer**, signed with the local TEST certificate `1F47F898D58528C072D4B19AFD81814117FFBF6A` | Brief 341 device test, account `Application Testing` on W11LAPTOP2. Never uploaded. ⚠️ Its `-AllUsers` removal could not be checked (needs administrator) | ⛔ **SPENT.** The number is used and must not be reused |
-| **66** (**Windows**) | 1.1.1 | `bb5462e` ✅ **exact, tree clean, level with origin, READ FROM GIT AT BUILD TIME** (Brief MER-W3, 17 Oct 2026, 14:59 and 15:02 AEDT). Allocated against parent `6717569` (`21d7fae`); the version was set in `a04c18b`; `bb5462e` changes comments only. `flutter build windows --release`, then `dart run msix:create --build-windows false`. ⚠️ The first build attempt failed at link time (`LNK1181`, `jvm.lib`) because `build\windows\x64\CMakeCache.txt` held a stale `JAVA_JVM_LIBRARY` under Android Studio's JBR. The cache was set aside, not deleted, and the rebuild took `jvm.lib` from `JAVA_HOME` (Microsoft OpenJDK 21) | 17 Oct 2026, 15:02–15:03 AEDT | ✅ **BUILT.** `medical_event_recorder.msix`, 17,376,321 B, sha256 `62c1d94c9fb22b6e35566fd0fb7c5d9bad5d3b4aa77ff051b67d2bb4a36fd5d9`, 118 entries. Read FROM THE ARCHIVE's `AppxManifest.xml`: Identity `Notiva.MedicalEventRecorder`, Version `1.1.66.0`, Publisher `CN=520D1E31-3542-4059-8124-5366ECCA4994`, `x64`, PublisherDisplayName `Notiva`, `Windows.Desktop` MinVersion `10.0.17763.0`. **UNSIGNED:** no `AppxSignature.p7x` entry and Authenticode `NotSigned` (control: the 1.1.65.0 package, read the same way, shows the entry and `Valid`, signer `1F47F898…`). `tool/verify_release_signing.sh --msix-only`: PASS, `sqlite3.dll` 1,657,856 B. Durable copy, re-hashed after the copy: `OneDrive\Projects\App Dev\MER builds\66\MER-1.1.1-msix-1.1.66.0-store.msix` | ⬜ **NOT YET UPLOADED.** The developer uploads in Partner Center. Whether Partner Center accepts it unsigned is OPEN, and this upload settles it | — |
+| **66** (**Windows**) | 1.1.1 | `bb5462e` ✅ **exact, tree clean, level with origin, READ FROM GIT AT BUILD TIME** (Brief MER-W3, 17 Oct 2026, 14:59 and 15:02 AEDT). Allocated against parent `6717569` (`21d7fae`); the version was set in `a04c18b`; `bb5462e` changes comments only. `flutter build windows --release`, then `dart run msix:create --build-windows false`. ⚠️ The first build attempt failed at link time (`LNK1181`, `jvm.lib`) because `build\windows\x64\CMakeCache.txt` held a stale `JAVA_JVM_LIBRARY` under Android Studio's JBR. The cache was set aside, not deleted, and the rebuild took `jvm.lib` from `JAVA_HOME` (Microsoft OpenJDK 21) | 17 Oct 2026, 15:02–15:03 AEDT | ✅ **BUILT.** `medical_event_recorder.msix`, 17,376,321 B, sha256 `62c1d94c9fb22b6e35566fd0fb7c5d9bad5d3b4aa77ff051b67d2bb4a36fd5d9`, 118 entries. Read FROM THE ARCHIVE's `AppxManifest.xml`: Identity `Notiva.MedicalEventRecorder`, Version `1.1.66.0`, Publisher `CN=520D1E31-3542-4059-8124-5366ECCA4994`, `x64`, PublisherDisplayName `Notiva`, `Windows.Desktop` MinVersion `10.0.17763.0`. **UNSIGNED:** no `AppxSignature.p7x` entry and Authenticode `NotSigned` (control: the 1.1.65.0 package, read the same way, shows the entry and `Valid`, signer `1F47F898…`). `tool/verify_release_signing.sh --msix-only`: PASS, `sqlite3.dll` 1,657,856 B. Durable copy, re-hashed after the copy: `OneDrive\Projects\App Dev\MER builds\66\MER-1.1.1-msix-1.1.66.0-store.msix` | ⬜ **NOT YET UPLOADED.** The developer uploads in Partner Center. Whether Partner Center accepts it unsigned is OPEN, and this upload settles it. ⭐ **DEVICE-TESTED 17–18 Oct 2026 (Brief MER-W4), on a separately signed COPY: see "Row 66 device test" below** | — |
 
 ⚠️ **Code 66 is unused on every platform at allocation.** Per decision 2 above, any later Android or
 iOS build that takes 66 must come from the same `lib/`, `pubspec.yaml` and `pubspec.lock` as this
 Windows build.
+
+#### Row 66 device test (Brief MER-W4, 17 Oct 2026 20:04 to 18 Oct 2026 00:20 AEDT)
+
+**Machine:** W11LAPTOP2, account `wjl25`. **Paths** below are relative to
+`OneDrive\Projects\App Dev\MER builds\66-sideload-test\` unless stated otherwise.
+
+**WHAT WAS INSTALLED: a signed COPY, never the Store artefact.**
+- **The Store artefact is unchanged:** row 66's hash `62c1d94c…6fd5d9` still refers to the
+  unsigned `66\MER-1.1.1-msix-1.1.66.0-store.msix`. It was re-hashed before and after signing and
+  at the end of the brief.
+- **The test copy:** `MER-1.1.1-msix-1.1.66.0-SIDELOAD-TEST-signed-1F47F898.msix`, SHA-256
+  `c521fa0f1ba2b733563ff8ab296c55d902b42f2a896c9a2a897937fae6eea8c7`, 17,377,126 B. Signed with
+  the local TEST certificate `1F47F898…` (`signtool sign /fd SHA256`; `signtool verify /pa` OK).
+- **Payload identical apart from the signature**, by per-entry SHA-256:
+  - 117 of the Store artefact's 118 entries are byte-identical;
+  - the copy adds `AppxSignature.p7x` and `AppxMetadata/CodeIntegrity.cat`;
+  - `[Content_Types].xml` was re-serialised with two overrides added for those entries.
+  - Control: the same comparison against the 1.1.65.0 package found 18 differing entries.
+- **Installed with `Add-AppxPackage`: OK, no error.** SignatureKind `Developer`, Version
+  `1.1.66.0`. The dev registration was removed first, with `Remove-AppxPackage
+  -PreserveApplicationData`.
+
+**B1 BACKUP of the dev data, taken before the test** (`devdata-backup-20261017\`), hashed at source
+and in the copy:
+- `mer_events.db` `fb440955f609be1ca4d5fdba46c138c19f9f77beda21000e5716bc448f43be62`, 86,016 B;
+- `shared_preferences.json` `18b20a0bd958aebf5e52a832d4f46dc778e264bb12159a2198baa622f1c018d8`,
+  80 B.
+
+**RESULT 1, on the existing dev data: STORAGE FALLBACK, reproduced and preserved.**
+- 1.1.66.0 launched; About shows "1.1.1".
+- It ran on the shared_preferences fallback store: the recorded event (`5d57783b…`) went into the
+  legacy list, and `mer_events.db` was not written.
+- Sentry recorded `DatabaseException(resultCode: 1, class: duplicateColumn)`.
+- **The three readings that are the finding**, taken from the dev database:
+  - `schema_meta.schema_version` = **9**
+  - `PRAGMA user_version` = **1**
+  - `event` columns (17): `ordinal, id, logged_at, occurred_at, duration_bucket,
+    duration_seconds, event_type, severity, feelings_json, triggers_json, notes,
+    referral_required, details_completed, condition_id, rescue_med_given, rescue_med_helped,
+    rescue_med_second_dose`
+- **The mechanism:** sqflite starts the upgrade from `user_version`, so `upgradeSchema(db, 1, 11)`
+  re-runs the unguarded v2 `ADD COLUMN details_completed` on a table that already has it. The
+  v10 and v11 steps are guarded with `hasColumn`; v2 to v9 are not.
+- **Evidence** (`fallback-repro-20261017\`):
+  - `FALLBACK-REPRO_mer_events_user_version1_schema9.db` `fb440955…f43be62`. It is byte-identical
+    to B1: the failed upgrade rolled back.
+  - `FALLBACK-REPRO_shared_preferences_after_smoke_event.json`
+    `4f65df44a8be6d7d218f5495a3e880b950621e2e91d20904c7b41dfc62e1b3dd`, 1,109 B. It differs from
+    B1 because it holds the test event.
+
+**RESULT 2, on an empty data folder: ✅ PASS at every stage, on SQLite throughout.** The dev folder
+was renamed aside, so this launch started from nothing: no legacy list, `migration_source_count` 0.
+- **Launch:**
+  - a new `mer_events.db` with `PRAGMA user_version` **11** and `schema_version` **11**;
+  - 19 `event` columns, including `hidden` and `updated_at`;
+  - no fallback, and one Sentry info event.
+- **Record:**
+  - row `95c40327-1599-4037-bfe0-681a5ef0be86`, `logged_at` 2026-10-18T00:00:22.329;
+  - seizure, severity 1, 120 s, `["Tired"]`, `["Stress"]`, notes "W4 clean",
+    `details_completed` 1, `hidden` 0;
+  - no legacy list in prefs.
+- **Export CSV:**
+  - `medical_event_recorder_all_20261018_000413.v8.csv`, 389 B, with a 17-column header and one
+    data row matching the database row.
+- **Backup:**
+  - `mer_backup_20261018_000949.json`, 908 B;
+  - `schemaVersion` 4, `appVersion` `1.1.1+66`, 1 record (`95c40327…`).
+- **Close and relaunch:**
+  - no process left after close; the row was still present;
+  - still 11 / 11, still no legacy list, and no Sentry event;
+  - the developer confirmed it is visible in History.
+- **Evidence** (`clean-v11-smoke-20261018\`, 14 files, every one hashed at source and destination
+  and matching):
+  - `CLEAN-v11_mer_events_user_version11_schema11_1event.db` `743c6264…16d50bee3`;
+  - `CLEAN-v11_shared_preferences_no_legacy_list.json` `0fe2baef…5623393021`;
+  - the CSV `45814012…a1257169`;
+  - the backup `0018906c…bd21811`;
+  - the package's own data folder, which holds Windows settings and registry hives only.
+
+**OBSERVED, not judged as defects:**
+- About shows "1.1.1" with no build number.
+- The first launch started two `Medical_Event_Recorder.exe` processes in the same second, and both
+  reported the fallback; later launches started one.
+- `event_observation` and `event_trigger` hold no rows for the new event; feelings and triggers are
+  in the row's JSON columns.
+- **The export's "CSV saved" snackbar has an "Open" action, so under Flutter 3.41.7 it never times
+  out:** `snack_bar.dart` reads `persist = persist ?? action != null`. It stayed up across screens,
+  and the backup's confirmation queued behind it until "Open" was clicked.
+
+**SENTRY.** Two error-level "Storage migration did not complete; running on shared_preferences"
+events were raised by this test on release epilepsyrecorder@1.1.1+66, 17 Oct 2026 8:21 pm AEDT, 0
+users. They are our own test events. They group into MEDICAL-EVENT-RECORDER-9 together with the
+info-level "Storage migrated to SQLite" message. That grouping is why the issue reads as
+error-level although every event before 17 Oct 2026 is info-level, and why the issue's user count
+belongs to the info events and not to these errors. That info message is sent once per database,
+on the launch that first completes the one-time migration step, including when there is nothing to
+migrate (main.dart; migrateJsonToSqlite in storage_migration.dart), so its count is not a count of
+data migrations. Do not resolve or ignore the issue.
+
+**RESTORED, read back:**
+- The test install was removed, and the dev build re-registered from `build\msix_layout`:
+  1.1.6.0, SignatureKind None, IsDevelopmentMode True, Status Ok.
+- The 1.1.66.0 data folder was deleted after its verified copy, and the aside folder renamed back.
+- `shared_preferences.json` was then restored from B1, since the aside copy held the test event.
+- Both files re-hash to B1.
+
+The dev data folder is restored to its pre-test state: mer_events.db at user_version 1 with
+schema_meta.schema_version 9, hashes matching B1. That disagreement is deliberately preserved as
+the only held reproduction of a storage fallback and must not be "corrected". The re-registered dev
+layout is a 25 Aug binary at kSqliteSchemaVersion 1 (built between 9461f27 and 77adc0b), which
+matches user_version 1, so an ordinary launch of THAT layout is not expected to fall back (inferred
+from the code, not run). A build from HEAD (schema 11) opened against this database will fall back
+and will post another error-level event into MEDICAL-EVENT-RECORDER-9. There is no test-origin tag:
+the only environment signal is kReleaseMode ? 'production' : 'development' (main.dart), so a
+release build run locally is tagged production exactly as a store install is.
+
+🔴 **FINDING: THE 14 OCT 2026 DEV-DATA BACKUP NO LONGER EXISTS, AND NEVER HELD THE APP DATA.**
+- `C:\Users\wjl25\MER-devdata-backup-20261014`, recorded on 14 Oct 2026 (Change Register, the
+  Brief 341 apparatus entry) as the dev data backup, **does not exist** as at 17 Oct 2026
+  (`Test-Path` False; a control listing done the same way works).
+- **Its recorded contents (2 files, 8,192 bytes in all) match the package settings files** in
+  `%LOCALAPPDATA%\Packages\Notiva.MedicalEventRecorder_5v0y4nerrn178\Settings\` (`settings.dat`,
+  8,192 B, and `roaming.lock`, 0 B).
+- **They do not match the database.** MER's data lives in the real
+  `%APPDATA%\au.com.bedlin\epilepsyrecorder\`, where `mer_events.db` alone is 86,016 B.
+- **So it never held the app data it was taken to protect**, and nothing in any record would have
+  let its loss be noticed.
+- **This is why B1 sits in OneDrive with its hashes written here:** the record has to outlive the
+  folder.
 
 ---
 
