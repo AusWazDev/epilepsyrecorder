@@ -1420,3 +1420,12 @@ ALL** — and that is a property of the output type, not of the patterns.
 
 All code changes logged in:
 `C:\Users\wjl25\OneDrive\Projects\App Dev\Claude\Medical Event Recorder — Change Register.md`
+
+
+## Regulatory Note (Notiva / MER) (moved from `C:\dev\CLAUDE.md`, 2 Nov 2026)
+
+TGA (Therapeutic Goods Administration) regulates software that performs diagnosis or monitoring as a medical device. MER is positioned as a **data capture tool only** — it does not interpret, diagnose, or recommend. Public-facing copy must not claim diagnostic or monitoring capability. Have a lawyer review any copy that mentions "diagnosis", "prognosis", or "treatment plans" before publishing.
+
+⚠️ **ANNOTATED 14 October 2026 (Brief MER-F6, CR-50); the paragraph above is left as written.** *"Have a lawyer review any copy that mentions 'diagnosis', 'prognosis', or 'treatment plans' before publishing"* no longer stands for MER: **the adviser step for claim wording is DROPPED** (developer's ruling, 14 Oct 2026; see D2's annotation in the CURRENT DECISIONS block). Claim wording is decided by the chat half. Outside advice is sought only if MER adds features that interpret data (patterns, alerts, predictions). The wording rule stands: public copy says MER records and logs, never that it diagnoses, monitors, predicts or treats, and the store description states that it does not diagnose or treat any condition.
+
+---
