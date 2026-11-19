@@ -147,6 +147,13 @@ one word".*
   (`a11y_batch_render_comparison_test.dart`, Brief S note, 17 Sep 2026).
 - ⚠️ **How users read it** [unverified — chat half's recollection, 30 Sep 2026]. No user
   observation of that reading is in the repo.
+- ◐ **Annotated 19 Nov 2026 (Brief MER-REL-1 A, handover item 12); the bullets above are left as
+  written.** The AEL session's handover restates this item as *"History's crossed-out eye ('Hide
+  this event') reads as 'hidden'"*. Recorded here rather than as a new item.
+  - ✅ **Still in place, re-read 19 Nov 2026:** `Icons.visibility_off_outlined` with the tooltip
+    `'Hide this event'`, `history_screen.dart` (cited by symbol, not line).
+  - ⚠️ **The reading is still unobserved.** The handover's wording ("reads as hidden") is a second
+    report of the same concern, not a user observation.
 
 ### 9. Privacy policy §6 describes session tracking ⚠️ / ◐
 - ⚠️ **§6's content** [unverified — chat half's recollection, 30 Sep 2026]. The policy is not in
@@ -157,6 +164,20 @@ one word".*
   Sentry SDK's default applies. `bf5a2ae`'s own new copy says the diagnostic reports record
   *"when the app is opened as a count of sessions"*. If item 12 turns session tracking off, both
   that copy and §6 would need to change with it.
+- ✅ **Annotated 19 Nov 2026 (Brief MER-REL-1 A): §6's content is now READ, on Windows, as item 9
+  routed it. The ⚠️ above is left as written.**
+  - `notiva-site`, `src/pages/medical-event-recorder/privacy/index.astro`, section *"6.
+    Third-Party Services"*: *"The service also records when the app is opened and for how long,
+    as a count of sessions; that carries no information about what you did in the app."* Last
+    changed in `d23ca2c` (18 Oct 2026).
+  - ⭐ **And a second dependent sentence the item did not know about**, in section *"4. Data We Do
+    Not Collect"*, from `dd55bdc` (30 Sep 2026): *"Each installation of the app is given a random
+    identifier by the error-reporting service … It is created when the app is first installed
+    and is stored with the app's own files; using Reset does not change it."* The same section
+    lists *"Device identifiers"* among the data not collected, three lines above.
+  - The in-app copy is still at `disclaimer_screen.dart` (*"app is opened as a count of
+    sessions"*).
+  - **All three change when item 26 ships.** See item 26.
 
 ### 22. About shows "1.1.1" with no build number ✅
 - **What:** About gives the version name only. On Windows there is no other way for a user to
@@ -168,6 +189,132 @@ one word".*
     on either.
   - Cited by symbol, not line.
 - **Found:** 17 Oct 2026, Brief MER-W4 (ledger, "Row 66 device test").
+
+*Items 26 to 37 below were added 19 Nov 2026 by Brief MER-REL-1 Part A, from the AEL session's
+handover (`claude/HANDOVER-MER-from-AEL-session-2026-11-19.md`). Each was checked against the code
+at `88657e1` before it was written. Handover item 12 is recorded on item 8, not here.*
+
+### 26. Strip the Sentry per-install ID and session tracking (decision A4) ◐
+- **What:** the native Sentry SDKs attach a per-install identifier to reports, and session
+  tracking is on by default. Decision A4 removes both.
+- ✅ **From the repo and the resolved packages:**
+  - One Sentry init in `lib/`: `SentryFlutter.init(configureSentryOptions, …)` in `main()`. No
+    Swift file initialises Sentry (`AppDelegate.swift` mentions it only in a comment).
+  - `sendDefaultPii = false` (`configureSentryOptions`). No `setUser` anywhere in `lib/`.
+  - `enableAutoSessionTracking` is unset, so it is `true` (item 12, re-read today).
+  - Resolved, not pinned: `pubspec.yaml` says `sentry_flutter: ^9.0.0`; `pubspec.lock` resolves
+    9.19.0; the plugin's `android/build.gradle` names `io.sentry:sentry-android:8.39.1`; its
+    podspec and `ios/Podfile.lock` name `Sentry/HybridSDK` 8.58.1; its Windows build fetches
+    sentry-native 0.13.7 (`sentry-native/CMakeCache.txt`).
+  - Android, read from the compiled `sentry-android-core-8.39.1.aar` in the Gradle cache (a byte
+    search of `classes.jar`, 198 classes): the class `io.sentry.android.core.Installation` holds
+    the string `INSTALLATION`, and `DefaultAndroidEventProcessor`, `DeviceInfoUtil`,
+    `AndroidOptionsInitializer`, `InternalSentrySdk` and `ApplicationExitInfoEventProcessor`
+    reference it.
+- ⚠️ **Not established here** [report: MER-SENTRY-2, at `5fce27e`]:
+  - that the ID is set as `user.id`, `device.id` and session `did`;
+  - that this happens **regardless of `sendDefaultPii`**. `DefaultAndroidEventProcessor` also
+    reads `isSendDefaultPii`, so a byte search cannot say which fields the flag gates. Needs the
+    source or a decompile;
+  - anything about iOS (Sentry Cocoa is not on this machine) or Windows.
+- ⭐ **When this ships, three texts change with it:** item 9's policy §6 sessions sentence, the
+  policy's §4 install-identifier paragraph (see item 9's annotation), and `bf5a2ae`'s in-app
+  copy in `disclaimer_screen.dart` (*"a count of sessions"*). Item 29's store labels revert too.
+- **Overlaps:** item 12 is this item's sessions half; item 9 holds the dependent texts.
+- **Found:** before 19 Nov 2026 (MER-SENTRY-2); recorded 19 Nov 2026.
+
+### 27. Sanitiser gap: a native error's message reaches Sentry through `mechanism.data` ✅
+- **What:** `sanitiseEventValues` (`main.dart`, CR-49, MER-F5, "default-deny") rewrites each
+  exception's `value`, but never touches `mechanism.data`. The SDK copies a
+  `PlatformException`'s `message` there.
+- **Evidence:**
+  - MER's own doc comment on `sanitiseEventValues` says so: *"Stack frames, types, levels,
+    mechanisms and SDK contexts are untouched."* The body has no `mechanism` reference.
+  - `sentry_flutter` 9.19.0, `platform_exception_event_processor.dart`: *"Add code & message
+    from [PlatformException] to [SentryException]"*, and `data['message'] =
+    platformException.message;`.
+  - AEL `4e91232` (read-only, for comparison): its commit body says the same loop *"never"*
+    reached `mechanism.data['message']`, found by a test in which a store message's text
+    reached the transport. Its fix keeps `code` and withholds every other value. Its own
+    comment: *"Inherited from MER, which has the same loop and the same SDK; MER is not changed
+    here."*
+  - ⚠️ **Correction to the brief's framing:** `4e91232`'s subject is *"Sentry: report to AEL's own
+    project"*. The sanitiser fix is one hunk inside it, not a commit of its own.
+- **Why it is a claim:** the disclaimer says reports *"are designed not to include anything you
+  have recorded"*. A `PlatformException` message can carry whatever the native side put in it.
+- ⚠️ **Not established:** whether any MER `PlatformException` today carries user text in its
+  message. Part B sizes this.
+- **Found:** 17 Nov 2026 by AEL (AV-18); confirmed in MER 19 Nov 2026.
+
+### 29. Store privacy labels: declare the install ID until item 26 ships, then revert ⚠️ ⛔ HELD
+- ⛔ **HELD: developer approval not given. Recorded only. No console is touched.**
+- **What (report):** Play Data safety ("Device or other IDs") and App Store App Privacy ("Device
+  ID") would declare the identifier while it is sent, and be reverted when item 26 ships.
+- ⚠️ **Console state is not readable from the repo.** The App Store label's current state was not
+  read by anyone (handover).
+- ✅ **What the repo shows:** the published privacy policy already discloses the identifier
+  (section 4, `dd55bdc`, quoted on item 9), while the same section lists *"Device identifiers"*
+  as not collected. So the policy and any label that says "no device ID" disagree today.
+- **Found:** before 19 Nov 2026 (handover); recorded 19 Nov 2026.
+
+### 30. Store listing: "nothing is sent to the cloud or any third party" ◐
+- ✅ **The sentence is recorded in the repo as live on the App Store:** `STATUS.md`, App Store
+  Connect audit of 28 Aug (*"The unqualified privacy claim (… "nothing is sent to the cloud or any
+  third party", against Sentry) is the one Apple reviews against"*). It is not in `notiva-site`
+  (searched `src/`, no hit). Whether it is still live: ⚠️, console.
+- ✅ **False** against Sentry generally (crash reports go to a third party) and against item 26
+  (a per-install identifier goes with them).
+- ⛔ **The "26 Sep replacement" was not found.** No file in this repo or in `notiva-site` holds a
+  replacement dated 26 Sep. What exists is older: `docs/Store Listing Copy — v1.1 revision.md`
+  (Briefs 42, 43, 63 Part D; 18 to 20 Sep 2026), marked *"Not applied anywhere."* Its PRIVACY
+  block replaces the sentence with:
+  - *"Your event data is stored only on your device"*: the exclusivity shape banned on 26 Sep
+    2026 (items 1 to 3), and false on iOS for the same reason as item 1;
+  - *"Anonymous crash reports help fix faults; they contain no event data"*: "anonymous" is
+    contradicted by item 26 if the install ID is confirmed.
+  - **So that replacement is itself stale against two later findings.** Do not paste it as is.
+- **Found:** by 28 Aug 2026 (the App Store Connect audit in `STATUS.md`); recorded here 19 Nov
+  2026.
+
+### 31. Play Data safety: "Data can't be deleted" ⚠️ (console) / ✅ (what the repo says)
+- ⚠️ **The console answer** [report: handover]. Not readable from the repo.
+- ✅ **Deletion paths in the app and policy, for checking that answer later:**
+  - **Reset:** About's *"Reset app (clear all data)"*, `onReset` → `_confirmResetDisclaimer`
+    (`home_screen.dart`); the store side empties `kResetClearedTables`
+    (`event_store_sqlite.dart`). Its own copy: *"This cannot be undone."*
+  - **Hide is not delete:** policy section 7, *"Removing individual events hides them from the
+    history rather than erasing the underlying record"*.
+  - **Uninstall:** Android `allowBackup="false"` with `dataExtractionRules` (item 1), so uninstall
+    removes the app's data; on iOS a device backup can keep a copy (policy section 3).
+  - **Sentry-held data:** no user deletion path in the app. The install ID survives Reset (policy
+    section 4).
+- **Found:** before 19 Nov 2026 (handover); recorded 19 Nov 2026.
+
+### 32. Live Activity "End" control may clip ◐
+- ✅ **MER has two End controls**, both `Button(intent: EndMEREventIntent())` in
+  `ios/MERWidget/MERLiveActivity.swift`:
+  - one with `Label("End", systemImage: "stop.circle.fill")`: text plus icon;
+  - one, under `if #available(iOS 17.0, *)`, with `Text("Event Ended")`, padded and on a red
+    background.
+- **Reference only (decision A1, no code moves):** AEL made its control icon-only in `48ffaa0`.
+- ⚠️ **That MER's control clips** is not observed in the repo. It needs a device or simulator look,
+  in Release per this repo's simulator rule.
+- **Found:** before 19 Nov 2026 (handover); recorded 19 Nov 2026.
+
+### 37. D1 donation not built; the Terms still promise a paid app ✅
+- ✅ **No donation mechanism:** `grep -rni donat lib/` returns nothing at `88657e1`. Control: the
+  same command for `sentry` returns hits (28 in `main.dart` alone), so the search runs.
+  `STATUS.md` row M1-M4 records the same.
+- ✅ **The Terms** (`notiva-site`, `src/pages/medical-event-recorder/terms/index.astro`, read
+  19 Nov 2026 at `5dcd6a3`):
+  - line 18: *"Medical Event Recorder is a paid, one-time purchase app for recording personal
+    health events."*
+  - line 38: *"The app is a <strong>one-time paid purchase</strong>. No subscription or ongoing
+    fee applies."*
+  - ⭐ **and a third D1 does not cite**, line 82: liability *"is limited to the amount you paid for
+    the app"*. A free app makes that cap zero, which is a legal question, not a copy edit.
+  - D1's cited lines 18 and 38 have not moved.
+- **Found:** 20 Aug 2026 (D1); re-read 19 Nov 2026.
 
 ---
 
@@ -263,6 +410,16 @@ Moved up and priority raised, Brief 311, 30 Sep 2026: its red state is a saturat
 ### 12. `enableAutoSessionTracking = false` ✅ (current state verified; the change is the item)
 - **Evidence:** not set anywhere in `lib/` as at 30 Sep 2026, so the SDK default applies. See
   item 9 for the copy and the policy text that depend on it.
+- ✅ **Re-verified and annotated 19 Nov 2026 (Brief MER-REL-1 A); the text above is left as
+  written.**
+  - Still unset: `enableAutoSessionTracking` has 0 occurrences in `lib/` at `88657e1`.
+    `configureSentryOptions` (`main.dart`) is the only options site, and the same search finds it.
+  - The default, read from the resolved package (`sentry_flutter` 9.19.0, `pubspec.lock`):
+    `bool enableAutoSessionTracking = true;` in `sentry_flutter_options.dart`. It reaches Android
+    through `sentry_native_java_init.dart` (`setEnableAutoSessionTracking`) and iOS through
+    `SentryFlutter.swift` (`data["enableAutoSessionTracking"]`).
+  - ⭐ **This item is now the sessions half of item 26** (decision A4: install ID and sessions).
+    It stays numbered so references hold; the work is item 26's.
 
 ### 15. Xcode's App Store Connect session expires; sign in before an Organizer upload ✅
 - **Evidence:** `docs/iOS Device Test Checklist.md` §12 (Brief 242, 29 Sep 2026) and the Sign-off
@@ -358,6 +515,106 @@ cannot be verified from it.*
   No design is given here.
 - **Found:** 18 Oct 2026, Brief MER-W4.
 
+### 28. iOS privacy manifests are absent for Runner and MERWidget ✅ (absence) / ⚠️ (ITMS-91053)
+- ✅ **Absent:** no `PrivacyInfo.xcprivacy` anywhere under `ios/`, and 0 occurrences of
+  `PrivacyInfo` in `ios/Runner.xcodeproj/project.pbxproj`.
+- ✅ **Required-reason API use in MER's own Swift** (8 files in `ios/Runner` and `ios/MERWidget`):
+  UserDefaults only, both `UserDefaults.standard` and the App Group suite
+  (`UserDefaults(suiteName: kAppGroupId)`), in `AppDelegate.swift` and `EndMEREventIntent.swift`.
+  No hits for file timestamps, system uptime, disk space or active keyboards. Part B widens this
+  to plugins and Dart.
+- ✅ **Pods that ship their own manifest** (read from the pub cache at the `pubspec.lock`
+  versions): `file_selector_ios`, `flutter_native_splash`, `package_info_plus`, `share_plus`,
+  `shared_preferences_foundation`, `sqflite_darwin`, `url_launcher_ios`. **None:**
+  `awesome_notifications` 0.11.0 and the `sentry_flutter` plugin wrapper. Not readable from
+  Windows: `Sentry/HybridSDK` 8.58.1 and `IosAwnCore` 0.11.0 (CocoaPods trunk; `ios/Pods` is
+  not on this machine).
+  - ⚠️ `ios/Podfile.lock` records `flutter_native_splash` 2.4.3 against `pubspec.lock`'s 2.4.7,
+    so the Mac's last `pod install` predates the current lock.
+- ⚠️ **ITMS-91053 on the next upload** [report: handover]. The ledger's upload rows record 90473
+  warnings, not 91053. Only an upload can show it.
+- **Comparison:** AEL added both manifests in `fe71879` (AV-35 B). Part B reads them.
+- **Found:** before 19 Nov 2026 (handover); absence confirmed 19 Nov 2026.
+
+### 33. Play 16 KB page-size warning ◐
+- ⚠️ **The console warning** [report: handover]. Which release it names is not recorded.
+- ✅ **Native libraries MER ships**, from the last local release build's merged libs
+  (`build/app/intermediates/merged_native_libs/release/…`, dated 28 Sep 2026, the same night as
+  `build/app/outputs/bundle/release/app-release.aab`): `libapp.so`, `libflutter.so`,
+  `libsqlite3.so`, `libsentry.so`, `libsentry-android.so`, `libdartjni.so`,
+  `libdatastore_shared_counter.so`, across arm64-v8a, armeabi-v7a, x86_64 and x86.
+- ✅ **Every one has ELF LOAD alignment of at least 16 KB** (25 of 25 files; 16384 or 65536), read
+  from the program headers by a script.
+  - **Control:** a copy of `libsqlite3.so` with its LOAD alignment patched to 4096 is reported
+    "under 16KB" by the same script; the unpatched copy beside it passes.
+- ⚠️ **What this does not establish:** that the 28 Sep build is what Play warned about; that the
+  AAB stores the libraries uncompressed and 16 KB zip-aligned (Play's other condition); and any
+  library a later build adds. A check of the uploaded AAB itself would settle the first two.
+- **Found:** before 19 Nov 2026 (handover); recorded 19 Nov 2026.
+
+### 34. Apple 90725: uploads need the Xcode 27 / iOS 27 SDK from April 2027 ⚠️
+- ⚠️ **The requirement** [report: handover]. Not readable from the repo.
+- ⚠️ **Whether MER's iOS build Mac can run Xcode 27: not established.** The repo records the Mac as
+  an *"8 GB Intel MacBook Air"* (`STATUS.md`; `iOS Device Test Checklist.md` §13, *"the Mac (8 GB
+  Intel)"*) running Xcode 26.3 (`BUILD-LEDGER.md`, rows 5 and 65). Whether Xcode 27 supports
+  Intel Macs is not in the repo.
+- **Why it matters:** if it cannot, MER has no iOS upload path from April 2027.
+- **Found:** before 19 Nov 2026 (handover); recorded 19 Nov 2026.
+
+### 35. Sentry dSYM upload ✅ (with the brief's premise corrected)
+- ⛔ **"A dSYM upload build phase was added with CR-43" is wrong twice:**
+  - it came in with `192ae40` (v1.0.2+3), the same commit that carries CR-43 per the
+    instructions file, not with CR-43's own commits (`4d1514a`, `0468e6f`, which are
+    Android-only);
+  - **the build phase no longer exists.** `4cc50d3` (Brief 244, 29 Sep 2026) removed it; the
+    pbxproj today has no `sentry-cli`, `dSYM` upload or `Upload dSYMs` phase. The upload is
+    `tool/upload_dsyms.sh`, run after archiving (`iOS Device Test Checklist.md` §12).
+- ✅ **It has run successfully, with an independent read:** `BUILD-LEDGER.md` row 65 (iOS 1.1.1):
+  *"uploaded to Sentry 30 Sep 2026 (`tool/upload_dsyms.sh`, Brief 306)"*, 3 sent and 1 already
+  held, *"Verified independently … by a read of Sentry's Debug Files listing"*. Row 64's dSYMs
+  were not uploaded (a separate decision, per that row).
+- **What remains is process:** nothing makes the script run for each release. Whether it ran for
+  any build after 65 is not recorded.
+- **Found:** before 19 Nov 2026 (handover); corrected 19 Nov 2026.
+
+### 36. `project.pbxproj` re-sort churn on `pod install` ◐
+- ✅ **From history**, by a script comparing each commit's pbxproj with its parent's as a multiset of
+  lines: of 17 commits touching `ios/Runner.xcodeproj/project.pbxproj`, **1 is reorder-only**,
+  `4b32e3c` (6 May 2026, *"… + Xcode project reorder"*); 15 change content; 1 is the file's
+  creation. Of 7 commits touching `ios/Podfile.lock`, none is reorder-only.
+- ⚠️ **What this cannot see:** reorder hunks inside a content-changing commit, and churn never
+  committed (reverted on the Mac before commit). That `pod install` is the cause is the handover's
+  report.
+- **Found:** before 19 Nov 2026 (handover); recorded 19 Nov 2026.
+
+### 38. AEL data-loss fixes since the fork that MER must check (decision A2): NONE FOUND ✅
+- **Range:** `git log b859d9a..HEAD` in `event-recorder-fork` at `a6a1f55`, read-only: **90
+  commits**, 23 touching `lib/`. `b859d9a` is an ancestor of HEAD.
+- **Filter 1, by file:** commits touching storage, migration, backup, restore, reset, export, the
+  capture inbox or vocabulary files. **7 commits**, each classified:
+
+  | Commit | What | Data-loss fix? |
+  |---|---|---|
+  | `f92ddea` | identity rename; storage key prefix `mer_` to `ael_`, db file `ael_events.db` | No: renames for a new app, not a defect fix |
+  | `479b8ef` | seed vocabulary replaced with the animal set | No: content, AEL-only |
+  | `12752d4` | user-visible copy renamed (backup error strings among it) | No: copy |
+  | `ddd18b2` | episode summary PDF; `reset_files.dart` pattern gains `pdf` | No: new file type for a new feature |
+  | `8a19281` | `animal` table, schema 12, backup schema 5, Reset census | No: new feature built to the data-loss standard; fixes nothing inherited |
+  | `8a98e1e` | seeded catch-all relabelled, `value` unchanged | No: presentation |
+  | `f4c9aa7` | reading-width cap on screens incl. Your lists | No: layout |
+
+- **Filter 2, by content** (`git log -G` over `lib/` for persist, save, restore plan, delete,
+  storage boot and migration code): 5 commits, the four above plus `eb9bd34` ("Your animal"
+  screen, a new feature). No addition.
+- **Native side:** the commits touching `ios/Runner`, `ios/MERWidget` or `android/app/src/main`
+  are manifests (`fe71879`), Live Activity look (`48ffaa0`, `deecd06`) and splash images
+  (`6e2e146`). None touches capture or storage.
+- **Control:** both filters catch `8a19281`, a known storage commit (schema 12), so each can
+  return a storage commit when one exists.
+- **Result: 0 of 90 is a data-loss fix to code MER shares.** ⚠️ The A2 obligation is a standing
+  one; this answers it at `a6a1f55` only.
+- **Found:** 19 Nov 2026.
+
 ---
 
 **Count at creation, 30 Sep 2026:** 19 items.
@@ -391,3 +648,20 @@ record. The counts above are left as written.
 - ✅ **3 verified:** 22, 23, 24.
 - ◐ **1 partly verified:** 25. The gap is verified; the specification is deliberately not
   written.
+
+**Count after Brief MER-REL-1 Part A, 19 Nov 2026:** 37 items on the list, plus item 18 kept as a
+withdrawn record. The counts above are left as written.
+- **Items 26 to 38 are new** (13), from the AEL session's handover, each checked against the code
+  at `88657e1` before it was written. Handover item 12 was recorded on item 8 instead of as a new
+  item.
+- **Annotated in place, dated 19 Nov 2026:** 8 (handover item 12), 9 (policy §6 now read, and a
+  second dependent paragraph found in §4) and 12 (re-verified; now item 26's sessions half).
+- ✅ **4 verified:** 27, 35 (premise corrected), 37, 38 (a null result, with a control).
+- ◐ **7 partly verified:** 26, 28, 30, 31, 32, 33, 36. Items 28 and 31 each verify the repo half
+  and leave a console or upload half ⚠️.
+- ⚠️ **2 unverified from the repo:** 29 (also ⛔ HELD for developer approval) and 34.
+- **Item 9 moves from ⚠️ to ✅:** §6's content is read.
+- ⛔ **Premises in the brief found wrong:** 35's "added with CR-43" and its implied live build
+  phase (removed by `4cc50d3`); 30's "26 Sep replacement" (none exists; the repo's replacement is
+  from 18 to 20 Sep and is itself stale); 27's commit `4e91232` is a DSN change carrying the
+  sanitiser fix as one hunk.
