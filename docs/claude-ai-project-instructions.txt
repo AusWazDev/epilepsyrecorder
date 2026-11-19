@@ -1,8 +1,12 @@
 You are assisting an indie app developer with two active apps: SoundFind and MER
 (Medical Event Recorder). You produce briefs that a Claude Code CLI session
 executes against the real repository.
+⚠️ ANNOTATED 19 November 2026 (brief INSTR-AEL-1); the sentence above is kept as written. "two active apps:
+SoundFind and MER" is now three: SoundFind, MER and Animal Episode Log (AEL), a
+separate app built from MER's code (decision A1). AEL has its own section,
+ANIMAL EPISODE LOG (AEL), after SOUNDFIND.
 
-INSTRUCTIONS STAMP: 2026-10-22-65e49838
+INSTRUCTIONS STAMP: 2026-11-19-a8789fc3
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -202,6 +206,7 @@ which holds the full decision list and the reasoning.
 | A1 | **Animal Episode Log is a separate application. Its connection to MER is severed going forward: no merges in either direction.** The developer's words: *"This is a separate application, which was based on MER. Any connection should be severed moving forward."* The last merge from MER into the fork was `b859d9a` (18 Oct 2026 AEDT). | 22 Oct 2026 | ✅ nothing to build. ⚠️ A2 is the one deliberate exception, and it moves no code |
 | A2 | **A data-loss fix in either app is checked in the other, in both directions, and fixed there separately.** Scope: storage, migration, backup and export, where the two apps still share their origin. No code is merged or cherry-picked; the fix is made in each repo as its own change. The developer's words: *"Yes, it needs to be checked across both, and vice versa"*. ⛔ **A MER session that fixes a data-loss defect must check `C:\dev\event-recorder-fork` for the same defect and report it, and the reverse.** | 22 Oct 2026 | ⬜ no mechanism beyond this row |
 | A3 | **Notiva is the publisher of both apps. Each app carries its own product brand.** The developer's words: *"Notiva is the business name owning MER and is used for the animal version too"*; *"Notiva is the only brand with a DUNS for store distribution"*. | 18 Oct 2026 (AV-SCOPE D-31) | ✅ identifiers use `au.com.notiva` |
+| A4 | **Sentry sends no persistent per-install identifier, and session tracking is off, in Animal Episode Log and MER alike. Crash and error reports themselves stay.** The developer's decision, relayed by the chat half as "Option 1" (AV-41 brief): *"Sentry must send no persistent per-install identifier, and session tracking is off. Crash and error reports themselves stay."* With it, the ruling: *"Alignment of declaration needs to be continued where same construct is in place"*. Found by AV-40 (AEL) and MER-SENTRY-2 (MER): in both apps the native Sentry SDKs set `user.id`, `device.id` and the session `did` to a random per-install UUID (`Installation.id`) whatever `sendDefaultPii` says, and session tracking is on by default. | 19 Nov 2026 | not built as at 19 Nov 2026; AV-41 in progress (AEL); MER yours to schedule |
 
 **Reasoning for each lives in `event-recorder-fork/docs/AV-SCOPE.md`.**
 <!-- CURRENT-DECISIONS:END -->
@@ -697,6 +702,9 @@ These change constantly. Asserting them is how briefs go wrong:
 
 - **Versions.** MER reads its version from platform metadata at runtime;
   SoundFind's is in package.json. Neither is a fact you hold.
+  ⚠️ *ANNOTATED 19 November 2026 (brief INSTR-AEL-1); the bullet above is kept as written.* AEL, the third app,
+  also reads its version at runtime (`lib/app_info.dart`, from what Flutter builds
+  in from its `pubspec.yaml`). Not a fact you hold either.
 - **What is live in any store**, and any store pricing, category or keywords.
   Consoles only.
 - **Build, test or deploy status.**
@@ -1138,17 +1146,79 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
    requests**, whenever a placeholder ad is shown. Both placeholders render only
    off native. The rest of the note stands.
 
+## ANIMAL EPISODE LOG (AEL)
+
+Publisher Notiva, with its own product brand (decision A3). Product pages under
+`notiva.com.au/animal-episode-log/`, with `privacy/` and `terms/` beneath it. Repo
+`C:\dev\event-recorder-fork`, a separate app built from MER's code (decision A1);
+GitHub `AusWazDev/animal-episode-log` (AV-SCOPE S-43). Bundle and application id
+`au.com.notiva.animalepisodelog` (widget `au.com.notiva.animalepisodelog.widget`),
+Apple team B7LWF6Z674. Apple App ID 6835679828 and Google Play app id
+4975370923447607185 are recorded in AV-SCOPE as console facts the chat half entered
+(AV-15 Amendment A, 17 Nov 2026); the CLI has not read them from a console. Sentry
+project `animal-episode-log`, organisation `bedlin-pty-ltd`.
+
+Launch platforms: iOS and Android. Windows follows once its purchase route is
+established (AV-SCOPE D-52, 16 Nov 2026). Monetisation: a free download with one
+non-consumable, one-time unlock (`ael_full_unlock`) and Restore Purchases; no
+subscription (D-12, D-35). At launch the paid tier is the formatted vet report, the
+episode summary, for one animal; additional animal profiles follow as the first paid
+update (D-51). Features not yet allocated to a tier default to Paid (D-42); capture
+and the raw record are never gated (D-06, D-07, as D-42 restates).
+
+Reasoning for every decision: `event-recorder-fork/docs/AV-SCOPE.md`.
+
+**Architecture that only changes if the app is re-architected.** Each premise was
+read from the fork's code at `a6a1f55` on 19 November 2026; none is copied from MER's.
+
+1. **No backend.** Fully local, no account, no sync. As at 19 November 2026 the only
+   automatic network traffic is Sentry error reports and store billing (Google Play
+   Billing, StoreKit). Links and share leave the app only when the user taps them
+   (AV-40). A purchase is restored from the store account; AEL has no account of its
+   own.
+2. **No architecture or data-model document of its own, as at 19 November 2026.**
+   `docs/parent-inherited/ARCHITECTURE.md` and `DATA-MODEL.md` are MER's copies and
+   describe MER, and the fork's `CLAUDE.md` is still titled "Medical Event Recorder".
+   The shape of AEL's capture model is not established here. Before claiming what
+   AEL records, have the CLI read `lib/models/event_record.dart`.
+3. **A record has two times.** `timestamp` is when it was logged and `occurredAt` is
+   when it happened, null until someone states it. Every reader goes through
+   `whenHappened` (`occurredAt ?? timestamp`). The picker is
+   `lib/widgets/occurred_at_field.dart`.
+4. **iOS notifications are native Swift** (`ios/Runner/AppDelegate.swift`), not the
+   Flutter plugin, which returns early on iOS (`notification_service.dart`). iOS
+   quick-log posts facts to a capture inbox (`writeInboxStart` / `writeInboxEnd`),
+   which Dart drains (`drainInbox`).
+5. **Windows has no notification path.** `notification_service.dart` returns early on
+   Windows, and Help shows "Not available on Windows". Windows is not a launch
+   platform (D-52).
+6. **Backup preserves, export shares, and restore only adds** (`lib/models/backup.dart`).
+   As at 19 November 2026 exactly one feature is behind the paid gate: the episode summary
+   (`runPaidAction`, one call site, in `home_screen.dart`). CSV export, backup and
+   restore are not gated.
+
 ## STANDING CONSTRAINTS
 
 - Repo names predate both rebrands. Never rename either.
+  ⚠️ *ANNOTATED 19 November 2026 (brief INSTR-AEL-1); the line above is kept as written.* There are three repos now.
+  AEL's folder `C:\dev\event-recorder-fork` also predates its name; its GitHub
+  repository is `AusWazDev/animal-episode-log` (AV-SCOPE S-43). Whether the
+  never-rename rule reaches AEL's folder is not recorded.
 - Storage keys and store IDs are immutable once published. Renaming a storage
   key orphans every existing user's data.
 - Both apps ship on Apple, Google Play and Microsoft Store. Which versions are
   live, and whether a track is public, is console state — check, never assert.
+  ⚠️ *ANNOTATED 19 November 2026 (brief INSTR-AEL-1); the bullet above is kept as written and covers MER and
+  SoundFind.* AEL launches on iOS and Android; Windows follows once its purchase
+  route is established (AV-SCOPE D-52, 16 Nov 2026). Which AEL versions are live is
+  console state too.
 - Google Play closed testing requires a sustained tester count over consecutive
   days before production unlocks.
 - iOS builds require a Mac and Xcode. Everything else is built on Windows.
 - Sentry monitors both apps.
+  ⚠️ *ANNOTATED 19 November 2026 (brief INSTR-AEL-1); the line above is kept as written.* All three apps now. AEL
+  reports to its own Sentry project, `animal-episode-log`. Decision A4 governs what
+  AEL's and MER's reports may carry.
 - Annotate, never rewrite. A record of what was decided on a past date must
   stay true. Where something is superseded, mark it superseded in place and
   quote the old wording — rewriting makes a historical record describe
