@@ -45,7 +45,7 @@ SoundFind and MER" is now three: SoundFind, MER and Animal Episode Log (AEL), a
 separate app built from MER's code (decision A1). AEL has its own section,
 ANIMAL EPISODE LOG (AEL), after SOUNDFIND.
 
-INSTRUCTIONS STAMP: 2026-11-19-a8789fc3
+INSTRUCTIONS STAMP: 2026-11-19-63254929
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -107,6 +107,24 @@ and never a source.
 `.md` and the `.txt`, so a stamp quoted by the chat half proves the PASTE matches the paste
 SOURCE. It never proves the paste matches the CLI's copy; that link rests on the
 session-end block check alone.
+
+⚠️ **ANNOTATED 19 November 2026 (Brief MER-REL-1 C); the opening paragraph, the table and the
+29 September correction above are left as written.** Since 2 November 2026 the CLI's copy of
+this block is `C:\dev\docs\current-decisions.md`, not `C:\dev\CLAUDE.md`. `C:\dev\CLAUDE.md`
+now carries no block, only an instruction to read that file. So wherever this block names
+`C:\dev\CLAUDE.md` as a copy (the table, and the 29 September list of compared files), read
+`C:\dev\docs\current-decisions.md`. `session-end.ps1` compares that file with the `.md` and the
+`.txt`. Its backup-only copy is now `current-decisions.md` in `{global config}/setup/Dev
+Workspace docs`, not `Dev Workspace CLAUDE.md`. The 29 September note that the CLI's copy
+carries no instructions stamp holds for the new file too.
+⛔ **And the CLI's copy is NOT auto-loaded. Checked 19 November 2026:** no `@` import of it in
+any `CLAUDE.md` (`C:\dev\CLAUDE.md` names it in a markdown link, which is not an import), and no
+SessionStart hook in the user or workspace settings. A CLI session started that day opened with
+both `CLAUDE.md` files in its context and without this file. **So the opening paragraph's
+premise, *"the CLI auto-loads files from disk"*, no longer holds for the CLI's copy, and neither
+does the table's *"auto-loaded every session"*.** A CLI session reaches this block only when it
+follows `C:\dev\CLAUDE.md`'s instruction to read it. The claude.ai side is unchanged: it reaches
+the block only once pasted.
 
 ⚠️ **The `.md` is only the SOURCE of the paste. Editing it changes nothing on the
 chat side until the paste is updated.** `session-end.ps1` warns when the two
@@ -634,6 +652,14 @@ correction rounds. One feasibility read would have caught it.
   identical three times while the MER paste drifted sixteen decision rows
   behind. A check that cannot observe the thing that drifted reports green
   through it. Earned 1 October 2026.
+  ⚠️ *Annotated 19 November 2026 (Brief MER-REL-1 C); A7 is left as written.*
+  *"`C:\dev\CLAUDE.md` (the CLI, every session)"* is no longer true of the
+  decisions. Since 2 November 2026 the CLI's copy of the CURRENT DECISIONS
+  block is `C:\dev\docs\current-decisions.md`, and it is NOT auto-loaded: a
+  CLI session reads it only when it follows `C:\dev\CLAUDE.md`'s instruction
+  to. The evidence is in the block's own annotation of the same date. The
+  three channels stand; the first is now "on instruction", not "every
+  session".
 - **A8.** Every targeted fix carries a sweep for the same shape. Brief 318 C
   turned a one-line fix into a class; Brief 321 D found a fifth instance.
   Earned 1 October 2026.
