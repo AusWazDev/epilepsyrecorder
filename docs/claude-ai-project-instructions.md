@@ -45,7 +45,7 @@ SoundFind and MER" is now three: SoundFind, MER and Animal Episode Log (AEL), a
 separate app built from MER's code (decision A1). AEL has its own section,
 ANIMAL EPISODE LOG (AEL), after SOUNDFIND.
 
-INSTRUCTIONS STAMP: 2026-11-19-63254929
+INSTRUCTIONS STAMP: 2026-11-19-225dafa4
 
 ⛔ QUOTE THIS STAMP VERBATIM AT THE START OF EVERY SESSION, before writing any
 brief. The CLI cannot read this paste. Quoting the stamp is the only thing that
@@ -229,16 +229,16 @@ developer on 30 Sep 2026 in chat, briefs SF-5 to SF-8
 | Placement | **The web version lives on the subdomain `play.uniquegames.com.au`.** ⚠️ **This is the chat half's technical call; the developer may override it.** Serving at a subdomain's root keeps the build's root-absolute asset and audio paths working (SF-13). | 30 Sep 2026 | ⬜ subdomain not created |
 | S20 | **Mobile first. iOS and Android testing and release come next.** Web commissioning (S9 to S19) and the Microsoft Store withdrawal are parked, and their research is kept. The Microsoft Store listing stays up until a web version replaces it (S7's order is unchanged). The Vercel build stays as it is. ⚠️ **SUPERSEDED IN PART by S22 (1 Oct 2026), annotated 12 Oct 2026; the wording above is kept as written.** *"stays up until a web version replaces it"* no longer stands: the Microsoft Store listing is retained. | 30 Sep 2026 | ⬜ mobile release not yet done; web items parked |
 | S21 | **Android: the advertising-ID permission (`com.google.android.gms.permission.AD_ID`) is removed from the merged manifest** (K8). Because S1 treats every player as a possible child, the Play target audience includes children. Google Play's Families policy: *"Apps solely targeted to children should not request AD_ID permission when targeting Android API 33 or higher"*; mixed-audience apps *"must not transmit AAID … from children or users of unknown age"*. AdMob: *"You can also choose to disable the advertising ID for your entire app by preventing the advertising ID permission from being merged into your app."* Applied by the CLI under the 1 Oct 2026 prompt, which made it conditional on the policy supporting removal; the developer may override. Without the permission, on API 33+ the ID reads as zeros, including for RevenueCat. The three Privacy Sandbox `ACCESS_ADSERVICES_*` permissions are not removed; that is open. ⚠️ **UPDATED later on 1 Oct 2026; the sentence above is kept as written.** All three (`ACCESS_ADSERVICES_AD_ID`, `_ATTRIBUTION`, `_TOPICS`) are now removed too, in CR-73 (`0284479`). AdMob documents preventing their merge as an opt-out (*"If you want to opt out of AdMob testing of Android's Topics API, see how to prevent the merging of permissions"*), the Families policy says ads shown to children must *"not involve interest-based advertising"*, and *"As of October 17, 2025, Privacy Sandbox on Android is deprecated."* No Google page found requires or forbids this for a child audience. | 1 Oct 2026 | ✅ CR-71 (`5d2a33d`); merged manifest and debug APK show no AD_ID |
-| S22 | **Keep the Microsoft Store; Windows ships 1.1.1 after its own device tests.** Supersedes the Store half of S7 and S16's "only the Windows Store listing is withdrawn". | 1 Oct 2026 | not recorded |
+| S22 | **Keep the Microsoft Store; Windows ships 1.1.1 after its own device tests.** Supersedes the Store half of S7 and S16's "only the Windows Store listing is withdrawn". | 1 Oct 2026 | not recorded. Microsoft Store kept (ARCHITECTURE.md). [annotated 19 Nov 2026, SF-81] |
 | S23 | **"iPhone and iPad Apps on Apple Silicon Macs" stays on, without a Mac device test.** | 1 Oct 2026 | not recorded |
 | S24 | **Windows 1.1.1 gets real Store purchases and real ads.** SUPERSEDED IN PART by S25: SF-21 found no compliant child-directed ad network for Windows. | 2 Oct 2026 | not recorded |
-| S25 | **Windows: Microsoft Store purchases for hint packs, plus non-ad free hints (Daily completed = 1 hint, once a day; 3-day streak = 2).** No ads, no "watch an ad", no Remove Ads. Optional promotion slot behind a parent check. iOS and Android keep ad-for-a-hint. | 2 Oct 2026 | ⬜ NOT BUILT as at 12 Oct 2026; HintModal.jsx still carries the S6 placeholders on Windows |
+| S25 | **Windows: Microsoft Store purchases for hint packs, plus non-ad free hints (Daily completed = 1 hint, once a day; 3-day streak = 2).** No ads, no "watch an ad", no Remove Ads. Optional promotion slot behind a parent check. iOS and Android keep ad-for-a-hint. | 2 Oct 2026 | ⬜ NOT BUILT as at 12 Oct 2026; HintModal.jsx still carries the S6 placeholders on Windows. ✅ built CR-132 7adc5d9, CR-133 bc1a38e; promotion slot out. The 'NOT BUILT as at 12 Oct 2026' text above is superseded. [annotated 19 Nov 2026, SF-81] |
 | S26 | **Each platform's release is gated by its own device tests.** Its MacBook-leg sentence is superseded by S29. | 2 Oct 2026 | not recorded |
 | S27 | **Daily time limits scale with word count: 12 s/word standard, 15 s anagram and association, 20 s audio; untimed templates stay untimed; floor at the pre-CR-84 limit (CR-85).** | 2 Oct 2026 | ✅ built (CR-84, CR-85) |
 | S28 | **Daily reward hints are awarded once per day; same-day replays allowed, no extra hints.** | 2 Oct 2026 | ✅ built (CR-84) |
 | S29 | **iOS 1.1.1 is signed off on real-iPhone TestFlight passes; the MacBook / iOS Simulator leg does not gate it.** | 2 Oct 2026 | not recorded |
 | S30 | **App Store App Privacy: Device ID declared not used for tracking; "Does this app track?" = No.** | 2 Oct 2026 | not recorded |
-| S31 | **Sentry "Prevent Storing of IP Addresses" ON for the soundfind project; org-level Require stays OFF.** | 2 Oct 2026 | not recorded |
+| S31 | **Sentry "Prevent Storing of IP Addresses" ON for the soundfind project; org-level Require stays OFF.** | 2 Oct 2026 | not recorded. ✅ confirmed ON 14 Oct 2026 (SoundFind CR-125) [console: Sentry UI, chat half's read]. [annotated 19 Nov 2026, SF-81] |
 | S32 | **Web version hosted on Vercel Pro.** Supersedes S12, and S18 in practice; S20 (web parked behind mobile) unchanged. | 2 Oct 2026 | not recorded |
 | S33 | **Privacy policy and terms draft 3 published without an adviser read.** | 2 Oct 2026 | not recorded |
 | S34 | **iOS 1.1.1 releases automatically on approval, no phased release.** | 2 Oct 2026 | not recorded |
@@ -247,6 +247,16 @@ developer on 30 Sep 2026 in chat, briefs SF-5 to SF-8
 | S37 | **Mailbox roles: privacy@ for privacy, contact@ for general enquiries, apps@ for development.** Supersedes S33's placeholder resolutions 1 and 6. | 3 Oct 2026 | not recorded |
 | S38 | **Footer social icons are dimmed so they look uniform.** The developer's words: *"dim both, they need to look uniform."* On uniquegames.com.au the LinkedIn SVG went to 35% white and the Facebook PNG to opacity 0.35, both rising to 0.7 on hover. ⚠️ **SUPERSEDED 4 Oct 2026 by S39; the wording above is kept as written.** Dimming Meta's logo alters it, and the developer chose full white instead. notiva.com.au never carried S38: its Facebook icon went in at full opacity under Brief 337. | 3 Oct 2026 | ⚠️ superseded. Was built in SF-39b (`e7fc008`, uniquegames-site), reversed in SF-39d |
 | S39 | **Footer social icons are full white on both websites: LinkedIn raised to white, Meta's white logo unaltered, no hover dimming.** Supersedes S38. notiva-site (Brief 338, `d1b60f2`), uniquegames-site (SF-39d, `b5d66b2`). | 4 Oct 2026 | ✅ live on both sites, checked in a browser 4 Oct 2026 |
+| S40 | **Hint retention and purchase integrity go ahead as A + B + C:** (A) a "saved on this device" line on the hint purchase screen; (B) backup rules or a Preferences mirror, chosen by the Android backup test; (C) reconcile charged-but-uncredited packs by RevenueCat transaction ID. | 12 Oct 2026 | ✅ A: CR-93 `bd05e0a`; B: CR-94 `e3fea9d`; C: CR-98 `766fa69`, CR-100 `2e6c18f` |
+| S41 | **Ad cadence: every completed game counts toward the 6-game interstitial (Home, Next Level, Replay, Daily), and the interstitial can show however the next game starts; a Daily timer never runs during an ad.** S1 and S5 still hold. | 13 Oct 2026 | ✅ CR-96 `084bc15`; dismissal fix CR-101 `c28964a` |
+| S42 | **Welcome screen direction "Live demo":** a small demo grid finds a word, sound on tap only, one primary button into a first puzzle, full welcome on first launch only. | 13 Oct 2026 | ✅ CR-107 `1e67d30` |
+| S43 | **A guided first game replaces the How to Play modal:** a fixed tiny board with coach marks, skippable, offline, isolated from progress, ads, the Daily and the hint balance; replayable from Settings. | ⚠️ not recorded in the SoundFind repo; built 13 Oct 2026 (CR-108) | ✅ CR-108 `87dc545` |
+| S44 | **One price list on every store.** iOS reference: 3 hints A$0.99, 10 hints A$1.99, 25 hints A$3.99, Remove Ads A$4.99. ⚠️ Superseded for Windows by S47; stands for iOS and Android. Recorded as "S39" in project docs dated 12 Oct; renumbered 19 Nov 2026 (CR-137). | 12 Oct 2026 | ✅ recorded in CR-137 `3c87c77` (no code; prices are store-side, and CR-137 records them as not checked against App Store Connect) |
+| S45 | **Windows and web work start now, while Android production waits on the tester gate; Windows first.** Overrides S20's parking of the web work (S20 left as written). Recorded as "S40" in project docs dated 18 Oct; renumbered 19 Nov 2026. | 18 Oct 2026 | ◐ Windows half built (CR-132, CR-133); no web work recorded since (CR-137) |
+| S46 | **Windows free hints: the Daily pays the same 1 to 3 hints as every platform; a Daily streak pays 2 hints at each multiple of 3 days, once per milestone.** Refines S25 (left as written). Recorded as "S41" in project docs dated 18 Oct and in CR-132; renumbered 19 Nov 2026. | 18 Oct 2026 | ✅ CR-132 `7adc5d9` (`streakReward.js`) |
+| S47 | **Windows hint packs: hints_5 A$1.50, hints_10 A$1.95, hints_25 A$3.90; Developer-managed consumables, hidden in the Store.** iOS and Android unchanged (hints_3 / hints_10 / hints_25). Supersedes S44 for Windows. Recorded as "S42" in project docs dated 21 Oct and in CR-133; renumbered 19 Nov 2026. | 21 Oct 2026 | ✅ CR-133 `bc1a38e`. Add-ons in the Microsoft Store and Windows 1.2.0 submitted 21 Oct 2026 [console: Partner Center, chat half's read]; live per the developer's report of a Microsoft email, 21 Oct 2026 (not console-read) |
+
+S-number rule (19 Nov 2026, CR-137): an S-number is issued once. On a collision the earlier-dated decision keeps it. Next free: S48.
 
 **Reasoning for each lives in the SoundFind Change Register**
 (`WordFind-Adventure/docs/Change Register.md`) and in the briefs file above.
@@ -1190,6 +1200,17 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
    Remove Ads off native. The free refill is gone, and nothing reads or writes
    `sf_free_hint_refill_at`. So premise 6's own sentence, a "coming soon" message
    on web as the expected fallback, describes the app again.
+   ⚠️ **ANNOTATED 19 November 2026 (SoundFind SF-81 A4, HEAD `014c593`); every
+   annotation above is kept as written.** Windows no longer matches the
+   annotations above. On Windows there are no ads, no 'Watch an Ad', no Remove
+   Ads and no 'Coming soon'. Out of hints, it offers Microsoft Store hint packs
+   (5, 10, 25 hints, Store-priced) and earns free hints from the Daily and Daily
+   streaks (S25, S46, S47). If the Store is unreachable it says so and disables
+   Buy. The web build still matches the CR-67 annotation: a placeholder 'Watch
+   an Ad' (skipping still grants the hint), 'Buy Hint Pack' with 3/10/25 and no
+   prices ending in a 'Coming soon' toast, and the placeholder interstitial from
+   Home every 6 completed games. iOS and Android are unchanged: AdMob and
+   RevenueCat.
 7. **The app makes third-party image requests at runtime.** Everything else is
    local — worth remembering whenever privacy claims are drafted.
    ⚠️ **ANNOTATED 30 September 2026 (SoundFind CR-64, `578967d`, brief SF-3);
@@ -1210,6 +1231,11 @@ id `au.com.uniquegames.soundfind`. Apple App ID 6769255354, MS Store
    (`HintModal.jsx`). **So web and Windows once again make third-party image
    requests**, whenever a placeholder ad is shown. Both placeholders render only
    off native. The rest of the note stands.
+   ⚠️ **ANNOTATED 19 November 2026 (SoundFind SF-81 A4); every annotation above
+   is kept as written.** src holds 4 images.unsplash.com URLs (3 distinct
+   photos), in AdModal.jsx and HintModal.jsx, inside web-only placeholder views.
+   Only the web build requests them. Windows never opens those views; iOS and
+   Android show AdMob instead.
 
 ## ANIMAL EPISODE LOG (AEL)
 
